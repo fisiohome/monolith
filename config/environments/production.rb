@@ -69,6 +69,13 @@ Rails.application.configure do
   #   port: 587,
   #   authentication: :plain
   # }
+  config.action_mailer.default_url_options = {
+    host: "smtp.resend.com",
+    port: 465,
+    user_name: "resend",
+    password: Rails.application.credentials.resend.api_key,
+    protocol: "https"
+  }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
@@ -88,4 +95,7 @@ Rails.application.configure do
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # additional configs
+  config.action_mailer.delivery_method = :resend
 end
