@@ -61,3 +61,11 @@ end
 gem "devise", "~> 4.9"
 
 gem "resend", "~> 0.14.0"
+
+gem "inertia_rails", "~> 3.4"
+
+gem "inertia_rails-contrib", "~> 0.3.0"
+
+gem "vite_rails", "~> 3.0"
+
+gem "rufo", "~> 0.18.0"
