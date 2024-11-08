@@ -7,3 +7,10 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+
+puts "Seed accounts Start"
+User.where(email: "super_admin@fisiohome.id").first_or_create do |user|
+  user.password = "Fisiohome123!"
+  user.password_confirmation = "Fisiohome123!"
+end
+puts "Seed accounts Finish"
