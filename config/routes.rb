@@ -10,9 +10,11 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  root "posts#index"
+  root "inertia_example#index"
 
-  devise_for :users
+  devise_for :users, path: "", path_names: {
+    registration: "auth"
+  }
   resources :posts
   get "inertia-example", to: "inertia_example#index"
 end

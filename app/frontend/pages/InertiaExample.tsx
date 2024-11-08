@@ -1,13 +1,14 @@
-import { Head } from '@inertiajs/react'
+import { Head, usePage } from '@inertiajs/react'
 import { useState } from 'react'
-
 import reactSvg from '/assets/react.svg'
 import inertiaSvg from '/assets/inertia.svg'
 import viteRubySvg from '/assets/vite_ruby.svg'
-
 import cs from './InertiaExample.module.css'
+import { Button } from '@/components/ui/button'
+import { GlobalPageProps } from '@/types/globals'
 
 export default function InertiaExample({ name }: { name: string }) {
+  const props = usePage<GlobalPageProps>().props
   const [count, setCount] = useState(0)
 
   return (
@@ -54,7 +55,12 @@ export default function InertiaExample({ name }: { name: string }) {
         <p className={cs.readTheDocs}>
           Click on the Inertia, Vite Ruby, and React logos to learn more
         </p>
+
+        <Button asChild>
+          <a href={props.adminPortal.router.logout}>Logout</a>
+        </Button>
       </div>
+
     </>
   )
 }
