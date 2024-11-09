@@ -1,10 +1,10 @@
 class ApplicationController < ActionController::Base
-  # include Auth
-  # include ErrorHandler
+  include Auth
+  include ErrorHandler
 
   # include InertiaCsrf
-  # include InertiaFlash
-  # include InertiaJson
+  include InertiaFlash
+  include InertiaJson
   include InertiaAdminPortal
 
   include ApplicationHelper

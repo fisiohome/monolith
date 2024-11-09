@@ -15,7 +15,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
   // )
 
   return (
-    <ThemeProvider defaultTheme="system" storageKey="portal-ui-theme">
+    <ThemeProvider defaultTheme="system">
       <ToastProvider>
         {/* <SidebarProvider style={sidebarStyle}>
           <AppSidebar />

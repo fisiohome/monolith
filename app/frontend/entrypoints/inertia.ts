@@ -30,7 +30,7 @@ createInertiaApp({
     // page.default.layout ||= (page) => createElement(Layout, null, page)
 
     const useGuestLayout = name.startsWith('Auth/') || name === 'Error'
-    const useAdminLayout = name.startsWith('Admin/') || name.startsWith('Post/')
+    const useAdminLayout = name.startsWith('Admin/')
     const page = pages[`../pages/${name}.tsx`]
     // @ts-ignore
     page.default.layout = useAdminLayout ? (page: ResolvedComponent) => createElement(AdminLayout, null, page) : useGuestLayout ? (page: ResolvedComponent) => createElement(GuestLayout, null, page) : undefined

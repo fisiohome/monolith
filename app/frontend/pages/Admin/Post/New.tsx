@@ -13,13 +13,13 @@ export default function New({ post }: any) {
           post={post}
           onSubmit={(form) => {
             form.transform((data) => ({ post: data }))
-            form.post('/posts')
+            form.post('/admin/posts')
           }}
           submitText="Create post"
         />
 
         <Link
-          href="/posts"
+          href="/admin/posts"
           className="inline-block px-5 py-3 ml-2 font-medium bg-gray-100 rounded-lg"
         >
           Back to posts

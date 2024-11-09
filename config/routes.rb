@@ -6,15 +6,33 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  root "inertia_example#index"
+  # root to: "inertia_example#index"
 
   devise_for :users, path: "", path_names: {
-    registration: "auth"
+    sign_in: "sign-in", sign_out: "sign-out", registration: "auth", sign_up: "sign-up"
+  }, controllers: {
+    sessions: "users/sessions"
   }
-  resources :posts
+
+  devise_scope :user do
+    authenticated :user do
+      namespace :admin do
+        root to: "posts#index"
+
+        resources :posts
+      end
+    end
+
+    unauthenticated do
+      # root to: "users/sessions#new", as: :unauthenticated_root
+      root to: "users/sessions#new"
+    end
+  end
+
+
   get "inertia-example", to: "inertia_example#index"
 end

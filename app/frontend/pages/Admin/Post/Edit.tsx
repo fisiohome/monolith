@@ -13,13 +13,13 @@ export default function Edit({ post }: any) {
           post={post}
           onSubmit={(form: { transform: (arg0: (data: any) => { post: any }) => void; patch: (arg0: string) => void }) => {
             form.transform((data) => ({ post: data }))
-            form.patch(`/posts/${post.id}`)
+            form.patch(`/admin/posts/${post.id}`)
           }}
           submitText="Update post"
         />
 
         <Link
-          href={`/posts/${post.id}`}
+          href={`/admin/posts/${post.id}`}
           className="inline-block px-5 py-3 ml-2 font-medium bg-gray-100 rounded-lg"
         >
           Show this post

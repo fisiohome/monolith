@@ -45,7 +45,6 @@ export function ThemeProvider({
       return
     }
 
-
     root.classList.add(theme)
   }, [theme])
 

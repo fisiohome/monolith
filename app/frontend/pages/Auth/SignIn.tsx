@@ -4,9 +4,8 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { z } from 'zod'
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Head, usePage } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
-import type { GlobalPageProps } from "@/types/globals";
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -19,7 +18,7 @@ const FormSchema = z.object({
 })
 
 const SignIn = () => {
-  const props = usePage<{ 'rememberable?': boolean; forgotPasswordPath: string; } & GlobalPageProps>().props
+  // const props = usePage<{ 'rememberable?': boolean; } & GlobalPageProps>().props
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -27,8 +26,21 @@ const SignIn = () => {
       password: ""
     },
   })
+  // for docs this not works
   // const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+  //   // using fetch
+  //   const response = await fetch('sign-in', {
+  //     method: 'post',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     body: JSON.stringify({ user: { ...data }, 'authenticity_token': document.querySelector("meta[name='csrf-token']")?.content })
+  //   })
+  //   console.log(await response.json())
+
+  //   // using inertia router
   //   router.post('/sign-in', { user: { ...data } })
+  //   window.location.reload();
   // }
 
 
@@ -50,7 +62,7 @@ const SignIn = () => {
             <Form {...form}>
               {/* <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4"> */}
               <form method="post" action="/sign-in" className="grid gap-4">
-                <input type="hidden" name="authenticity_token" value={props?.X_CSRF_TOKEN} hidden />
+                <input type="hidden" name="authenticity_token" value={(document.querySelector("meta[name='csrf-token']") as HTMLMetaElement)?.content} hidden />
 
                 <input type="hidden" name="remember_me" value="0" hidden />
 
@@ -96,7 +108,7 @@ const SignIn = () => {
 
                 <div className="mt-4">
                   <Button type="submit" className="w-full">
-                    Login
+                    {form.formState.isSubmitting ? "Loading..." : "Login"}
                   </Button>
                 </div>
               </form>

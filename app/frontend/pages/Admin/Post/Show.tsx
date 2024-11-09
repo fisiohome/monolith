@@ -25,20 +25,20 @@ export default function Show({ post, flash }: any) {
           <Post post={post} />
 
           <Link
-            href={`/posts/${post.id}/edit`}
+            href={`/admin/posts/${post.id}/edit`}
             className="inline-block px-5 py-3 mt-2 font-medium bg-gray-100 rounded-lg"
           >
             Edit this post
           </Link>
           <Link
-            href="/posts"
+            href="/admin/posts"
             className="inline-block px-5 py-3 ml-2 font-medium bg-gray-100 rounded-lg"
           >
             Back to posts
           </Link>
           <div className="inline-block ml-2">
             <Link
-              href={`/posts/${post.id}`}
+              href={`/admin/posts/${post.id}`}
               onClick={onDestroy}
               as="button"
               method="delete"
