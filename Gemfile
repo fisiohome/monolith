@@ -69,3 +69,5 @@ gem "inertia_rails-contrib", "~> 0.3.0"
 gem "vite_rails", "~> 3.0"
 
 gem "rufo", "~> 0.18.0"
+
+gem "pagy", "~> 9.2"

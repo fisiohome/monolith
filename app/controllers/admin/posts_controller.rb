@@ -3,7 +3,7 @@ module Admin
     before_action :authenticate_user!
     before_action :set_post, only: %i[ show edit update destroy ]
 
-    inertia_share flash: -> { flash.to_hash }
+    # inertia_share flash: -> { flash.to_hash }
 
     # GET /posts
     def index

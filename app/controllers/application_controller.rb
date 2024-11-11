@@ -1,7 +1,8 @@
 class ApplicationController < ActionController::Base
+  include Pagy::Backend
+
   include Auth
   include ErrorHandler
-
   # include InertiaCsrf
   include InertiaFlash
   include InertiaJson

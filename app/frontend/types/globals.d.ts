@@ -16,12 +16,16 @@ export interface FlashMessage {
   alert: string | null
 }
 export interface AdminPortal {
+  currentLocale: string
+  currentTimezone: string
   router: {
     root: string
     logout: string
     adminRootPath: string
+    authenticatedRootPath: string
     accountManagement: {
       index: string
+      new: string
     }
   }
 }

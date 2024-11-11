@@ -12,11 +12,14 @@ module Auth
     # end
 
     inertia_share auth: -> {
-      {
-        currentUser: current_user.as_json(
-          only: %i[id email sign_in_count current_sign_in_at last_sign_in_at current_sign_in_ip last_sign_in_ip created_at updated_at]
-          )&.deep_transform_keys { |key| key.to_s.camelize(:lower) }
-      }
+      deep_transform_keys_to_camel_case(
+        {
+          # currentUser: current_user.as_json(
+          #   only: %i[id email sign_in_count current_sign_in_at last_sign_in_at current_sign_in_ip last_sign_in_ip created_at updated_at]
+          #   )&.deep_transform_keys { |key| key.to_s.camelize(:lower) }
+          currentUser: current_user.as_json(only: %i[email])
+        }
+      )
     }
   end
 

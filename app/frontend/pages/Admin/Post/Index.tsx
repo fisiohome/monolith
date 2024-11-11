@@ -10,12 +10,12 @@ export default function Index({ posts, flash }: { posts: any[]; flash: any }) {
   return (
     <>
       <Head title="Posts" />
-      <div className="w-full px-8 pt-8 mx-auto md:w-2/3">
-        {flash.notice && (
+      <article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-6">
+        {/* {flash.notice && (
           <p className="inline-block px-3 py-2 mb-5 font-medium text-green-500 rounded-lg bg-green-50">
             {flash.notice}
           </p>
-        )}
+        )} */}
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold">Posts</h1>
 
@@ -51,7 +51,7 @@ export default function Index({ posts, flash }: { posts: any[]; flash: any }) {
             )
           })}
         </div>
-      </div>
+      </article>
     </>
   )
 }

@@ -20,15 +20,17 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     authenticated :user do
+      root to: "admin/users#index", as: :authenticated_root
+
       namespace :admin do
-        root to: "posts#index"
+        root to: "users#index"
 
         resources :posts
+        resources :users, path: "accounts", as: "account_management"
       end
     end
 
     unauthenticated do
-      # root to: "users/sessions#new", as: :unauthenticated_root
       root to: "users/sessions#new"
     end
   end
