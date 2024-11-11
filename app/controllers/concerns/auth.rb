@@ -7,6 +7,9 @@ module Auth
     # before the location can be stored.
     before_action :authenticate_user!
 
+    # for tracking if the user is online
+    after_action :update_user_online, if: :user_signed_in?
+
     # rescue_from CanCan::AccessDenied do
     #   render inertia: "Error", props: { status: 403 }
     # end
@@ -27,5 +30,12 @@ module Auth
 
   def after_sign_out_path_for(_resource_or_scope)
     new_user_session_path
+  end
+
+  def update_user_online
+    return if session[:last_online_at] && session[:last_online_at] > 5.minutes.ago
+
+    current_user.update!(last_online_at: Time.current)
+    session[:last_online_at] = Time.current
   end
 end
