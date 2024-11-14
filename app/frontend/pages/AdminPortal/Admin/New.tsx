@@ -1,11 +1,12 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
-import { Check, ChevronLeft, ChevronsUpDown, Eye, EyeClosed } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import type { AdminTypes } from "@/types/admin-portal/admin";
-import type { GlobalPageProps } from "@/types/globals";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	Form,
 	FormControl,
@@ -13,63 +14,89 @@ import {
 	FormItem,
 	FormLabel,
 	FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn, humanize } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { cn, humanize } from "@/lib/utils";
+import type { AdminTypes } from "@/types/admin-portal/admin";
+import type { GlobalPageProps } from "@/types/globals";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import {
+	Check,
+	ChevronLeft,
+	ChevronsUpDown,
+	Eye,
+	EyeClosed,
+} from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 export interface NewAdminPageProps {
-	adminTypeList: AdminTypes
+	adminTypeList: AdminTypes;
 }
 
 export default function New({ adminTypeList }: NewAdminPageProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	console.log(globalProps)
+	console.log(globalProps);
 
-	const [passwordVisibility, setPasswordVisibility] = useState(false)
-	const [passwordConfirmationVisibility, setPasswordConfirmationVisibility] = useState(false)
-	const formSchema = z.object({
-		name: z.string(),
-		email: z.string().email(),
-		adminType: z.enum([...adminTypeList]),
-		password: z.string()
-			.min(8, "Password must be at least 8 characters long")
-			.max(64, "Password must be no more than 64 characters")
-			.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-			.regex(/\d/, "Password must contain at least one number")
-			.regex(/[\W_]/, "Password must contain at least one symbol"),
-		passwordConfirmation: z.string().min(8, "Password must be at least 8 characters long")
-			.max(64, "Password must be no more than 64 characters")
-			.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-			.regex(/\d/, "Password must contain at least one number")
-			.regex(/[\W_]/, "Password must contain at least one symbol")
-	}).refine((data) => data.password === data.passwordConfirmation, {
-		message: "Passwords don't match",
-		path: ["passwordConfirmation"],
-	})
+	const [passwordVisibility, setPasswordVisibility] = useState(false);
+	const [passwordConfirmationVisibility, setPasswordConfirmationVisibility] =
+		useState(false);
+	const formSchema = z
+		.object({
+			name: z.string(),
+			email: z.string().email(),
+			adminType: z.enum([...adminTypeList]),
+			password: z
+				.string()
+				.min(8, "Password must be at least 8 characters long")
+				.max(64, "Password must be no more than 64 characters")
+				.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+				.regex(/\d/, "Password must contain at least one number")
+				.regex(/[\W_]/, "Password must contain at least one symbol"),
+			passwordConfirmation: z
+				.string()
+				.min(8, "Password must be at least 8 characters long")
+				.max(64, "Password must be no more than 64 characters")
+				.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+				.regex(/\d/, "Password must contain at least one number")
+				.regex(/[\W_]/, "Password must contain at least one symbol"),
+		})
+		.refine((data) => data.password === data.passwordConfirmation, {
+			message: "Passwords don't match",
+			path: ["passwordConfirmation"],
+		});
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			name: "Admin",
 			email: "admin_1@yopmail.com",
-			password: 'Fisiohome123!',
-			passwordConfirmation: 'Fisiohome123!'
+			password: "Fisiohome123!",
+			passwordConfirmation: "Fisiohome123!",
 		},
-	})
+	});
 	function onSubmit(values: z.infer<typeof formSchema>) {
-		console.log("Submitting form to create the admin...")
+		console.log("Submitting form to create the admin...");
 		router.post(
 			globalProps.adminPortal.router.adminPortal.adminManagement.index,
 			deepTransformKeysToSnakeCase({
-				admin: { adminType: values.adminType, name: values.name, userId: '' },
-				user: { email: values.email, password: values.password, passwordConfirmation: values.passwordConfirmation }
-			})
-		)
-		console.log("Admin successfully created...")
+				admin: { adminType: values.adminType, name: values.name, userId: "" },
+				user: {
+					email: values.email,
+					password: values.password,
+					passwordConfirmation: values.passwordConfirmation,
+				},
+			}),
+		);
+		console.log("Admin successfully created...");
 	}
 
 	return (
@@ -82,7 +109,10 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 							<Link href={globalProps.adminPortal.router.authenticatedRootPath}>
 								<ChevronLeft />
 							</Link>
-							<Separator orientation="vertical" className="h-5 bg-muted-foreground/50" />
+							<Separator
+								orientation="vertical"
+								className="h-5 bg-muted-foreground/50"
+							/>
 						</div>
 
 						<h1 className="text-2xl font-bold tracking-tight">
@@ -93,7 +123,10 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 					<Separator className="bg-muted-foreground/50" />
 
 					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)} className="grid space-y-4 lg:w-8/12">
+						<form
+							onSubmit={form.handleSubmit(onSubmit)}
+							className="grid space-y-4 lg:w-8/12"
+						>
 							<FormField
 								control={form.control}
 								name="name"
@@ -101,7 +134,11 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 									<FormItem>
 										<FormLabel>Name</FormLabel>
 										<FormControl>
-											<Input {...field} type="text" placeholder="Enter the name..." />
+											<Input
+												{...field}
+												type="text"
+												placeholder="Enter the name..."
+											/>
 										</FormControl>
 
 										<FormMessage />
@@ -122,13 +159,15 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 														variant="outline"
 														className={cn(
 															"justify-between px-3 py-1 w-[200px]",
-															!field.value && "text-muted-foreground"
+															!field.value && "text-muted-foreground",
 														)}
 													>
 														{field.value
-															? humanize(adminTypeList.find(
-																(type) => type === field.value
-															) || '')?.toUpperCase()
+															? humanize(
+																	adminTypeList.find(
+																		(type) => type === field.value,
+																	) || "",
+																)?.toUpperCase()
 															: "Select admin type"}
 														<ChevronsUpDown className="opacity-50" />
 													</Button>
@@ -148,7 +187,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 																	value={type}
 																	key={type}
 																	onSelect={() => {
-																		form.setValue("adminType", type)
+																		form.setValue("adminType", type);
 																	}}
 																>
 																	{humanize(type).toUpperCase()}
@@ -157,7 +196,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 																			"ml-auto",
 																			type === field.value
 																				? "opacity-100"
-																				: "opacity-0"
+																				: "opacity-0",
 																		)}
 																	/>
 																</CommandItem>
@@ -180,7 +219,11 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 									<FormItem>
 										<FormLabel>Email</FormLabel>
 										<FormControl>
-											<Input {...field} type="email" placeholder="Enter the email..." />
+											<Input
+												{...field}
+												type="email"
+												placeholder="Enter the email..."
+											/>
 										</FormControl>
 
 										<FormMessage />
@@ -208,11 +251,17 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 													size="icon"
 													className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
 													onClick={() => {
-														setPasswordVisibility(!passwordVisibility)
+														setPasswordVisibility(!passwordVisibility);
 													}}
 												>
-													{!passwordVisibility ? <Eye className="size-4" /> : <EyeClosed className="size-4" />}
-													<span className="sr-only">Toggle Password Visibility</span>
+													{!passwordVisibility ? (
+														<Eye className="size-4" />
+													) : (
+														<EyeClosed className="size-4" />
+													)}
+													<span className="sr-only">
+														Toggle Password Visibility
+													</span>
 												</Button>
 											</div>
 										</FormControl>
@@ -232,7 +281,9 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 											<div className="relative">
 												<Input
 													{...field}
-													type={passwordConfirmationVisibility ? "text" : "password"}
+													type={
+														passwordConfirmationVisibility ? "text" : "password"
+													}
 													placeholder="Enter the password confirmation..."
 													autoComplete="current-password"
 												/>
@@ -242,11 +293,19 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 													size="icon"
 													className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
 													onClick={() => {
-														setPasswordConfirmationVisibility(!passwordConfirmationVisibility)
+														setPasswordConfirmationVisibility(
+															!passwordConfirmationVisibility,
+														);
 													}}
 												>
-													{!passwordConfirmationVisibility ? <Eye className="size-4" /> : <EyeClosed className="size-4" />}
-													<span className="sr-only">Toggle Password Visibility</span>
+													{!passwordConfirmationVisibility ? (
+														<Eye className="size-4" />
+													) : (
+														<EyeClosed className="size-4" />
+													)}
+													<span className="sr-only">
+														Toggle Password Visibility
+													</span>
 												</Button>
 											</div>
 										</FormControl>
@@ -259,10 +318,10 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 							<div className="flex !mt-6">
 								<Button type="submit">Create</Button>
 							</div>
-						</form >
-					</Form >
-				</div >
-			</article >
+						</form>
+					</Form>
+				</div>
+			</article>
 		</>
 	);
 }

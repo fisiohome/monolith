@@ -37,7 +37,7 @@ const FormSchema = z.object({
 const SignIn = () => {
 	// const props = usePage<{ 'rememberable?': boolean; } & GlobalPageProps>().props
 
-	const [passwordVisibility, setPasswordVisibility] = useState(false)
+	const [passwordVisibility, setPasswordVisibility] = useState(false);
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
@@ -141,11 +141,17 @@ const SignIn = () => {
 														size="icon"
 														className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
 														onClick={() => {
-															setPasswordVisibility(!passwordVisibility)
+															setPasswordVisibility(!passwordVisibility);
 														}}
 													>
-														{!passwordVisibility ? <Eye className="size-4" /> : <EyeClosed className="size-4" />}
-														<span className="sr-only">Toggle Password Visibility</span>
+														{!passwordVisibility ? (
+															<Eye className="size-4" />
+														) : (
+															<EyeClosed className="size-4" />
+														)}
+														<span className="sr-only">
+															Toggle Password Visibility
+														</span>
 													</Button>
 												</div>
 											</FormControl>

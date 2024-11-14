@@ -13,4 +13,10 @@ export const CURRENT_DATE_TOPBAR = ({
 }: { locale?: Locale; timezone?: ContextFn<Date> }) =>
 	format(new Date(), "PPPP 'at' p", { locale, in: timezone });
 
-export const ADMIN_TYPES = ["SUPER_ADMIN", "ADMIN_L1", "ADMIN_L2", "ADMIN_L3", "ADMIN_BACKLOG"] as const
+export const ADMIN_TYPES = [
+	"SUPER_ADMIN",
+	"ADMIN_L1",
+	"ADMIN_L2",
+	"ADMIN_L3",
+	"ADMIN_BACKLOG",
+] as const;

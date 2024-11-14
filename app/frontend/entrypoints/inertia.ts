@@ -39,11 +39,11 @@ createInertiaApp({
 		const page = pages[`../pages/${name}.tsx`];
 		// @ts-ignore
 		page.default.layout = useAdminLayout
-			// @ts-ignore
-			? (page: ResolvedComponent) => createElement(AdminLayout, null, page)
+			? // @ts-ignore
+				(page: ResolvedComponent) => createElement(AdminLayout, null, page)
 			: useGuestLayout
-				// @ts-ignore
-				? (page: ResolvedComponent) => createElement(GuestLayout, null, page)
+				? // @ts-ignore
+					(page: ResolvedComponent) => createElement(GuestLayout, null, page)
 				: undefined;
 
 		return page;
