@@ -5,6 +5,32 @@ class User < ApplicationRecord
          :recoverable, :rememberable, :validatable,
          :trackable
 
+  has_one :admin, dependent: :destroy
+
   validates :email, presence: true
   validates :email, uniqueness: true
+
+  def is_online?
+    last_online_at.present? && last_online_at > 5.minutes.ago
+  end
+
+  def suspended?
+    return false if suspend_at.nil?
+
+    if suspend_end.present?
+      Time.current >= suspend_at && Time.current <= suspend_end
+    else
+      Time.current >= suspend_at
+    end
+  end
+
+  # overriding the devise fn
+  def active_for_authentication?
+    super && !suspended?
+  end
+
+  # overriding the devise fn
+  def inactive_message
+    !suspended? ? :locked : super
+  end
 end

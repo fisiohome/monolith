@@ -20,13 +20,14 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     authenticated :user do
-      root to: "admin/users#index", as: :authenticated_root
+      root to: "admin_portal/admins#index", as: :authenticated_root
 
-      namespace :admin do
-        root to: "users#index"
+      namespace :admin_portal, path: "admin-portal" do
+        root to: "admins#index"
 
-        resources :posts
-        resources :users, path: "accounts", as: "account_management"
+        # resources :posts
+        # resources :users, path: "accounts", as: "account_management"
+        resources :admins, path: "admin-management", except: [ :show ]
       end
     end
 
@@ -34,7 +35,4 @@ Rails.application.routes.draw do
       root to: "users/sessions#new"
     end
   end
-
-
-  get "inertia-example", to: "inertia_example#index"
 end

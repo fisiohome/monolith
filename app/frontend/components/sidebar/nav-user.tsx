@@ -95,7 +95,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator /> */}
-            <DropdownMenuItem asChild>
+            <DropdownMenuItem asChild className="hover:cursor-pointer">
               <a href={url.logout}>
                 <LogOut />
                 Log out

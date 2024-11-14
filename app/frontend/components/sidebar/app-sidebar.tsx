@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Fingerprint, HousePlus, Users } from "lucide-react"
+import { HousePlus, Users } from "lucide-react"
 import { NavMain } from "@/components/sidebar/nav-main"
 import { NavUser } from "@/components/sidebar/nav-user"
 import {
@@ -21,14 +21,14 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
     () => {
       const user = {
         name: 'Admin',
-        email: globalProps.auth.currentUser?.email || '',
+        email: globalProps.auth.currentUser?.user.email || '',
         avatar: ''
       }
       const url = { logout: globalProps.adminPortal.router.logout }
 
       return { user, url }
     },
-    [globalProps.auth.currentUser?.email, globalProps.adminPortal.router.logout]
+    [globalProps.auth.currentUser?.user.email, globalProps.adminPortal.router.logout]
   )
   const navMainProps = useMemo<React.ComponentProps<typeof NavMain>>(
     () => {
@@ -36,13 +36,13 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
       const items = [
         {
           title: "User Management",
-          url: '#',
+          url: globalProps.adminPortal.router.authenticatedRootPath,
           icon: Users,
           isActive: true,
           items: [
             {
               title: "Admin",
-              url: '#',
+              url: globalProps.adminPortal.router.authenticatedRootPath,
               isActive: false
             },
             {
@@ -52,15 +52,9 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
             },
           ],
         },
-        {
-          title: "Account Management",
-          url: globalProps.adminPortal.router.root,
-          isActive: false,
-          icon: Fingerprint
-        }
       ].map(menu => {
         function isActiveLink(currentUrl: string, menuUrl: string) {
-          return currentUrl === menuUrl || currentUrl.startsWith(menuUrl + '/');
+          return currentUrl === menuUrl || currentUrl.startsWith(menuUrl + '/') || currentUrl.includes(menuUrl);
         }
         const updatedMenu = { ...menu, isActive: false };
 
@@ -81,7 +75,7 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
 
       return { items }
     },
-    [globalProps.adminPortal.router.accountManagement.index, currentUrl]
+    [currentUrl, globalProps.adminPortal.router.authenticatedRootPath]
   )
 
   return (
@@ -90,7 +84,7 @@ export default function AppSidebar({ ...props }: React.ComponentProps<typeof Sid
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={globalProps.adminPortal.router.root}>
+              <Link href={globalProps.adminPortal.router.authenticatedRootPath}>
                 <div className="flex items-center justify-center bg-purple-600 rounded-lg aspect-square size-8 text-sidebar-primary-foreground">
                   <HousePlus className="size-4" />
                 </div>

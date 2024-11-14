@@ -1,14 +1,12 @@
 export interface Auth {
   currentUser: null | {
-    id: string
-    email: string
-    signInCount: string
-    currentSignInAt: string
-    lastSignInAt: string
-    currentSignInIp: string
-    lastSignInIp: string
-    createdAt: string
-    updatedAt: string
+    id: number
+    adminType: "SUPER_ADMIN" | "ADMIN_L1" | "ADMIN_L2" | "ADMIN_L3" | "ADMIN_BACKLOG"
+    name: string
+    user: {
+      id: number
+      email: string
+    }
   }
 }
 export interface FlashMessage {
@@ -18,14 +16,17 @@ export interface FlashMessage {
 export interface AdminPortal {
   currentLocale: string
   currentTimezone: string
+  currentQuery: Record<string, string> | null
   router: {
     root: string
-    logout: string
-    adminRootPath: string
     authenticatedRootPath: string
-    accountManagement: {
-      index: string
-      new: string
+    logout: string
+    adminPortalRootPath: string
+    adminPortal: {
+      adminManagement: {
+        index: string
+        new: string
+      }
     }
   }
 }

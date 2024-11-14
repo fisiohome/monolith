@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react'
 import type { GlobalPageProps } from '@/types/globals';
-import type { User } from '@/types/user';
+import type { User } from '@/types/admin-portal/user';
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from '@/components/ui/data-table';
 import { format } from 'date-fns';
 
 export default function Index({ users }: { users: User[] }) {
   const { props: globalProps } = usePage<GlobalPageProps>()
-  const columns: ColumnDef<User>[] = [
+  const columns: ColumnDef<any>[] = [
     {
       accessorKey: "email",
       header: "Email",

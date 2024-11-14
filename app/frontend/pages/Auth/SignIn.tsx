@@ -6,10 +6,12 @@ import { z } from 'zod'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Head } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const FormSchema = z.object({
-  email: z.string().email(),
-  password: z.string()
+  'user[email]': z.string().email(),
+  'user[password]': z.string(),
+  'user[remember_me]': z.boolean()
   // .min(8, "Password must be at least 8 characters long")
   // .max(64, "Password must be no more than 64 characters")
   // .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
@@ -22,8 +24,9 @@ const SignIn = () => {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      email: "",
-      password: ""
+      "user[email]": "",
+      "user[password]": "",
+      "user[remember_me]": false
     },
   })
   // for docs this not works
@@ -49,7 +52,7 @@ const SignIn = () => {
       <Head title="Sign In" />
 
       <article className="flex items-center justify-center w-full h-screen px-4">
-        <Card className="max-w-sm mx-auto">
+        <Card className="max-w-sm mx-auto bg-muted/50">
           <CardHeader>
             <CardTitle className="text-xl">Log in to Admin Portal</CardTitle>
 
@@ -64,18 +67,15 @@ const SignIn = () => {
               <form method="post" action="/sign-in" className="grid gap-4">
                 <input type="hidden" name="authenticity_token" value={(document.querySelector("meta[name='csrf-token']") as HTMLMetaElement)?.content} hidden />
 
-                <input type="hidden" name="remember_me" value="0" hidden />
-
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="user[email]"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
 
                       <FormControl>
-                        <Input {...field} name="user[email]" placeholder="your_email@domain.com" autoFocus autoComplete="email" />
-                        {/* <Input {...field} placeholder="your_email@domain.com" autoFocus autoComplete="email" /> */}
+                        <Input {...field} placeholder="your_email@domain.com" autoFocus autoComplete="email" />
                       </FormControl>
 
                       <FormMessage />
@@ -85,7 +85,7 @@ const SignIn = () => {
 
                 <FormField
                   control={form.control}
-                  name="password"
+                  name="user[password]"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center">
@@ -97,11 +97,30 @@ const SignIn = () => {
                       </FormLabel>
 
                       <FormControl>
-                        <Input {...field} name="user[password]" type="password" placeholder="********" autoComplete="current-password" />
-                        {/* <Input {...field} type="password" placeholder="********" autoComplete="current-password" /> */}
+                        <Input {...field} type="password" placeholder="********" autoComplete="current-password" />
                       </FormControl>
 
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="user[remember_me]"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          name={field.name}
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          value={field.value ? 1 : 0}
+                        />
+                      </FormControl>
+                      <FormLabel className="!mt-0 text-muted-foreground">
+                        Remember me for 3 days
+                      </FormLabel>
                     </FormItem>
                   )}
                 />
