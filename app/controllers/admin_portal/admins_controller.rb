@@ -3,8 +3,6 @@ module AdminPortal
   # before_action :set_admin, only: %i[ show edit update destroy ]
   before_action :set_admin, only: %i[ edit update destroy ]
 
-  # inertia_share flash: -> { flash.to_hash }
-
   # GET /admins
   def index
     # define the query params with default values if not provided
@@ -48,33 +46,62 @@ module AdminPortal
   # GET /admins/new
   def new
     @admin = Admin.new
-    render inertia: "AdminPortal/Admin/New", props: {
-      admin: serialize_admin(@admin)
-    }
+    render inertia: "AdminPortal/Admin/New", props: deep_transform_keys_to_camel_case({
+      admin: serialize_admin(@admin),
+      admin_type_list: Admin::TYPES
+    })
   end
 
   # GET /admins/1/edit
   def edit
     render inertia: "AdminPortal/Admin/Edit", props: {
-      admin: serialize_admin(@admin)
+      admin: serialize_admin(@admin),
+      admin_type_list: Admin::TYPES
     }
   end
 
   # POST /admins
   def create
-    @admin = Admin.new(admin_params)
-
-    if @admin.save
-      redirect_to @admin, notice: "Admin was successfully created."
-    else
-      redirect_to new_admin_url, inertia: { errors: @admin.errors }
+    # if the user exists, return an error message
+    logger.info("Starting the admin creation process")
+    user_email = params[:user][:email]
+    user = User.find_by(email: user_email)
+    if user
+      logger.warn("User with email #{user_email} already exists. Redirecting to new admin page.")
+      flash[:alert] = "User with this email already exists and cannot be assigned as a new admin."
+      redirect_to new_admin_portal_admin_path
+      return
     end
+
+    # if the user doesn't exist, create a new User and associate the Admin
+    logger.info("User with email #{user_email} not found. Proceeding to create a new user.")
+    user = User.new(user_params_helper)
+    if user.save
+      logger.info("User #{user.email} created successfully. Proceeding to associate with new admin.")
+      @admin = user.build_admin(admin_params)
+    else
+      logger.error("Failed to create user #{user.email}. Errors: #{user.errors.full_messages.join(', ')}")
+      flash[:alert] = "Failed to create associated user."
+      redirect_to new_admin_portal_admin_path, inertia: { errors: user.errors }
+      return
+    end
+
+    # if the admin creation success then redirect, if failed shows the alert
+    if @admin.save
+      logger.info("Admin associated with user #{user.email} created successfully.")
+      redirect_to admin_portal_admins_path, notice: "Admin was successfully created."
+    else
+      logger.error("Failed to create admin for user #{user.email}. Errors: #{admin.errors.full_messages.join(', ')}")
+      flash[:alert] = "Failed to create new admin."
+      redirect_to new_admin_portal_admin_path, inertia: { errors: @admin.errors }
+    end
+    logger.info("Admin creation process finished")
   end
 
   # PATCH/PUT /admins/1
   def update
     if @admin.update(admin_params)
-      redirect_to @admin, notice: "Admin was successfully updated."
+      redirect_to admin_portal_admins_path, notice: "Admin was successfully updated."
     else
       redirect_to edit_admin_url(@admin), inertia: { errors: @admin.errors }
     end

@@ -18,13 +18,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head } from "@inertiajs/react";
+import { Eye, EyeClosed } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const FormSchema = z.object({
 	"user[email]": z.string().email(),
 	"user[password]": z.string(),
-	"user[remember_me]": z.boolean(),
+	"user[remember_me]": z.boolean().optional(),
 	// .min(8, "Password must be at least 8 characters long")
 	// .max(64, "Password must be no more than 64 characters")
 	// .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
@@ -34,6 +36,8 @@ const FormSchema = z.object({
 
 const SignIn = () => {
 	// const props = usePage<{ 'rememberable?': boolean; } & GlobalPageProps>().props
+
+	const [passwordVisibility, setPasswordVisibility] = useState(false)
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
@@ -63,8 +67,8 @@ const SignIn = () => {
 		<>
 			<Head title="Sign In" />
 
-			<article className="flex items-center justify-center w-full h-screen px-4">
-				<Card className="max-w-sm mx-auto bg-muted/50">
+			<article className="flex items-center justify-center w-full h-screen p-4">
+				<Card className="w-full mx-auto md:w-6/12 lg:w-3/12 bg-muted/50">
 					<CardHeader>
 						<CardTitle className="text-xl">Log in to Admin Portal</CardTitle>
 
@@ -124,12 +128,26 @@ const SignIn = () => {
 											</FormLabel>
 
 											<FormControl>
-												<Input
-													{...field}
-													type="password"
-													placeholder="********"
-													autoComplete="current-password"
-												/>
+												<div className="relative">
+													<Input
+														{...field}
+														type={passwordVisibility ? "text" : "password"}
+														placeholder="********"
+														autoComplete="current-password"
+													/>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
+														onClick={() => {
+															setPasswordVisibility(!passwordVisibility)
+														}}
+													>
+														{!passwordVisibility ? <Eye className="size-4" /> : <EyeClosed className="size-4" />}
+														<span className="sr-only">Toggle Password Visibility</span>
+													</Button>
+												</div>
 											</FormControl>
 
 											<FormMessage />

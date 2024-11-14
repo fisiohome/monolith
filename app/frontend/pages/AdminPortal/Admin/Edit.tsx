@@ -1,5 +1,5 @@
 import { Head, Link } from "@inertiajs/react";
-import Form from "./Form";
+import AdminForm from "./Form";
 
 export default function Edit({ admin }: any) {
 	return (
@@ -9,7 +9,7 @@ export default function Edit({ admin }: any) {
 			<div className="w-full px-8 pt-8 mx-auto md:w-2/3">
 				<h1 className="text-4xl font-bold">Editing admin</h1>
 
-				<Form
+				<AdminForm
 					admin={admin}
 					onSubmit={(form) => {
 						form.transform((data) => ({ admin: data }));

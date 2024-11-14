@@ -30,7 +30,7 @@ export const ToastProvider = ({ children }: PropsWithChildren) => {
 			description: message,
 			variant: isSuccess ? "default" : "destructive",
 		});
-	}, [props?.flash?.success, props?.flash?.alert, toast]);
+	}, [props, toast]);
 
 	return (
 		<ToastContext.Provider value={{ toast }}>

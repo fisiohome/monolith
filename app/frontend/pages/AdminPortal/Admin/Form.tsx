@@ -1,6 +1,6 @@
 import { useForm } from "@inertiajs/react";
 
-export default function Form({ admin, onSubmit, submitText }: any) {
+export default function AdminForm({ admin, onSubmit, submitText }: any) {
 	const form = useForm({
 		admin_type: admin.admin_type || "",
 		name: admin.name || "",
