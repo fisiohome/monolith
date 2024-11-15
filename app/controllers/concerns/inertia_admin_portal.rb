@@ -21,7 +21,9 @@ module InertiaAdminPortal
             admin_portal: {
               admin_management: {
                 index: admin_portal_admins_path,
-                new: new_admin_portal_admin_path
+                new: new_admin_portal_admin_path,
+                generate_reset_password_url: generate_reset_password_url_admin_portal_admins_path,
+                change_password: change_password_admin_portal_admins_path
               }
             }
           },

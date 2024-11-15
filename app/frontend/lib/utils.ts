@@ -82,3 +82,49 @@ export function populateQueryParams(
 
 	return { baseUrl, fullUrl, queryParams };
 }
+
+/**
+ * Utility to copy text to the clipboard
+ * @param text - The text to copy to the clipboard
+ * @returns A Promise that resolves when the text is successfully copied
+ */
+export async function copyToClipboard(text: string): Promise<void> {
+	if (
+		navigator.clipboard &&
+		typeof navigator.clipboard.writeText === "function"
+	) {
+		// Modern Clipboard API
+		try {
+			await navigator.clipboard.writeText(text);
+			console.log("Text copied to clipboard successfully!");
+		} catch (error) {
+			console.error(
+				"Failed to copy text to clipboard using Clipboard API:",
+				error,
+			);
+			throw error;
+		}
+	} else {
+		// Fallback approach
+		const textarea = document.createElement("textarea");
+		textarea.value = text;
+		textarea.style.position = "fixed"; // Prevent scrolling to bottom of the page
+		textarea.style.opacity = "0"; // Hide the textarea
+		document.body.appendChild(textarea);
+		textarea.select();
+
+		try {
+			const successful = document.execCommand("copy");
+			if (successful) {
+				console.log("Text copied to clipboard successfully (fallback)!");
+			} else {
+				throw new Error("Fallback copy failed");
+			}
+		} catch (error) {
+			console.error("Failed to copy text to clipboard using fallback:", error);
+			throw error;
+		} finally {
+			document.body.removeChild(textarea);
+		}
+	}
+}

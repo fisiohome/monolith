@@ -28,7 +28,12 @@ Rails.application.routes.draw do
 
         # resources :posts
         # resources :users, path: "accounts", as: "account_management"
-        resources :admins, path: "admin-management", except: [ :show ]
+        resources :admins, path: "admin-management", except: [ :show ] do
+          collection do
+            get "generate-reset-password-url" => "admins#generate_reset_password_url"
+            put "change-password" => "admins#change_password"
+          end
+        end
       end
     end
 

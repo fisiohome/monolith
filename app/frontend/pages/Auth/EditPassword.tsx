@@ -34,10 +34,9 @@ export interface EditPasswordPageProps {
 
 export default function EditPassword({ user }: EditPasswordPageProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	console.log(globalProps);
 
 	const [passwordVisibility, setPasswordVisibility] = useState({
-		old: false,
+		new: false,
 		confirmation: false,
 		current: false,
 	});
@@ -150,7 +149,7 @@ export default function EditPassword({ user }: EditPasswordPageProps) {
 										<div className="relative">
 											<Input
 												{...field}
-												type={passwordVisibility.old ? "text" : "password"}
+												type={passwordVisibility.new ? "text" : "password"}
 												placeholder="Enter the new password..."
 												autoComplete="new-password"
 											/>
@@ -162,11 +161,11 @@ export default function EditPassword({ user }: EditPasswordPageProps) {
 												onClick={() => {
 													setPasswordVisibility({
 														...passwordVisibility,
-														old: !passwordVisibility.old,
+														new: !passwordVisibility.new,
 													});
 												}}
 											>
-												{!passwordVisibility.old ? (
+												{!passwordVisibility.new ? (
 													<Eye className="size-4" />
 												) : (
 													<EyeClosed className="size-4" />

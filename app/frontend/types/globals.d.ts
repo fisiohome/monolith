@@ -31,6 +31,8 @@ export interface AdminPortal {
 			adminManagement: {
 				index: string;
 				new: string;
+				generateResetPasswordUrl: string;
+				changePassword: string;
 			};
 		};
 	};

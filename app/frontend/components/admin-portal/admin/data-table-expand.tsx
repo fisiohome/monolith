@@ -1,13 +1,3 @@
-import {
-	AlertDialog,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
 import type { GlobalPageProps } from "@/types/globals";
@@ -15,29 +5,37 @@ import { usePage } from "@inertiajs/react";
 import { format } from "date-fns/format";
 import { Fingerprint, Pencil, Trash2 } from "lucide-react";
 import { type ComponentProps, useMemo } from "react";
+import { ChangePasswordPopover, DeleteAdminAlert } from "./feature-actions";
 
 interface ExpandSubTableProps extends ComponentProps<"div"> {
 	row: TableRowDataProps;
 	isSuperAdmin: boolean;
-	handleDelete: (row: TableRowDataProps) => void;
+	feature: {
+		deleteAdmin: {
+			handler: (row: TableRowDataProps) => void;
+		};
+		changePassword: {
+			linkGenerated: string;
+			handlerGenerated: (row: TableRowDataProps) => Promise<void>;
+			resetGeneratedLink: () => void;
+		};
+	};
 }
 
 export default function ExpandSubTable({
 	row,
 	isSuperAdmin,
-	handleDelete,
+	feature,
 }: ExpandSubTableProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
 
+	const isCurrentUser = useMemo(
+		() => globalProps.auth.currentUser?.user.email === row.original.user.email,
+		[globalProps.auth.currentUser?.user.email, row.original.user.email],
+	);
 	const isShowDelete = useMemo(
-		() =>
-			isSuperAdmin &&
-			globalProps.auth.currentUser?.user.email !== row.original.user.email,
-		[
-			isSuperAdmin,
-			globalProps.auth.currentUser?.user.email,
-			row.original.user.email,
-		],
+		() => isSuperAdmin && !isCurrentUser,
+		[isSuperAdmin, isCurrentUser],
 	);
 
 	return (
@@ -89,36 +87,29 @@ export default function ExpandSubTable({
 					Edit
 				</Button>
 
-				<Button variant="outline" disabled>
-					<Fingerprint />
-					Change Password
-				</Button>
+				{!isCurrentUser && (
+					<ChangePasswordPopover
+						row={row}
+						linkGenerated={feature.changePassword.linkGenerated}
+						handlerGenerated={feature.changePassword.handlerGenerated}
+					>
+						<Button
+							variant="outline"
+							onClick={() => feature.changePassword.resetGeneratedLink()}
+						>
+							<Fingerprint />
+							Change Password
+						</Button>
+					</ChangePasswordPopover>
+				)}
 
 				{isShowDelete && (
-					<AlertDialog>
-						<AlertDialogTrigger asChild>
-							<Button variant="destructive">
-								<Trash2 />
-								Delete
-							</Button>
-						</AlertDialogTrigger>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-								<AlertDialogDescription>
-									This action is irreversible. Deleting your account will
-									permanently remove all associated data from our servers and
-									cannot be recovered.
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel>Keep Account</AlertDialogCancel>
-								<Button variant="destructive" onClick={() => handleDelete(row)}>
-									Delete
-								</Button>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
+					<DeleteAdminAlert row={row} handler={feature.deleteAdmin.handler}>
+						<Button variant="destructive">
+							<Trash2 />
+							Delete
+						</Button>
+					</DeleteAdminAlert>
 				)}
 			</div>
 		</>
