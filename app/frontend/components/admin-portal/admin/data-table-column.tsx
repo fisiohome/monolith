@@ -36,7 +36,7 @@ import type { GlobalPageProps } from "@/types/globals";
 import type { usePage } from "@inertiajs/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns/format";
-import { ChevronDown, ChevronUp, Ellipsis } from "lucide-react";
+import { ChevronDown, ChevronUp, Ellipsis, InfinityIcon } from "lucide-react";
 import { useMemo } from "react";
 
 const columns = ({
@@ -191,9 +191,9 @@ const columns = ({
 			},
 		},
 		{
-			accessorKey: "onlineStatus",
+			accessorKey: "status",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Online Status" />
+				<DataTableColumnHeader column={column} title="Status" />
 			),
 			enableSorting: false,
 			enableHiding: false,
@@ -201,7 +201,41 @@ const columns = ({
 				const isOnline = row.original.user["isOnline?"];
 				const currentIP = row.original.user.currentSignInIp;
 				const lastIP = row.original.user.lastSignInIp;
-				const lastSignIn = row.original.user.lastSignInAt;
+				const lastOnlineAt = row.original.user.lastOnlineAt;
+				const isSuspended = row.original.user["suspended?"];
+				const suspendedAt = row.original.user.suspendAt;
+				const suspendEnd = row.original.user.suspendEnd;
+
+				if (isSuspended) {
+					return (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger>
+									<Badge variant="destructive">Suspended</Badge>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									<div className="flex flex-col">
+										{suspendedAt && (
+											<span>
+												Suspended on: <b>{format(suspendedAt, "PP")}</b>
+											</span>
+										)}
+										<span className="flex items-center">
+											Suspended end:{" "}
+											<b>
+												{suspendEnd ? (
+													format(suspendEnd, "PP")
+												) : (
+													<InfinityIcon className="ml-1 size-4" />
+												)}
+											</b>
+										</span>
+									</div>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					);
+				}
 
 				return (
 					<TooltipProvider>
@@ -221,9 +255,10 @@ const columns = ({
 										<span>
 											Last IP: <b>{lastIP}</b>
 										</span>
-										{lastSignIn && (
+										{lastOnlineAt && (
 											<span>
-												Last Sign in: <b>{format(lastSignIn, "PPpp")}</b>
+												Last Online Session:{" "}
+												<b>{format(lastOnlineAt, "PPpp")}</b>
 											</span>
 										)}
 									</div>

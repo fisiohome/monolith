@@ -8,5 +8,17 @@ export type Admin = {
 	name: string;
 	createdAt: string;
 	updatedAt: string;
-	user: User;
+	user: Pick<
+		User,
+		| "id"
+		| "email"
+		| "isOnline?"
+		| "lastOnlineAt"
+		| "lastSignInAt"
+		| "currentSignInIp"
+		| "lastSignInIp"
+		| "suspendAt"
+		| "suspendEnd"
+		| "suspended?"
+	>;
 };

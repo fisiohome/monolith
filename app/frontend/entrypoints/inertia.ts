@@ -35,7 +35,8 @@ createInertiaApp({
 		// page.default.layout ||= (page) => createElement(Layout, null, page)
 
 		const useGuestLayout = name.startsWith("Auth/") || name === "Error";
-		const useAdminLayout = name.startsWith("AdminPortal/");
+		const useAdminLayout =
+			name.startsWith("AdminPortal/") || name.startsWith("Auth/EditPassword");
 		const page = pages[`../pages/${name}.tsx`];
 		// @ts-ignore
 		page.default.layout = useAdminLayout

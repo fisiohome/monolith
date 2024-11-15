@@ -11,6 +11,12 @@ module InertiaAdminPortal
             root: root_path,
             authenticated_root_path: authenticated_root_path,
             logout: destroy_user_session_path,
+            auth: {
+              registration: {
+                index: user_registration_path,
+                edit: edit_user_registration_path
+              }
+            },
             admin_portal_root_path: admin_portal_root_path,
             admin_portal: {
               admin_management: {

@@ -45,14 +45,13 @@ export interface NewAdminPageProps {
 
 export default function New({ adminTypeList }: NewAdminPageProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	console.log(globalProps);
 
 	const [passwordVisibility, setPasswordVisibility] = useState(false);
 	const [passwordConfirmationVisibility, setPasswordConfirmationVisibility] =
 		useState(false);
 	const formSchema = z
 		.object({
-			name: z.string(),
+			name: z.string().min(3),
 			email: z.string().email(),
 			adminType: z.enum([...adminTypeList]),
 			password: z
@@ -64,11 +63,17 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 				.regex(/[\W_]/, "Password must contain at least one symbol"),
 			passwordConfirmation: z
 				.string()
-				.min(8, "Password must be at least 8 characters long")
-				.max(64, "Password must be no more than 64 characters")
-				.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-				.regex(/\d/, "Password must contain at least one number")
-				.regex(/[\W_]/, "Password must contain at least one symbol"),
+				.min(8, "Password confirmation must be at least 8 characters long")
+				.max(64, "Password confirmation must be no more than 64 characters")
+				.regex(
+					/[A-Z]/,
+					"Password confirmation must contain at least one uppercase letter",
+				)
+				.regex(/\d/, "Password confirmation must contain at least one number")
+				.regex(
+					/[\W_]/,
+					"Password confirmation must contain at least one symbol",
+				),
 		})
 		.refine((data) => data.password === data.passwordConfirmation, {
 			message: "Passwords don't match",
@@ -77,10 +82,10 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			name: "Admin",
-			email: "admin_1@yopmail.com",
-			password: "Fisiohome123!",
-			passwordConfirmation: "Fisiohome123!",
+			name: "",
+			email: "",
+			password: "",
+			passwordConfirmation: "",
 		},
 	});
 	function onSubmit(values: z.infer<typeof formSchema>) {
@@ -115,8 +120,8 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 							/>
 						</div>
 
-						<h1 className="text-2xl font-bold tracking-tight">
-							<span>Add a new admin</span>
+						<h1 className="text-xl font-bold tracking-tight">
+							<span>Create New Admin</span>
 						</h1>
 					</div>
 

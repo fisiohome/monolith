@@ -8,9 +8,9 @@ module AdminPortal
     # define the query params with default values if not provided
     page = params.fetch(:page, 1)
     limit = params.fetch(:limit, 10)
-    sort_by_last_online_at = params.fetch(:sort_by_last_online_at, "last_online_at asc")
     filter_by_account_status = params[:filter_by_account_status]
     filter_by_email = params[:email]
+    # sort_by_last_online_at = params.fetch(:sort_by_last_online_at, "last_online_at asc")
 
     #  join the admin with user and apply the generated order query
     query = Admin
@@ -21,10 +21,11 @@ module AdminPortal
         filter_by_account_status == "suspended" ? [ "(users.suspend_at IS NOT NULL AND users.suspend_at <= ?) AND (users.suspend_end IS NULL OR users.suspend_end >= ?)", Time.current, Time.current ] :
         nil
       )
-      .order(sort_by_last_online_at)
+      .sort_by { |u| u.user.is_online? ? 1 : 0 }.reverse
+    # .order(sort_by_last_online_at)
 
     # fetch paginated data with the order query
-    @pagy, @admins = pagy(query, page: page, limit: limit)
+    @pagy, @admins = pagy_array(query, page: page, limit: limit)
 
     render inertia: "AdminPortal/Admin/Index", props: deep_transform_keys_to_camel_case({
       admins: {
@@ -132,8 +133,8 @@ module AdminPortal
         only: %i[ id admin_type name created_at updated_at ],
         include: {
           user: {
-            only: %i[ id email is_online? last_online_at last_sign_in_at current_sign_in_ip last_sign_in_ip ],
-            methods: :is_online?
+            only: %i[ id email is_online? last_online_at last_sign_in_at current_sign_in_ip last_sign_in_ip suspend_at suspend_end ],
+            methods: %i[ is_online? suspended? ]
           }
         }
       )

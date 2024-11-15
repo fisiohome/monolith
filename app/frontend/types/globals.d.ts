@@ -20,6 +20,12 @@ export interface AdminPortal {
 		root: string;
 		authenticatedRootPath: string;
 		logout: string;
+		auth: {
+			registration: {
+				index: string;
+				edit: string;
+			};
+		};
 		adminPortalRootPath: string;
 		adminPortal: {
 			adminManagement: {

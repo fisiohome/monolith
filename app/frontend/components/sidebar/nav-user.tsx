@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -13,7 +14,8 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import { ChevronsUpDown, LogOut } from "lucide-react";
+import { Link } from "@inertiajs/react";
+import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 
 export function NavUser({
 	user,
@@ -26,6 +28,7 @@ export function NavUser({
 	};
 	url: {
 		logout: string;
+		account: string;
 	};
 }) {
 	const { isMobile } = useSidebar();
@@ -69,28 +72,15 @@ export function NavUser({
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						{/* <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator /> */}
+						<DropdownMenuGroup>
+							<DropdownMenuItem asChild className="hover:cursor-pointer">
+								<Link href={url.account}>
+									<Settings />
+									Settings
+								</Link>
+							</DropdownMenuItem>
+						</DropdownMenuGroup>
+						<DropdownMenuSeparator />
 						<DropdownMenuItem asChild className="hover:cursor-pointer">
 							<a href={url.logout}>
 								<LogOut />

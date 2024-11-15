@@ -6,4 +6,9 @@ export type User = {
 	currentSignInIp: string | null;
 	lastSignInIp: string | null;
 	"isOnline?": boolean;
+	"suspended?": boolean;
+	suspendAt: string | null;
+	suspendEnd: string | null;
+	createdAt: string | null;
+	updatedAt: string | null;
 };

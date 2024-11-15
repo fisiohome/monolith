@@ -25,12 +25,16 @@ export default function AppSidebar({
 			email: globalProps.auth.currentUser?.user.email || "",
 			avatar: "",
 		};
-		const url = { logout: globalProps.adminPortal.router.logout };
+		const url = {
+			logout: globalProps.adminPortal.router.logout,
+			account: globalProps.adminPortal.router.auth.registration.edit,
+		};
 
 		return { user, url };
 	}, [
 		globalProps.auth.currentUser?.user.email,
 		globalProps.adminPortal.router.logout,
+		globalProps.adminPortal.router.auth.registration.edit,
 	]);
 	const navMainProps = useMemo<React.ComponentProps<typeof NavMain>>(() => {
 		// const label = 'Users Management'
@@ -54,13 +58,8 @@ export default function AppSidebar({
 				],
 			},
 		].map((menu) => {
-			function isActiveLink(currentUrl: string, menuUrl: string) {
-				return (
-					currentUrl === menuUrl ||
-					currentUrl.startsWith(`${menuUrl}/`) ||
-					currentUrl.includes(menuUrl)
-				);
-			}
+			const isActiveLink = (currentUrl: string, menuUrl: string) =>
+				currentUrl === menuUrl || currentUrl.startsWith(`${menuUrl}/`);
 			const updatedMenu = { ...menu, isActive: false };
 
 			if (menu.items && Array.isArray(menu.items)) {

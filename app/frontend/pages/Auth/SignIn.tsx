@@ -34,7 +34,7 @@ const FormSchema = z.object({
 	// .regex(/[\W_]/, "Password must contain at least one symbol"),
 });
 
-const SignIn = () => {
+const SignIn = ({ rememberable }: { rememberable: boolean }) => {
 	// const props = usePage<{ 'rememberable?': boolean; } & GlobalPageProps>().props
 
 	const [passwordVisibility, setPasswordVisibility] = useState(false);
@@ -161,25 +161,27 @@ const SignIn = () => {
 									)}
 								/>
 
-								<FormField
-									control={form.control}
-									name="user[remember_me]"
-									render={({ field }) => (
-										<FormItem className="flex items-center space-x-2">
-											<FormControl>
-												<Checkbox
-													name={field.name}
-													checked={field.value}
-													onCheckedChange={field.onChange}
-													value={field.value ? 1 : 0}
-												/>
-											</FormControl>
-											<FormLabel className="!mt-0 text-muted-foreground">
-												Remember me for 3 days
-											</FormLabel>
-										</FormItem>
-									)}
-								/>
+								{rememberable && (
+									<FormField
+										control={form.control}
+										name="user[remember_me]"
+										render={({ field }) => (
+											<FormItem className="flex items-center space-x-2">
+												<FormControl>
+													<Checkbox
+														name={field.name}
+														checked={field.value}
+														onCheckedChange={field.onChange}
+														value={field.value ? 1 : 0}
+													/>
+												</FormControl>
+												<FormLabel className="!mt-0 text-muted-foreground">
+													Remember me for 3 days
+												</FormLabel>
+											</FormItem>
+										)}
+									/>
+								)}
 
 								<div className="mt-4">
 									<Button type="submit" className="w-full">
