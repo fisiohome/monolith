@@ -411,19 +411,28 @@ export default function Index({
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				const isShowDelete = useMemo(
-					() =>
-						globalProps.auth.currentUser?.["isSuperAdmin?"] &&
-						globalProps.auth.currentUser?.user.email !==
-							row.original.user.email,
-					[row.original.user.email],
-				);
 				const isCurrentUser = useMemo(
-					() =>
-						globalProps.auth.currentUser?.user.email ===
-						row.original.user.email,
+					() => globalProps.auth.currentUser?.user.email === row.original.user.email,
 					[row.original.user.email],
 				);
+				const isShowDelete = useMemo(
+					() => globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
+					[isCurrentUser],
+				);
+				const isShowEdit = useMemo(
+					() => globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
+					[isCurrentUser]
+				)
+				const isShowChangePassword = useMemo(
+					() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
+					[isCurrentUser]
+				)
+				const isShowSuspend = useMemo(
+					() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
+					[isCurrentUser]
+				)
+
+				if (!globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser) return
 
 				return (
 					<div className="flex items-center justify-end space-x-2">
@@ -439,20 +448,36 @@ export default function Index({
 								<DropdownMenuSeparator />
 
 								<DropdownMenuGroup>
-									<DropdownMenuItem
-										onSelect={() => routeTo.editAdmin(row.original.id)}
-									>
-										Edit
-									</DropdownMenuItem>
-
-									{!isCurrentUser && (
+									{isShowEdit && (
 										<DropdownMenuItem
-											onSelect={() => routeTo.changePassword(row.original.id)}
+											onSelect={() => routeTo.editAdmin(row.original.id)}
 										>
-											Change Password
+											Edit
 										</DropdownMenuItem>
 									)}
+
 								</DropdownMenuGroup>
+
+
+								{(isShowChangePassword || isShowSuspend) && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuGroup>
+											{isShowChangePassword && (
+												<DropdownMenuItem
+													onSelect={() => routeTo.changePassword(row.original.id)}
+												>
+													Change Password
+												</DropdownMenuItem>
+											)}
+											{isShowSuspend && (
+												<DropdownMenuItem disabled>
+													Suspend
+												</DropdownMenuItem>
+											)}
+										</DropdownMenuGroup>
+									</>
+								)}
 
 								{isShowDelete && (
 									<>

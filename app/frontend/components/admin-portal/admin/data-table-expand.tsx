@@ -26,6 +26,18 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 		() => globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
 		[isCurrentUser, globalProps.auth.currentUser],
 	);
+	const isShowEdit = useMemo(
+		() => globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
+		[isCurrentUser, globalProps.auth.currentUser]
+	)
+	const isShowChangePassword = useMemo(
+		() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
+		[isCurrentUser, globalProps.auth.currentUser]
+	)
+	const isShowSuspend = useMemo(
+		() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
+		[isCurrentUser, globalProps.auth.currentUser]
+	)
 
 	return (
 		<>
@@ -72,15 +84,17 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 			</div>
 
 			<div className="flex items-center justify-end space-x-2">
-				<Button
-					variant="outline"
-					onClick={() => routeTo.editAdmin(row.original.id)}
-				>
-					<Pencil />
-					Edit
-				</Button>
+				{isShowEdit && (
+					<Button
+						variant="outline"
+						onClick={() => routeTo.editAdmin(row.original.id)}
+					>
+						<Pencil />
+						Edit
+					</Button>
+				)}
 
-				{!isCurrentUser && (
+				{isShowChangePassword && (
 					<Button
 						variant="outline"
 						onClick={() => routeTo.changePassword(row.original.id)}
@@ -90,10 +104,12 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 					</Button>
 				)}
 
-				<Button variant="destructive" disabled>
-					<Ban />
-					Suspend
-				</Button>
+				{isShowSuspend && (
+					<Button variant="destructive" disabled>
+						<Ban />
+						Suspend
+					</Button>
+				)}
 
 				{isShowDelete && (
 					<DeleteAdminAlert row={row}>
