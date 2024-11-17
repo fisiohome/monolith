@@ -128,3 +128,5 @@ export async function copyToClipboard(text: string): Promise<void> {
 		}
 	}
 }
+
+export const removeWhiteSpaces = (data: string) => data.replace(/\s/g, "");

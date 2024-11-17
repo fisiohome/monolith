@@ -11,7 +11,7 @@ class User < ApplicationRecord
   validates :email, uniqueness: true
 
   def is_online?
-    last_online_at.present? && last_online_at > 5.minutes.ago
+    last_online_at.present? && last_online_at >= 5.minutes.ago
   end
 
   def suspended?

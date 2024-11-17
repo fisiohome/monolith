@@ -3,6 +3,7 @@ import { debounce, populateQueryParams } from "@/lib/utils";
 import type { TableToolbarDataProps } from "@/pages/AdminPortal/Admin/Index";
 import type { GlobalPageProps } from "@/types/globals";
 import { router, usePage } from "@inertiajs/react";
+import { Search } from "lucide-react";
 import { type ChangeEvent, useCallback, useState } from "react";
 
 export default function ToolbarTable({
@@ -45,6 +46,7 @@ export default function ToolbarTable({
 			<div className="w-[200px]">
 				<Input
 					value={filterBy.email}
+					endIcon={Search}
 					type="text"
 					placeholder="Filter by email..."
 					onChange={(event) => handleFilterBy({ event, type: "email" })}

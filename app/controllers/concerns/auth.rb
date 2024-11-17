@@ -23,6 +23,7 @@ module Auth
           # current_user: current_user
           current_user: current_user&.present? ? Admin.find(current_user&.id).as_json(
             only: %i[id name admin_type],
+            methods: %i[is_super_admin? is_admin_l1? is_admin_l2? is_admin_l3? is_admin_backlog?],
             include: {
               user: {
                 only: %i[id email]
@@ -44,7 +45,7 @@ module Auth
   def update_user_online
     return if session[:last_online_at] && session[:last_online_at] >= 5.minutes.ago
 
-    logger.info "Updating the current session onlint time..."
+    logger.info "Updating the current session online time..."
     current_user.update!(last_online_at: Time.current)
     session[:last_online_at] = Time.current
   end

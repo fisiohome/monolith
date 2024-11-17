@@ -1,7 +1,7 @@
 module AdminPortal
   class AdminsController < ApplicationController
   # before_action :set_admin, only: %i[ show edit update destroy ]
-  before_action :set_admin, only: %i[ edit update destroy ]
+  before_action :set_admin, only: %i[ update destroy ]
 
   # GET /admins
   def index
@@ -26,22 +26,35 @@ module AdminPortal
 
     # fetch paginated data with the order query
     @pagy, @admins = pagy_array(query, page: page, limit: limit)
+    admins = {
+      metadata: pagy_metadata(@pagy),
+      data: @admins.map do |admin|
+        serialize_admin_only_index(admin)
+      end
+    }
+
+    # get the selected data admin for form
+    selected_admin_lambda = lambda do
+      selected_param = params[:edit] || params[:change_password]
+      selected_param ? admin = Admin.find_by(id: selected_param.to_i) : nil
+      serialize_admin(admin)
+    end
 
     render inertia: "AdminPortal/Admin/Index", props: deep_transform_keys_to_camel_case({
-      admins: {
-        metadata: pagy_metadata(@pagy),
-        data: @admins.map do |admin|
-          serialize_admin_only_index(admin)
-        end
-      }
+      admins: admins,
+      selected_admin: -> {
+        selected_admin_lambda.call&.then { |admin| deep_transform_keys_to_camel_case(admin) }
+       },
+      admin_type_list: -> { Admin::TYPES }
     })
   end
 
   # GET /admins/1
   # def show
-  #   render inertia: "AdminPortal/Admin/Show", props: {
-  #     admin: serialize_admin(@admin)
-  #   }
+  #   render json: deep_transform_keys_to_camel_case({
+  #     admin: serialize_admin(@admin),
+  #     admin_type_list: Admin::TYPES
+  #   })
   # end
 
   # GET /admins/new
@@ -54,12 +67,12 @@ module AdminPortal
   end
 
   # GET /admins/1/edit
-  def edit
-    render inertia: "AdminPortal/Admin/Edit", props: {
-      admin: serialize_admin(@admin),
-      admin_type_list: Admin::TYPES
-    }
-  end
+  # def edit
+  #   render inertia: "AdminPortal/Admin/Edit", props: deep_transform_keys_to_camel_case({
+  #     admin: serialize_admin(@admin),
+  #     admin_type_list: Admin::TYPES
+  #   })
+  # end
 
   # POST /admins
   def create
@@ -101,11 +114,27 @@ module AdminPortal
 
   # PATCH/PUT /admins/1
   def update
-    if @admin.update(admin_params)
-      redirect_to admin_portal_admins_path, notice: "Admin was successfully updated."
-    else
-      redirect_to edit_admin_url(@admin), inertia: { errors: @admin.errors }
+    logger.info "Starting process to update admin profile..."
+    update_admin_params = params.require(:admin).permit(:id, :admin_type, :name)
+    admin = Admin.find_by(id: update_admin_params[:id])
+    unless admin
+      logger.warn "Cannot find the existing admin data with ID #{update_admin_params[:id]}."
+      flash[:alert] = "The existing admin could not be found with this e-mail address."
+      redirect_to new_admin_portal_admin_path
+      return
     end
+
+    if admin.update(update_admin_params)
+      logger.info "Admin profile for #{admin.user.email} successfully updated."
+      redirect_to admin_portal_admins_path, notice: "Admin was updated successfully."
+    else
+      error_message = admin&.errors&.first&.full_message || "Failed to update the admin profile."
+      flash[:alert] = error_message
+      logger.error "Admin profile failed to update for #{admin.user.email}, Errors: #{error_message}"
+      redirect_to admin_portal_admins_path, inertia: { errors: admin&.errors }
+    end
+
+    logger.info "Process to update admin profile finished..."
   end
 
   # DELETE /admins/1

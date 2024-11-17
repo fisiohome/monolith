@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
 	AlertDialogCancel,
@@ -10,12 +11,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
+import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from "@/components/ui/dialog";
 import {
 	Drawer,
@@ -25,11 +33,11 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle,
-	DrawerTrigger,
 } from "@/components/ui/drawer";
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -38,19 +46,51 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
+import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { cn, copyToClipboard } from "@/lib/utils";
-import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
+import { useToast } from "@/hooks/use-toast";
+import {
+	cn,
+	copyToClipboard,
+	humanize,
+	populateQueryParams,
+} from "@/lib/utils";
+import type {
+	SelectedAdmin,
+	TableRowDataProps,
+} from "@/pages/AdminPortal/Admin/Index";
+import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
-import { Clipboard, Eye, EyeClosed, Loader2, PartyPopper } from "lucide-react";
+import {
+	Check,
+	ChevronsUpDown,
+	Clipboard,
+	Eye,
+	EyeClosed,
+	Info,
+	Loader2,
+	PartyPopper,
+} from "lucide-react";
 import type React from "react";
 import { type ComponentProps, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -58,19 +98,24 @@ import { z } from "zod";
 
 /* change password feature */
 interface ChangePasswordContentProps extends ComponentProps<"div"> {
-	row: TableRowDataProps;
+	selectedAdmin: SelectedAdmin | null;
 	linkGenerated: string;
-	handlerGenerated: (row: TableRowDataProps) => void;
+	handlerGenerated: (values: SelectedAdmin) => Promise<void>;
+	handleOpenChange: (value: boolean) => void;
 }
 
 const ChangePasswordContent = ({
 	className,
-	row,
+	selectedAdmin,
 	linkGenerated,
 	handlerGenerated,
+	handleOpenChange,
 }: ChangePasswordContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	const [isLoading, setIsLoading] = useState(false);
+	const [isLoading, setIsLoading] = useState({
+		generate: false,
+		form: false,
+	});
 	const [passwordVisibility, setPasswordVisibility] = useState({
 		new: false,
 		confirmation: false,
@@ -114,14 +159,23 @@ const ChangePasswordContent = ({
 		mode: "onBlur",
 	});
 	function onSubmit(values: z.infer<typeof formSchema>) {
-		const email = row.original.user.email;
+		const email = selectedAdmin?.user.email;
 		console.log(`Submitting form to change password for ${email} ...`);
 		router.put(
 			globalProps.adminPortal.router.adminPortal.adminManagement.changePassword,
 			deepTransformKeysToSnakeCase({
 				user: { ...values, email },
 			}),
-			{ only: ["admins"] },
+			{
+				only: [],
+				onStart: () => {
+					setIsLoading({ ...isLoading, form: true });
+				},
+				onFinish: () => {
+					setIsLoading({ ...isLoading, form: false });
+					handleOpenChange(false);
+				},
+			},
 		);
 		console.log("Password successfully changed...");
 	}
@@ -135,7 +189,7 @@ const ChangePasswordContent = ({
 					id="email"
 					placeholder="Email"
 					readOnly
-					value={row.original.user.email}
+					value={selectedAdmin?.user.email}
 				/>
 			</div>
 
@@ -192,16 +246,18 @@ const ChangePasswordContent = ({
 				) : (
 					<Button
 						className="w-full"
-						disabled={isLoading}
+						disabled={isLoading.generate}
 						onClick={async () => {
-							setIsLoading(true);
+							setIsLoading({ ...isLoading, generate: true });
 							setTimeout(async () => {
-								await handlerGenerated(row);
-								setIsLoading(false);
+								if (selectedAdmin) {
+									await handlerGenerated(selectedAdmin);
+								}
+								setIsLoading({ ...isLoading, generate: false });
 							}, 250);
 						}}
 					>
-						{isLoading ? (
+						{isLoading.generate ? (
 							<>
 								<Loader2 className="animate-spin" />
 								Please wait
@@ -311,8 +367,21 @@ const ChangePasswordContent = ({
 						)}
 					/>
 
-					<div className="flex justify-end !mt-6">
-						<Button type="submit">Update</Button>
+					<div className="w-full flex justify-end !mt-6">
+						<Button
+							type="submit"
+							disabled={isLoading.form}
+							className="w-full lg:w-auto "
+						>
+							{isLoading.form ? (
+								<>
+									<Loader2 className="animate-spin" />
+									<span>Updating...</span>
+								</>
+							) : (
+								<span>Update</span>
+							)}
+						</Button>
 					</div>
 				</form>
 			</Form>
@@ -320,22 +389,19 @@ const ChangePasswordContent = ({
 	);
 };
 
-export interface ChangePasswordPopoverProps {
-	children: React.ReactNode;
-	row: TableRowDataProps;
-	linkGenerated: string;
-	handlerGenerated: (row: TableRowDataProps) => void;
+export interface ChangePasswordDialogProps {
+	selectedAdmin: SelectedAdmin | null;
+	isOpen: boolean;
 	dropdown?: boolean;
 }
 
-export const ChangePasswordPopover = ({
-	row,
-	children,
-	linkGenerated,
-	handlerGenerated,
+export const ChangePasswordDialog = ({
 	dropdown,
-}: ChangePasswordPopoverProps) => {
-	const [open, setOpen] = useState(false);
+	selectedAdmin,
+	isOpen,
+}: ChangePasswordDialogProps) => {
+	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
+	const { toast } = useToast();
 	const isDesktop = useMediaQuery("(min-width: 768px)");
 	const pageContent = useMemo(() => {
 		return {
@@ -344,18 +410,64 @@ export const ChangePasswordPopover = ({
 				"Make password changes using the generate the form link or via form.",
 		};
 	}, []);
+	const handleOpenChange = (value: boolean) => {
+		if (!value) {
+			const { fullUrl } = populateQueryParams(pageURL, {
+				change_password: null,
+			});
+			router.get(
+				fullUrl,
+				{},
+				{ only: ["selectedAdmin"], preserveScroll: true },
+			);
+
+			// reseting the link generated state
+			if (linkGenerated) {
+				setLinkGenerated("");
+			}
+		}
+	};
+
+	const [linkGenerated, setLinkGenerated] = useState("");
+	const handlerGenerated = async (values: SelectedAdmin) => {
+		console.log(
+			`Generating the change password link for ${values.user.email}...`,
+		);
+		const { fullUrl } = populateQueryParams(
+			globalProps.adminPortal.router.adminPortal.adminManagement
+				.generateResetPasswordUrl,
+			{ email: values.user.email },
+		);
+		const response = await fetch(fullUrl, { method: "get" });
+		const data = await response.json();
+
+		if (!data?.link && data?.error) {
+			console.log(data.error);
+			toast({ description: data.error, variant: "destructive" });
+			return;
+		}
+
+		const successMessage = `Successfully generated the change password link for ${values.user.email}.`;
+		setLinkGenerated(data.link);
+		toast({ description: successMessage });
+		console.log(successMessage);
+	};
 
 	if (isDesktop && !dropdown) {
 		return (
-			<Dialog open={open} onOpenChange={setOpen} modal>
-				<DialogTrigger asChild>{children}</DialogTrigger>
+			<Dialog defaultOpen={isOpen} onOpenChange={handleOpenChange}>
 				<DialogContent className="sm:max-w-[380px]">
 					<DialogHeader>
 						<DialogTitle>{pageContent.title}</DialogTitle>
 						<DialogDescription>{pageContent.description}</DialogDescription>
 					</DialogHeader>
 					<ChangePasswordContent
-						{...{ row, linkGenerated, handlerGenerated }}
+						{...{
+							selectedAdmin,
+							linkGenerated,
+							handlerGenerated,
+							handleOpenChange,
+						}}
 					/>
 				</DialogContent>
 			</Dialog>
@@ -363,8 +475,7 @@ export const ChangePasswordPopover = ({
 	}
 
 	return (
-		<Drawer open={open} onOpenChange={setOpen} modal>
-			<DrawerTrigger asChild>{children}</DrawerTrigger>
+		<Drawer defaultOpen={isOpen} onOpenChange={handleOpenChange}>
 			<DrawerContent>
 				<div className="w-full max-w-sm mx-auto">
 					<DrawerHeader className="text-left">
@@ -372,11 +483,16 @@ export const ChangePasswordPopover = ({
 						<DrawerDescription>{pageContent.description}</DrawerDescription>
 					</DrawerHeader>
 					<ChangePasswordContent
-						{...{ row, linkGenerated, handlerGenerated }}
+						{...{
+							selectedAdmin,
+							linkGenerated,
+							handlerGenerated,
+							handleOpenChange,
+						}}
 						className="px-4"
 					/>
-					<DrawerFooter className="pt-2">
-						<DrawerClose asChild>
+					<DrawerFooter className="px-0 pt-2">
+						<DrawerClose asChild className="p-0">
 							<Button variant="outline">Cancel</Button>
 						</DrawerClose>
 					</DrawerFooter>
@@ -390,14 +506,23 @@ export const ChangePasswordPopover = ({
 export interface DeleteAdminAlertProps {
 	children: React.ReactNode;
 	row: TableRowDataProps;
-	handler: (row: TableRowDataProps) => void;
 }
 
-export const DeleteAdminAlert = ({
-	children,
-	handler,
-	row,
-}: DeleteAdminAlertProps) => {
+export const DeleteAdminAlert = ({ children, row }: DeleteAdminAlertProps) => {
+	const { props: globalProps } = usePage<GlobalPageProps>();
+	const handler = (row: TableRowDataProps) => {
+		console.log(`Deleting the Admin ${row.original.user.email}...`);
+		router.delete(
+			`${globalProps.adminPortal.router.adminPortal.adminManagement.index}/${row.original.id}`,
+			{
+				data: row.original,
+			},
+		);
+		console.log(
+			`Successfully to deleted the Admin ${row.original.user.email}...`,
+		);
+	};
+
 	return (
 		<AlertDialog>
 			<AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
@@ -418,5 +543,212 @@ export const DeleteAdminAlert = ({
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>
+	);
+};
+
+/* feature edit admin */
+export interface EditAdminDialogProps {
+	adminTypeList: AdminTypes;
+	selectedAdmin: SelectedAdmin | null;
+	isOpen: boolean;
+}
+
+export const EditAdminDialog = ({
+	selectedAdmin,
+	adminTypeList,
+	isOpen,
+}: EditAdminDialogProps) => {
+	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
+	const handleOpenChange = (value: boolean) => {
+		if (!value) {
+			const { fullUrl } = populateQueryParams(pageURL, { edit: null });
+			router.get(
+				fullUrl,
+				{},
+				{ only: ["selectedAdmin"], preserveScroll: true },
+			);
+		}
+	};
+
+	// schema and handler form
+	const formSchema = z.object({
+		name: z.string().min(3),
+		email: z.string().email(),
+		adminType: z.enum([...adminTypeList]),
+	});
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			name: selectedAdmin?.name,
+			email: selectedAdmin?.user.email,
+			adminType: selectedAdmin?.adminType,
+		},
+	});
+	function onSubmit(values: z.infer<typeof formSchema>) {
+		console.log("Submitting form to edit the admin...");
+		const routeURL = `${globalProps.adminPortal.router.adminPortal.adminManagement.index}/${selectedAdmin?.id}`;
+		router.put(
+			routeURL,
+			deepTransformKeysToSnakeCase({
+				admin: {
+					id: selectedAdmin?.id,
+					adminType: values.adminType,
+					name: values.name,
+				},
+			}),
+			{ preserveScroll: true, preserveState: true },
+		);
+		console.log("Admin successfully updated...");
+	}
+
+	return (
+		<Sheet modal defaultOpen={isOpen} onOpenChange={handleOpenChange}>
+			<SheetContent side="right">
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)}>
+						<SheetHeader>
+							<SheetTitle>Edit admin profile</SheetTitle>
+							<SheetDescription>
+								Make changes to selected admin profile here. Click save when
+								you're done.
+							</SheetDescription>
+						</SheetHeader>
+
+						<div className="grid gap-4 py-4">
+							<Alert variant="warning">
+								<Info className="w-4 h-4" />
+								<AlertTitle>Heads up!</AlertTitle>
+								<AlertDescription>
+									Contact the super-admin if you need to change the
+									write-protected information.
+								</AlertDescription>
+							</Alert>
+
+							<div className="grid space-y-4">
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Email</FormLabel>
+											<FormControl>
+												<Input
+													{...field}
+													type="email"
+													placeholder="Enter the email..."
+													disabled
+												/>
+											</FormControl>
+
+											<FormDescription>
+												The email is write-protected and can't be modified.
+											</FormDescription>
+
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									control={form.control}
+									name="adminType"
+									render={({ field }) => (
+										<FormItem className="flex flex-col">
+											<FormLabel className="mt-1 mb-1">Type</FormLabel>
+											<Popover>
+												<PopoverTrigger asChild>
+													<FormControl>
+														<Button
+															disabled
+															variant="outline"
+															className={cn(
+																"justify-between px-3 py-1 w-[200px]",
+																!field.value && "text-muted-foreground",
+															)}
+														>
+															{field.value
+																? humanize(
+																		adminTypeList.find(
+																			(type) => type === field.value,
+																		) || "",
+																	)?.toUpperCase()
+																: "Select admin type"}
+															<ChevronsUpDown className="opacity-50" />
+														</Button>
+													</FormControl>
+												</PopoverTrigger>
+												<PopoverContent align="start" className="w-[200px] p-0">
+													<Command>
+														<CommandInput
+															placeholder="Search admin type..."
+															className="my-1 -mr-2 border-0 h-9"
+														/>
+														<CommandList>
+															<CommandEmpty>No admin type found.</CommandEmpty>
+															<CommandGroup>
+																{adminTypeList.map((type) => (
+																	<CommandItem
+																		value={type}
+																		key={type}
+																		onSelect={() => {
+																			form.setValue("adminType", type);
+																		}}
+																	>
+																		{humanize(type).toUpperCase()}
+																		<Check
+																			className={cn(
+																				"ml-auto",
+																				type === field.value
+																					? "opacity-100"
+																					: "opacity-0",
+																			)}
+																		/>
+																	</CommandItem>
+																))}
+															</CommandGroup>
+														</CommandList>
+													</Command>
+												</PopoverContent>
+											</Popover>
+
+											<FormDescription>
+												The admin type is write-protected and can't be modified.
+											</FormDescription>
+
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									control={form.control}
+									name="name"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Name</FormLabel>
+											<FormControl>
+												<Input
+													{...field}
+													type="text"
+													placeholder="Enter the name..."
+												/>
+											</FormControl>
+
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+						</div>
+
+						<SheetFooter className="mt-6">
+							{/* <SheetClose asChild> */}
+							<Button type="submit">Save changes</Button>
+							{/* </SheetClose> */}
+						</SheetFooter>
+					</form>
+				</Form>
+			</SheetContent>
+		</Sheet>
 	);
 };

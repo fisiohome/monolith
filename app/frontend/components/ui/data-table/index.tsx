@@ -36,6 +36,7 @@ interface DataTableProps<TData, TValue> {
 	subComponent?: (row: Row<TData>) => React.ReactNode;
 	toolbar?: (table: TableTanstack<TData>) => React.ReactNode;
 	customPagination?: (table: TableTanstack<TData>) => React.ReactNode;
+	currentExpanded?: ExpandedState;
 }
 
 export function DataTable<TData, TValue>({
@@ -44,6 +45,7 @@ export function DataTable<TData, TValue>({
 	subComponent,
 	toolbar,
 	customPagination,
+	currentExpanded = {},
 }: DataTableProps<TData, TValue>) {
 	const [rowSelection, setRowSelection] = React.useState({});
 	const [columnVisibility, setColumnVisibility] =
@@ -52,7 +54,8 @@ export function DataTable<TData, TValue>({
 		[],
 	);
 	const [sorting, setSorting] = React.useState<SortingState>([]);
-	const [expanded, setExpanded] = React.useState<ExpandedState>({});
+	const [expanded, setExpanded] =
+		React.useState<ExpandedState>(currentExpanded);
 
 	const table = useReactTable({
 		data,
@@ -122,7 +125,10 @@ export function DataTable<TData, TValue>({
 
 									{row.getIsExpanded() && subComponent && (
 										<TableRow>
-											<TableCell colSpan={columns.length}>
+											<TableCell
+												colSpan={columns.length}
+												className="bg-background/75 hover:backdrop-brightness-125"
+											>
 												{subComponent(row)}
 											</TableCell>
 										</TableRow>

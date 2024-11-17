@@ -3,30 +3,19 @@ import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import { format } from "date-fns/format";
-import { Fingerprint, Pencil, Trash2 } from "lucide-react";
+import { Ban, Fingerprint, Pencil, Trash2 } from "lucide-react";
 import { type ComponentProps, useMemo } from "react";
-import { ChangePasswordPopover, DeleteAdminAlert } from "./feature-actions";
+import { DeleteAdminAlert } from "./feature-actions";
 
 interface ExpandSubTableProps extends ComponentProps<"div"> {
 	row: TableRowDataProps;
-	isSuperAdmin: boolean;
-	feature: {
-		deleteAdmin: {
-			handler: (row: TableRowDataProps) => void;
-		};
-		changePassword: {
-			linkGenerated: string;
-			handlerGenerated: (row: TableRowDataProps) => Promise<void>;
-			resetGeneratedLink: () => void;
-		};
+	routeTo: {
+		editAdmin: (id: number) => void;
+		changePassword: (id: number) => void;
 	};
 }
 
-export default function ExpandSubTable({
-	row,
-	isSuperAdmin,
-	feature,
-}: ExpandSubTableProps) {
+export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
 
 	const isCurrentUser = useMemo(
@@ -34,8 +23,8 @@ export default function ExpandSubTable({
 		[globalProps.auth.currentUser?.user.email, row.original.user.email],
 	);
 	const isShowDelete = useMemo(
-		() => isSuperAdmin && !isCurrentUser,
-		[isSuperAdmin, isCurrentUser],
+		() => globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
+		[isCurrentUser, globalProps.auth.currentUser],
 	);
 
 	return (
@@ -53,15 +42,16 @@ export default function ExpandSubTable({
 						{format(row.original.updatedAt, "PPpp")}
 					</p>
 				</div>
-				{isSuperAdmin && row.original.user["isOnline?"] && (
-					<div className="space-y-1">
-						<p className="text-xs text-muted-foreground">Current IP</p>
-						<p className="font-semibold">
-							{row?.original?.user?.currentSignInIp || "-"}
-						</p>
-					</div>
-				)}
-				{isSuperAdmin && (
+				{globalProps.auth.currentUser?.["isSuperAdmin?"] &&
+					row.original.user["isOnline?"] && (
+						<div className="space-y-1">
+							<p className="text-xs text-muted-foreground">Current IP</p>
+							<p className="font-semibold">
+								{row?.original?.user?.currentSignInIp || "-"}
+							</p>
+						</div>
+					)}
+				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 					<>
 						<div className="space-y-1">
 							<p className="text-xs text-muted-foreground">Last IP</p>
@@ -82,29 +72,31 @@ export default function ExpandSubTable({
 			</div>
 
 			<div className="flex items-center justify-end space-x-2">
-				<Button variant="outline" disabled>
+				<Button
+					variant="outline"
+					onClick={() => routeTo.editAdmin(row.original.id)}
+				>
 					<Pencil />
 					Edit
 				</Button>
 
 				{!isCurrentUser && (
-					<ChangePasswordPopover
-						row={row}
-						linkGenerated={feature.changePassword.linkGenerated}
-						handlerGenerated={feature.changePassword.handlerGenerated}
+					<Button
+						variant="outline"
+						onClick={() => routeTo.changePassword(row.original.id)}
 					>
-						<Button
-							variant="outline"
-							onClick={() => feature.changePassword.resetGeneratedLink()}
-						>
-							<Fingerprint />
-							Change Password
-						</Button>
-					</ChangePasswordPopover>
+						<Fingerprint />
+						Change Password
+					</Button>
 				)}
 
+				<Button variant="destructive" disabled>
+					<Ban />
+					Suspend
+				</Button>
+
 				{isShowDelete && (
-					<DeleteAdminAlert row={row} handler={feature.deleteAdmin.handler}>
+					<DeleteAdminAlert row={row}>
 						<Button variant="destructive">
 							<Trash2 />
 							Delete

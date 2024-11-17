@@ -20,6 +20,7 @@ export const ToastProvider = ({ children }: PropsWithChildren) => {
 	const { toast } = useToast();
 	const props = usePage<GlobalPageProps>().props;
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		const isSuccess = !!props?.flash?.success;
 		const message = props?.flash?.success || props?.flash?.alert;
@@ -30,7 +31,7 @@ export const ToastProvider = ({ children }: PropsWithChildren) => {
 			description: message,
 			variant: isSuccess ? "default" : "destructive",
 		});
-	}, [props, toast]);
+	}, [props]);
 
 	return (
 		<ToastContext.Provider value={{ toast }}>

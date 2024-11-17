@@ -1,7 +1,11 @@
 import ExpandSubTable from "@/components/admin-portal/admin/data-table-expand";
 import PaginationTable from "@/components/admin-portal/admin/data-table-pagination";
 import ToolbarTable from "@/components/admin-portal/admin/data-table-toolbar";
-import { DeleteAdminAlert } from "@/components/admin-portal/admin/feature-actions";
+import {
+	ChangePasswordDialog,
+	DeleteAdminAlert,
+	EditAdminDialog,
+} from "@/components/admin-portal/admin/feature-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,26 +27,31 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
-import { cn, populateQueryParams } from "@/lib/utils";
+import { cn, populateQueryParams, removeWhiteSpaces } from "@/lib/utils";
 import { generateInitials, humanize } from "@/lib/utils";
-import type { Admin } from "@/types/admin-portal/admin";
+import type { Admin, AdminTypes } from "@/types/admin-portal/admin";
+import type { User } from "@/types/auth";
 import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import type { Row } from "@tanstack/react-table";
+import type { ExpandedState, Row } from "@tanstack/react-table";
 import type { Table as TableTanstack } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns/format";
 import { Plus } from "lucide-react";
 import { ChevronDown, ChevronUp, Ellipsis, InfinityIcon } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo } from "react";
 
+export type SelectedAdmin = Pick<Admin, "id" | "adminType" | "name"> & {
+	user: Pick<User, "id" | "email">;
+};
 export interface PageProps {
 	admins: {
 		data: Admin[];
 		metadata: Metadata;
 	};
+	adminTypeList: AdminTypes;
+	selectedAdmin: SelectedAdmin | null;
 }
 export type TableRowDataProps = Row<PageProps["admins"]["data"][number]>;
 export type TableToolbarDataProps = TableTanstack<
@@ -52,9 +61,12 @@ export type TableToolbarDataProps = TableTanstack<
 // TODO: table actions
 // TODO: table filter by
 // TODO: theme toggle
-export default function Index({ admins }: PageProps) {
+export default function Index({
+	admins,
+	adminTypeList,
+	selectedAdmin,
+}: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
-	const { toast } = useToast();
 	console.log(globalProps);
 
 	// tabs management
@@ -93,51 +105,47 @@ export default function Index({ admins }: PageProps) {
 	};
 
 	// data table management
-	const isSuperAdmin = useMemo(
-		() => globalProps.auth.currentUser?.adminType === "SUPER_ADMIN",
-		[globalProps.auth.currentUser?.adminType],
-	);
-	const handleDelete = (row: TableRowDataProps) => {
-		console.log(`Deleting the Admin ${row.original.user.email}...`);
-		router.delete(
-			`${globalProps.adminPortal.router.adminPortal.adminManagement.index}/${row.original.id}`,
-			{
-				data: row.original,
+	const currentExpanded = useMemo<ExpandedState>(() => {
+		const { queryParams } = populateQueryParams(pageURL);
+		const expandedList = queryParams?.expanded
+			? removeWhiteSpaces(queryParams?.expanded)?.split(",")
+			: [];
+		const adminsIndex = admins.data.reduce(
+			(obj, item, index) => {
+				if (expandedList.includes(String(item.id))) {
+					obj[index] = true;
+				}
+				return obj;
 			},
+			{} as Record<number, boolean>,
 		);
-		console.log(
-			`Successfully to deleted the Admin ${row.original.user.email}...`,
-		);
-	};
-	const [linkGenerated, setLinkGenerated] = useState("");
-	const handleChangePassword = {
-		generateLink: async (row: TableRowDataProps) => {
-			console.log(
-				`Generating the change password link for ${row.original.user.email}...`,
-			);
-			const { fullUrl } = populateQueryParams(
-				globalProps.adminPortal.router.adminPortal.adminManagement
-					.generateResetPasswordUrl,
-				{ email: row.original.user.email },
-			);
-			const response = await fetch(fullUrl, { method: "get" });
-			const data = await response.json();
 
-			if (!data?.link && data?.error) {
-				console.log(data.error);
-				toast({ description: data.error, variant: "destructive" });
-				return;
-			}
-
-			const successMessage = `Successfully generated the change password link for ${row.original.user.email}.`;
-			setLinkGenerated(data.link);
-			toast({ description: successMessage });
-			console.log(successMessage);
+		return adminsIndex;
+	}, [pageURL, admins.data]);
+	const routeTo = {
+		editAdmin: (id: number) => {
+			router.get(
+				pageURL,
+				{ edit: id },
+				{ only: ["selectedAdmin"], preserveScroll: true },
+			);
 		},
-		resetGeneratedLink: () => {
-			setLinkGenerated("");
+		changePassword: (id: number) => {
+			router.get(
+				pageURL,
+				{ change_password: id },
+				{ only: ["selectedAdmin"], preserveScroll: true },
+			);
 		},
 	};
+	const isOpen = useMemo(() => {
+		const { queryParams } = populateQueryParams(pageURL, {});
+
+		return {
+			changePassword: !!queryParams?.change_password || false,
+			editAdmin: !!queryParams?.edit || false,
+		};
+	}, [pageURL]);
 	const columns: ColumnDef<PageProps["admins"]["data"][number]>[] = [
 		{
 			id: "select",
@@ -191,9 +199,34 @@ export default function Index({ admins }: PageProps) {
 					</div>
 				);
 			},
-			cell: ({ row }) => (
-				<div className="flex items-start space-x-2">
-					{/* <TooltipProvider>
+			cell: ({ row }) => {
+				const toggleExpand = () => {
+					row.toggleExpanded();
+
+					const { queryParams: currentQuery } = populateQueryParams(pageURL);
+					const expandedList = removeWhiteSpaces(currentQuery?.expanded || "")
+						.split(",")
+						.filter(Boolean);
+					const id = String(row.original.id);
+					const updatedList = row.getIsExpanded()
+						? expandedList.filter((item) => item !== id)
+						: [...expandedList, id];
+
+					const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+						expanded: updatedList.join(","),
+					});
+
+					router.get(fullUrl, queryParams, {
+						only: ["admins"],
+						preserveScroll: true,
+						preserveState: true,
+						replace: true,
+					});
+				};
+
+				return (
+					<div className="flex items-start space-x-2">
+						{/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Checkbox
@@ -209,25 +242,26 @@ export default function Index({ admins }: PageProps) {
             </Tooltip>
           </TooltipProvider> */}
 
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="w-5 h-5 border shadow border-primary/25"
-									onClick={() => row.toggleExpanded()}
-								>
-									{row.getIsExpanded() ? <ChevronUp /> : <ChevronDown />}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="top">
-								<span>{row.getIsExpanded() ? "Collapse" : "Expand"}</span>
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				</div>
-			),
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="w-5 h-5 border shadow border-primary/25"
+										onClick={toggleExpand}
+									>
+										{row.getIsExpanded() ? <ChevronUp /> : <ChevronDown />}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="top">
+									<span>{row.getIsExpanded() ? "Collapse" : "Expand"}</span>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
+				);
+			},
 			enableSorting: false,
 			enableHiding: false,
 		},
@@ -245,6 +279,7 @@ export default function Index({ admins }: PageProps) {
 				const isOnline = row.original.user["isOnline?"];
 				const isCurrent =
 					row.original.user.email === globalProps.auth.currentUser?.user.email;
+				const isSuspended = row.original.user["suspended?"];
 
 				return (
 					<>
@@ -254,11 +289,13 @@ export default function Index({ admins }: PageProps) {
 								<AvatarFallback
 									className={cn(
 										"text-xs rounded-lg",
-										isCurrent
-											? "bg-purple-600"
-											: isOnline
-												? "bg-green-700"
-												: "",
+										isSuspended
+											? "bg-destructive"
+											: isCurrent
+												? "bg-purple-600"
+												: isOnline
+													? "bg-green-700"
+													: "",
 									)}
 								>
 									{initials}
@@ -376,9 +413,15 @@ export default function Index({ admins }: PageProps) {
 			cell: ({ row }) => {
 				const isShowDelete = useMemo(
 					() =>
-						isSuperAdmin &&
+						globalProps.auth.currentUser?.["isSuperAdmin?"] &&
 						globalProps.auth.currentUser?.user.email !==
 							row.original.user.email,
+					[row.original.user.email],
+				);
+				const isCurrentUser = useMemo(
+					() =>
+						globalProps.auth.currentUser?.user.email ===
+						row.original.user.email,
 					[row.original.user.email],
 				);
 
@@ -396,13 +439,25 @@ export default function Index({ admins }: PageProps) {
 								<DropdownMenuSeparator />
 
 								<DropdownMenuGroup>
-									<DropdownMenuItem disabled>Edit</DropdownMenuItem>
+									<DropdownMenuItem
+										onSelect={() => routeTo.editAdmin(row.original.id)}
+									>
+										Edit
+									</DropdownMenuItem>
+
+									{!isCurrentUser && (
+										<DropdownMenuItem
+											onSelect={() => routeTo.changePassword(row.original.id)}
+										>
+											Change Password
+										</DropdownMenuItem>
+									)}
 								</DropdownMenuGroup>
 
 								{isShowDelete && (
 									<>
 										<DropdownMenuSeparator />
-										<DeleteAdminAlert row={row} handler={handleDelete}>
+										<DeleteAdminAlert row={row}>
 											<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
 												Delete
 											</DropdownMenuItem>
@@ -423,7 +478,7 @@ export default function Index({ admins }: PageProps) {
 			<article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-6 space-y-4">
 				<section className="flex items-center justify-between">
 					<h1 className="text-2xl font-bold tracking-tight">Admins</h1>
-					{isSuperAdmin && (
+					{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 						<Button asChild>
 							<Link
 								href={
@@ -460,21 +515,7 @@ export default function Index({ admins }: PageProps) {
 										data={admins.data}
 										toolbar={(table) => <ToolbarTable table={table} />}
 										subComponent={(row) => (
-											<ExpandSubTable
-												row={row}
-												isSuperAdmin={isSuperAdmin}
-												feature={{
-													deleteAdmin: {
-														handler: handleDelete,
-													},
-													changePassword: {
-														linkGenerated,
-														handlerGenerated: handleChangePassword.generateLink,
-														resetGeneratedLink:
-															handleChangePassword.resetGeneratedLink,
-													},
-												}}
-											/>
+											<ExpandSubTable row={row} routeTo={routeTo} />
 										)}
 										customPagination={(table) => (
 											<PaginationTable
@@ -482,11 +523,27 @@ export default function Index({ admins }: PageProps) {
 												metadata={admins.metadata}
 											/>
 										)}
+										currentExpanded={currentExpanded}
 									/>
 								</TabsContent>
 							</Fragment>
 						))}
 					</Tabs>
+
+					{selectedAdmin && isOpen.editAdmin && (
+						<EditAdminDialog
+							isOpen={isOpen.editAdmin}
+							adminTypeList={adminTypeList}
+							selectedAdmin={selectedAdmin}
+						/>
+					)}
+
+					{selectedAdmin && isOpen.changePassword && (
+						<ChangePasswordDialog
+							isOpen={isOpen.changePassword}
+							selectedAdmin={selectedAdmin}
+						/>
+					)}
 				</section>
 			</article>
 		</>

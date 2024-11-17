@@ -100,13 +100,14 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 					passwordConfirmation: values.passwordConfirmation,
 				},
 			}),
+			{ preserveState: true },
 		);
 		console.log("Admin successfully created...");
 	}
 
 	return (
 		<>
-			<Head title="New admin" />
+			<Head title="Create Admin" />
 			<article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-6 space-y-4">
 				<div className="space-y-6 lg:w-6/12">
 					<div className="flex items-center gap-4">
@@ -121,7 +122,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 						</div>
 
 						<h1 className="text-xl font-bold tracking-tight">
-							<span>Create New Admin</span>
+							<span>Create Admin</span>
 						</h1>
 					</div>
 

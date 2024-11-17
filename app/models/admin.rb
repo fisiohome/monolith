@@ -10,6 +10,26 @@ class Admin < ApplicationRecord
 
   validates :name, presence: true
 
+  def is_super_admin?
+    self.admin_type === "SUPER_ADMIN"
+  end
+
+  def is_admin_l1?
+    self.admin_type === "ADMIN_L1"
+  end
+
+  def is_admin_l2?
+    self.admin_type === "ADMIN_L2"
+  end
+
+  def is_admin_l3?
+    self.admin_type === "ADMIN_L3"
+  end
+
+  def is_admin_backlog?
+    self.admin_type === "ADMIN_BACKLOG"
+  end
+
   private
 
   def destroy_associated_user

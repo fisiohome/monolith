@@ -8,6 +8,11 @@ export type Admin = {
 	name: string;
 	createdAt: string;
 	updatedAt: string;
+	"isSuperAdmin?": boolean;
+	"isAdminL1?": boolean;
+	"isAdminL12?": boolean;
+	"isAdminL13?": boolean;
+	"isAdminBacklog?": boolean;
 	user: Pick<
 		User,
 		| "id"
