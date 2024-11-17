@@ -1,3 +1,4 @@
+import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -18,23 +19,6 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/components/ui/command";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import {
-	Drawer,
-	DrawerClose,
-	DrawerContent,
-	DrawerDescription,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle,
-} from "@/components/ui/drawer";
 import {
 	Form,
 	FormControl,
@@ -73,7 +57,6 @@ import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
 import {
 	Check,
 	ChevronsUpDown,
@@ -85,33 +68,60 @@ import {
 	PartyPopper,
 } from "lucide-react";
 import type React from "react";
-import { type ComponentProps, useMemo, useState } from "react";
+import { type ComponentProps, type Dispatch, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 /* change password feature */
-interface ChangePasswordContentProps extends ComponentProps<"div"> {
+export interface ChangePasswordContentProps extends ComponentProps<"div"> {
 	selectedAdmin: SelectedAdmin | null;
 	linkGenerated: string;
-	handlerGenerated: (values: SelectedAdmin) => Promise<void>;
-	handleOpenChange: (value: boolean) => void;
-	forceMode: ResponsiveDialogMode;
+	setLinkGenerated: Dispatch<React.SetStateAction<string>>;
+	handleOpenChange?: (value: boolean) => void;
+	forceMode?: ResponsiveDialogMode;
 }
 
-const ChangePasswordContent = ({
+export const ChangePasswordContent = ({
 	className,
 	selectedAdmin,
 	linkGenerated,
-	handlerGenerated,
+	setLinkGenerated,
 	handleOpenChange,
 	forceMode,
 }: ChangePasswordContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	const isDesktop = useMediaQuery("(min-width: 768px)");
+	const { toast } = useToast();
+
 	const [isLoading, setIsLoading] = useState({
 		generate: false,
 		form: false,
 	});
+	const buttonProps = useMemo<ResponsiveDialogButton>(() => {
+		return { isLoading: isLoading.form, forceMode };
+	}, [isLoading, forceMode]);
+	const handlerGenerated = async (values: SelectedAdmin) => {
+		console.log(
+			`Generating the change password link for ${values.user.email}...`,
+		);
+		const { fullUrl } = populateQueryParams(
+			globalProps.adminPortal.router.adminPortal.adminManagement
+				.generateResetPasswordUrl,
+			{ email: values.user.email },
+		);
+		const response = await fetch(fullUrl, { method: "get" });
+		const data = await response.json();
+
+		if (!data?.link && data?.error) {
+			console.log(data.error);
+			toast({ description: data.error, variant: "destructive" });
+			return;
+		}
+
+		const successMessage = `Successfully generated the change password link for ${values.user.email}.`;
+		setLinkGenerated(data.link);
+		toast({ description: successMessage });
+		console.log(successMessage);
+	};
 	const [passwordVisibility, setPasswordVisibility] = useState({
 		new: false,
 		confirmation: false,
@@ -163,7 +173,6 @@ const ChangePasswordContent = ({
 				user: { ...values, email },
 			}),
 			{
-				only: [],
 				preserveScroll: true,
 				preserveState: true,
 				onStart: () => {
@@ -171,7 +180,9 @@ const ChangePasswordContent = ({
 				},
 				onFinish: () => {
 					setIsLoading({ ...isLoading, form: false });
-					handleOpenChange(false);
+					if (handleOpenChange) {
+						handleOpenChange(false);
+					}
 				},
 			},
 		);
@@ -365,162 +376,10 @@ const ChangePasswordContent = ({
 						)}
 					/>
 
-					<div
-						className={cn(
-							"w-full flex justify-end !mt-6 space-x-2",
-							forceMode === "drawer" ? "w-full" : "",
-						)}
-					>
-						{forceMode === "dialog" && isDesktop && (
-							<DialogClose asChild>
-								<Button variant="ghost">Cancel</Button>
-							</DialogClose>
-						)}
-
-						<Button
-							type="submit"
-							disabled={isLoading.form}
-							className={cn(
-								"w-full lg:w-auto",
-								forceMode === "drawer" ? "w-full lg:w-full" : "",
-							)}
-						>
-							{isLoading.form ? (
-								<>
-									<Loader2 className="animate-spin" />
-									<span>Updating...</span>
-								</>
-							) : (
-								<span>Update</span>
-							)}
-						</Button>
-					</div>
+					<ResponsiveDialogButton {...buttonProps} />
 				</form>
 			</Form>
 		</div>
-	);
-};
-
-export interface ChangePasswordDialogProps {
-	selectedAdmin: SelectedAdmin | null;
-	isOpen: boolean;
-	forceMode?: ResponsiveDialogMode;
-}
-
-export const ChangePasswordDialog = ({
-	selectedAdmin,
-	isOpen,
-	forceMode = "dialog",
-}: ChangePasswordDialogProps) => {
-	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
-	const { toast } = useToast();
-	const isDesktop = useMediaQuery("(min-width: 768px)");
-	const pageContent = useMemo(() => {
-		return {
-			title: "Change Password",
-			description:
-				"Make password changes using the generate the form link or via form.",
-		};
-	}, []);
-	const handleOpenChange = (value: boolean) => {
-		if (!value) {
-			const { fullUrl } = populateQueryParams(pageURL, {
-				change_password: null,
-			});
-			router.get(
-				fullUrl,
-				{},
-				{ only: ["selectedAdmin"], preserveScroll: true },
-			);
-
-			// reseting the link generated state
-			if (linkGenerated) {
-				setLinkGenerated("");
-			}
-		}
-	};
-
-	const [linkGenerated, setLinkGenerated] = useState("");
-	const handlerGenerated = async (values: SelectedAdmin) => {
-		console.log(
-			`Generating the change password link for ${values.user.email}...`,
-		);
-		const { fullUrl } = populateQueryParams(
-			globalProps.adminPortal.router.adminPortal.adminManagement
-				.generateResetPasswordUrl,
-			{ email: values.user.email },
-		);
-		const response = await fetch(fullUrl, { method: "get" });
-		const data = await response.json();
-
-		if (!data?.link && data?.error) {
-			console.log(data.error);
-			toast({ description: data.error, variant: "destructive" });
-			return;
-		}
-
-		const successMessage = `Successfully generated the change password link for ${values.user.email}.`;
-		setLinkGenerated(data.link);
-		toast({ description: successMessage });
-		console.log(successMessage);
-	};
-
-	if (isDesktop && forceMode === "dialog") {
-		return (
-			<Dialog modal open={isOpen} onOpenChange={handleOpenChange}>
-				<DialogContent
-					onInteractOutside={(event) => {
-						event.preventDefault();
-					}}
-					className="sm:max-w-[380px]"
-				>
-					<DialogHeader>
-						<DialogTitle>{pageContent.title}</DialogTitle>
-						<DialogDescription>{pageContent.description}</DialogDescription>
-					</DialogHeader>
-					<ChangePasswordContent
-						{...{
-							selectedAdmin,
-							linkGenerated,
-							handlerGenerated,
-							handleOpenChange,
-							forceMode,
-						}}
-					/>
-				</DialogContent>
-			</Dialog>
-		);
-	}
-
-	return (
-		<Drawer modal open={isOpen} onOpenChange={handleOpenChange}>
-			<DrawerContent
-				onInteractOutside={(event) => {
-					event.preventDefault();
-				}}
-			>
-				<div className="w-full max-w-sm mx-auto">
-					<DrawerHeader className="text-left">
-						<DrawerTitle>{pageContent.title}</DrawerTitle>
-						<DrawerDescription>{pageContent.description}</DrawerDescription>
-					</DrawerHeader>
-					<ChangePasswordContent
-						{...{
-							selectedAdmin,
-							linkGenerated,
-							handlerGenerated,
-							handleOpenChange,
-							forceMode,
-						}}
-					/>
-					<DrawerFooter className="px-0 pt-4">
-						<DrawerClose asChild className="p-0">
-							<Button variant="outline">Cancel</Button>
-						</DrawerClose>
-					</DrawerFooter>
-				</div>
-			</DrawerContent>
-		</Drawer>
 	);
 };
 
@@ -569,14 +428,14 @@ export const DeleteAdminAlert = ({ children, row }: DeleteAdminAlertProps) => {
 };
 
 /* feature edit admin */
-interface EditAdminDialogContentProps extends ComponentProps<"div"> {
+export interface EditAdminDialogContentProps extends ComponentProps<"div"> {
 	adminTypeList: AdminTypes;
 	selectedAdmin: SelectedAdmin | null;
-	handleOpenChange: (value: boolean) => void;
-	forceMode: ResponsiveDialogMode;
+	handleOpenChange?: (value: boolean) => void;
+	forceMode?: ResponsiveDialogMode;
 }
 
-const EditAdminDialogContent = ({
+export const EditAdminDialogContent = ({
 	selectedAdmin,
 	adminTypeList,
 	forceMode,
@@ -584,8 +443,10 @@ const EditAdminDialogContent = ({
 	className,
 }: EditAdminDialogContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	const isDesktop = useMediaQuery("(min-width: 768px)");
 	const [isLoading, setIsLoading] = useState(false);
+	const buttonProps = useMemo<ResponsiveDialogButton>(() => {
+		return { isLoading, forceMode };
+	}, [isLoading, forceMode]);
 	const formSchema = z.object({
 		name: z.string().min(3),
 		email: z.string().email(),
@@ -620,7 +481,9 @@ const EditAdminDialogContent = ({
 				},
 				onFinish: () => {
 					setIsLoading(false);
-					handleOpenChange(false);
+					if (handleOpenChange) {
+						handleOpenChange(false);
+					}
 				},
 			},
 		);
@@ -756,128 +619,9 @@ const EditAdminDialogContent = ({
 						/>
 					</div>
 
-					<div
-						className={cn(
-							"w-full flex justify-end !mt-6 space-x-2",
-							forceMode === "drawer" ? "w-full" : "",
-						)}
-					>
-						{forceMode === "dialog" && isDesktop && (
-							<DialogClose asChild>
-								<Button variant="ghost">Cancel</Button>
-							</DialogClose>
-						)}
-
-						<Button
-							type="submit"
-							disabled={isLoading}
-							className={cn(
-								"w-full lg:w-auto",
-								forceMode === "drawer" ? "w-full lg:w-full" : "",
-							)}
-						>
-							{isLoading ? (
-								<>
-									<Loader2 className="animate-spin" />
-									<span>Please wait...</span>
-								</>
-							) : (
-								<span>Save changes</span>
-							)}
-						</Button>
-					</div>
+					<ResponsiveDialogButton {...buttonProps} />
 				</form>
 			</Form>
 		</div>
-	);
-};
-
-export interface EditAdminDialogProps {
-	adminTypeList: AdminTypes;
-	selectedAdmin: SelectedAdmin | null;
-	isOpen: boolean;
-	forceMode?: ResponsiveDialogMode;
-}
-
-export const EditAdminDialog = ({
-	selectedAdmin,
-	adminTypeList,
-	isOpen,
-	forceMode = "dialog",
-}: EditAdminDialogProps) => {
-	const { url: pageURL } = usePage<GlobalPageProps>();
-	const isDesktop = useMediaQuery("(min-width: 768px)");
-	const pageContent = useMemo(() => {
-		return {
-			title: "Edit Admin Profile",
-			description:
-				"Make changes to selected admin profile here. Click save when you're done.",
-		};
-	}, []);
-	const handleOpenChange = (value: boolean) => {
-		if (!value) {
-			const { fullUrl } = populateQueryParams(pageURL, { edit: null });
-			router.get(
-				fullUrl,
-				{},
-				{ only: ["selectedAdmin"], preserveScroll: true },
-			);
-		}
-	};
-
-	if (isDesktop && forceMode === "dialog") {
-		return (
-			<Dialog open={isOpen} onOpenChange={handleOpenChange}>
-				<DialogContent
-					onInteractOutside={(event) => {
-						event.preventDefault();
-					}}
-					className="sm:max-w-[425px]"
-				>
-					<DialogHeader>
-						<DialogTitle>{pageContent.title}</DialogTitle>
-						<DialogDescription>{pageContent.description}</DialogDescription>
-					</DialogHeader>
-					<EditAdminDialogContent
-						{...{
-							selectedAdmin,
-							adminTypeList,
-							forceMode,
-							handleOpenChange,
-						}}
-					/>
-				</DialogContent>
-			</Dialog>
-		);
-	}
-
-	return (
-		<Drawer modal open={isOpen} onOpenChange={handleOpenChange}>
-			<DrawerContent
-				onInteractOutside={(event) => {
-					event.preventDefault();
-				}}
-			>
-				<div className="w-full max-w-sm mx-auto">
-					<DrawerHeader className="text-left">
-						<DrawerTitle>{pageContent.title}</DrawerTitle>
-						<DrawerDescription>{pageContent.description}</DrawerDescription>
-					</DrawerHeader>
-					<EditAdminDialogContent
-						{...{
-							selectedAdmin,
-							adminTypeList,
-							forceMode,
-							handleOpenChange,
-						}}
-					/>
-					<DrawerFooter className="px-0 pt-4">
-						<DrawerClose asChild className="p-0">
-							<Button variant="outline">Cancel</Button>
-						</DrawerClose>
-					</DrawerFooter>
-				</div>
-			</DrawerContent>
-		</Drawer>
 	);
 };

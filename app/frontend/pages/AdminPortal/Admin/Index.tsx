@@ -2,10 +2,14 @@ import ExpandSubTable from "@/components/admin-portal/admin/data-table-expand";
 import PaginationTable from "@/components/admin-portal/admin/data-table-pagination";
 import ToolbarTable from "@/components/admin-portal/admin/data-table-toolbar";
 import {
-	ChangePasswordDialog,
+	ChangePasswordContent,
 	DeleteAdminAlert,
-	EditAdminDialog,
+	EditAdminDialogContent,
 } from "@/components/admin-portal/admin/feature-actions";
+import {
+	ResponsiveDialog,
+	type ResponsiveDialogProps,
+} from "@/components/shared/responsive-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,7 +44,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns/format";
 import { Plus } from "lucide-react";
 import { ChevronDown, ChevronUp, Ellipsis, InfinityIcon } from "lucide-react";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 export type SelectedAdmin = Pick<Admin, "id" | "adminType" | "name"> & {
 	user: Pick<User, "id" | "email">;
@@ -124,25 +128,68 @@ export default function Index({
 			router.get(
 				pageURL,
 				{ edit: id },
-				{ only: ["selectedAdmin"], preserveScroll: true },
+				{ only: ["selectedAdmin", "flash"], preserveScroll: true },
 			);
 		},
 		changePassword: (id: number) => {
 			router.get(
 				pageURL,
 				{ change_password: id },
-				{ only: ["selectedAdmin"], preserveScroll: true },
+				{ only: ["selectedAdmin", "flash"], preserveScroll: true },
 			);
 		},
 	};
-	const isOpen = useMemo(() => {
+	// for edit admin profile
+	const editAdminDialog = useMemo<ResponsiveDialogProps>(() => {
 		const { queryParams } = populateQueryParams(pageURL, {});
 
 		return {
-			changePassword: !!queryParams?.change_password || false,
-			editAdmin: !!queryParams?.edit || false,
+			title: "Edit Admin Profile",
+			description:
+				"Make changes to selected admin profile here. Click save when you're done.",
+			isOpen: !!queryParams?.edit || false,
+			dialogWidth: "425px",
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, { edit: null });
+					router.get(
+						fullUrl,
+						{},
+						{ only: ["selectedAdmin", "flash"], preserveScroll: true },
+					);
+				}
+			},
 		};
 	}, [pageURL]);
+	// for change password
+	const [linkGenerated, setLinkGenerated] = useState("");
+	const changePasswordDialog = useMemo<ResponsiveDialogProps>(() => {
+		const { queryParams } = populateQueryParams(pageURL, {});
+
+		return {
+			title: "Change Password",
+			description:
+				"Make password changes using the generate the form link or via form.",
+			isOpen: !!queryParams?.change_password || false,
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						change_password: null,
+					});
+					router.get(
+						fullUrl,
+						{},
+						{ only: ["selectedAdmin", "flash"], preserveScroll: true },
+					);
+
+					// reseting the link generated state
+					if (linkGenerated) {
+						setLinkGenerated("");
+					}
+				}
+			},
+		};
+	}, [pageURL, linkGenerated]);
 	const columns: ColumnDef<PageProps["admins"]["data"][number]>[] = [
 		{
 			id: "select",
@@ -557,19 +604,31 @@ export default function Index({
 						))}
 					</Tabs>
 
-					{selectedAdmin && isOpen.editAdmin && (
-						<EditAdminDialog
-							isOpen={isOpen.editAdmin}
-							adminTypeList={adminTypeList}
-							selectedAdmin={selectedAdmin}
-						/>
+					{selectedAdmin && editAdminDialog.isOpen && (
+						<ResponsiveDialog {...editAdminDialog}>
+							<EditAdminDialogContent
+								{...{
+									selectedAdmin,
+									adminTypeList,
+									forceMode: editAdminDialog.forceMode,
+									handleOpenChange: editAdminDialog.onOpenChange,
+								}}
+							/>
+						</ResponsiveDialog>
 					)}
 
-					{selectedAdmin && isOpen.changePassword && (
-						<ChangePasswordDialog
-							isOpen={isOpen.changePassword}
-							selectedAdmin={selectedAdmin}
-						/>
+					{selectedAdmin && changePasswordDialog.isOpen && (
+						<ResponsiveDialog {...changePasswordDialog}>
+							<ChangePasswordContent
+								{...{
+									selectedAdmin,
+									linkGenerated,
+									setLinkGenerated,
+									forceMode: changePasswordDialog.forceMode,
+									handleOpenChange: changePasswordDialog.onOpenChange,
+								}}
+							/>
+						</ResponsiveDialog>
 					)}
 				</section>
 			</article>
