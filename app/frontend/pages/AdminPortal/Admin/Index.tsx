@@ -58,9 +58,6 @@ export type TableToolbarDataProps = TableTanstack<
 	PageProps["admins"]["data"][number]
 >;
 
-// TODO: table actions
-// TODO: table filter by
-// TODO: theme toggle
 export default function Index({
 	admins,
 	adminTypeList,
@@ -412,27 +409,34 @@ export default function Index({
 			id: "actions",
 			cell: ({ row }) => {
 				const isCurrentUser = useMemo(
-					() => globalProps.auth.currentUser?.user.email === row.original.user.email,
+					() =>
+						globalProps.auth.currentUser?.user.email ===
+						row.original.user.email,
 					[row.original.user.email],
 				);
 				const isShowDelete = useMemo(
-					() => globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
+					() =>
+						globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
 					[isCurrentUser],
 				);
 				const isShowEdit = useMemo(
-					() => globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
-					[isCurrentUser]
-				)
+					() =>
+						globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
+					[isCurrentUser],
+				);
 				const isShowChangePassword = useMemo(
-					() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-					[isCurrentUser]
-				)
+					() =>
+						!isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
+					[isCurrentUser],
+				);
 				const isShowSuspend = useMemo(
-					() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-					[isCurrentUser]
-				)
+					() =>
+						!isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
+					[isCurrentUser],
+				);
 
-				if (!globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser) return
+				if (!globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser)
+					return;
 
 				return (
 					<div className="flex items-center justify-end space-x-2">
@@ -455,9 +459,7 @@ export default function Index({
 											Edit
 										</DropdownMenuItem>
 									)}
-
 								</DropdownMenuGroup>
-
 
 								{(isShowChangePassword || isShowSuspend) && (
 									<>
@@ -465,15 +467,15 @@ export default function Index({
 										<DropdownMenuGroup>
 											{isShowChangePassword && (
 												<DropdownMenuItem
-													onSelect={() => routeTo.changePassword(row.original.id)}
+													onSelect={() =>
+														routeTo.changePassword(row.original.id)
+													}
 												>
 													Change Password
 												</DropdownMenuItem>
 											)}
 											{isShowSuspend && (
-												<DropdownMenuItem disabled>
-													Suspend
-												</DropdownMenuItem>
+												<DropdownMenuItem disabled>Suspend</DropdownMenuItem>
 											)}
 										</DropdownMenuGroup>
 									</>

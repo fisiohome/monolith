@@ -1,6 +1,8 @@
 import type { Admin } from "./admin-portal/admin";
 import type { User } from "./auth";
 
+export type ResponsiveDialogMode = "dialog" | "drawer";
+
 export interface Auth {
 	currentUser:
 		| null

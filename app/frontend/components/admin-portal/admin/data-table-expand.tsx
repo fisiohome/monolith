@@ -28,16 +28,16 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 	);
 	const isShowEdit = useMemo(
 		() => globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
-		[isCurrentUser, globalProps.auth.currentUser]
-	)
+		[isCurrentUser, globalProps.auth.currentUser],
+	);
 	const isShowChangePassword = useMemo(
 		() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-		[isCurrentUser, globalProps.auth.currentUser]
-	)
+		[isCurrentUser, globalProps.auth.currentUser],
+	);
 	const isShowSuspend = useMemo(
 		() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-		[isCurrentUser, globalProps.auth.currentUser]
-	)
+		[isCurrentUser, globalProps.auth.currentUser],
+	);
 
 	return (
 		<>

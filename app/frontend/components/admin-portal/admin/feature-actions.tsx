@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/command";
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
@@ -51,14 +52,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetFooter,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet";
-import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
@@ -77,7 +70,7 @@ import type {
 	TableRowDataProps,
 } from "@/pages/AdminPortal/Admin/Index";
 import type { AdminTypes } from "@/types/admin-portal/admin";
-import type { GlobalPageProps } from "@/types/globals";
+import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
@@ -102,6 +95,7 @@ interface ChangePasswordContentProps extends ComponentProps<"div"> {
 	linkGenerated: string;
 	handlerGenerated: (values: SelectedAdmin) => Promise<void>;
 	handleOpenChange: (value: boolean) => void;
+	forceMode: ResponsiveDialogMode;
 }
 
 const ChangePasswordContent = ({
@@ -110,8 +104,10 @@ const ChangePasswordContent = ({
 	linkGenerated,
 	handlerGenerated,
 	handleOpenChange,
+	forceMode,
 }: ChangePasswordContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
+	const isDesktop = useMediaQuery("(min-width: 768px)");
 	const [isLoading, setIsLoading] = useState({
 		generate: false,
 		form: false,
@@ -168,6 +164,8 @@ const ChangePasswordContent = ({
 			}),
 			{
 				only: [],
+				preserveScroll: true,
+				preserveState: true,
 				onStart: () => {
 					setIsLoading({ ...isLoading, form: true });
 				},
@@ -181,7 +179,7 @@ const ChangePasswordContent = ({
 	}
 
 	return (
-		<div className="grid gap-4">
+		<div className={cn("grid gap-4", className)}>
 			<div className="grid w-full max-w-sm items-center gap-1.5">
 				<Label htmlFor="email">Email</Label>
 				<Input
@@ -367,11 +365,25 @@ const ChangePasswordContent = ({
 						)}
 					/>
 
-					<div className="w-full flex justify-end !mt-6">
+					<div
+						className={cn(
+							"w-full flex justify-end !mt-6 space-x-2",
+							forceMode === "drawer" ? "w-full" : "",
+						)}
+					>
+						{forceMode === "dialog" && isDesktop && (
+							<DialogClose asChild>
+								<Button variant="ghost">Cancel</Button>
+							</DialogClose>
+						)}
+
 						<Button
 							type="submit"
 							disabled={isLoading.form}
-							className="w-full lg:w-auto "
+							className={cn(
+								"w-full lg:w-auto",
+								forceMode === "drawer" ? "w-full lg:w-full" : "",
+							)}
 						>
 							{isLoading.form ? (
 								<>
@@ -392,13 +404,13 @@ const ChangePasswordContent = ({
 export interface ChangePasswordDialogProps {
 	selectedAdmin: SelectedAdmin | null;
 	isOpen: boolean;
-	dropdown?: boolean;
+	forceMode?: ResponsiveDialogMode;
 }
 
 export const ChangePasswordDialog = ({
-	dropdown,
 	selectedAdmin,
 	isOpen,
+	forceMode = "dialog",
 }: ChangePasswordDialogProps) => {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 	const { toast } = useToast();
@@ -453,10 +465,15 @@ export const ChangePasswordDialog = ({
 		console.log(successMessage);
 	};
 
-	if (isDesktop && !dropdown) {
+	if (isDesktop && forceMode === "dialog") {
 		return (
-			<Dialog defaultOpen={isOpen} onOpenChange={handleOpenChange}>
-				<DialogContent className="sm:max-w-[380px]">
+			<Dialog modal open={isOpen} onOpenChange={handleOpenChange}>
+				<DialogContent
+					onInteractOutside={(event) => {
+						event.preventDefault();
+					}}
+					className="sm:max-w-[380px]"
+				>
 					<DialogHeader>
 						<DialogTitle>{pageContent.title}</DialogTitle>
 						<DialogDescription>{pageContent.description}</DialogDescription>
@@ -467,6 +484,7 @@ export const ChangePasswordDialog = ({
 							linkGenerated,
 							handlerGenerated,
 							handleOpenChange,
+							forceMode,
 						}}
 					/>
 				</DialogContent>
@@ -475,8 +493,12 @@ export const ChangePasswordDialog = ({
 	}
 
 	return (
-		<Drawer defaultOpen={isOpen} onOpenChange={handleOpenChange}>
-			<DrawerContent>
+		<Drawer modal open={isOpen} onOpenChange={handleOpenChange}>
+			<DrawerContent
+				onInteractOutside={(event) => {
+					event.preventDefault();
+				}}
+			>
 				<div className="w-full max-w-sm mx-auto">
 					<DrawerHeader className="text-left">
 						<DrawerTitle>{pageContent.title}</DrawerTitle>
@@ -488,10 +510,10 @@ export const ChangePasswordDialog = ({
 							linkGenerated,
 							handlerGenerated,
 							handleOpenChange,
+							forceMode,
 						}}
-						className="px-4"
 					/>
-					<DrawerFooter className="px-0 pt-2">
+					<DrawerFooter className="px-0 pt-4">
 						<DrawerClose asChild className="p-0">
 							<Button variant="outline">Cancel</Button>
 						</DrawerClose>
@@ -547,30 +569,23 @@ export const DeleteAdminAlert = ({ children, row }: DeleteAdminAlertProps) => {
 };
 
 /* feature edit admin */
-export interface EditAdminDialogProps {
+interface EditAdminDialogContentProps extends ComponentProps<"div"> {
 	adminTypeList: AdminTypes;
 	selectedAdmin: SelectedAdmin | null;
-	isOpen: boolean;
+	handleOpenChange: (value: boolean) => void;
+	forceMode: ResponsiveDialogMode;
 }
 
-export const EditAdminDialog = ({
+const EditAdminDialogContent = ({
 	selectedAdmin,
 	adminTypeList,
-	isOpen,
-}: EditAdminDialogProps) => {
-	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
-	const handleOpenChange = (value: boolean) => {
-		if (!value) {
-			const { fullUrl } = populateQueryParams(pageURL, { edit: null });
-			router.get(
-				fullUrl,
-				{},
-				{ only: ["selectedAdmin"], preserveScroll: true },
-			);
-		}
-	};
-
-	// schema and handler form
+	forceMode,
+	handleOpenChange,
+	className,
+}: EditAdminDialogContentProps) => {
+	const { props: globalProps } = usePage<GlobalPageProps>();
+	const isDesktop = useMediaQuery("(min-width: 768px)");
+	const [isLoading, setIsLoading] = useState(false);
 	const formSchema = z.object({
 		name: z.string().min(3),
 		email: z.string().email(),
@@ -583,6 +598,7 @@ export const EditAdminDialog = ({
 			email: selectedAdmin?.user.email,
 			adminType: selectedAdmin?.adminType,
 		},
+		mode: "onBlur",
 	});
 	function onSubmit(values: z.infer<typeof formSchema>) {
 		console.log("Submitting form to edit the admin...");
@@ -596,159 +612,272 @@ export const EditAdminDialog = ({
 					name: values.name,
 				},
 			}),
-			{ preserveScroll: true, preserveState: true },
+			{
+				preserveScroll: true,
+				preserveState: true,
+				onStart: () => {
+					setIsLoading(true);
+				},
+				onFinish: () => {
+					setIsLoading(false);
+					handleOpenChange(false);
+				},
+			},
 		);
 		console.log("Admin successfully updated...");
 	}
 
 	return (
-		<Sheet modal defaultOpen={isOpen} onOpenChange={handleOpenChange}>
-			<SheetContent side="right">
-				<Form {...form}>
-					<form onSubmit={form.handleSubmit(onSubmit)}>
-						<SheetHeader>
-							<SheetTitle>Edit admin profile</SheetTitle>
-							<SheetDescription>
-								Make changes to selected admin profile here. Click save when
-								you're done.
-							</SheetDescription>
-						</SheetHeader>
+		<div className={cn("grid gap-4", className)}>
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+					<Alert variant="warning">
+						<Info className="w-4 h-4" />
+						<AlertTitle>Heads up!</AlertTitle>
+						<AlertDescription>
+							Contact the super-admin if you need to change the write-protected
+							information.
+						</AlertDescription>
+					</Alert>
 
-						<div className="grid gap-4 py-4">
-							<Alert variant="warning">
-								<Info className="w-4 h-4" />
-								<AlertTitle>Heads up!</AlertTitle>
-								<AlertDescription>
-									Contact the super-admin if you need to change the
-									write-protected information.
-								</AlertDescription>
-							</Alert>
+					<div className="grid space-y-4">
+						<FormField
+							control={form.control}
+							name="email"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Email</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											type="email"
+											placeholder="Enter the email..."
+											disabled
+										/>
+									</FormControl>
 
-							<div className="grid space-y-4">
-								<FormField
-									control={form.control}
-									name="email"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Email</FormLabel>
+									<FormDescription>
+										The email is write-protected and can't be modified.
+									</FormDescription>
+
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="adminType"
+							render={({ field }) => (
+								<FormItem className="flex flex-col">
+									<FormLabel className="mt-1 mb-1">Type</FormLabel>
+									<Popover>
+										<PopoverTrigger asChild>
 											<FormControl>
-												<Input
-													{...field}
-													type="email"
-													placeholder="Enter the email..."
+												<Button
 													disabled
-												/>
+													variant="outline"
+													className={cn(
+														"justify-between px-3 py-1 w-[200px]",
+														!field.value && "text-muted-foreground",
+													)}
+												>
+													{field.value
+														? humanize(
+															adminTypeList.find(
+																(type) => type === field.value,
+															) || "",
+														)?.toUpperCase()
+														: "Select admin type"}
+													<ChevronsUpDown className="opacity-50" />
+												</Button>
 											</FormControl>
-
-											<FormDescription>
-												The email is write-protected and can't be modified.
-											</FormDescription>
-
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<FormField
-									control={form.control}
-									name="adminType"
-									render={({ field }) => (
-										<FormItem className="flex flex-col">
-											<FormLabel className="mt-1 mb-1">Type</FormLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<FormControl>
-														<Button
-															disabled
-															variant="outline"
-															className={cn(
-																"justify-between px-3 py-1 w-[200px]",
-																!field.value && "text-muted-foreground",
-															)}
-														>
-															{field.value
-																? humanize(
-																		adminTypeList.find(
-																			(type) => type === field.value,
-																		) || "",
-																	)?.toUpperCase()
-																: "Select admin type"}
-															<ChevronsUpDown className="opacity-50" />
-														</Button>
-													</FormControl>
-												</PopoverTrigger>
-												<PopoverContent align="start" className="w-[200px] p-0">
-													<Command>
-														<CommandInput
-															placeholder="Search admin type..."
-															className="my-1 -mr-2 border-0 h-9"
-														/>
-														<CommandList>
-															<CommandEmpty>No admin type found.</CommandEmpty>
-															<CommandGroup>
-																{adminTypeList.map((type) => (
-																	<CommandItem
-																		value={type}
-																		key={type}
-																		onSelect={() => {
-																			form.setValue("adminType", type);
-																		}}
-																	>
-																		{humanize(type).toUpperCase()}
-																		<Check
-																			className={cn(
-																				"ml-auto",
-																				type === field.value
-																					? "opacity-100"
-																					: "opacity-0",
-																			)}
-																		/>
-																	</CommandItem>
-																))}
-															</CommandGroup>
-														</CommandList>
-													</Command>
-												</PopoverContent>
-											</Popover>
-
-											<FormDescription>
-												The admin type is write-protected and can't be modified.
-											</FormDescription>
-
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<FormField
-									control={form.control}
-									name="name"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Name</FormLabel>
-											<FormControl>
-												<Input
-													{...field}
-													type="text"
-													placeholder="Enter the name..."
+										</PopoverTrigger>
+										<PopoverContent align="start" className="w-[200px] p-0">
+											<Command>
+												<CommandInput
+													placeholder="Search admin type..."
+													className="my-1 -mr-2 border-0 h-9"
 												/>
-											</FormControl>
+												<CommandList>
+													<CommandEmpty>No admin type found.</CommandEmpty>
+													<CommandGroup>
+														{adminTypeList.map((type) => (
+															<CommandItem
+																value={type}
+																key={type}
+																onSelect={() => {
+																	form.setValue("adminType", type);
+																}}
+															>
+																{humanize(type).toUpperCase()}
+																<Check
+																	className={cn(
+																		"ml-auto",
+																		type === field.value
+																			? "opacity-100"
+																			: "opacity-0",
+																	)}
+																/>
+															</CommandItem>
+														))}
+													</CommandGroup>
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
 
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-						</div>
+									<FormDescription>
+										The admin type is write-protected and can't be modified.
+									</FormDescription>
 
-						<SheetFooter className="mt-6">
-							{/* <SheetClose asChild> */}
-							<Button type="submit">Save changes</Button>
-							{/* </SheetClose> */}
-						</SheetFooter>
-					</form>
-				</Form>
-			</SheetContent>
-		</Sheet>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Name</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											type="text"
+											placeholder="Enter the name..."
+										/>
+									</FormControl>
+
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
+
+					<div
+						className={cn(
+							"w-full flex justify-end !mt-6 space-x-2",
+							forceMode === "drawer" ? "w-full" : "",
+						)}
+					>
+						{forceMode === "dialog" && isDesktop && (
+							<DialogClose asChild>
+								<Button variant="ghost">Cancel</Button>
+							</DialogClose>
+						)}
+
+						<Button
+							type="submit"
+							disabled={isLoading}
+							className={cn(
+								"w-full lg:w-auto",
+								forceMode === "drawer" ? "w-full lg:w-full" : "",
+							)}
+						>
+							{isLoading ? (
+								<>
+									<Loader2 className="animate-spin" />
+									<span>Please wait...</span>
+								</>
+							) : (
+								<span>Save changes</span>
+							)}
+						</Button>
+					</div>
+				</form>
+			</Form>
+		</div>
+	);
+};
+
+export interface EditAdminDialogProps {
+	adminTypeList: AdminTypes;
+	selectedAdmin: SelectedAdmin | null;
+	isOpen: boolean;
+	forceMode?: ResponsiveDialogMode;
+}
+
+export const EditAdminDialog = ({
+	selectedAdmin,
+	adminTypeList,
+	isOpen,
+	forceMode = "dialog",
+}: EditAdminDialogProps) => {
+	const { url: pageURL } = usePage<GlobalPageProps>();
+	const isDesktop = useMediaQuery("(min-width: 768px)");
+	const pageContent = useMemo(() => {
+		return {
+			title: "Edit Admin Profile",
+			description:
+				"Make changes to selected admin profile here. Click save when you're done.",
+		};
+	}, []);
+	const handleOpenChange = (value: boolean) => {
+		if (!value) {
+			const { fullUrl } = populateQueryParams(pageURL, { edit: null });
+			router.get(
+				fullUrl,
+				{},
+				{ only: ["selectedAdmin"], preserveScroll: true },
+			);
+		}
+	};
+
+	if (isDesktop && forceMode === "dialog") {
+		return (
+			<Dialog open={isOpen} onOpenChange={handleOpenChange}>
+				<DialogContent
+					onInteractOutside={(event) => {
+						event.preventDefault();
+					}}
+					className="sm:max-w-[425px]"
+				>
+					<DialogHeader>
+						<DialogTitle>{pageContent.title}</DialogTitle>
+						<DialogDescription>{pageContent.description}</DialogDescription>
+					</DialogHeader>
+					<EditAdminDialogContent
+						{...{
+							selectedAdmin,
+							adminTypeList,
+							forceMode,
+							handleOpenChange,
+						}}
+					/>
+				</DialogContent>
+			</Dialog>
+		);
+	}
+
+	return (
+		<Drawer modal open={isOpen} onOpenChange={handleOpenChange}>
+			<DrawerContent
+				onInteractOutside={(event) => {
+					event.preventDefault();
+				}}
+			>
+				<div className="w-full max-w-sm mx-auto">
+					<DrawerHeader className="text-left">
+						<DrawerTitle>{pageContent.title}</DrawerTitle>
+						<DrawerDescription>{pageContent.description}</DrawerDescription>
+					</DrawerHeader>
+					<EditAdminDialogContent
+						{...{
+							selectedAdmin,
+							adminTypeList,
+							forceMode,
+							handleOpenChange,
+						}}
+					/>
+					<DrawerFooter className="px-0 pt-4">
+						<DrawerClose asChild className="p-0">
+							<Button variant="outline">Cancel</Button>
+						</DrawerClose>
+					</DrawerFooter>
+				</div>
+			</DrawerContent>
+		</Drawer>
 	);
 };

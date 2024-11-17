@@ -86,6 +86,12 @@ The **Admin Management** section is accessible to all admin users. However, the 
      Allows SUPER ADMIN to permanently remove an admin account from the system.  
      - **Important Limitation:** SUPER ADMIN cannot delete their own account to ensure continuity of the role.
 
+Upcoming list:
+
+- Filter by admin type
+- Filter Status
+- Selectable item (all/per item) & actions (suspend, delete, or can be mass change password)
+
 ---
 
 ## Summary of Role-Based Access in Admin Management
