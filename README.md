@@ -91,6 +91,7 @@ Upcoming list:
 - Filter by admin type
 - Filter Status
 - Selectable item (all/per item) & actions (suspend, delete, or can be mass change password)
+- Suspend by date
 
 ---
 

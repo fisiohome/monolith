@@ -51,7 +51,7 @@ export const ResponsiveDialog = ({
 					onInteractOutside={(event) => {
 						event.preventDefault();
 					}}
-					className={`sm:max-w-[${dialogWidth}]`}
+					style={{ maxWidth: dialogWidth }}
 				>
 					<DialogHeader>
 						<DialogTitle>{title}</DialogTitle>

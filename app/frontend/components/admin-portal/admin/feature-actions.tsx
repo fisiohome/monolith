@@ -86,7 +86,6 @@ export const ChangePasswordContent = ({
 	selectedAdmin,
 	linkGenerated,
 	setLinkGenerated,
-	handleOpenChange,
 	forceMode,
 }: ChangePasswordContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
@@ -180,9 +179,6 @@ export const ChangePasswordContent = ({
 				},
 				onFinish: () => {
 					setIsLoading({ ...isLoading, form: false });
-					if (handleOpenChange) {
-						handleOpenChange(false);
-					}
 				},
 			},
 		);
@@ -202,9 +198,7 @@ export const ChangePasswordContent = ({
 				/>
 			</div>
 
-			<div
-				className={cn("flex flex-col items-center w-full space-y-6", className)}
-			>
+			<div className="flex flex-col items-center w-full space-y-6">
 				{linkGenerated ? (
 					<div className="w-full space-y-2">
 						<div className="space-y-0.5">
@@ -439,7 +433,6 @@ export const EditAdminDialogContent = ({
 	selectedAdmin,
 	adminTypeList,
 	forceMode,
-	handleOpenChange,
 	className,
 }: EditAdminDialogContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
@@ -469,7 +462,9 @@ export const EditAdminDialogContent = ({
 			deepTransformKeysToSnakeCase({
 				admin: {
 					id: selectedAdmin?.id,
-					adminType: values.adminType,
+					adminType: !globalProps.auth.currentUser?.["isSuperAdmin?"]
+						? selectedAdmin?.adminType
+						: values.adminType,
 					name: values.name,
 				},
 			}),
@@ -481,9 +476,6 @@ export const EditAdminDialogContent = ({
 				},
 				onFinish: () => {
 					setIsLoading(false);
-					if (handleOpenChange) {
-						handleOpenChange(false);
-					}
 				},
 			},
 		);
@@ -494,14 +486,16 @@ export const EditAdminDialogContent = ({
 		<div className={cn("grid gap-4", className)}>
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-					<Alert variant="warning">
-						<Info className="w-4 h-4" />
-						<AlertTitle>Heads up!</AlertTitle>
-						<AlertDescription>
-							Contact the super-admin if you need to change the write-protected
-							information.
-						</AlertDescription>
-					</Alert>
+					{!globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+						<Alert variant="warning">
+							<Info className="w-4 h-4" />
+							<AlertTitle>Heads up!</AlertTitle>
+							<AlertDescription>
+								Contact the super-admin if you need to change the
+								write-protected information.
+							</AlertDescription>
+						</Alert>
+					)}
 
 					<div className="grid space-y-4">
 						<FormField
@@ -538,7 +532,9 @@ export const EditAdminDialogContent = ({
 										<PopoverTrigger asChild>
 											<FormControl>
 												<Button
-													disabled
+													disabled={
+														!globalProps.auth.currentUser?.["isSuperAdmin?"]
+													}
 													variant="outline"
 													className={cn(
 														"justify-between px-3 py-1 w-[200px]",
@@ -547,10 +543,10 @@ export const EditAdminDialogContent = ({
 												>
 													{field.value
 														? humanize(
-															adminTypeList.find(
-																(type) => type === field.value,
-															) || "",
-														)?.toUpperCase()
+																adminTypeList.find(
+																	(type) => type === field.value,
+																) || "",
+															)?.toUpperCase()
 														: "Select admin type"}
 													<ChevronsUpDown className="opacity-50" />
 												</Button>
@@ -590,9 +586,11 @@ export const EditAdminDialogContent = ({
 										</PopoverContent>
 									</Popover>
 
-									<FormDescription>
-										The admin type is write-protected and can't be modified.
-									</FormDescription>
+									{!globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+										<FormDescription>
+											The admin type is write-protected and can't be modified.
+										</FormDescription>
+									)}
 
 									<FormMessage />
 								</FormItem>
@@ -622,6 +620,123 @@ export const EditAdminDialogContent = ({
 					<ResponsiveDialogButton {...buttonProps} />
 				</form>
 			</Form>
+		</div>
+	);
+};
+
+/* suspend admin feature */
+export interface SuspendAdminContentProps extends ComponentProps<"div"> {
+	selectedAdmin: SelectedAdmin | null;
+	handleOpenChange?: (value: boolean) => void;
+	forceMode?: ResponsiveDialogMode;
+}
+
+export const SuspendAdminContent = ({
+	className,
+	selectedAdmin,
+}: SuspendAdminContentProps) => {
+	const { props: globalProps } = usePage<GlobalPageProps>();
+	const [isLoading, setIsLoading] = useState({
+		immediately: false,
+		date: false,
+	});
+	const handleSuspendNow = () => {
+		console.log(
+			`Starting process to suspend the admin account for ${selectedAdmin?.user.email} now...`,
+		);
+		router.put(
+			globalProps.adminPortal.router.adminPortal.adminManagement.suspend,
+			deepTransformKeysToSnakeCase({
+				user: {
+					id: selectedAdmin?.user.id,
+					email: selectedAdmin?.user.email,
+					suspendAt: new Date().toISOString(),
+					suspendEnd: null,
+				},
+			}),
+			{
+				preserveScroll: true,
+				preserveState: true,
+				onStart: () => {
+					setIsLoading({ ...isLoading, immediately: true });
+				},
+				onFinish: () => {
+					setIsLoading({ ...isLoading, immediately: false });
+					console.log("The proccess to suspend admin account finished...");
+				},
+			},
+		);
+	};
+	const handleActivateNow = () => {
+		console.log(
+			`Starting process to activate the admin account for ${selectedAdmin?.user.email} now...`,
+		);
+		router.put(
+			globalProps.adminPortal.router.adminPortal.adminManagement.activate,
+			deepTransformKeysToSnakeCase({
+				user: {
+					id: selectedAdmin?.user.id,
+					email: selectedAdmin?.user.email,
+					suspendAt: null,
+					suspendEnd: null,
+				},
+			}),
+			{
+				preserveScroll: true,
+				preserveState: true,
+				onStart: () => {
+					setIsLoading({ ...isLoading, immediately: true });
+				},
+				onFinish: () => {
+					setIsLoading({ ...isLoading, immediately: false });
+					console.log("The proccess to activate admin account finished...");
+				},
+			},
+		);
+	};
+
+	return (
+		<div className={cn("grid gap-4", className)}>
+			<div className="grid w-full max-w-sm items-center gap-1.5">
+				<Label htmlFor="email">Email</Label>
+				<Input
+					type="email"
+					id="email"
+					placeholder="Email"
+					readOnly
+					value={selectedAdmin?.user.email}
+				/>
+				<span className="text-[0.8rem] text-muted-foreground">
+					This account is currently{" "}
+					{selectedAdmin?.user["suspended?"] ? <b>suspended</b> : <b>active</b>}
+				</span>
+			</div>
+
+			<div className="flex flex-col items-center w-full space-y-6">
+				<Button
+					variant={
+						selectedAdmin?.user["suspended?"] ? "default" : "destructive"
+					}
+					className="w-full"
+					disabled={isLoading.immediately}
+					onClick={
+						selectedAdmin?.user["suspended?"]
+							? handleActivateNow
+							: handleSuspendNow
+					}
+				>
+					{isLoading.immediately ? (
+						<>
+							<Loader2 className="animate-spin" />
+							Please wait
+						</>
+					) : selectedAdmin?.user["suspended?"] ? (
+						<span>Activate</span>
+					) : (
+						<span>Suspend Now</span>
+					)}
+				</Button>
+			</div>
 		</div>
 	);
 };

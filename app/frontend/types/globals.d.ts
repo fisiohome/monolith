@@ -35,6 +35,8 @@ export interface AdminPortal {
 				new: string;
 				generateResetPasswordUrl: string;
 				changePassword: string;
+				suspend: string;
+				activate: string;
 			};
 		};
 	};

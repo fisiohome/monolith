@@ -5,6 +5,7 @@ import {
 	ChangePasswordContent,
 	DeleteAdminAlert,
 	EditAdminDialogContent,
+	SuspendAdminContent,
 } from "@/components/admin-portal/admin/feature-actions";
 import {
 	ResponsiveDialog,
@@ -47,7 +48,7 @@ import { ChevronDown, ChevronUp, Ellipsis, InfinityIcon } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 
 export type SelectedAdmin = Pick<Admin, "id" | "adminType" | "name"> & {
-	user: Pick<User, "id" | "email">;
+	user: Pick<User, "id" | "email" | "suspendAt" | "suspendEnd" | "suspended?">;
 };
 export interface PageProps {
 	admins: {
@@ -138,6 +139,13 @@ export default function Index({
 				{ only: ["selectedAdmin", "flash"], preserveScroll: true },
 			);
 		},
+		suspendAdmin: (id: number) => {
+			router.get(
+				pageURL,
+				{ suspend: id },
+				{ only: ["selectedAdmin", "flash"], preserveScroll: true },
+			);
+		},
 	};
 	// for edit admin profile
 	const editAdminDialog = useMemo<ResponsiveDialogProps>(() => {
@@ -148,7 +156,7 @@ export default function Index({
 			description:
 				"Make changes to selected admin profile here. Click save when you're done.",
 			isOpen: !!queryParams?.edit || false,
-			dialogWidth: "425px",
+			dialogWidth: "350px",
 			onOpenChange: (value: boolean) => {
 				if (!value) {
 					const { fullUrl } = populateQueryParams(pageURL, { edit: null });
@@ -190,6 +198,32 @@ export default function Index({
 			},
 		};
 	}, [pageURL, linkGenerated]);
+	// for suspend admin
+	const suspendAdminDialog = useMemo<ResponsiveDialogProps>(() => {
+		const { queryParams } = populateQueryParams(pageURL, {});
+
+		return {
+			title: selectedAdmin?.user["suspended?"]
+				? "Activate Admin"
+				: "Suspend Admin",
+			description: selectedAdmin?.user["suspended?"]
+				? "Re-activate the admin accounts. "
+				: "Suspend admin accounts immediately or schedule suspension for a specific date.",
+			isOpen: !!queryParams?.suspend || false,
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						suspend: null,
+					});
+					router.get(
+						fullUrl,
+						{},
+						{ only: ["selectedAdmin", "flash"], preserveScroll: true },
+					);
+				}
+			},
+		};
+	}, [pageURL, selectedAdmin?.user["suspended?"]]);
 	const columns: ColumnDef<PageProps["admins"]["data"][number]>[] = [
 		{
 			id: "select",
@@ -261,7 +295,7 @@ export default function Index({
 					});
 
 					router.get(fullUrl, queryParams, {
-						only: ["admins"],
+						only: ["flash"],
 						preserveScroll: true,
 						preserveState: true,
 						replace: true,
@@ -522,7 +556,13 @@ export default function Index({
 												</DropdownMenuItem>
 											)}
 											{isShowSuspend && (
-												<DropdownMenuItem disabled>Suspend</DropdownMenuItem>
+												<DropdownMenuItem
+													onSelect={() => routeTo.suspendAdmin(row.original.id)}
+												>
+													{row.original.user["suspended?"]
+														? "Activate"
+														: "Suspend"}
+												</DropdownMenuItem>
 											)}
 										</DropdownMenuGroup>
 									</>
@@ -626,6 +666,18 @@ export default function Index({
 									setLinkGenerated,
 									forceMode: changePasswordDialog.forceMode,
 									handleOpenChange: changePasswordDialog.onOpenChange,
+								}}
+							/>
+						</ResponsiveDialog>
+					)}
+
+					{selectedAdmin && suspendAdminDialog.isOpen && (
+						<ResponsiveDialog {...suspendAdminDialog}>
+							<SuspendAdminContent
+								{...{
+									selectedAdmin,
+									forceMode: suspendAdminDialog.forceMode,
+									handleOpenChange: suspendAdminDialog.onOpenChange,
 								}}
 							/>
 						</ResponsiveDialog>

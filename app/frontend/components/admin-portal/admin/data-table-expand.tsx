@@ -3,7 +3,7 @@ import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import { format } from "date-fns/format";
-import { Ban, Fingerprint, Pencil, Trash2 } from "lucide-react";
+import { Ban, Fingerprint, Key, Pencil, Trash2 } from "lucide-react";
 import { type ComponentProps, useMemo } from "react";
 import { DeleteAdminAlert } from "./feature-actions";
 
@@ -12,6 +12,7 @@ interface ExpandSubTableProps extends ComponentProps<"div"> {
 	routeTo: {
 		editAdmin: (id: number) => void;
 		changePassword: (id: number) => void;
+		suspendAdmin: (id: number) => void;
 	};
 }
 
@@ -105,9 +106,14 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 				)}
 
 				{isShowSuspend && (
-					<Button variant="destructive" disabled>
-						<Ban />
-						Suspend
+					<Button
+						variant={
+							row.original.user["suspended?"] ? "default" : "destructive"
+						}
+						onClick={() => routeTo.suspendAdmin(row.original.id)}
+					>
+						{row.original.user["suspended?"] ? <Key /> : <Ban />}
+						{row.original.user["suspended?"] ? "Activate" : "Suspend"}
 					</Button>
 				)}
 

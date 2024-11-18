@@ -35,7 +35,7 @@ module AdminPortal
 
     # get the selected data admin for form
     selected_admin_lambda = lambda do
-      selected_param = params[:edit] || params[:change_password]
+      selected_param = params[:edit] || params[:change_password] || params[:suspend]
       selected_param ? admin = Admin.find_by(id: selected_param.to_i) : nil
       serialize_admin(admin)
     end
@@ -131,7 +131,7 @@ module AdminPortal
       error_message = admin&.errors&.first&.full_message || "Failed to update the admin profile."
       flash[:alert] = error_message
       logger.error "Admin profile failed to update for #{admin.user.email}, Errors: #{error_message}"
-      redirect_to admin_portal_admins_path, inertia: { errors: admin&.errors }
+      redirect_to admin_portal_admins_path(edit: admin.id), inertia: { errors: admin&.errors }
     end
 
     logger.info "Process to update admin profile finished..."
@@ -169,7 +169,7 @@ module AdminPortal
     end
   end
 
-  # PUT
+  # PUT /change-password
   def change_password
     logger.info "Starting proccess to change the password account..."
     user_params = params.require(:user).permit(:password, :password_confirmation, :email)
@@ -189,8 +189,9 @@ module AdminPortal
     else
       failed_message = user&.errors&.first&.full_message || "Failed to changed the password."
       logger.info failed_message
-      redirect_to admin_portal_admins_path, alert: failed_message
+      redirect_to admin_portal_admins_path(change_password: user.admin.id), alert: failed_message
     end
+    logger.info "The proccess to change the password account finished..."
   end
 
   private
@@ -221,7 +222,8 @@ module AdminPortal
         only: %i[ id admin_type name ],
         include: {
           user:  {
-            only: %i[ id email ]
+            only: %i[ id email suspend_at suspend_end ],
+            methods: %i[ suspended? ]
           }
         }
       )
