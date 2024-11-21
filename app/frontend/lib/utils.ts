@@ -88,7 +88,7 @@ export function populateQueryParams(
  * @param text - The text to copy to the clipboard
  * @returns A Promise that resolves when the text is successfully copied
  */
-export async function copyToClipboard(text: string): Promise<void> {
+export async function copyToClipboard(text: string): Promise<boolean> {
 	if (
 		navigator.clipboard &&
 		typeof navigator.clipboard.writeText === "function"
@@ -97,12 +97,13 @@ export async function copyToClipboard(text: string): Promise<void> {
 		try {
 			await navigator.clipboard.writeText(text);
 			console.log("Text copied to clipboard successfully!");
+			return true
 		} catch (error) {
 			console.error(
 				"Failed to copy text to clipboard using Clipboard API:",
 				error,
 			);
-			throw error;
+			return false
 		}
 	} else {
 		// Fallback approach
@@ -117,12 +118,13 @@ export async function copyToClipboard(text: string): Promise<void> {
 			const successful = document.execCommand("copy");
 			if (successful) {
 				console.log("Text copied to clipboard successfully (fallback)!");
+				return true
 			} else {
 				throw new Error("Fallback copy failed");
 			}
 		} catch (error) {
 			console.error("Failed to copy text to clipboard using fallback:", error);
-			throw error;
+			return false
 		} finally {
 			document.body.removeChild(textarea);
 		}

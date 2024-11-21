@@ -46,7 +46,7 @@ export default function ToolbarTable({
 			<div className="w-[200px]">
 				<Input
 					value={filterBy.email}
-					endIcon={Search}
+					EndIcon={{ icon: Search }}
 					type="text"
 					placeholder="Filter by email..."
 					onChange={(event) => handleFilterBy({ event, type: "email" })}

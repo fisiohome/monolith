@@ -13,10 +13,11 @@ Rails.application.routes.draw do
   # root to: "inertia_example#index"
 
   devise_for :users, path: "", path_names: {
-    sign_in: "sign-in", sign_out: "sign-out", registration: "auth", sign_up: "sign-up"
+    sign_in: "sign-in", sign_out: "sign-out", registration: "auth", sign_up: "sign-up", password: "auth/password"
   }, controllers: {
     sessions: "users/sessions",
-    registrations: "users/registrations"
+    registrations: "users/registrations",
+    passwords: "users/passwords"
   }
 
   devise_scope :user do

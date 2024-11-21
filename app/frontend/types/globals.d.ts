@@ -5,10 +5,10 @@ export type ResponsiveDialogMode = "dialog" | "drawer";
 
 export interface Auth {
 	currentUser:
-		| null
-		| (Admin & {
-				user: Pick<User, "id" | "email">;
-		  });
+	| null
+	| (Admin & {
+		user: Pick<User, "id" | "email">;
+	});
 }
 export interface FlashMessage {
 	success: string | null;
@@ -21,11 +21,15 @@ export interface AdminPortal {
 	router: {
 		root: string;
 		authenticatedRootPath: string;
+		login: string;
 		logout: string;
 		auth: {
 			registration: {
 				index: string;
 				edit: string;
+			};
+			password: {
+				index: string;
 			};
 		};
 		adminPortalRootPath: string;
