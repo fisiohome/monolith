@@ -10,6 +10,8 @@ class Admin < ApplicationRecord
 
   validates :name, presence: true
 
+  self.implicit_order_column = "created_at"
+
   def is_super_admin?
     self.admin_type === "SUPER_ADMIN"
   end

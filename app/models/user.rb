@@ -10,6 +10,8 @@ class User < ApplicationRecord
   validates :email, presence: true
   validates :email, uniqueness: true
 
+  self.implicit_order_column = "created_at"
+
   def is_online?
     last_online_at.present? && last_online_at >= 5.minutes.ago
   end
