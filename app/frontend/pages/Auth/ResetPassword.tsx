@@ -26,15 +26,15 @@ import { z } from "zod";
 
 const formSchema = z
 	.object({
-		"reset_password_token": z.string(),
-		"password": z
+		reset_password_token: z.string(),
+		password: z
 			.string()
 			.min(8, "New password must be at least 8 characters long")
 			.max(64, "New password must be no more than 64 characters")
 			.regex(/[A-Z]/, "New password must contain at least one uppercase letter")
 			.regex(/\d/, "New password must contain at least one number")
 			.regex(/[\W_]/, "New password must contain at least one symbol"),
-		'password_confirmation': z
+		password_confirmation: z
 			.string()
 			.min(8, "Password confirmation must be at least 8 characters long")
 			.max(64, "Password confirmation must be no more than 64 characters")
@@ -45,7 +45,7 @@ const formSchema = z
 			.regex(/\d/, "Password confirmation must contain at least one number")
 			.regex(/[\W_]/, "Password confirmation must contain at least one symbol"),
 	})
-	.refine((data) => data["password"] === data["password_confirmation"], {
+	.refine((data) => data.password === data.password_confirmation, {
 		message: "Passwords don't match",
 		path: ["password_confirmation"],
 	});
@@ -60,11 +60,12 @@ const ResetPassword = () => {
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			"reset_password_token": globalProps.adminPortal.currentQuery?.['resetPasswordToken'],
-			"password": '',
-			"password_confirmation": ''
+			reset_password_token:
+				globalProps.adminPortal.currentQuery?.resetPasswordToken,
+			password: "",
+			password_confirmation: "",
 		},
-		mode: "onBlur"
+		mode: "onBlur",
 	});
 	function onSubmit(values: z.infer<typeof formSchema>) {
 		console.log("Submitting form to set a new password...");
@@ -80,7 +81,7 @@ const ResetPassword = () => {
 				onFinish: () => {
 					setIsLoading(false);
 				},
-			}
+			},
 		);
 		console.log("Account password successfully changed...");
 	}

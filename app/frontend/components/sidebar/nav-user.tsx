@@ -5,7 +5,13 @@ import {
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuPortal,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -15,7 +21,15 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { Link } from "@inertiajs/react";
-import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
+import {
+	ChevronsUpDown,
+	LogOut,
+	Moon,
+	Settings,
+	Sun,
+	SunMoon,
+} from "lucide-react";
+import { type Theme, useTheme } from "../providers/theme-provider";
 
 export function NavUser({
 	user,
@@ -32,6 +46,11 @@ export function NavUser({
 	};
 }) {
 	const { isMobile } = useSidebar();
+	const { theme, setTheme } = useTheme();
+	const handleToggleTheme = (value: string) => {
+		const themeValue = value as Theme;
+		setTheme(themeValue);
+	};
 
 	return (
 		<SidebarMenu>
@@ -72,6 +91,47 @@ export function NavUser({
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								{theme === "system" ? (
+									<SunMoon className="h-[1.2rem] w-[1.2rem]" />
+								) : (
+									<>
+										<Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+										<Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+									</>
+								)}
+								Toggle Theme
+							</DropdownMenuSubTrigger>
+							<DropdownMenuPortal>
+								<DropdownMenuSubContent>
+									<DropdownMenuRadioGroup
+										value={theme}
+										onValueChange={handleToggleTheme}
+									>
+										<DropdownMenuRadioItem
+											value="dark"
+											onSelect={(event) => event.preventDefault()}
+										>
+											Dark
+										</DropdownMenuRadioItem>
+										<DropdownMenuRadioItem
+											value="light"
+											onSelect={(event) => event.preventDefault()}
+										>
+											Light
+										</DropdownMenuRadioItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuRadioItem
+											value="system"
+											onSelect={(event) => event.preventDefault()}
+										>
+											System
+										</DropdownMenuRadioItem>
+									</DropdownMenuRadioGroup>
+								</DropdownMenuSubContent>
+							</DropdownMenuPortal>
+						</DropdownMenuSub>
 						<DropdownMenuGroup>
 							<DropdownMenuItem asChild className="hover:cursor-pointer">
 								<Link href={url.account}>

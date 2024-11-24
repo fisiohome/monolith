@@ -4,7 +4,7 @@ import type { PropsWithChildren } from "react";
 
 export default function GuestLayout({ children }: PropsWithChildren) {
 	return (
-		<ThemeProvider defaultTheme="system">
+		<ThemeProvider>
 			<ToastProvider>{children}</ToastProvider>
 		</ThemeProvider>
 	);

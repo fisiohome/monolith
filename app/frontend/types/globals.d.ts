@@ -5,10 +5,20 @@ export type ResponsiveDialogMode = "dialog" | "drawer";
 
 export interface Auth {
 	currentUser:
-	| null
-	| (Admin & {
-		user: Pick<User, "id" | "email">;
-	});
+		| null
+		| (Pick<
+				Admin,
+				| "id"
+				| "name"
+				| "adminType"
+				| "isSuperAdmin?"
+				| "isAdminL1?"
+				| "isAdminL12?"
+				| "isAdminL13?"
+				| "isAdminBacklog?"
+		  > & {
+				user: Pick<User, "id" | "email">;
+		  });
 }
 export interface FlashMessage {
 	success: string | null;

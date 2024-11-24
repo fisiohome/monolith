@@ -19,7 +19,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 	({ className, type, StartIcon, EndIcon, ...props }, ref) => {
 		return (
 			<div className="relative w-full">
-				{StartIcon && StartIcon?.isButton ? (
+				{StartIcon?.isButton ? (
 					<Button
 						type="button"
 						variant="ghost"
@@ -48,7 +48,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 					{...props}
 				/>
 
-				{EndIcon && EndIcon?.isButton ? (
+				{EndIcon?.isButton ? (
 					<Button
 						type="button"
 						variant="ghost"

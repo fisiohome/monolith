@@ -97,13 +97,13 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 		try {
 			await navigator.clipboard.writeText(text);
 			console.log("Text copied to clipboard successfully!");
-			return true
+			return true;
 		} catch (error) {
 			console.error(
 				"Failed to copy text to clipboard using Clipboard API:",
 				error,
 			);
-			return false
+			return false;
 		}
 	} else {
 		// Fallback approach
@@ -118,13 +118,12 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 			const successful = document.execCommand("copy");
 			if (successful) {
 				console.log("Text copied to clipboard successfully (fallback)!");
-				return true
-			} else {
-				throw new Error("Fallback copy failed");
+				return true;
 			}
+			throw new Error("Fallback copy failed");
 		} catch (error) {
 			console.error("Failed to copy text to clipboard using fallback:", error);
-			return false
+			return false;
 		} finally {
 			document.body.removeChild(textarea);
 		}

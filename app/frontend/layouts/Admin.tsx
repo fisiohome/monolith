@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
 	);
 
 	return (
-		<ThemeProvider defaultTheme="system">
+		<ThemeProvider>
 			<ToastProvider>
 				<SidebarProvider style={sidebarStyle}>
 					<AppSidebar />

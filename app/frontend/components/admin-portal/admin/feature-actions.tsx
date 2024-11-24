@@ -231,7 +231,10 @@ export const ChangePasswordContent = ({
 											className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7"
 											onClick={async () => {
 												if (await copyToClipboard(linkGenerated)) {
-													toast({ description: 'Text copied to clipboard successfully' })
+													toast({
+														description:
+															"Text copied to clipboard successfully",
+													});
 												}
 											}}
 										>
@@ -545,10 +548,10 @@ export const EditAdminDialogContent = ({
 												>
 													{field.value
 														? humanize(
-															adminTypeList.find(
-																(type) => type === field.value,
-															) || "",
-														)?.toUpperCase()
+																adminTypeList.find(
+																	(type) => type === field.value,
+																) || "",
+															)?.toUpperCase()
 														: "Select admin type"}
 													<ChevronsUpDown className="opacity-50" />
 												</Button>

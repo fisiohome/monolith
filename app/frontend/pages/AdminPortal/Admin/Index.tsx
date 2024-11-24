@@ -42,6 +42,7 @@ import { Head, Link, router, usePage } from "@inertiajs/react";
 import type { ExpandedState, Row } from "@tanstack/react-table";
 import type { Table as TableTanstack } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { formatDistanceToNow } from "date-fns";
 import { format } from "date-fns/format";
 import { Plus } from "lucide-react";
 import { ChevronDown, ChevronUp, Ellipsis, InfinityIcon } from "lucide-react";
@@ -475,7 +476,12 @@ export default function Index({
 										{lastOnlineAt && (
 											<span>
 												Last Online Session:{" "}
-												<b>{format(lastOnlineAt, "PPpp")}</b>
+												<b>
+													{formatDistanceToNow(lastOnlineAt, {
+														includeSeconds: true,
+														addSuffix: true,
+													})}
+												</b>
 											</span>
 										)}
 									</div>
