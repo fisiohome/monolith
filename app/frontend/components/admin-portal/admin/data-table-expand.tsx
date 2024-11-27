@@ -64,9 +64,9 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 					<p className="font-semibold">
 						{row?.original?.user?.lastSignInAt
 							? formatDistanceToNow(row?.original?.user?.lastSignInAt, {
-									includeSeconds: true,
-									addSuffix: true,
-								})
+								includeSeconds: true,
+								addSuffix: true,
+							})
 							: "-"}
 					</p>
 				</div>
@@ -89,7 +89,7 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 					)}
 			</div>
 
-			<div className="flex items-center mt-6 space-x-2">
+			<div className="grid items-center gap-2 mt-6 lg:flex">
 				{isShowEdit && (
 					<Button
 						variant="outline"

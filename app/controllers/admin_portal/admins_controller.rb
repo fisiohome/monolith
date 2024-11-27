@@ -36,7 +36,7 @@ module AdminPortal
     # get the selected data admin for form
     selected_admin_lambda = lambda do
       selected_param = params[:edit] || params[:change_password] || params[:suspend]
-      selected_param ? admin = Admin.find_by(id: selected_param.to_i) : nil
+      selected_param ? admin = Admin.find_by(id: selected_param) : nil
       serialize_admin(admin)
     end
 
@@ -116,7 +116,7 @@ module AdminPortal
   def update
     logger.info "Starting process to update admin profile..."
     update_admin_params = params.require(:admin).permit(:id, :admin_type, :name)
-    admin = Admin.find_by(id: update_admin_params[:id])
+    admin = Admin.find_by!(id: update_admin_params[:id])
     unless admin
       logger.warn "Cannot find the existing admin data with ID #{update_admin_params[:id]}."
       flash[:alert] = "The existing admin could not be found with this e-mail address."

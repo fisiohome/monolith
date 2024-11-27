@@ -42,8 +42,8 @@ export default function ToolbarTable({
 	};
 
 	return (
-		<section className="flex flex-col flex-wrap items-center gap-4 lg:flex-row lg:gap-2">
-			<div className="w-[200px]">
+		<section className="flex flex-col flex-wrap items-center justify-start gap-4 lg:flex-row lg:gap-2">
+			<div className="w-full md:w-[200px]">
 				<Input
 					value={filterBy.email}
 					EndIcon={{ icon: Search }}

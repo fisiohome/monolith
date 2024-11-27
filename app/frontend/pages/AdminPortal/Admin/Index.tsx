@@ -42,6 +42,7 @@ import { Head, Link, router, usePage } from "@inertiajs/react";
 import type { ExpandedState, Row } from "@tanstack/react-table";
 import type { Table as TableTanstack } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import { formatDistanceToNow } from "date-fns";
 import { format } from "date-fns/format";
 import { Plus } from "lucide-react";
@@ -70,6 +71,7 @@ export default function Index({
 	selectedAdmin,
 }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
+	const isDekstop = useMediaQuery("(min-width: 768px)");
 	console.log(globalProps);
 
 	// tabs management
@@ -595,7 +597,7 @@ export default function Index({
 	return (
 		<>
 			<Head title="Admin Management" />
-			<article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-6 space-y-4">
+			<article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-4 md:p-6 space-y-4">
 				<section className="flex items-center justify-between">
 					<h1 className="text-2xl font-bold tracking-tight">Admins</h1>
 					{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
@@ -614,7 +616,7 @@ export default function Index({
 
 				<section className="min-w-full">
 					<Tabs defaultValue={tabActive}>
-						<TabsList>
+						<TabsList className={isDekstop ? "" : "grid grid-cols-3 w-full"}>
 							{tabList.map((tab) => (
 								<Fragment key={tab.value}>
 									<TabsTrigger

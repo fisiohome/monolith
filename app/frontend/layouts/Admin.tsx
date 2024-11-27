@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
 					<SidebarInset>
 						<AppTopBar />
 
-						<div className="flex flex-col flex-1 gap-4 p-4 pt-0">
+						<div className="flex flex-col flex-1 gap-4 pt-0 md:p-4">
 							{children}
 						</div>
 					</SidebarInset>

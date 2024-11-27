@@ -164,16 +164,16 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 													<Button
 														variant="outline"
 														className={cn(
-															"justify-between px-3 py-1 w-[200px]",
+															"justify-between px-3 w-[200px]",
 															!field.value && "text-muted-foreground",
 														)}
 													>
 														{field.value
 															? humanize(
-																	adminTypeList.find(
-																		(type) => type === field.value,
-																	) || "",
-																)?.toUpperCase()
+																adminTypeList.find(
+																	(type) => type === field.value,
+																) || "",
+															)?.toUpperCase()
 															: "Select admin type"}
 														<ChevronsUpDown className="opacity-50" />
 													</Button>
@@ -321,8 +321,8 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 								)}
 							/>
 
-							<div className="flex !mt-6">
-								<Button type="submit">Create</Button>
+							<div className="flex !mt-10 lg:!mt-6">
+								<Button type="submit" className="w-full lg:w-auto">Create</Button>
 							</div>
 						</form>
 					</Form>

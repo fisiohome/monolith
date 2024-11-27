@@ -6,6 +6,7 @@ import {
 	PaginationContent,
 	PaginationEllipsis,
 	PaginationItem,
+	PaginationLink,
 } from "@/components/ui/pagination";
 import {
 	Popover,
@@ -40,48 +41,46 @@ export default function PaginationTable<TData>({
 	metadata,
 }: DataTablePaginationProps<TData>) {
 	return (
-		<div className="flex items-center justify-between text-muted-foreground">
-			{table.getFilteredSelectedRowModel().rows.length ? (
-				<div className="flex-1 text-sm">
-					{table.getFilteredSelectedRowModel().rows.length} of {metadata.count}{" "}
-					row(s) selected.
-				</div>
-			) : (
-				<div className="flex-1 text-sm">
-					<div>{metadata.count} records found</div>
-				</div>
-			)}
+		<div className="grid items-center grid-cols-2 gap-6 lg:grid-cols-4 text-muted-foreground">
+			<div className="lg:col-span-2">
+				{table.getFilteredSelectedRowModel().rows.length ? (
+					<div className="flex-1 text-sm">
+						{table.getFilteredSelectedRowModel().rows.length} of{" "}
+						{metadata.count} row(s) selected.
+					</div>
+				) : (
+					<div className="flex-1 text-sm">
+						<div>{metadata.count} records found</div>
+					</div>
+				)}
+			</div>
 
-			<div className="flex items-center space-x-6 lg:space-x-8">
-				<div className="flex items-center space-x-2">
-					<p className="text-sm">Rows per page</p>
-					<Select
-						value={`${metadata.limit}`}
-						onValueChange={(value) => {
-							const { fullUrl } = populateQueryParams(metadata.pageUrl, {
-								limit: value,
-							});
-							router.get(
-								fullUrl,
-								{},
-								{ preserveState: true, only: ["admins"] },
-							);
-						}}
-					>
-						<SelectTrigger className="bg-background h-8 w-[70px]">
-							<SelectValue placeholder={metadata.limit} />
-						</SelectTrigger>
-						<SelectContent side="top">
-							{[5, 10, 25, 50, 100].map((pageSize) => (
-								<SelectItem key={pageSize} value={`${pageSize}`}>
-									{pageSize}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
+			<div className="flex items-center justify-end space-x-2">
+				<p className="text-sm">Rows per page</p>
+				<Select
+					value={`${metadata.limit}`}
+					onValueChange={(value) => {
+						const { fullUrl } = populateQueryParams(metadata.pageUrl, {
+							limit: value,
+						});
+						router.get(fullUrl, {}, { preserveState: true, only: ["admins"] });
+					}}
+				>
+					<SelectTrigger className="bg-background h-8 w-[70px]">
+						<SelectValue placeholder={metadata.limit} />
+					</SelectTrigger>
+					<SelectContent side="top">
+						{[5, 10, 25, 50, 100].map((pageSize) => (
+							<SelectItem key={pageSize} value={`${pageSize}`}>
+								{pageSize}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
 
-				<div className="flex w-[100px] items-center justify-center text-sm">
+			<div className="flex items-center justify-center col-span-2 lg:col-span-1 lg:justify-end">
+				<div className="lg:flex w-[100px] items-center text-sm hidden">
 					Page {metadata.page} of {metadata.pages}
 				</div>
 
@@ -92,7 +91,7 @@ export default function PaginationTable<TData>({
 								{/* <PaginationPrevious href="#" /> */}
 								<Button
 									variant="outline"
-									className="hidden w-8 h-8 p-0 lg:flex"
+									className="w-8 h-8 p-0"
 									onClick={() =>
 										router.get(
 											metadata.firstUrl,
@@ -122,15 +121,17 @@ export default function PaginationTable<TData>({
 								</Button>
 							</PaginationItem>
 
-							{/* <PaginationItem>
-                <PaginationLink href="#" isActive>1</PaginationLink>
-              </PaginationItem> */}
-
 							<PaginationItem>
 								<Popover>
 									<PopoverTrigger asChild disabled={metadata.pages <= 1}>
 										<Button variant="outline" size="icon">
-											<PaginationEllipsis />
+											{metadata.pages <= 1 ? (
+												<PaginationLink href="#" isActive>
+													1
+												</PaginationLink>
+											) : (
+												<PaginationEllipsis />
+											)}
 										</Button>
 									</PopoverTrigger>
 									<PopoverContent className="w-full">
@@ -186,7 +187,7 @@ export default function PaginationTable<TData>({
 								</Button>
 								<Button
 									variant="outline"
-									className="hidden w-8 h-8 p-0 lg:flex"
+									className="w-8 h-8 p-0"
 									onClick={() =>
 										router.get(
 											metadata.lastUrl,
