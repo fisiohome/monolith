@@ -70,6 +70,6 @@ gem "vite_rails", "~> 3.0"
 
 gem "pagy", "~> 9.2"
 
-gem "standard", "~> 1.42", group: [:development, :test]
+gem "standard", "~> 1.43", group: [:development, :test]
 
 gem "standard-rails", "~> 1.2", group: [:development, :test]
