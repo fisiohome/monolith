@@ -20,6 +20,7 @@ servers:
 proxy:
   ssl: true
   host: admin.fisiohome.id
+  app_port: 5000
 
 # Credentials for your image host.
 registry:
