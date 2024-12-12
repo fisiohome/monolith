@@ -33,11 +33,23 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libpq-dev pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
+# Install JavaScript dependencies
+ARG NODE_VERSION=22.11.0
+ENV PATH=/usr/local/node/bin:$PATH
+RUN curl -sL https://github.com/nodenv/node-build/archive/master.tar.gz | tar xz -C /tmp/ && \
+    /tmp/node-build-master/bin/node-build "${NODE_VERSION}" /usr/local/node && \
+    rm -rf /tmp/node-build-master
+
 # Install application gems
 COPY Gemfile Gemfile.lock ./
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
+
+# Install node modules
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && \
+    rm -rf ~/.npm
 
 # Copy application code
 COPY . .
@@ -48,7 +60,8 @@ RUN bundle exec bootsnap precompile app/ lib/
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
-
+# clean the node modules
+RUN rm -rf node_modules
 
 
 # Final stage for app image

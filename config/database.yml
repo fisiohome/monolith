@@ -87,7 +87,7 @@ production:
   primary: &primary_production
     <<: *default
     database: monolith_production
-    username: monolith
+    username: fisiohome
     password: <%= ENV["MONOLITH_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
