@@ -52,6 +52,17 @@ export interface AdminPortal {
 				suspend: string;
 				activate: string;
 			};
+			therapistManagement: {
+				index: string;
+				new: string;
+			};
+			serviceManagement: {
+				index: string;
+				updateStatus: string;
+			};
+			locationManagement: {
+				index: string;
+			};
 		};
 	};
 }
@@ -60,4 +71,9 @@ export type GlobalPageProps = {
 	flash: FlashMessage;
 	X_CSRF_TOKEN: string;
 	adminPortal: AdminPortal;
+};
+
+export type Timestamp = {
+	createdAt: string;
+	updatedAt: string;
 };

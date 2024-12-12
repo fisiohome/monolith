@@ -1,3 +1,4 @@
+import { type Theme, useTheme } from "@/components/providers/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -20,6 +21,7 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
+import { generateInitials } from "@/lib/utils";
 import { Link } from "@inertiajs/react";
 import {
 	ChevronsUpDown,
@@ -29,7 +31,6 @@ import {
 	Sun,
 	SunMoon,
 } from "lucide-react";
-import { type Theme, useTheme } from "../providers/theme-provider";
 
 export function NavUser({
 	user,
@@ -53,7 +54,7 @@ export function NavUser({
 	};
 
 	return (
-		<SidebarMenu>
+		<SidebarMenu className="rounded-md shadow bg-background">
 			<SidebarMenuItem>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
@@ -63,10 +64,14 @@ export function NavUser({
 						>
 							<Avatar className="w-8 h-8 rounded-lg">
 								<AvatarImage src={user.avatar} alt={user.name} />
-								<AvatarFallback className="rounded-lg">AD</AvatarFallback>
+								<AvatarFallback className="rounded-lg">
+									{generateInitials(user.name)}
+								</AvatarFallback>
 							</Avatar>
 							<div className="grid flex-1 text-sm leading-tight text-left">
-								<span className="font-semibold truncate">{user.name}</span>
+								<span className="font-semibold capitalize truncate">
+									{user.name}
+								</span>
 								<span className="text-xs truncate">{user.email}</span>
 							</div>
 							<ChevronsUpDown className="ml-auto size-4" />
@@ -82,10 +87,14 @@ export function NavUser({
 							<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 								<Avatar className="w-8 h-8 rounded-lg">
 									<AvatarImage src={user.avatar} alt={user.name} />
-									<AvatarFallback className="rounded-lg">AD</AvatarFallback>
+									<AvatarFallback className="rounded-lg">
+										{generateInitials(user.name)}
+									</AvatarFallback>
 								</Avatar>
 								<div className="grid flex-1 text-sm leading-tight text-left">
-									<span className="font-semibold truncate">{user.name}</span>
+									<span className="font-semibold capitalize truncate">
+										{user.name}
+									</span>
 									<span className="text-xs truncate">{user.email}</span>
 								</div>
 							</div>

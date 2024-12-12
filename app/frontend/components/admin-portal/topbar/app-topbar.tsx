@@ -1,4 +1,5 @@
 import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
 	CURRENT_DATE_TOPBAR,
 	INTERVAL_TOPBAR_DATE,
@@ -23,7 +24,6 @@ import {
 	Clock12,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { SidebarTrigger } from "../ui/sidebar";
 
 const CLOCK_ICONS = [
 	Clock1,

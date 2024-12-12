@@ -30,6 +30,17 @@ module InertiaAdminPortal
                 change_password: change_password_admin_portal_admins_path,
                 suspend: admin_portal_suspend_path,
                 activate: admin_portal_activate_path
+              },
+              therapist_management: {
+                index: admin_portal_therapists_path,
+                new: new_admin_portal_therapist_path
+              },
+              service_management: {
+                index: admin_portal_services_path,
+                update_status: update_status_admin_portal_services_path
+              },
+              location_management: {
+                index: admin_portal_locations_path
               }
             }
           },

@@ -71,7 +71,7 @@ export const ResponsiveDialog = ({
 				}}
 			>
 				<div className="w-full max-w-sm mx-auto">
-					<DrawerHeader className="text-left">
+					<DrawerHeader className="px-0 text-left ">
 						<DrawerTitle>{title}</DrawerTitle>
 						<DrawerDescription>{description}</DrawerDescription>
 					</DrawerHeader>
@@ -91,9 +91,11 @@ export interface ResponsiveDialogButton extends ComponentProps<"div"> {
 	forceMode?: ResponsiveDialogMode;
 	LoaderIcon?: LucideIcon;
 	isLoading: boolean;
+	cancelButton?: boolean;
 	cancelText?: string;
 	loaderText?: string;
 	submitText?: string;
+	classSubmitButton?: string;
 }
 
 export const ResponsiveDialogButton = ({
@@ -101,6 +103,7 @@ export const ResponsiveDialogButton = ({
 	LoaderIcon = Loader2,
 	forceMode = DIALOG_MODE,
 	isLoading,
+	cancelButton = true,
 	cancelText = "Cancel",
 	loaderText = "Please wait...",
 	submitText = "Save",
@@ -110,12 +113,12 @@ export const ResponsiveDialogButton = ({
 	return (
 		<div
 			className={cn(
-				"w-full flex justify-end !mt-6 space-x-2",
+				"w-full flex justify-end !mt-6 gap-2",
 				forceMode === "drawer" ? "w-full" : "",
 				className,
 			)}
 		>
-			{forceMode === "dialog" && isDekstop && (
+			{forceMode === "dialog" && isDekstop && cancelButton && (
 				<DialogClose asChild>
 					<Button variant="ghost">{cancelText}</Button>
 				</DialogClose>
@@ -125,8 +128,8 @@ export const ResponsiveDialogButton = ({
 				type="submit"
 				disabled={isLoading}
 				className={cn(
-					"w-full lg:w-auto",
-					forceMode === "drawer" ? "w-full lg:w-full" : "",
+					"w-full md:w-auto order-first md:order-last",
+					forceMode === "drawer" ? "w-full md:w-full" : "",
 				)}
 			>
 				{isLoading ? (

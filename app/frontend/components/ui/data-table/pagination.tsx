@@ -2,9 +2,7 @@ import { Button } from "@/components/ui/button";
 import {
 	Pagination,
 	PaginationContent,
-	PaginationEllipsis,
 	PaginationItem,
-	PaginationLink,
 } from "@/components/ui/pagination";
 import {
 	Select,
@@ -29,8 +27,8 @@ export function DataTablePagination<TData>({
 	table,
 }: DataTablePaginationProps<TData>) {
 	return (
-		<div className="grid items-center grid-cols-2 gap-6 lg:grid-cols-4 text-muted-foreground">
-			<div className="lg:col-span-2">
+		<div className="grid items-center grid-cols-2 gap-6 lg:grid-cols-12 text-muted-foreground">
+			<div className="text-nowrap">
 				{table.getFilteredSelectedRowModel().rows.length ? (
 					<div className="flex-1 text-sm">
 						{table.getFilteredSelectedRowModel().rows.length} of{" "}
@@ -43,8 +41,8 @@ export function DataTablePagination<TData>({
 				)}
 			</div>
 
-			<div className="flex items-center justify-end space-x-2">
-				<p className="text-sm">Rows per page</p>
+			<div className="flex items-center justify-end space-x-2 lg:col-end-9 2xl:col-end-10">
+				<p className="text-sm text-nowrap">Rows per page</p>
 				<Select
 					value={`${table.getState().pagination.pageSize}`}
 					onValueChange={(value) => {
@@ -64,8 +62,8 @@ export function DataTablePagination<TData>({
 				</Select>
 			</div>
 
-			<div className="flex items-center justify-center col-span-2 lg:col-span-1 lg:justify-end">
-				<div className="lg:flex w-[100px] items-center text-sm hidden">
+			<div className="flex items-center justify-center col-span-2 gap-2 lg:col-end-13 lg:justify-end">
+				<div className="lg:flex w-[100px] items-center text-sm hidden whitespace-nowrap">
 					Page {table.getState().pagination.pageIndex + 1} of{" "}
 					{table.getPageCount()}
 				</div>
@@ -95,17 +93,17 @@ export function DataTablePagination<TData>({
 								</Button>
 							</PaginationItem>
 
-							<PaginationItem>
-								<PaginationLink href="#" isActive>
+							{/* <PaginationItem>
+								<PaginationLink href="#" isActive={(table.getState().pagination.pageIndex + 1) === 1}>
 									1
 								</PaginationLink>
-							</PaginationItem>
+							</PaginationItem> */}
 
-							{table.getPageCount() > 1 && (
+							{/* {table.getPageCount() > 1 && (
 								<PaginationItem>
 									<PaginationEllipsis />
 								</PaginationItem>
-							)}
+							)} */}
 
 							<PaginationItem className="flex space-x-1">
 								{/* <PaginationNext href="#" /> */}

@@ -6,6 +6,7 @@ class User < ApplicationRecord
          :trackable
 
   has_one :admin, dependent: :destroy
+  has_one :therapist, dependent: :destroy
 
   validates :email, presence: true
   validates :email, uniqueness: true

@@ -5,23 +5,13 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+export function goBackHandler() {
+	window.history.back();
+}
+
 export function generateInitials(input: string): string {
 	// Convert the input to lowercase and split it into individual words
 	const wordArray = input.toLowerCase().split(" ");
-
-	// Check specific cases first
-	if (
-		input.toLowerCase() === "super admin special" ||
-		input.toLowerCase() === "super admin"
-	) {
-		return "SA";
-	}
-
-	// If the string is 'super', return 'SU'
-	if (input.toLowerCase() === "super") {
-		return "SU";
-	}
-
 	// Extract the first letter of each word and combine them
 	const initials = wordArray
 		.map((word) => word.charAt(0).toUpperCase())

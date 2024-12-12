@@ -44,7 +44,7 @@ module AdminPortal
       admins: admins,
       selected_admin: -> {
         selected_admin_lambda.call&.then { |admin| deep_transform_keys_to_camel_case(admin) }
-       },
+      },
       admin_type_list: -> { Admin::TYPES }
     })
   end

@@ -1,3 +1,5 @@
+import type { Timestamp } from "./globals";
+
 export type User = {
 	id: number;
 	email: string;
@@ -9,6 +11,4 @@ export type User = {
 	"suspended?": boolean;
 	suspendAt: string | null;
 	suspendEnd: string | null;
-	createdAt: string | null;
-	updatedAt: string | null;
-};
+} & Timestamp;

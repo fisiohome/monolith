@@ -1,5 +1,4 @@
 import ExpandSubTable from "@/components/admin-portal/admin/data-table-expand";
-import PaginationTable from "@/components/admin-portal/admin/data-table-pagination";
 import ToolbarTable from "@/components/admin-portal/admin/data-table-toolbar";
 import {
 	ChangePasswordContent,
@@ -7,6 +6,8 @@ import {
 	EditAdminDialogContent,
 	SuspendAdminContent,
 } from "@/components/admin-portal/admin/feature-actions";
+import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
+import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
@@ -72,7 +73,6 @@ export default function Index({
 }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 	const isDekstop = useMediaQuery("(min-width: 768px)");
-	console.log(globalProps);
 
 	// tabs management
 	const tabActive = useMemo(
@@ -105,7 +105,11 @@ export default function Index({
 		router.get(
 			fullUrl,
 			{ ...queryParams },
-			{ replace: true, preserveState: true, only: ["admins"] },
+			{
+				replace: true,
+				preserveState: true,
+				only: ["admins", "adminPortal", "flash"],
+			},
 		);
 	};
 
@@ -159,7 +163,6 @@ export default function Index({
 			description:
 				"Make changes to selected admin profile here. Click save when you're done.",
 			isOpen: !!queryParams?.edit || false,
-			dialogWidth: "350px",
 			onOpenChange: (value: boolean) => {
 				if (!value) {
 					const { fullUrl } = populateQueryParams(pageURL, { edit: null });
@@ -365,7 +368,7 @@ export default function Index({
 				return (
 					<>
 						<div className="flex items-center gap-2 text-sm text-left">
-							<Avatar className="w-8 h-8 rounded-lg">
+							<Avatar className="w-8 h-8 border rounded-lg">
 								<AvatarImage src="#" alt={name} />
 								<AvatarFallback
 									className={cn(
@@ -431,17 +434,20 @@ export default function Index({
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger>
-									<Badge variant="destructive">Suspended</Badge>
+									<div className="flex items-center space-x-2">
+										<div className="bg-red-700 rounded-full size-2" />
+										<span>Suspended</span>
+									</div>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
 									<div className="flex flex-col">
 										{suspendedAt && (
 											<span>
-												Suspended on: <b>{format(suspendedAt, "PP")}</b>
+												Suspend on: <b>{format(suspendedAt, "PP")}</b>
 											</span>
 										)}
 										<span className="flex items-center">
-											Suspended end:{" "}
+											Suspend until:{" "}
 											<b>
 												{suspendEnd ? (
 													format(suspendEnd, "PP")
@@ -461,11 +467,17 @@ export default function Index({
 					<TooltipProvider>
 						<Tooltip>
 							<TooltipTrigger className="space-x-1">
-								<Badge variant={isOnline ? "default" : "outline"}>
-									{isOnline ? "Online" : "Offline"}
-								</Badge>
+								<div className="flex items-center space-x-2">
+									<div
+										className={cn(
+											"rounded-full size-2",
+											isOnline ? "bg-green-700" : "bg-muted-foreground",
+										)}
+									/>
+									<span>{isOnline ? "Online" : "Offline"}</span>
+								</div>
 							</TooltipTrigger>
-							<TooltipContent side="bottom">
+							<TooltipContent>
 								{isOnline ? (
 									<span>
 										Current IP: <b>{currentIP}</b>
@@ -597,101 +609,99 @@ export default function Index({
 	return (
 		<>
 			<Head title="Admin Management" />
-			<article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-4 md:p-6 space-y-4">
-				<section className="flex items-center justify-between">
-					<h1 className="text-2xl font-bold tracking-tight">Admins</h1>
-					{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-						<Button asChild>
-							<Link
-								href={
-									globalProps.adminPortal.router.adminPortal.adminManagement.new
-								}
-							>
-								<Plus />
-								Add Admin
-							</Link>
-						</Button>
-					)}
-				</section>
 
-				<section className="min-w-full">
-					<Tabs defaultValue={tabActive}>
-						<TabsList className={isDekstop ? "" : "grid grid-cols-3 w-full"}>
-							{tabList.map((tab) => (
-								<Fragment key={tab.value}>
-									<TabsTrigger
-										value={tab.value}
-										onClick={() => handleTabClick(tab.value)}
-									>
-										{tab.text}
-									</TabsTrigger>
-								</Fragment>
-							))}
-						</TabsList>
+			<PageContainer className="flex items-center justify-between">
+				<h1 className="text-2xl font-bold tracking-tight">Admins</h1>
+				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+					<Button asChild>
+						<Link
+							href={
+								globalProps.adminPortal.router.adminPortal.adminManagement.new
+							}
+						>
+							<Plus />
+							Add Admin
+						</Link>
+					</Button>
+				)}
+			</PageContainer>
 
+			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+				<Tabs defaultValue={tabActive}>
+					<TabsList
+						className={cn("", isDekstop ? "" : "grid grid-cols-3 w-full")}
+					>
 						{tabList.map((tab) => (
 							<Fragment key={tab.value}>
-								<TabsContent value={tab.value}>
-									<DataTable
-										columns={columns}
-										data={admins.data}
-										toolbar={(table) => <ToolbarTable table={table} />}
-										subComponent={(row) => (
-											<ExpandSubTable row={row} routeTo={routeTo} />
-										)}
-										customPagination={(table) => (
-											<PaginationTable
-												table={table}
-												metadata={admins.metadata}
-											/>
-										)}
-										currentExpanded={currentExpanded}
-									/>
-								</TabsContent>
+								<TabsTrigger
+									value={tab.value}
+									onClick={() => handleTabClick(tab.value)}
+								>
+									{tab.text}
+								</TabsTrigger>
 							</Fragment>
 						))}
-					</Tabs>
+					</TabsList>
 
-					{selectedAdmin && editAdminDialog.isOpen && (
-						<ResponsiveDialog {...editAdminDialog}>
-							<EditAdminDialogContent
-								{...{
-									selectedAdmin,
-									adminTypeList,
-									forceMode: editAdminDialog.forceMode,
-									handleOpenChange: editAdminDialog.onOpenChange,
-								}}
-							/>
-						</ResponsiveDialog>
-					)}
+					{tabList.map((tab) => (
+						<Fragment key={tab.value}>
+							<TabsContent value={tab.value}>
+								<DataTable
+									columns={columns}
+									data={admins.data}
+									toolbar={(table) => <ToolbarTable table={table} />}
+									subComponent={(row) => (
+										<ExpandSubTable row={row} routeTo={routeTo} />
+									)}
+									customPagination={(table) => (
+										<PaginationTable table={table} metadata={admins.metadata} />
+									)}
+									currentExpanded={currentExpanded}
+								/>
+							</TabsContent>
+						</Fragment>
+					))}
+				</Tabs>
 
-					{selectedAdmin && changePasswordDialog.isOpen && (
-						<ResponsiveDialog {...changePasswordDialog}>
-							<ChangePasswordContent
-								{...{
-									selectedAdmin,
-									linkGenerated,
-									setLinkGenerated,
-									forceMode: changePasswordDialog.forceMode,
-									handleOpenChange: changePasswordDialog.onOpenChange,
-								}}
-							/>
-						</ResponsiveDialog>
-					)}
+				{selectedAdmin && editAdminDialog.isOpen && (
+					<ResponsiveDialog {...editAdminDialog}>
+						<EditAdminDialogContent
+							{...{
+								selectedAdmin,
+								adminTypeList,
+								forceMode: editAdminDialog.forceMode,
+								handleOpenChange: editAdminDialog.onOpenChange,
+							}}
+						/>
+					</ResponsiveDialog>
+				)}
 
-					{selectedAdmin && suspendAdminDialog.isOpen && (
-						<ResponsiveDialog {...suspendAdminDialog}>
-							<SuspendAdminContent
-								{...{
-									selectedAdmin,
-									forceMode: suspendAdminDialog.forceMode,
-									handleOpenChange: suspendAdminDialog.onOpenChange,
-								}}
-							/>
-						</ResponsiveDialog>
-					)}
-				</section>
-			</article>
+				{selectedAdmin && changePasswordDialog.isOpen && (
+					<ResponsiveDialog {...changePasswordDialog}>
+						<ChangePasswordContent
+							{...{
+								selectedAdmin,
+								linkGenerated,
+								setLinkGenerated,
+								forceMode: changePasswordDialog.forceMode,
+								handleOpenChange: changePasswordDialog.onOpenChange,
+							}}
+						/>
+					</ResponsiveDialog>
+				)}
+
+				{selectedAdmin && suspendAdminDialog.isOpen && (
+					<ResponsiveDialog {...suspendAdminDialog}>
+						<SuspendAdminContent
+							{...{
+								selectedAdmin,
+								forceMode: suspendAdminDialog.forceMode,
+								handleOpenChange: suspendAdminDialog.onOpenChange,
+							}}
+						/>
+					</ResponsiveDialog>
+				)}
+			</PageContainer>
 		</>
 	);
 }

@@ -20,3 +20,8 @@ export const ADMIN_TYPES = [
 	"ADMIN_L3",
 	"ADMIN_BACKLOG",
 ] as const;
+
+export const GENDERS = ["MALE", "FEMALE"] as const;
+
+export const EMPLOYMENT_STATUSES = ["ACTIVE", "HOLD", "INACTIVE"] as const;
+export const EMPLOYMENT_TYPES = ["KARPIS", "FLAT"] as const;

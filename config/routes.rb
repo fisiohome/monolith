@@ -27,7 +27,6 @@ Rails.application.routes.draw do
       namespace :admin_portal, path: "admin-portal" do
         root to: "admins#index"
 
-        # resources :posts
         # resources :users, path: "accounts", as: "account_management"
         put "suspend" => "users#suspend_account"
         put "activate" => "users#activate_account"
@@ -38,6 +37,14 @@ Rails.application.routes.draw do
             put "change-password" => "admins#change_password"
           end
         end
+
+        resources :therapists
+        resources :services, only: [ :index, :create, :update, :destroy ] do
+          collection do
+            put "update-status" => "services#update_status"
+          end
+        end
+        resources :locations, only: [ :index, :create ]
       end
     end
 

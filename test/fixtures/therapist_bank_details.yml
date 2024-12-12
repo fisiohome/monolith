@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  therapist: one
+  bank_detail: one
+  active: false
+
+two:
+  therapist: two
+  bank_detail: two
+  active: false

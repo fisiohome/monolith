@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  therapist: one
+  bank_name: MyString
+  account_number: MyString
+  account_holder_name: MyString
+  active: false
+
+two:
+  therapist: two
+  bank_name: MyString
+  account_number: MyString
+  account_holder_name: MyString
+  active: false

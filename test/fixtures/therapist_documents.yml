@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  contract_document: MyString
+  registration_certificate_document: MyString
+  registration_certificate_valid_period: 2024-11-26
+  agreement_document: MyString
+  curriculum_vitae_document: MyString
+  standard_operating_procedure_document: MyString
+  therapist: one
+
+two:
+  contract_document: MyString
+  registration_certificate_document: MyString
+  registration_certificate_valid_period: 2024-11-26
+  agreement_document: MyString
+  curriculum_vitae_document: MyString
+  standard_operating_procedure_document: MyString
+  therapist: two

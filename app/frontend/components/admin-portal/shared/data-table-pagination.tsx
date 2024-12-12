@@ -41,8 +41,8 @@ export default function PaginationTable<TData>({
 	metadata,
 }: DataTablePaginationProps<TData>) {
 	return (
-		<div className="grid items-center grid-cols-2 gap-6 lg:grid-cols-4 text-muted-foreground">
-			<div className="lg:col-span-2">
+		<div className="grid items-center grid-cols-2 gap-6 lg:grid-cols-12 text-muted-foreground">
+			<div className="text-nowrap">
 				{table.getFilteredSelectedRowModel().rows.length ? (
 					<div className="flex-1 text-sm">
 						{table.getFilteredSelectedRowModel().rows.length} of{" "}
@@ -55,15 +55,15 @@ export default function PaginationTable<TData>({
 				)}
 			</div>
 
-			<div className="flex items-center justify-end space-x-2">
-				<p className="text-sm">Rows per page</p>
+			<div className="flex items-center justify-end space-x-2 lg:col-end-9 2xl:col-end-10">
+				<p className="text-sm text-nowrap">Rows per page</p>
 				<Select
 					value={`${metadata.limit}`}
 					onValueChange={(value) => {
 						const { fullUrl } = populateQueryParams(metadata.pageUrl, {
 							limit: value,
 						});
-						router.get(fullUrl, {}, { preserveState: true, only: ["admins"] });
+						router.get(fullUrl, {}, { preserveState: true });
 					}}
 				>
 					<SelectTrigger className="bg-background h-8 w-[70px]">
@@ -79,8 +79,8 @@ export default function PaginationTable<TData>({
 				</Select>
 			</div>
 
-			<div className="flex items-center justify-center col-span-2 lg:col-span-1 lg:justify-end">
-				<div className="lg:flex w-[100px] items-center text-sm hidden">
+			<div className="flex items-center justify-center col-span-2 gap-2 lg:col-end-13 lg:justify-end">
+				<div className="lg:flex w-[100px] items-center text-sm hidden whitespace-nowrap">
 					Page {metadata.page} of {metadata.pages}
 				</div>
 
@@ -93,11 +93,7 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(
-											metadata.firstUrl,
-											{},
-											{ preserveState: true, only: ["admins"] },
-										)
+										router.get(metadata.firstUrl, {}, { preserveState: true })
 									}
 									disabled={!metadata.prev}
 								>
@@ -108,11 +104,7 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(
-											metadata.prevUrl,
-											{},
-											{ preserveState: true, only: ["admins"] },
-										)
+										router.get(metadata.prevUrl, {}, { preserveState: true })
 									}
 									disabled={!metadata.prev}
 								>
@@ -157,7 +149,7 @@ export default function PaginationTable<TData>({
 															router.get(
 																metadata.pageUrl,
 																{ page: Number(value) },
-																{ preserveState: true, only: ["admins"] },
+																{ preserveState: true },
 															);
 														}}
 													/>
@@ -174,11 +166,7 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(
-											metadata.nextUrl,
-											{},
-											{ preserveState: true, only: ["admins"] },
-										)
+										router.get(metadata.nextUrl, {}, { preserveState: true })
 									}
 									disabled={!metadata.next}
 								>
@@ -189,11 +177,7 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(
-											metadata.lastUrl,
-											{},
-											{ preserveState: true, only: ["admins"] },
-										)
+										router.get(metadata.lastUrl, {}, { preserveState: true })
 									}
 									disabled={!metadata.next}
 								>

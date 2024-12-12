@@ -1,5 +1,3 @@
-import { NavMain } from "@/components/sidebar/nav-main";
-import { NavUser } from "@/components/sidebar/nav-user";
 import {
 	Sidebar,
 	SidebarContent,
@@ -9,19 +7,25 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { humanize } from "@/lib/utils";
 import type { GlobalPageProps } from "@/types/globals";
 import { Link, usePage } from "@inertiajs/react";
-import { HousePlus, Users } from "lucide-react";
+import { HandPlatter, HousePlus, Users } from "lucide-react";
 import type * as React from "react";
 import { useMemo } from "react";
+import { NavMain } from "./nav-main";
+import { NavUser } from "./nav-user";
 
 export default function AppSidebar({
 	...props
 }: React.ComponentProps<typeof Sidebar>) {
 	const { props: globalProps, url: currentUrl } = usePage<GlobalPageProps>();
+	console.log(globalProps);
 	const navUserProps = useMemo<React.ComponentProps<typeof NavUser>>(() => {
 		const user = {
-			name: "Admin",
+			name: globalProps.auth.currentUser?.adminType
+				? humanize(globalProps.auth.currentUser?.adminType)
+				: "Admin",
 			email: globalProps.auth.currentUser?.user.email || "",
 			avatar: "",
 		};
@@ -33,6 +37,7 @@ export default function AppSidebar({
 		return { user, url };
 	}, [
 		globalProps.auth.currentUser?.user.email,
+		globalProps.auth.currentUser?.adminType,
 		globalProps.adminPortal.router.logout,
 		globalProps.adminPortal.router.auth.registration.edit,
 	]);
@@ -46,20 +51,49 @@ export default function AppSidebar({
 				isActive: true,
 				items: [
 					{
-						title: "Admin",
+						title: "Admins",
 						url: globalProps.adminPortal.router.authenticatedRootPath,
 						isActive: false,
 					},
 					{
-						title: "Physiotherapy",
-						url: "#",
+						title: "Therapists",
+						url: globalProps.adminPortal.router.adminPortal.therapistManagement
+							.index,
+						isActive: false,
+					},
+				],
+			},
+			{
+				title: "Service Management",
+				url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
+				icon: HandPlatter,
+				isActive: false,
+				items: [
+					{
+						title: "Services",
+						url: globalProps.adminPortal.router.adminPortal.serviceManagement
+							.index,
+						isActive: false,
+					},
+					{
+						title: "Locations",
+						url: globalProps.adminPortal.router.adminPortal.locationManagement
+							.index,
 						isActive: false,
 					},
 				],
 			},
 		].map((menu) => {
-			const isActiveLink = (currentUrl: string, menuUrl: string) =>
-				currentUrl === menuUrl || currentUrl.startsWith(`${menuUrl}/`);
+			const isActiveLink = (currentUrl: string, menuUrl: string) => {
+				const isRoot =
+					menuUrl === globalProps.adminPortal.router.authenticatedRootPath;
+				const commonActiveURL =
+					currentUrl === menuUrl || currentUrl.startsWith(`${menuUrl}/`);
+
+				if (!isRoot) return commonActiveURL || currentUrl.includes(menuUrl);
+
+				return commonActiveURL;
+			};
 			const updatedMenu = { ...menu, isActive: false };
 
 			if (menu.items && Array.isArray(menu.items)) {
@@ -79,12 +113,16 @@ export default function AppSidebar({
 		});
 
 		return { items };
-	}, [currentUrl, globalProps.adminPortal.router.authenticatedRootPath]);
+	}, [
+		currentUrl,
+		globalProps.adminPortal.router.adminPortal,
+		globalProps.adminPortal.router.authenticatedRootPath,
+	]);
 
 	return (
 		<Sidebar variant="inset" {...props}>
 			<SidebarHeader>
-				<SidebarMenu>
+				<SidebarMenu className="rounded-md shadow bg-background">
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>
 							<Link href={globalProps.adminPortal.router.authenticatedRootPath}>

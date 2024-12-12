@@ -4,7 +4,14 @@ import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import { formatDistanceToNow } from "date-fns";
 import { format } from "date-fns/format";
-import { Ban, Fingerprint, Key, Pencil, Trash2 } from "lucide-react";
+import {
+	Ban,
+	Fingerprint,
+	InfinityIcon,
+	Key,
+	Pencil,
+	Trash2,
+} from "lucide-react";
 import { type ComponentProps, useMemo } from "react";
 import { DeleteAdminAlert } from "./feature-actions";
 
@@ -64,9 +71,9 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 					<p className="font-semibold">
 						{row?.original?.user?.lastSignInAt
 							? formatDistanceToNow(row?.original?.user?.lastSignInAt, {
-								includeSeconds: true,
-								addSuffix: true,
-							})
+									includeSeconds: true,
+									addSuffix: true,
+								})
 							: "-"}
 					</p>
 				</div>
@@ -87,6 +94,29 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 							</p>
 						</div>
 					)}
+				{row.original.user["suspended?"] && (
+					<>
+						<div className="space-y-1">
+							<p className="text-xs text-muted-foreground">Suspend on</p>
+							<p className="font-semibold">
+								{row?.original?.user?.suspendAt
+									? format(row.original.user.suspendAt, "PP")
+									: "-"}
+							</p>
+						</div>
+
+						<div className="space-y-1">
+							<p className="text-xs text-muted-foreground">Suspend until</p>
+							<p className="font-semibold">
+								{row?.original?.user?.suspendEnd ? (
+									format(row.original.user.suspendEnd, "PP")
+								) : (
+									<InfinityIcon className="size-4" />
+								)}
+							</p>
+						</div>
+					</>
+				)}
 			</div>
 
 			<div className="grid items-center gap-2 mt-6 lg:flex">

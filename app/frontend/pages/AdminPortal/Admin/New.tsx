@@ -27,7 +27,7 @@ import { cn, humanize } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import {
 	Check,
 	ChevronLeft,
@@ -112,9 +112,13 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 				<div className="space-y-6 lg:w-6/12">
 					<div className="flex items-center gap-4">
 						<div className="flex items-center gap-2">
-							<Link href={globalProps.adminPortal.router.authenticatedRootPath}>
-								<ChevronLeft />
-							</Link>
+							<ChevronLeft
+								className="cursor-pointer"
+								onClick={() => {
+									window.history.back();
+								}}
+							/>
+
 							<Separator
 								orientation="vertical"
 								className="h-5 bg-muted-foreground/50"
@@ -170,10 +174,10 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 													>
 														{field.value
 															? humanize(
-																adminTypeList.find(
-																	(type) => type === field.value,
-																) || "",
-															)?.toUpperCase()
+																	adminTypeList.find(
+																		(type) => type === field.value,
+																	) || "",
+																)?.toUpperCase()
 															: "Select admin type"}
 														<ChevronsUpDown className="opacity-50" />
 													</Button>
@@ -321,8 +325,21 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 								)}
 							/>
 
-							<div className="flex !mt-10 lg:!mt-6">
-								<Button type="submit" className="w-full lg:w-auto">Create</Button>
+							<div className="!mt-10 lg:!mt-6 gap-4 flex flex-col md:flex-row md:justify-end">
+								<Button
+									type="button"
+									variant="outline"
+									className="w-full lg:w-auto"
+									onClick={() => {
+										window.history.back();
+									}}
+								>
+									Back
+								</Button>
+
+								<Button type="submit" className="w-full lg:w-auto">
+									Create
+								</Button>
 							</div>
 						</form>
 					</Form>
