@@ -6,5 +6,5 @@ class LocationService < ApplicationRecord
   belongs_to :service
 
   # define the validation
-  validates :location_id, uniqueness: { scope: :service_id }
+  validates :location_id, uniqueness: {scope: :service_id}
 end

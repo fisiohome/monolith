@@ -33,7 +33,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
     prev_unconfirmed_email = resource.unconfirmed_email if resource.respond_to?(:unconfirmed_email)
     logger.debug "Previous unconfirmed email: #{prev_unconfirmed_email}" if prev_unconfirmed_email
 
-
     resource_updated = update_resource(resource, account_update_params)
     if resource_updated
       logger.info "Password updated successfully for auth:#{resource_name}/#{resource.email}"

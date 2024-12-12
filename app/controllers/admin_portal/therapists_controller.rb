@@ -1,6 +1,6 @@
 module AdminPortal
   class TherapistsController < ApplicationController
-    before_action :set_therapist, only: %i[ show edit update destroy ]
+    before_action :set_therapist, only: %i[show edit update destroy]
 
     # GET /therapists
     def index
@@ -44,7 +44,7 @@ module AdminPortal
       if @therapist.save
         redirect_to @therapist, notice: "Therapist was successfully created."
       else
-        redirect_to new_therapist_url, inertia: { errors: @therapist.errors }
+        redirect_to new_therapist_url, inertia: {errors: @therapist.errors}
       end
     end
 
@@ -53,7 +53,7 @@ module AdminPortal
       if @therapist.update(therapist_params)
         redirect_to @therapist, notice: "Therapist was successfully updated."
       else
-        redirect_to edit_therapist_url(@therapist), inertia: { errors: @therapist.errors }
+        redirect_to edit_therapist_url(@therapist), inertia: {errors: @therapist.errors}
       end
     end
 
@@ -64,25 +64,26 @@ module AdminPortal
     end
 
     private
-      # Use callbacks to share common setup or constraints between actions.
-      def set_therapist
-        @therapist = Therapist.find(params[:id])
-      end
 
-      # Only allow a list of trusted parameters through.
-      def therapist_params
-        params.fetch(:therapist, {})
-      end
+    # Use callbacks to share common setup or constraints between actions.
+    def set_therapist
+      @therapist = Therapist.find(params[:id])
+    end
 
-      def serialize_therapist(therapist)
-        therapist.as_json(
-          only: %i[ id ],
-          include: {
-            user: {
-              only: %i[ id email ]
-            }
+    # Only allow a list of trusted parameters through.
+    def therapist_params
+      params.fetch(:therapist, {})
+    end
+
+    def serialize_therapist(therapist)
+      therapist.as_json(
+        only: %i[id],
+        include: {
+          user: {
+            only: %i[id email]
           }
-        )
-      end
+        }
+      )
+    end
   end
 end

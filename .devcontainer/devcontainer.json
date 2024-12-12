@@ -14,8 +14,12 @@
     "ghcr.io/devcontainers-community/npm-features/typescript:1": {},
     "ghcr.io/devcontainers-community/npm-features/prettier:1": {},
     "ghcr.io/devcontainers/features/node:1": {},
-    "ghcr.io/michidk/devcontainers-features/bun:1": {}
+    "ghcr.io/michidk/devcontainers-features/bun:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {}
   },
+  "mounts": [
+    "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly"
+  ],
   "containerEnv": {
     "CAPYBARA_SERVER_PORT": "45678",
     "SELENIUM_HOST": "selenium",

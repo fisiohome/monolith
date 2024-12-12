@@ -7,6 +7,6 @@ class CreateTherapistAddresses < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    add_index :therapist_addresses, [ :therapist_id, :active ], unique: true, where: "active = true"
+    add_index :therapist_addresses, [:therapist_id, :active], unique: true, where: "active = true"
   end
 end

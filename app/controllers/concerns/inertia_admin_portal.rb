@@ -44,7 +44,7 @@ module InertiaAdminPortal
               }
             }
           },
-          current_query: request.query_parameters.present? ? request.query_parameters : nil,
+          current_query: request.query_parameters.presence,
           current_locale: I18n.locale,
           current_timezone: Time.zone.name
         }

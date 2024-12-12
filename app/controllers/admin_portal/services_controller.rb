@@ -1,6 +1,6 @@
 module AdminPortal
   class ServicesController < ApplicationController
-    before_action :get_service, only: %i[ update destroy update_status ]
+    before_action :get_service, only: %i[update destroy update_status]
 
     def index
       filter_by_status = params[:filter_by_status]
@@ -11,9 +11,12 @@ module AdminPortal
         .includes(:location_services)
         .all
         .where(
-          filter_by_status == "active" ? [ "active IS NOT NULL AND active IS true" ] :
-          filter_by_status == "inactive" ? [ "active IS NULL OR active IS false" ] :
-          nil
+          if filter_by_status == "active"
+            ["active IS NOT NULL AND active IS true"]
+          else
+            (filter_by_status == "inactive") ? ["active IS NULL OR active IS false"] :
+                        nil
+          end
         )
         .sort_by { |item| item.active ? 0 : 1 }
 
@@ -51,7 +54,7 @@ module AdminPortal
         flash[:alert] = error_message
         redirect_to admin_portal_services_path, inertia: {
           errors: deep_transform_keys_to_camel_case(
-            new_service.errors.to_hash.merge({ full_messages: new_service.errors.full_messages })
+            new_service.errors.to_hash.merge({full_messages: new_service.errors.full_messages})
           )
         }
       end
@@ -61,7 +64,7 @@ module AdminPortal
     def update
       logger.info("Starting the process to update service.")
 
-      update_service_params = params.require(:service).permit(:name, :code, :active, locations: [ :id, :city, :active ])
+      update_service_params = params.require(:service).permit(:name, :code, :active, locations: [:id, :city, :active])
       Service.transaction do
         if @service.update(update_service_params.except(:locations))
           logger.info("Service details with name #{@service.name} updated successfully. Proceeding to update locations.")
@@ -98,7 +101,7 @@ module AdminPortal
           flash[:alert] = error_message
           redirect_to admin_portal_services_path(edit: @service.id), inertia: {
             errors: deep_transform_keys_to_camel_case(
-              @service.errors.to_hash.merge({ full_messages: @service.errors.full_messages })
+              @service.errors.to_hash.merge({full_messages: @service.errors.full_messages})
             )
           }
         end
@@ -133,7 +136,7 @@ module AdminPortal
         flash[:alert] = error_message
         redirect_to admin_portal_services_path(update_status: @service.id), inertia: {
           errors: deep_transform_keys_to_camel_case(
-            @service.errors.to_hash.merge({ full_messages: @service.errors.full_messages })
+            @service.errors.to_hash.merge({full_messages: @service.errors.full_messages})
           )
         }
       end
