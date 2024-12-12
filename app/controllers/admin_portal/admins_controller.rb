@@ -1,7 +1,7 @@
 module AdminPortal
   class AdminsController < ApplicationController
     # before_action :set_admin, only: %i[ show edit update destroy ]
-    before_action :set_admin, only: %i[ update destroy ]
+    before_action :set_admin, only: %i[update destroy]
 
     # GET /admins
     def index
@@ -17,9 +17,12 @@ module AdminPortal
         .joins(:user)
         .where(filter_by_email.present? ? ["users.email ILIKE ?", "%#{filter_by_email}%"] : nil)
         .where(
-          filter_by_account_status == "active" ? ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current] :
-            filter_by_account_status == "suspended" ? ["(users.suspend_at IS NOT NULL AND users.suspend_at <= ?) AND (users.suspend_end IS NULL OR users.suspend_end >= ?)", Time.current, Time.current] :
-            nil
+          if filter_by_account_status == "active"
+            ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
+          else
+            (filter_by_account_status == "suspended") ? ["(users.suspend_at IS NOT NULL AND users.suspend_at <= ?) AND (users.suspend_end IS NULL OR users.suspend_end >= ?)", Time.current, Time.current] :
+                        nil
+          end
         )
         .sort_by { |u| u.user.is_online? ? 1 : 0 }.reverse
       # .order(sort_by_last_online_at)
@@ -30,7 +33,7 @@ module AdminPortal
         metadata: pagy_metadata(@pagy),
         data: @admins.map do |admin|
           serialize_admin_only_index(admin)
-        end,
+        end
       }
 
       # get the selected data admin for form
@@ -41,12 +44,12 @@ module AdminPortal
       end
 
       render inertia: "AdminPortal/Admin/Index", props: deep_transform_keys_to_camel_case({
-               admins: admins,
-               selected_admin: -> {
-                 selected_admin_lambda.call&.then { |admin| deep_transform_keys_to_camel_case(admin) }
-               },
-               admin_type_list: -> { Admin::TYPES },
-             })
+        admins: admins,
+        selected_admin: -> {
+          selected_admin_lambda.call&.then { |admin| deep_transform_keys_to_camel_case(admin) }
+        },
+        admin_type_list: -> { Admin::TYPES }
+      })
     end
 
     # GET /admins/1
@@ -61,9 +64,9 @@ module AdminPortal
     def new
       @admin = Admin.new
       render inertia: "AdminPortal/Admin/New", props: deep_transform_keys_to_camel_case({
-               admin: serialize_admin(@admin),
-               admin_type_list: Admin::TYPES,
-             })
+        admin: serialize_admin(@admin),
+        admin_type_list: Admin::TYPES
+      })
     end
 
     # GET /admins/1/edit
@@ -96,7 +99,7 @@ module AdminPortal
       else
         logger.error("Failed to create user #{user.email}. Errors: #{user.errors.full_messages.join(", ")}")
         flash[:alert] = "Failed to create associated user."
-        redirect_to new_admin_portal_admin_path, inertia: { errors: user.errors }
+        redirect_to new_admin_portal_admin_path, inertia: {errors: user.errors}
         return
       end
 
@@ -107,7 +110,7 @@ module AdminPortal
       else
         logger.error("Failed to create admin for user #{user.email}. Errors: #{admin.errors.full_messages.join(", ")}")
         flash[:alert] = "Failed to create new admin."
-        redirect_to new_admin_portal_admin_path, inertia: { errors: @admin.errors }
+        redirect_to new_admin_portal_admin_path, inertia: {errors: @admin.errors}
       end
       logger.info("Admin creation process finished")
     end
@@ -116,7 +119,7 @@ module AdminPortal
     def update
       logger.info "Starting process to update admin profile..."
       update_admin_params = params.require(:admin).permit(:id, :admin_type, :name)
-      admin = Admin.find_by!(id: update_admin_params[:id])
+      admin = Admin.find(update_admin_params[:id])
       unless admin
         logger.warn "Cannot find the existing admin data with ID #{update_admin_params[:id]}."
         flash[:alert] = "The existing admin could not be found with this e-mail address."
@@ -131,7 +134,7 @@ module AdminPortal
         error_message = admin&.errors&.first&.full_message || "Failed to update the admin profile."
         flash[:alert] = error_message
         logger.error "Admin profile failed to update for #{admin.user.email}, Errors: #{error_message}"
-        redirect_to admin_portal_admins_path(edit: admin.id), inertia: { errors: admin&.errors }
+        redirect_to admin_portal_admins_path(edit: admin.id), inertia: {errors: admin&.errors}
       end
 
       logger.info "Process to update admin profile finished..."
@@ -160,12 +163,12 @@ module AdminPortal
         user.save
 
         reset_password_url = edit_user_password_url(reset_password_token: raw)
-        render json: { link: reset_password_url }
+        render json: {link: reset_password_url}
         logger.info "URL successfully generated: #{reset_password_url}."
       else
         failed_message = "Failed to generate change password link, the User not found."
         logger.info failed_message
-        render json: { error: failed_message }, status: :not_found
+        render json: {error: failed_message}, status: :not_found
       end
     end
 
@@ -208,25 +211,25 @@ module AdminPortal
 
     def serialize_admin_only_index(admin)
       admin.as_json(
-        only: %i[ id admin_type name created_at updated_at ],
+        only: %i[id admin_type name created_at updated_at],
         include: {
           user: {
-            only: %i[ id email is_online? last_online_at last_sign_in_at current_sign_in_ip last_sign_in_ip suspend_at suspend_end ],
-            methods: %i[ is_online? suspended? ],
-          },
-        },
+            only: %i[id email is_online? last_online_at last_sign_in_at current_sign_in_ip last_sign_in_ip suspend_at suspend_end],
+            methods: %i[is_online? suspended?]
+          }
+        }
       )
     end
 
     def serialize_admin(admin)
       admin.as_json(
-        only: %i[ id admin_type name ],
+        only: %i[id admin_type name],
         include: {
           user: {
-            only: %i[ id email suspend_at suspend_end ],
-            methods: %i[ suspended? ],
-          },
-        },
+            only: %i[id email suspend_at suspend_end],
+            methods: %i[suspended?]
+          }
+        }
       )
     end
   end

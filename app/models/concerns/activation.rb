@@ -3,13 +3,13 @@ module Activation
 
   included do
     # validation for is_active
-    validates :active, inclusion: { in: [true, false], message: "%{value} is not a valid" }
+    validates :active, inclusion: {in: [true, false], message: "%{value} is not a valid"}
 
     # scope for active records
     scope :active, -> { where(active: true) }
 
     def is_active?
-      self.active
+      active
     end
   end
 end

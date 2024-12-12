@@ -13,7 +13,7 @@ module InertiaCsrf
 
     rescue_from ActionController::InvalidAuthenticityToken do
       redirect_back fallback_location: "/",
-                    notice: "The page expired, please try again."
+        notice: "The page expired, please try again."
     end
   end
 
@@ -29,7 +29,7 @@ module InertiaCsrf
   def set_csrf_cookie
     cookies["XSRF-TOKEN"] = {
       value: form_authenticity_token,
-      same_site: "Strict",
+      same_site: "Strict"
     }
   end
 end

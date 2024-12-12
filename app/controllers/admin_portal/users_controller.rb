@@ -1,6 +1,6 @@
 module AdminPortal
   class UsersController < ApplicationController
-    before_action :set_user, only: %i[ suspend_account activate_account ]
+    before_action :set_user, only: %i[suspend_account activate_account]
 
     # inertia_share flash: -> { flash.to_hash }
 
@@ -17,7 +17,7 @@ module AdminPortal
       end
 
       logger.info "Suspending the account #{@user.email}..."
-      update_params = { id: permitted_params[:id], suspend_at: permitted_params[:suspend_at], suspend_end: permitted_params[:suspend_end] }
+      update_params = {id: permitted_params[:id], suspend_at: permitted_params[:suspend_at], suspend_end: permitted_params[:suspend_end]}
       if @user.update(update_params)
         success_message = "Successfully to suspend the account."
         logger.info success_message
@@ -43,7 +43,7 @@ module AdminPortal
       end
 
       logger.info "Activating the account #{@user.email}..."
-      update_params = { id: permitted_params[:id], suspend_at: permitted_params[:suspend_at], suspend_end: permitted_params[:suspend_end] }
+      update_params = {id: permitted_params[:id], suspend_at: permitted_params[:suspend_at], suspend_end: permitted_params[:suspend_end]}
       if @user.update(update_params)
         success_message = "Successfully to activate the account."
         logger.info success_message

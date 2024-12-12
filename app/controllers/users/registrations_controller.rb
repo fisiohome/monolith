@@ -19,7 +19,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
     # super
 
     render inertia: "Auth/EditPassword", props: {
-      user: resource,
+      user: resource
     }
   end
 
@@ -48,9 +48,9 @@ class Users::RegistrationsController < Devise::RegistrationsController
       flash[:alert] = resource&.errors&.first&.full_message || "Failed to change the password"
       logger.error "Password failed to update for auth:#{resource_name}/#{resource.email}. Errors: #{resource.errors.full_messages.join(", ")}"
       redirect_to edit_user_registration_path, inertia: {
-                                                 errors: resource.errors,
-                                                 user: resource,
-                                               }
+        errors: resource.errors,
+        user: resource
+      }
     end
 
     logger.info "Process to update password finished..."

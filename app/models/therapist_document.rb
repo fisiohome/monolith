@@ -3,5 +3,4 @@ class TherapistDocument < ApplicationRecord
   belongs_to :therapist
 
   # define the validation
-  validates :therapist_id, presence: true
 end

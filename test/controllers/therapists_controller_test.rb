@@ -17,7 +17,7 @@ class TherapistsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create therapist" do
     assert_difference("Therapist.count") do
-      post therapists_url, params: { therapist: {} }
+      post therapists_url, params: {therapist: {}}
     end
 
     assert_redirected_to therapist_url(Therapist.last)
@@ -34,7 +34,7 @@ class TherapistsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update therapist" do
-    patch therapist_url(@therapist), params: { therapist: {} }
+    patch therapist_url(@therapist), params: {therapist: {}}
     assert_redirected_to therapist_url(@therapist)
   end
 

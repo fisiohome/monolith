@@ -6,8 +6,8 @@ class TherapistAddress < ApplicationRecord
   belongs_to :addresses
 
   # define the validation
-  validates :therapist_id, :address_id, presence: true
-  validates :active, uniqueness: { scope: :therapist_id, message: "only one active address is allowed per therapist" }, if: -> { active }
+  validates :address_id, presence: true
+  validates :active, uniqueness: {scope: :therapist_id, message: "only one active address is allowed per therapist"}, if: -> { active }
 
   private
 

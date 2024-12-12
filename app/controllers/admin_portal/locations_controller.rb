@@ -22,15 +22,15 @@ module AdminPortal
           metadata: pagy_metadata(@pagy),
           data: @locations.map do |location|
             serialize_location(location)
-          end,
-        },
+          end
+        }
       })
     end
 
     private
 
     def serialize_location(location)
-      location.as_json()
+      location.as_json
     end
   end
 end
