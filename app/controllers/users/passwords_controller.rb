@@ -16,7 +16,7 @@ class Users::PasswordsController < Devise::PasswordsController
     super
 
     render inertia: "Auth/ResetPassword", props: {
-      resource: self.resource
+      resource: self.resource,
     }
   end
 
@@ -49,9 +49,9 @@ class Users::PasswordsController < Devise::PasswordsController
       flash[:alert] = resource&.errors&.first&.full_message || "Failed to reset the password"
       logger.error "Password failed to reset for auth:#{resource_name}/#{resource.email}. Errors: #{resource.errors.full_messages.join(", ")}"
       redirect_to edit_user_password_path(reset_password_token: resource_params[:reset_password_token]), inertia: {
-        errors: resource.errors,
-        resource: resource
-      }
+                                                                                                           errors: resource.errors,
+                                                                                                           resource: resource,
+                                                                                                         }
     end
 
     logger.info "Process to reset the password finished..."

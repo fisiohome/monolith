@@ -13,12 +13,12 @@ Rails.application.routes.draw do
   # root to: "inertia_example#index"
 
   devise_for :users, path: "", path_names: {
-    sign_in: "sign-in", sign_out: "sign-out", registration: "auth", sign_up: "sign-up", password: "auth/password"
-  }, controllers: {
-    sessions: "users/sessions",
-    registrations: "users/registrations",
-    passwords: "users/passwords"
-  }
+                       sign_in: "sign-in", sign_out: "sign-out", registration: "auth", sign_up: "sign-up", password: "auth/password",
+                     }, controllers: {
+                       sessions: "users/sessions",
+                       registrations: "users/registrations",
+                       passwords: "users/passwords",
+                     }
 
   devise_scope :user do
     authenticated :user do
@@ -31,7 +31,7 @@ Rails.application.routes.draw do
         put "suspend" => "users#suspend_account"
         put "activate" => "users#activate_account"
 
-        resources :admins, path: "admin-management", except: [ :show, :edit ] do
+        resources :admins, path: "admin-management", except: [:show, :edit] do
           collection do
             get "generate-reset-password-url" => "admins#generate_reset_password_url"
             put "change-password" => "admins#change_password"
@@ -39,12 +39,12 @@ Rails.application.routes.draw do
         end
 
         resources :therapists
-        resources :services, only: [ :index, :create, :update, :destroy ] do
+        resources :services, only: [:index, :create, :update, :destroy] do
           collection do
             put "update-status" => "services#update_status"
           end
         end
-        resources :locations, only: [ :index, :create ]
+        resources :locations, only: [:index, :create]
       end
     end
 

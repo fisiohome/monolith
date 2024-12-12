@@ -44,7 +44,7 @@ Rails.application.configure do
     port: 465,
     user_name: "resend",
     password: Rails.application.credentials.resend.api_key,
-    protocol: "https"
+    protocol: "https",
   }
 
   # Print deprecation notices to the Rails logger.

@@ -14,7 +14,7 @@ def log_message(message, type = :info)
     info: "\e[34m", # Blue
     success: "\e[32m", # Green
     warn: "\e[33m", # Yellow
-    error: "\e[31m" # Red
+    error: "\e[31m", # Red
   }
   reset = "\e[0m"
   time = Time.now.strftime("%Y-%m-%d %H:%M:%S")
@@ -32,7 +32,7 @@ begin
   super_admins = [
     { email: "tech@fisiohome.id", name: "Tech Admin" },
     { email: "dendy@fisiohome.id", name: "Dendy" },
-    { email: "hasnal@fisiohome.id", name: "Hasnal" }
+    { email: "hasnal@fisiohome.id", name: "Hasnal" },
   ]
 
   super_admins.each_with_index do |admin_data, index|
@@ -42,7 +42,7 @@ begin
     end
 
     admin = Admin.find_or_initialize_by(user: user)
-    admin.admin_type = 'SUPER_ADMIN'
+    admin.admin_type = "SUPER_ADMIN"
     admin.name = admin_data[:name]
     admin.save!
 
@@ -63,7 +63,7 @@ begin
     { email: "tech_admin_backlog@fisiohome.id", name: "Tech Admin Backlog" },
     { email: "tech_admin_l1@fisiohome.id", name: "Tech Admin L1" },
     { email: "tech_admin_l2@fisiohome.id", name: "Tech Admin L2" },
-    { email: "tech_admin_l3@fisiohome.id", name: "Tech Admin L3" }
+    { email: "tech_admin_l3@fisiohome.id", name: "Tech Admin L3" },
   ]
 
   other_admins.each_with_index do |admin_data, index|
@@ -76,13 +76,13 @@ begin
 
     case admin_data[:name]
     when "Tech Admin Backlog"
-      admin.admin_type = 'ADMIN_BACKLOG'
+      admin.admin_type = "ADMIN_BACKLOG"
     when "Tech Admin L1"
-      admin.admin_type = 'ADMIN_L1'
+      admin.admin_type = "ADMIN_L1"
     when "Tech Admin L2"
-      admin.admin_type = 'ADMIN_L2'
+      admin.admin_type = "ADMIN_L2"
     when "Tech Admin L3"
-      admin.admin_type = 'ADMIN_L3'
+      admin.admin_type = "ADMIN_L3"
     end
 
     admin.name = admin_data[:name]
@@ -97,7 +97,6 @@ end
 log_message("Other admins seeding completed", :info)
 
 log_message("=== All accounts seeding completed ===", :info)
-
 
 # for seeding the services and locations
 puts ""
@@ -153,10 +152,10 @@ begin
     { country: "INDONESIA", country_code: "ID", state: "NUSA TENGGARA BARAT", city: "KAB. DOMPU" },
     { country: "INDONESIA", country_code: "ID", state: "KALIMANTAN BARAT", city: "KOTA PONTIANAK" },
     { country: "INDONESIA", country_code: "ID", state: "KALIMANTAN TIMUR", city: "KOTA SAMARINDA" },
-    { country: "INDONESIA", country_code: "ID", state: "SULAWESI SELATAN", city: "KOTA MAKASSAR" }
+    { country: "INDONESIA", country_code: "ID", state: "SULAWESI SELATAN", city: "KOTA MAKASSAR" },
   ]
 
-  locations.each_with_index  do |loc, index|
+  locations.each_with_index do |loc, index|
     location = Location.find_or_initialize_by(city: loc[:city])
     location.assign_attributes(loc)
     location.save!
@@ -179,7 +178,7 @@ begin
     { name: "WICARAKU", code: "W", active: true },
     { name: "PERAWAT_HOMECARE", code: "PH", active: true },
     { name: "CAREGIVER_HOMECARE", code: "PH", active: true },
-    { name: "AESTHETIC_HOMECARE", code: "PH", active: true }
+    { name: "AESTHETIC_HOMECARE", code: "PH", active: true },
   ]
 
   services.each_with_index do |item, index|

@@ -25,13 +25,13 @@ class Therapist < ApplicationRecord
 
   # define the validation
   enum :gender, { MALE: "MALE", FEMALE: "FEMALE" }, prefix: true
-  validates :gender, presence: true, inclusion: { in: [ "MALE", "FEMALE" ], message: "%{value} is not a valid gender"  }
+  validates :gender, presence: true, inclusion: { in: ["MALE", "FEMALE"], message: "%{value} is not a valid gender" }
 
   enum :employment_type, { KARPIS: "KARPIS", FLAT: "FLAT" }, prefix: true
-  validates :employment_type, presence: true, inclusion: { in: [ "KARPIS", "FLAT" ], message: "%{value} is not a valid employment type"  }
+  validates :employment_type, presence: true, inclusion: { in: ["KARPIS", "FLAT"], message: "%{value} is not a valid employment type" }
 
   enum :employment_status, { ACTIVE: "ACTIVE", HOLD: "HOLD", INACTIVE: "INACTIVE" }, prefix: true
-  validates :employment_status, presence: true, inclusion: { in: [ "ACTIVE", "HOLD", "INACTIVE" ], message: "%{value} is not a valid employment status" }
+  validates :employment_status, presence: true, inclusion: { in: ["ACTIVE", "HOLD", "INACTIVE"], message: "%{value} is not a valid employment status" }
 
   validates :name, :specialization, :modality, presence: true
   validates :batch, numericality: true, presence: true
@@ -54,7 +54,7 @@ class Therapist < ApplicationRecord
       counter.last_number = 0
     end
 
-    self.registration_number = "#{service_code}#{format('%04d', registration_counter.last_number + 1)}"
+    self.registration_number = "#{service_code}#{format("%04d", registration_counter.last_number + 1)}"
     registration_counter.increment!(:last_number)
   end
 
@@ -68,7 +68,7 @@ class Therapist < ApplicationRecord
       suspend_duration = employment_status == "HOLD" ? 7.days : nil # Example: 7 days suspension for "HOLD"
       user.update(
         suspend_at: Time.current,
-        suspend_end: suspend_duration ? Time.current + suspend_duration : nil
+        suspend_end: suspend_duration ? Time.current + suspend_duration : nil,
       )
     end
   end

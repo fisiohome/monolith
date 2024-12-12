@@ -1,8 +1,8 @@
 class CreateTherapists < ActiveRecord::Migration[8.0]
   def change
-    create_enum :gender_enum, [ "MALE", "FEMALE" ]
-    create_enum :employment_type_enum, [ "KARPIS", "FLAT" ]
-    create_enum :employment_status_enum, [ "ACTIVE", "HOLD", "INACTIVE" ]
+    create_enum :gender_enum, ["MALE", "FEMALE"]
+    create_enum :employment_type_enum, ["KARPIS", "FLAT"]
+    create_enum :employment_status_enum, ["ACTIVE", "HOLD", "INACTIVE"]
 
     create_table :therapists, id: :uuid do |t|
       t.string :name, null: false

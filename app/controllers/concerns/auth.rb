@@ -15,22 +15,22 @@ module Auth
     # end
 
     inertia_share auth: -> {
-      user_data = current_user.as_json(
-        only: %i[id email],
-        include: {
-          admin: {
-            only: %i[id name admin_type],
-            methods: %i[is_super_admin? is_admin_l1? is_admin_l2? is_admin_l3? is_admin_backlog?]
-          }
-        }
-      )
+                    user_data = current_user.as_json(
+                      only: %i[id email],
+                      include: {
+                        admin: {
+                          only: %i[id name admin_type],
+                          methods: %i[is_super_admin? is_admin_l1? is_admin_l2? is_admin_l3? is_admin_backlog?],
+                        },
+                      },
+                    )
 
-      deep_transform_keys_to_camel_case(
-        {
-          current_user: authenticate_user! ? user_data["admin"].merge(user: user_data.slice("id", "email")) : nil
-        }
-      )
-    }
+                    deep_transform_keys_to_camel_case(
+                      {
+                        current_user: authenticate_user! ? user_data["admin"].merge(user: user_data.slice("id", "email")) : nil,
+                      }
+                    )
+                  }
   end
 
   private

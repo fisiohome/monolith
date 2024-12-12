@@ -8,14 +8,14 @@ module AdminPortal
       render inertia: "AdminPortal/Therapist/Index", props: deep_transform_keys_to_camel_case({
         therapists: @therapists.map do |therapist|
           serialize_therapist(therapist)
-        end
+        end,
       })
     end
 
     # GET /therapists/1
     def show
       render inertia: "Therapist/Show", props: {
-        therapist: serialize_therapist(@therapist)
+        therapist: serialize_therapist(@therapist),
       }
     end
 
@@ -26,14 +26,14 @@ module AdminPortal
         therapist: @therapist,
         genders: Therapist.genders.map { |key, value| value },
         employment_types: Therapist.employment_types.map { |key, value| value },
-        employment_statuses: Therapist.employment_statuses.map { |key, value| value }
+        employment_statuses: Therapist.employment_statuses.map { |key, value| value },
       })
     end
 
     # GET /therapists/1/edit
     def edit
       render inertia: "Therapist/Edit", props: {
-        therapist: serialize_therapist(@therapist)
+        therapist: serialize_therapist(@therapist),
       }
     end
 
@@ -64,25 +64,26 @@ module AdminPortal
     end
 
     private
-      # Use callbacks to share common setup or constraints between actions.
-      def set_therapist
-        @therapist = Therapist.find(params[:id])
-      end
 
-      # Only allow a list of trusted parameters through.
-      def therapist_params
-        params.fetch(:therapist, {})
-      end
+    # Use callbacks to share common setup or constraints between actions.
+    def set_therapist
+      @therapist = Therapist.find(params[:id])
+    end
 
-      def serialize_therapist(therapist)
-        therapist.as_json(
-          only: %i[ id ],
-          include: {
-            user: {
-              only: %i[ id email ]
-            }
-          }
-        )
-      end
+    # Only allow a list of trusted parameters through.
+    def therapist_params
+      params.fetch(:therapist, {})
+    end
+
+    def serialize_therapist(therapist)
+      therapist.as_json(
+        only: %i[ id ],
+        include: {
+          user: {
+            only: %i[ id email ],
+          },
+        },
+      )
+    end
   end
 end

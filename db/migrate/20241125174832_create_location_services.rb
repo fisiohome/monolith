@@ -7,6 +7,6 @@ class CreateLocationServices < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    add_index :location_services, [ :location_id, :service_id ], unique: true, name: 'index_location_services_on_location_and_service'
+    add_index :location_services, [:location_id, :service_id], unique: true, name: "index_location_services_on_location_and_service"
   end
 end
