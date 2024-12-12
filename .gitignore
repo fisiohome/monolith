@@ -38,4 +38,3 @@
 
 # ignore node modules
 node_modules
-/config/credentials/production.key
