@@ -20,8 +20,8 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   <% if ENV["DB_HOST"] %>
   host: <%= ENV["DB_HOST"] %>
-  username: postgres
-  password: postgres
+  username: <%= ENV["MONOLITH_DATABASE_USERNAME"] %>
+  password: <%= ENV["MONOLITH_DATABASE_PASSWORD"] %>
   <% end %>
 
 
@@ -87,7 +87,7 @@ production:
   primary: &primary_production
     <<: *default
     database: monolith_production
-    password: <%= ENV["MONOLITH_DATABASE_PASSWORD"] %>
+    url: <%= ENV["MONOLITH_DATABASE_URL"] %>
   cache:
     <<: *primary_production
     database: monolith_production_cache

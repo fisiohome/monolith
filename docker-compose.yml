@@ -1,0 +1,30 @@
+version: '3'
+services:
+  db-postgresql:
+    image: postgres:16-alpine
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - DB_HOST=${DB_HOST}
+      - MONOLITH_DATABASE_USERNAME=${MONOLITH_DATABASE_USERNAME}
+      - MONOLITH_DATABASE_PASSWORD=${MONOLITH_DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"
+  web:
+    build: .
+    environment:
+      - RAILS_ENV=${RAILS_ENV}
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      - DB_HOST=${DB_HOST}
+      - MONOLITH_DATABASE_USERNAME=${MONOLITH_DATABASE_USERNAME}
+      - MONOLITH_DATABASE_PASSWORD=${MONOLITH_DATABASE_PASSWORD}
+    volumes:
+      - app-storage:/rails/storage
+    depends_on:
+      - db-postgresql
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres-data: {}
+  app-storage: {}
