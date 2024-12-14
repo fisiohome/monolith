@@ -16,7 +16,7 @@ class Users::PasswordsController < Devise::PasswordsController
     super
 
     render inertia: "Auth/ResetPassword", props: {
-      resource: self.resource
+      resource: resource
     }
   end
 

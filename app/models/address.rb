@@ -14,6 +14,6 @@ class Address < ApplicationRecord
   private
 
   def update_coordinates
-    self.coordinates = [ latitude, longitude ]
+    self.coordinates = [latitude, longitude]
   end
 end

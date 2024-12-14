@@ -3,11 +3,11 @@ Rails.application.routes.draw do
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
+  get "up" => "rails/health#show", :as => :rails_health_check
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+  get "manifest" => "rails/pwa#manifest", :as => :pwa_manifest
+  get "service-worker" => "rails/pwa#service_worker", :as => :pwa_service_worker
 
   # Defines the root path route ("/")
   # root to: "inertia_example#index"
@@ -31,7 +31,7 @@ Rails.application.routes.draw do
         put "suspend" => "users#suspend_account"
         put "activate" => "users#activate_account"
 
-        resources :admins, path: "admin-management", except: [ :show, :edit ] do
+        resources :admins, path: "admin-management", except: [:show, :edit] do
           collection do
             get "generate-reset-password-url" => "admins#generate_reset_password_url"
             put "change-password" => "admins#change_password"
@@ -39,12 +39,12 @@ Rails.application.routes.draw do
         end
 
         resources :therapists
-        resources :services, only: [ :index, :create, :update, :destroy ] do
+        resources :services, only: [:index, :create, :update, :destroy] do
           collection do
             put "update-status" => "services#update_status"
           end
         end
-        resources :locations, only: [ :index, :create ]
+        resources :locations, only: [:index, :create]
       end
     end
 

@@ -1,8 +1,8 @@
 module ServiceCode
   extend ActiveSupport::Concern
+  SERVICE_CODES = Service.distinct.pluck(:code).freeze
 
   included do
-    SERVICE_CODES = Service.pluck(:code).uniq.freeze
-    validates :code, inclusion: { in: SERVICE_CODES, message: "%{value} is not a valid service code"  }
+    validates :code, inclusion: {in: SERVICE_CODES, message: "%{value} is not a valid service code"}
   end
 end

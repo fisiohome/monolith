@@ -2,8 +2,8 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable,
-         :trackable
+    :recoverable, :rememberable, :validatable,
+    :trackable
 
   has_one :admin, dependent: :destroy
   has_one :therapist, dependent: :destroy
@@ -34,6 +34,6 @@ class User < ApplicationRecord
 
   # overriding the devise fn
   def inactive_message
-    !suspended? ? :locked : super
+    (!suspended?) ? :locked : super
   end
 end

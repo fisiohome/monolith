@@ -1,0 +1,4 @@
+CREATE DATABASE monolith_production;
+CREATE DATABASE monolith_production_cache;
+CREATE DATABASE monolith_production_queue;
+CREATE DATABASE monolith_production_cable;

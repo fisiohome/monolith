@@ -87,7 +87,6 @@ production:
   primary: &primary_production
     <<: *default
     database: monolith_production
-    username: monolith
     password: <%= ENV["MONOLITH_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
