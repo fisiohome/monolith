@@ -7,13 +7,13 @@ class Users::SessionsController < Devise::SessionsController
   def new
     # super
     render inertia: "Auth/SignIn", props: {
-      rememberable?: devise_mapping.rememberable?
+      rememberable: devise_mapping.rememberable?
     }
   end
 
   # POST /resource/sign_in
   # def create
-  # super
+  #   super
   # end
 
   # DELETE /resource/sign_out

@@ -15,6 +15,6 @@ module ErrorHandler
     status = ActionDispatch::ExceptionWrapper.new(nil, exception).status_code
 
     # Render the Inertia error page with the status code as a prop
-    render inertia: "Error", props: { status: status }, status: status
+    render inertia: "Error", props: {status: status}, status: status
   end
 end

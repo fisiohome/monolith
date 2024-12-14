@@ -13,7 +13,7 @@ module InertiaCsrf
 
     rescue_from ActionController::InvalidAuthenticityToken do
       redirect_back fallback_location: "/",
-                    notice: "The page expired, please try again."
+        notice: "The page expired, please try again."
     end
   end
 
