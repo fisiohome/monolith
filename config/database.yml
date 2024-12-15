@@ -18,10 +18,11 @@ default: &default
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  port: <%= ENV["MONOLITH_DATABASE_PORT"] %>
   <% if ENV["DB_HOST"] %>
   host: <%= ENV["DB_HOST"] %>
-  username: postgres
-  password: postgres
+  username: <%= ENV["MONOLITH_DATABASE_USERNAME"] %>
+  password: <%= ENV["MONOLITH_DATABASE_PASSWORD"] %>
   <% end %>
 
 
@@ -83,11 +84,32 @@ test:
 # Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
 # for a full overview on how database connection configuration can be specified.
 #
+
+# for staging environment
+staging:
+  primary: &primary_staging
+    <<: *default
+    database: monolith_staging
+    url: <%= ENV["MONOLITH_DATABASE_URL"] %>
+  cache:
+    <<: *primary_staging
+    database: monolith_staging_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_staging
+    database: monolith_staging_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_staging
+    database: monolith_staging_cable
+    migrations_paths: db/cable_migrate
+
+# for production environment
 production:
   primary: &primary_production
     <<: *default
     database: monolith_production
-    password: <%= ENV["MONOLITH_DATABASE_PASSWORD"] %>
+    url: <%= ENV["MONOLITH_DATABASE_URL"] %>
   cache:
     <<: *primary_production
     database: monolith_production_cache

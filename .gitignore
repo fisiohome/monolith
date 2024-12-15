@@ -8,7 +8,7 @@
 /.bundle
 
 # Ignore all environment files.
-/.env*
+.env
 
 # Ignore all logfiles and tempfiles.
 /log/*
@@ -38,3 +38,6 @@
 
 # ignore node modules
 node_modules
+/config/credentials/production.key
+
+/config/credentials/staging.key
