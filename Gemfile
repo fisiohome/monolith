@@ -60,7 +60,7 @@ end
 
 gem "devise", "~> 4.9"
 
-gem "resend", "~> 0.14.0"
+gem "resend", "~> 0.15.0"
 
 gem "inertia_rails", "~> 3.4"
 
