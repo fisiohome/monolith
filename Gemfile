@@ -62,7 +62,7 @@ gem "devise", "~> 4.9"
 
 gem "resend", "~> 0.14.0"
 
-gem "inertia_rails", "~> 3.4"
+gem "inertia_rails", "~> 3.6"
 
 gem "inertia_rails-contrib", "~> 0.3.0"
 
