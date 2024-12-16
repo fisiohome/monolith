@@ -85,7 +85,7 @@ export default function AppTopBar() {
 	}, [currentLocale, currentTimezone]);
 
 	return (
-		<header className="sticky top-0 z-50 flex flex-row items-center justify-between h-16 gap-2 bg-background rounded-xl shrink-0">
+		<header className="sticky top-0 z-50 flex flex-row items-center justify-between h-16 gap-2 bg-background rounded-xl shrink-0 motion-preset-bounce">
 			<div className="flex items-center gap-2 px-4">
 				<SidebarTrigger className="-ml-1" />
 

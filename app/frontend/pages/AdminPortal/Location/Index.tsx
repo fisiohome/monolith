@@ -36,7 +36,7 @@ export default function Index({ locations }: PageProps) {
 			enableHiding: false,
 			cell: ({ row }) => {
 				return (
-					<div className="flex items-center space-x-4">
+					<div className="flex items-start space-x-4">
 						<img
 							src={`https://flagcdn.com/h24/${row.original.countryCode.toLowerCase()}.png`}
 							height="24"
@@ -44,9 +44,9 @@ export default function Index({ locations }: PageProps) {
 							className="border"
 						/>
 
-						<div className="flex flex-auto space-x-2">
+						<div className="flex gap-2">
+							<Badge variant="default">{row.original.countryCode}</Badge>
 							<p className="font-semibold">{row.original.country}</p>
-							<Badge>{row.original.countryCode}</Badge>
 						</div>
 					</div>
 				);
@@ -76,7 +76,7 @@ export default function Index({ locations }: PageProps) {
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Locations</h1>
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+				{/* {globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 					<Button
 						onClick={(event) => {
 							event.preventDefault();
@@ -86,7 +86,7 @@ export default function Index({ locations }: PageProps) {
 						<Plus />
 						Add Location
 					</Button>
-				)}
+				)} */}
 			</PageContainer>
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">

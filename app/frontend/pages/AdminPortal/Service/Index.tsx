@@ -30,7 +30,7 @@ import {
 	FloatingPanelFooter,
 	FloatingPanelRoot,
 	FloatingPanelTrigger,
-} from "@/components/ui/floating-panel"
+} from "@/components/ui/floating-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, humanize, populateQueryParams } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
@@ -184,6 +184,14 @@ export default function Index({
 			),
 			enableHiding: false,
 			cell: ({ row }) => {
+				const locations = useMemo(
+					() => row.original.locations,
+					[row.original.locations],
+				);
+				const locationsActive = useMemo(
+					() => row.original.locations.filter((location) => location.active),
+					[row.original.locations],
+				);
 				const actions = [
 					{
 						icon: <Plus className="w-4 h-4" />,
@@ -200,49 +208,52 @@ export default function Index({
 						label: "Edit Colors",
 						action: () => console.log("Edit Colors"),
 					},
-				]
+				];
+
+				if (!locations?.length) {
+					return <span title="No locations listed yet">-</span>;
+				}
 
 				return (
-					<FloatingPanelRoot>
-						<FloatingPanelTrigger
-							title="Quick Actions"
-							className="flex items-center px-4 py-2 space-x-2 transition-colors rounded-md bg-accent text-accent-foreground hover:bg-accent/90"
-						>
-							<span>Quick Actions</span>
-						</FloatingPanelTrigger>
-						<FloatingPanelContent className="w-56">
-							<FloatingPanelBody>
-								<AnimatePresence>
-									{actions.map((action, index) => (
-										<motion.div
-											key={action.label}
-											initial={{ opacity: 0, y: -10 }}
-											animate={{ opacity: 1, y: 0 }}
-											exit={{ opacity: 0, y: 10 }}
-											transition={{ delay: index * 0.1 }}
-										>
-											<FloatingPanelButton
-												onClick={action.action}
-												className="flex items-center w-full px-2 py-1 space-x-2 transition-colors rounded-md hover:bg-muted"
+					<div className="flex items-center space-x-2">
+						<span>
+							{locationsActive.length
+								? `Active in ${locationsActive.length} of ${locations.length} locations.`
+								: `Inactive, ${locations.length} locations available.`}
+						</span>
+
+						{/* <FloatingPanelRoot>
+							<FloatingPanelTrigger title="Show List">
+								<span className="text-xs">Show List</span>
+							</FloatingPanelTrigger>
+
+							<FloatingPanelContent className="w-56">
+								<FloatingPanelBody>
+									<AnimatePresence>
+										{locations.map((action, index) => (
+											<motion.div
+												key={action.id}
+												initial={{ opacity: 0, y: -10 }}
+												animate={{ opacity: 1, y: 0 }}
+												exit={{ opacity: 0, y: 10 }}
+												transition={{ delay: index * 0.1 }}
+												className="mb-2 rounded-md hover:bg-accent hover:text-accent-foreground"
 											>
-												{action.icon}
-												<span>{action.label}</span>
-											</FloatingPanelButton>
-										</motion.div>
-									))}
-								</AnimatePresence>
-							</FloatingPanelBody>
-							<FloatingPanelFooter>
-								<FloatingPanelCloseButton />
-							</FloatingPanelFooter>
-						</FloatingPanelContent>
-					</FloatingPanelRoot>
-				)
-				// return (
-				// 	<div className="flex items-center space-x-2">
-				// 		{row.original?.locations?.map(location => location.city).join(", ")}
-				// 	</div>
-				// );
+												<FloatingPanelButton>
+													{action.city}
+													<span>{action.label}</span>
+												</FloatingPanelButton>
+											</motion.div>
+										))}
+									</AnimatePresence>
+								</FloatingPanelBody>
+								<FloatingPanelFooter>
+									<FloatingPanelCloseButton />
+								</FloatingPanelFooter>
+							</FloatingPanelContent>
+						</FloatingPanelRoot> */}
+					</div>
+				);
 			},
 		},
 		{
@@ -372,7 +383,7 @@ export default function Index({
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Services</h1>
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+				{/* {globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 					<Button
 						onClick={(event) => {
 							event.preventDefault();
@@ -382,7 +393,7 @@ export default function Index({
 						<Plus />
 						Add Service
 					</Button>
-				)}
+				)} */}
 			</PageContainer>
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
@@ -415,15 +426,15 @@ export default function Index({
 					<ResponsiveDialog {...formServiceDialog}>
 						{(formServiceDialogMode.isEditMode ||
 							formServiceDialogMode.isCreateMode) && (
-								<FormServiceDialogContent
-									{...{
-										selectedService,
-										locations,
-										forceMode: formServiceDialog.forceMode,
-										handleOpenChange: formServiceDialog.onOpenChange,
-									}}
-								/>
-							)}
+							<FormServiceDialogContent
+								{...{
+									selectedService,
+									locations,
+									forceMode: formServiceDialog.forceMode,
+									handleOpenChange: formServiceDialog.onOpenChange,
+								}}
+							/>
+						)}
 
 						{formServiceDialogMode.isActivateMode && (
 							<ActivateServiceDialog

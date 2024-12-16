@@ -406,9 +406,7 @@ export default function Index({
 			cell: ({ row }) => {
 				return (
 					<>
-						<Badge variant="secondary">
-							{humanize(row.original.adminType).toUpperCase()}
-						</Badge>
+						<Badge>{humanize(row.original.adminType).toUpperCase()}</Badge>
 					</>
 				);
 			},

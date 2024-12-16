@@ -54,7 +54,7 @@ export function NavUser({
 	};
 
 	return (
-		<SidebarMenu className="rounded-md shadow bg-background">
+		<SidebarMenu>
 			<SidebarMenuItem>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>

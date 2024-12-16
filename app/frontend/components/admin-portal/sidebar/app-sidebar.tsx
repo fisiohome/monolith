@@ -55,12 +55,12 @@ export default function AppSidebar({
 						url: globalProps.adminPortal.router.authenticatedRootPath,
 						isActive: false,
 					},
-					{
-						title: "Therapists",
-						url: globalProps.adminPortal.router.adminPortal.therapistManagement
-							.index,
-						isActive: false,
-					},
+					// {
+					// 	title: "Therapists",
+					// 	url: globalProps.adminPortal.router.adminPortal.therapistManagement
+					// 		.index,
+					// 	isActive: false,
+					// },
 				],
 			},
 			{
@@ -121,12 +121,12 @@ export default function AppSidebar({
 
 	return (
 		<Sidebar variant="inset" {...props}>
-			<SidebarHeader>
-				<SidebarMenu className="rounded-md shadow bg-background">
+			<SidebarHeader className="motion-preset-bounce">
+				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>
 							<Link href={globalProps.adminPortal.router.authenticatedRootPath}>
-								<div className="flex items-center justify-center bg-purple-600 rounded-lg aspect-square size-8 text-sidebar-primary-foreground">
+								<div className="flex items-center justify-center rounded-lg bg-primary aspect-square size-8 text-sidebar-primary-foreground">
 									<HousePlus className="size-4" />
 								</div>
 								<div className="grid flex-1 text-sm leading-tight text-left">
@@ -138,12 +138,12 @@ export default function AppSidebar({
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
-			<SidebarContent>
+			<SidebarContent className="motion-preset-slide-right">
 				<NavMain {...navMainProps} />
 				{/* <NavProjects projects={data.projects} /> */}
 				{/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
 			</SidebarContent>
-			<SidebarFooter>
+			<SidebarFooter className="motion-preset-bounce">
 				<NavUser {...navUserProps} />
 			</SidebarFooter>
 		</Sidebar>

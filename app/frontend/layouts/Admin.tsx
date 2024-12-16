@@ -26,7 +26,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
 					<SidebarInset>
 						<AppTopBar />
 
-						<div className="flex flex-col flex-1 gap-4 pt-0 md:p-4">
+						<div className="flex flex-col flex-1 gap-4 pt-0 md:p-4 motion-preset-focus">
 							{children}
 						</div>
 					</SidebarInset>
