@@ -374,11 +374,11 @@ export default function Index({
 									className={cn(
 										"text-xs rounded-lg",
 										isSuspended
-											? "bg-destructive"
+											? "bg-destructive text-destructive-foreground"
 											: isCurrent
-												? "bg-purple-600"
+												? "bg-primary text-primary-foreground"
 												: isOnline
-													? "bg-green-700"
+													? "bg-emerald-700 text-white"
 													: "",
 									)}
 								>

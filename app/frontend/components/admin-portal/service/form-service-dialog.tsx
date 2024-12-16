@@ -30,6 +30,13 @@ import {
 	MultiSelectorTrigger,
 } from "@/components/ui/multi-select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
 	Tooltip,
@@ -45,7 +52,7 @@ import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
-import { LoaderIcon } from "lucide-react";
+import { Dot, LoaderIcon } from "lucide-react";
 import {
 	type ComponentProps,
 	Fragment,
@@ -98,7 +105,11 @@ export function FormServiceDialogContent({
 		active: z.boolean(),
 		locations: z
 			.array(
-				z.object({ id: z.number(), city: z.string(), active: z.boolean() }),
+				z.object({
+					id: z.union([z.string(), z.number()]),
+					city: z.string(),
+					active: z.boolean(),
+				}),
 			)
 			.nullish(),
 		cities: z.array(z.string()).nullish(),
@@ -124,6 +135,10 @@ export function FormServiceDialogContent({
 		control: form.control,
 		name: "locations",
 	});
+	const isActiveAllCities = useMemo(
+		() => !!locationsForm?.fields?.every((location) => location.active),
+		[locationsForm.fields],
+	);
 	function onSubmit(values: z.infer<typeof formSchema>) {
 		console.log("Submitting form to create the service...");
 		const baseURL =
@@ -268,24 +283,54 @@ export function FormServiceDialogContent({
 						<FormField
 							control={form.control}
 							name="active"
-							render={({ field }) => (
-								<FormItem className="flex flex-row items-start p-4 mt-2 space-x-3 space-y-0 border rounded-md">
-									<FormControl>
-										<Checkbox
-											checked={field.value}
-											onCheckedChange={field.onChange}
-										/>
-									</FormControl>
-									<div className="space-y-1 leading-none">
-										<FormLabel>Set as active</FormLabel>
-										<FormDescription>
-											Make this service as a service that is ready to be served
-											as a health service.
-										</FormDescription>
+							render={({ field }) => {
+								const statuses = [
+									{
+										value: "active",
+										label: "Active",
+										color: "text-emerald-600",
+									},
+									{
+										value: "inactive",
+										label: "Inactive",
+										color: "text-destructive",
+									},
+								];
+
+								return (
+									<FormItem className="w-100 lg:w-[75%]">
+										<FormLabel>Status</FormLabel>
+										<Select
+											onValueChange={(value) => {
+												field.onChange(value === "active");
+											}}
+											defaultValue={field.value ? "active" : "inactive"}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Select a service status" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{statuses.map((status) => (
+													<SelectItem key={status.value} value={status.value}>
+														<span className="flex items-center gap-2">
+															<Dot
+																className={status.color}
+																width={10}
+																height={10}
+																strokeWidth={20}
+															/>
+															<span className="truncate">{status.label}</span>
+														</span>
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 										<FormMessage />
-									</div>
-								</FormItem>
-							)}
+									</FormItem>
+								);
+							}}
 						/>
 					)}
 				</div>
@@ -353,42 +398,67 @@ export function FormServiceDialogContent({
 						/>
 
 						{!!locationsForm?.fields?.length && (
-							<ScrollArea className="w-full border rounded-md max-h-48">
-								<div className="p-4">
-									{locationsForm?.fields?.map((location, fieldIndex) => (
-										<Fragment key={location.id}>
-											<div className="flex">
-												<FormField
-													control={form.control}
-													name={`locations.${fieldIndex}.active`}
-													render={({ field }) => (
-														<TooltipProvider>
-															<Tooltip>
-																<TooltipTrigger asChild>
-																	<FormItem className="flex flex-row items-start space-x-3 space-y-0">
-																		<FormControl>
-																			<Checkbox
-																				checked={field.value}
-																				onCheckedChange={field.onChange}
-																			/>
-																		</FormControl>
+							<div className="flex flex-col gap-4 p-4 border rounded-md max-h-48">
+								<div className="flex flex-col gap-4 pb-2 border-b">
+									<FormItem className="flex flex-row items-start mb-1 space-x-3 space-y-0">
+										<FormControl>
+											<Checkbox
+												checked={isActiveAllCities}
+												onCheckedChange={(value) => {
+													const updatedLocations = locationsForm.fields.map(
+														(location) => ({ ...location, active: !!value }),
+													);
+													locationsForm.replace(updatedLocations);
+												}}
+											/>
+										</FormControl>
 
-																		<FormLabel>{location.city}</FormLabel>
-																	</FormItem>
-																</TooltipTrigger>
-																<TooltipContent side="left">
-																	<p>Activate for this city</p>
-																</TooltipContent>
-															</Tooltip>
-														</TooltipProvider>
-													)}
-												/>
-											</div>
-											<Separator className="my-2" />
-										</Fragment>
-									))}
+										<FormLabel>
+											Set active for all cities ({locationsForm.fields.length}{" "}
+											cities selected)
+										</FormLabel>
+									</FormItem>
 								</div>
-							</ScrollArea>
+
+								<ScrollArea className="w-full h-full">
+									<div className="grid gap-2">
+										{locationsForm?.fields?.map((location, fieldIndex) => (
+											<Fragment key={location.id}>
+												<div className="flex">
+													<FormField
+														control={form.control}
+														name={`locations.${fieldIndex}.active`}
+														render={({ field }) => (
+															<TooltipProvider>
+																<Tooltip>
+																	<TooltipTrigger asChild>
+																		<FormItem className="flex flex-row items-start space-x-3 space-y-0">
+																			<FormControl>
+																				<Checkbox
+																					checked={field.value}
+																					onCheckedChange={field.onChange}
+																				/>
+																			</FormControl>
+
+																			<FormLabel>{location.city}</FormLabel>
+																		</FormItem>
+																	</TooltipTrigger>
+																	<TooltipContent side="left">
+																		<p>
+																			{field.value ? "Inactive" : "Active"} for
+																			this city
+																		</p>
+																	</TooltipContent>
+																</Tooltip>
+															</TooltipProvider>
+														)}
+													/>
+												</div>
+											</Fragment>
+										))}
+									</div>
+								</ScrollArea>
+							</div>
 						)}
 					</div>
 				)}

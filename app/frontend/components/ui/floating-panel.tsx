@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import {
 	AnimatePresence,
 	MotionConfig,
@@ -158,6 +159,7 @@ export function FloatingPanelContent({
 	const { isOpen, closeFloatingPanel, uniqueId, triggerRect, title } =
 		useFloatingPanel();
 	const contentRef = useRef<HTMLDivElement>(null);
+	const isDekstopLG = useMediaQuery("(min-width: 1024px)");
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -199,14 +201,20 @@ export function FloatingPanelContent({
 						ref={contentRef}
 						layoutId={`floating-panel-${uniqueId}`}
 						className={cn(
-							"fixed z-50 overflow-hidden border rounded-md shadow outline-none",
+							"fixed z-50 overflow-hidden border rounded-md shadow outline-none transform ",
+							isDekstopLG
+								? "origin-top-left !-translate-x-[100%] xl:!-translate-x-[0%]"
+								: "left-[0%] top-[25%]  translate-y-[50%] md:left-[50%] md:top-[50%] md:!-translate-x-[50%] md:!-translate-y-[50%]",
 							className,
 						)}
-						style={{
-							left: triggerRect ? triggerRect.left : "50%",
-							top: triggerRect ? triggerRect.bottom + 8 : "50%",
-							transformOrigin: "top left",
-						}}
+						style={
+							isDekstopLG && triggerRect
+								? {
+										left: triggerRect.left,
+										top: triggerRect.bottom + 8,
+									}
+								: undefined
+						}
 						initial="hidden"
 						animate="visible"
 						exit="hidden"
@@ -233,7 +241,7 @@ function FloatingPanelTitle({ children }: FloatingPanelTitleProps) {
 	return (
 		<motion.div
 			layoutId={`floating-panel-label-container-${uniqueId}`}
-			className="p-3 border-b bg-background"
+			className="px-6 py-6 border-b md:p-3 bg-background"
 		>
 			<motion.div
 				layoutId={`floating-panel-label-${uniqueId}`}
@@ -355,7 +363,7 @@ export function FloatingPanelBody({
 }: FloatingPanelBodyProps) {
 	return (
 		<motion.div
-			className={cn("p-3 bg-background", className)}
+			className={cn("px-6 py-6 border-b md:p-3 bg-background", className)}
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: 0.2 }}
@@ -376,7 +384,10 @@ export function FloatingPanelFooter({
 }: FloatingPanelFooterProps) {
 	return (
 		<motion.div
-			className={cn("flex justify-end p-3 bg-background border-t", className)}
+			className={cn(
+				"flex justify-end px-6 py-6 border-b md:p-3 bg-background border-t",
+				className,
+			)}
 			initial={{ opacity: 0, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: 0.3 }}

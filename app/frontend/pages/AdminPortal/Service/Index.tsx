@@ -24,13 +24,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
 	FloatingPanelBody,
-	FloatingPanelButton,
 	FloatingPanelCloseButton,
 	FloatingPanelContent,
 	FloatingPanelFooter,
 	FloatingPanelRoot,
 	FloatingPanelTrigger,
 } from "@/components/ui/floating-panel";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, humanize, populateQueryParams } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
@@ -40,7 +40,7 @@ import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { Ellipsis, ImageIcon, Paintbrush, Plus } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { Fragment, useMemo } from "react";
 
 export interface PageProps {
@@ -169,7 +169,7 @@ export default function Index({
 						<div
 							className={cn(
 								"rounded-full size-2",
-								row.original.active ? "bg-green-700" : "bg-muted-foreground",
+								row.original.active ? "bg-green-700" : "bg-destructive",
 							)}
 						/>
 						<span>{row.original.active ? "Active" : "Inactive"}</span>
@@ -192,23 +192,6 @@ export default function Index({
 					() => row.original.locations.filter((location) => location.active),
 					[row.original.locations],
 				);
-				const actions = [
-					{
-						icon: <Plus className="w-4 h-4" />,
-						label: "New File",
-						action: () => console.log("New File"),
-					},
-					{
-						icon: <ImageIcon className="w-4 h-4" />,
-						label: "Upload Image",
-						action: () => console.log("Upload Image"),
-					},
-					{
-						icon: <Paintbrush className="w-4 h-4" />,
-						label: "Edit Colors",
-						action: () => console.log("Edit Colors"),
-					},
-				];
 
 				if (!locations?.length) {
 					return <span title="No locations listed yet">-</span>;
@@ -218,40 +201,45 @@ export default function Index({
 					<div className="flex items-center space-x-2">
 						<span>
 							{locationsActive.length
-								? `Active in ${locationsActive.length} of ${locations.length} locations.`
-								: `Inactive, ${locations.length} locations available.`}
+								? `Active in ${locationsActive.length} of ${locations.length} locations`
+								: `Inactive in all of  ${locations.length} locations`}
 						</span>
 
-						{/* <FloatingPanelRoot>
+						<FloatingPanelRoot>
 							<FloatingPanelTrigger title="Show List">
-								<span className="text-xs">Show List</span>
+								<span className="text-xs">Show</span>
 							</FloatingPanelTrigger>
 
-							<FloatingPanelContent className="w-56">
+							<FloatingPanelContent className="w-full md:max-w-xs lg:w-60">
 								<FloatingPanelBody>
-									<AnimatePresence>
-										{locations.map((action, index) => (
-											<motion.div
-												key={action.id}
-												initial={{ opacity: 0, y: -10 }}
-												animate={{ opacity: 1, y: 0 }}
-												exit={{ opacity: 0, y: 10 }}
-												transition={{ delay: index * 0.1 }}
-												className="mb-2 rounded-md hover:bg-accent hover:text-accent-foreground"
-											>
-												<FloatingPanelButton>
-													{action.city}
-													<span>{action.label}</span>
-												</FloatingPanelButton>
-											</motion.div>
-										))}
-									</AnimatePresence>
+									<ScrollArea className="w-full h-52 lg:h-32">
+										<AnimatePresence>
+											{locations.map((action, index) => (
+												<motion.div
+													key={action.id}
+													initial={{ opacity: 0, y: -10 }}
+													animate={{ opacity: 1, y: 0 }}
+													exit={{ opacity: 0, y: 10 }}
+													transition={{ delay: index * 0.1 }}
+													className="flex items-center px-1 mb-2 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
+												>
+													<div
+														className={cn(
+															"rounded-full size-2",
+															action.active ? "bg-green-700" : "bg-destructive",
+														)}
+													/>
+													<span>{action.city}</span>
+												</motion.div>
+											))}
+										</AnimatePresence>
+									</ScrollArea>
 								</FloatingPanelBody>
 								<FloatingPanelFooter>
 									<FloatingPanelCloseButton />
 								</FloatingPanelFooter>
 							</FloatingPanelContent>
-						</FloatingPanelRoot> */}
+						</FloatingPanelRoot>
 					</div>
 				);
 			},

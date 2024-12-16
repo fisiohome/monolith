@@ -82,9 +82,7 @@ module AdminPortal
             location_service = LocationService.find_or_initialize_by(location: location, service: @service)
             location_service.active = location_data[:active]
 
-            if location_service.save
-              logger.info("LocationService updated for location_id: #{location.id}, service_id: #{@service.id}")
-            else
+            unless location_service.save
               error_message = location_service.errors.full_messages.to_sentence
               logger.error("Failed to update LocationService for location_id: #{location.id}, service_id: #{@service.id}. Errors: #{error_message}")
               raise ActiveRecord::Rollback, "Failed to update location services."
