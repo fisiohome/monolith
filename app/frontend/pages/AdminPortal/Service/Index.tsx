@@ -34,7 +34,7 @@ import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { Ellipsis, Info } from "lucide-react";
+import { Ellipsis, Info, Plus } from "lucide-react";
 import { Fragment, useMemo } from "react";
 
 export interface PageProps {
@@ -212,15 +212,15 @@ export default function Index({
 									<div className="space-y-2 col-span-full">
 										<h4 className="font-medium leading-none">Show Locations</h4>
 										<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
-											<p className="flex items-center space-x-1">
+											<div className="flex items-center space-x-1">
 												<div className="bg-green-700 rounded-full size-2" />
 												<span>{`${locationsActive?.length || 0} Locations`}</span>
-											</p>
+											</div>
 											<Separator orientation="vertical" className="bg-muted-foreground/25" />
-											<p className="flex items-center space-x-1">
+											<div className="flex items-center space-x-1">
 												<div className="rounded-full bg-destructive size-2" />
 												<span>{`${locationInactive?.length || 0} Locations`}</span>
-											</p>
+											</div>
 											<Separator orientation="vertical" className="bg-muted-foreground/25" />
 											<p>{`${locations?.length || 0} Total Locations`}</p>
 										</div>
@@ -276,42 +276,6 @@ export default function Index({
 								</div>
 							</PopoverContent>
 						</Popover>
-
-						{/* <FloatingPanelRoot>
-							<FloatingPanelTrigger title="Show List">
-								<span className="text-xs">Show</span>
-							</FloatingPanelTrigger>
-
-							<FloatingPanelContent className="w-full md:max-w-xs lg:w-60">
-								<FloatingPanelBody>
-									<ScrollArea className="w-full h-52 lg:h-32">
-										<AnimatePresence>
-											{locations.map((action, index) => (
-												<motion.div
-													key={action.id}
-													initial={{ opacity: 0, y: -10 }}
-													animate={{ opacity: 1, y: 0 }}
-													exit={{ opacity: 0, y: 10 }}
-													transition={{ delay: index * 0.1 }}
-													className="flex items-center px-1 mb-2 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
-												>
-													<div
-														className={cn(
-															"rounded-full size-2",
-															action.active ? "bg-green-700" : "bg-destructive",
-														)}
-													/>
-													<span>{action.city}</span>
-												</motion.div>
-											))}
-										</AnimatePresence>
-									</ScrollArea>
-								</FloatingPanelBody>
-								<FloatingPanelFooter>
-									<FloatingPanelCloseButton />
-								</FloatingPanelFooter>
-							</FloatingPanelContent>
-						</FloatingPanelRoot> */}
 					</div>
 				);
 			},
@@ -443,7 +407,7 @@ export default function Index({
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Services</h1>
-				{/* {globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 					<Button
 						onClick={(event) => {
 							event.preventDefault();
@@ -453,7 +417,7 @@ export default function Index({
 						<Plus />
 						Add Service
 					</Button>
-				)} */}
+				)}
 			</PageContainer>
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">

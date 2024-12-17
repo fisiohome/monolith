@@ -205,14 +205,14 @@ export function FormServiceDialogContent({
 	useEffect(() => {
 		const cities = watchCities;
 		const locationSelected = locations
-			.filter((location) => cities?.includes(location.city))
-			.map((location) => ({
+			?.filter((location) => cities?.includes(location.city))
+			?.map((location) => ({
 				id: location.id,
 				city: location.city,
 				active: !!locationsForm?.fields?.find(
 					(field) => field.city === location.city,
 				)?.active,
-			}));
+			})) || [];
 
 		form.setValue("locations", locationSelected);
 	}, [watchCities, locations, locationsForm?.fields?.find, form.setValue]);
@@ -414,8 +414,7 @@ export function FormServiceDialogContent({
 										</FormControl>
 
 										<FormLabel>
-											Set active for all cities ({locationsForm.fields.length}{" "}
-											cities selected)
+											Set active for {locationsForm.fields.length} selected cities
 										</FormLabel>
 									</FormItem>
 								</div>
