@@ -22,15 +22,9 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	FloatingPanelBody,
-	FloatingPanelCloseButton,
-	FloatingPanelContent,
-	FloatingPanelFooter,
-	FloatingPanelRoot,
-	FloatingPanelTrigger,
-} from "@/components/ui/floating-panel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, humanize, populateQueryParams } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
@@ -40,7 +34,7 @@ import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, Info } from "lucide-react";
 import { Fragment, useMemo } from "react";
 
 export interface PageProps {
@@ -192,20 +186,98 @@ export default function Index({
 					() => row.original.locations.filter((location) => location.active),
 					[row.original.locations],
 				);
+				const locationInactive = useMemo(
+					() => row.original.locations.filter((location) => !location.active),
+					[row.original.locations],
+				);
 
 				if (!locations?.length) {
 					return <span title="No locations listed yet">-</span>;
 				}
 
 				return (
-					<div className="flex items-center space-x-2">
-						<span>
+					<div className="flex items-center space-x-2 whitespace-nowrap">
+						<span className="leading-none">
 							{locationsActive.length
 								? `Active in ${locationsActive.length} of ${locations.length} locations`
 								: `Inactive in all of  ${locations.length} locations`}
 						</span>
 
-						<FloatingPanelRoot>
+						<Popover>
+							<PopoverTrigger asChild>
+								<Info className="cursor-pointer size-4 hover:text-accent" />
+							</PopoverTrigger>
+							<PopoverContent className="w-full">
+								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+									<div className="space-y-2 col-span-full">
+										<h4 className="font-medium leading-none">Show Locations</h4>
+										<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
+											<p className="flex items-center space-x-1">
+												<div className="bg-green-700 rounded-full size-2" />
+												<span>{`${locationsActive?.length || 0} Locations`}</span>
+											</p>
+											<Separator orientation="vertical" className="bg-muted-foreground/25" />
+											<p className="flex items-center space-x-1">
+												<div className="rounded-full bg-destructive size-2" />
+												<span>{`${locationInactive?.length || 0} Locations`}</span>
+											</p>
+											<Separator orientation="vertical" className="bg-muted-foreground/25" />
+											<p>{`${locations?.length || 0} Total Locations`}</p>
+										</div>
+									</div>
+
+									<ScrollArea className="w-full max-h-52 lg:max-h-32">
+										<AnimatePresence>
+											{locationsActive?.length ? locationsActive.map((action, index) => (
+												<motion.div
+													key={action.id}
+													initial={{ opacity: 0, y: -10 }}
+													animate={{ opacity: 1, y: 0 }}
+													exit={{ opacity: 0, y: 10 }}
+													transition={{ delay: index * 0.1 }}
+													className="flex items-center px-1 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
+												>
+													<div
+														className={cn(
+															"rounded-full size-2",
+															action.active ? "bg-green-700" : "bg-destructive",
+														)}
+													/>
+													<span>{action.city}</span>
+												</motion.div>
+											)) : (
+												<p className="text-sm text-muted-foreground">There's no active locations</p>
+											)}
+										</AnimatePresence>
+									</ScrollArea>
+
+									<ScrollArea className="w-full max-h-52 lg:max-h-32">
+										<AnimatePresence>
+											{locationInactive.map((action, index) => (
+												<motion.div
+													key={action.id}
+													initial={{ opacity: 0, y: -10 }}
+													animate={{ opacity: 1, y: 0 }}
+													exit={{ opacity: 0, y: 10 }}
+													transition={{ delay: index * 0.1 }}
+													className="flex items-center px-1 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
+												>
+													<div
+														className={cn(
+															"rounded-full size-2",
+															action.active ? "bg-green-700" : "bg-destructive",
+														)}
+													/>
+													<span>{action.city}</span>
+												</motion.div>
+											))}
+										</AnimatePresence>
+									</ScrollArea>
+								</div>
+							</PopoverContent>
+						</Popover>
+
+						{/* <FloatingPanelRoot>
 							<FloatingPanelTrigger title="Show List">
 								<span className="text-xs">Show</span>
 							</FloatingPanelTrigger>
@@ -239,7 +311,7 @@ export default function Index({
 									<FloatingPanelCloseButton />
 								</FloatingPanelFooter>
 							</FloatingPanelContent>
-						</FloatingPanelRoot>
+						</FloatingPanelRoot> */}
 					</div>
 				);
 			},
@@ -414,15 +486,15 @@ export default function Index({
 					<ResponsiveDialog {...formServiceDialog}>
 						{(formServiceDialogMode.isEditMode ||
 							formServiceDialogMode.isCreateMode) && (
-							<FormServiceDialogContent
-								{...{
-									selectedService,
-									locations,
-									forceMode: formServiceDialog.forceMode,
-									handleOpenChange: formServiceDialog.onOpenChange,
-								}}
-							/>
-						)}
+								<FormServiceDialogContent
+									{...{
+										selectedService,
+										locations,
+										forceMode: formServiceDialog.forceMode,
+										handleOpenChange: formServiceDialog.onOpenChange,
+									}}
+								/>
+							)}
 
 						{formServiceDialogMode.isActivateMode && (
 							<ActivateServiceDialog
