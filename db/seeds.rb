@@ -105,8 +105,8 @@ log_message("=== Starting to create the services and locations... ===", :info)
 # seeding the locations
 log_message("Creating the locations...", :info)
 
-# FOR INDONESIAN COUNTRY BASED ON
-# https://api.cahyadsn.com/
+# country name and country code based on https://api.countrystatecity.in/play as uppercase value
+# FOR INDONESIAN COUNTRY BASED ON https://api.cahyadsn.com/
 begin
   locations = [
     {country: "INDONESIA", country_code: "ID", state: "ACEH", city: "KOTA BANDA ACEH"},

@@ -1,4 +1,4 @@
-import type { GroupByLocation, Location } from "@/types/admin-portal/location";
+import type { CityID, GroupByLocation, Location, StateID } from "@/types/admin-portal/location";
 
 export function groupLocationsByCountry(
 	locations: Location[],
@@ -51,3 +51,35 @@ export function groupLocationsByCountry(
 		};
 	});
 }
+
+export const getStatesID = async () => {
+	try {
+		const response = await fetch('https://api.cahyadsn.com/provinces');
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const data = (await response.json()) as { data: StateID[] };
+		return data.data || []
+	} catch (error) {
+		console.error("Error fetching states:", error);
+		return []
+	}
+};
+
+export const getCitiesID = async ({ stateId }: { stateId: string }) => {
+	try {
+		const response = await fetch(`https://api.cahyadsn.com/regencies/${stateId}`);
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const data = (await response.json()) as { data: CityID[] };
+		return data.data || []
+	} catch (error) {
+		console.error("Error fetching states:", error);
+		return []
+	}
+};

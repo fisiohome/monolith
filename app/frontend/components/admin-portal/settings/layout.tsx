@@ -36,7 +36,7 @@ export default function SettingsLayout({
 	}, [globalProps.adminPortal.router.auth.registration.edit, pageUrl]);
 
 	return (
-		<article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-6 space-y-6 md:block">
+		<article className="min-h-[100vh] flex-1 rounded-xl bg-sidebar shadow-inner md:min-h-min p-6 space-y-6 md:block">
 			<div className="-space-y-0.5">
 				<Button
 					onClick={() => window.history.back()}

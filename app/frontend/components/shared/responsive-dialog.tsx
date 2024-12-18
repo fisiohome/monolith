@@ -21,6 +21,7 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "../ui/drawer";
+import { ScrollArea } from "../ui/scroll-area";
 
 const DIALOG_MODE: ResponsiveDialogMode = "dialog";
 
@@ -40,11 +41,11 @@ export const ResponsiveDialog = ({
 	isOpen,
 	onOpenChange,
 	dialogWidth = "380px",
-	forceMode = DIALOG_MODE,
+	forceMode,
 }: ResponsiveDialogProps) => {
 	const isDekstop = useMediaQuery("(min-width: 768px)");
 
-	if (isDekstop && forceMode === "dialog") {
+	if (isDekstop || forceMode === "dialog") {
 		return (
 			<Dialog open={isOpen} onOpenChange={onOpenChange}>
 				<DialogContent
@@ -57,7 +58,7 @@ export const ResponsiveDialog = ({
 						<DialogTitle>{title}</DialogTitle>
 						<DialogDescription>{description}</DialogDescription>
 					</DialogHeader>
-					{children}
+					<ScrollArea className="max-h-[75dvh]">{children}</ScrollArea>
 				</DialogContent>
 			</Dialog>
 		);

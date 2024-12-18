@@ -22,7 +22,11 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -216,37 +220,49 @@ export default function Index({
 												<div className="bg-green-700 rounded-full size-2" />
 												<span>{`${locationsActive?.length || 0} Locations`}</span>
 											</div>
-											<Separator orientation="vertical" className="bg-muted-foreground/25" />
+											<Separator
+												orientation="vertical"
+												className="bg-muted-foreground/25"
+											/>
 											<div className="flex items-center space-x-1">
 												<div className="rounded-full bg-destructive size-2" />
 												<span>{`${locationInactive?.length || 0} Locations`}</span>
 											</div>
-											<Separator orientation="vertical" className="bg-muted-foreground/25" />
+											<Separator
+												orientation="vertical"
+												className="bg-muted-foreground/25"
+											/>
 											<p>{`${locations?.length || 0} Total Locations`}</p>
 										</div>
 									</div>
 
 									<ScrollArea className="w-full max-h-52 lg:max-h-32">
 										<AnimatePresence>
-											{locationsActive?.length ? locationsActive.map((action, index) => (
-												<motion.div
-													key={action.id}
-													initial={{ opacity: 0, y: -10 }}
-													animate={{ opacity: 1, y: 0 }}
-													exit={{ opacity: 0, y: 10 }}
-													transition={{ delay: index * 0.1 }}
-													className="flex items-center px-1 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
-												>
-													<div
-														className={cn(
-															"rounded-full size-2",
-															action.active ? "bg-green-700" : "bg-destructive",
-														)}
-													/>
-													<span>{action.city}</span>
-												</motion.div>
-											)) : (
-												<p className="text-sm text-muted-foreground">There's no active locations</p>
+											{locationsActive?.length ? (
+												locationsActive.map((action, index) => (
+													<motion.div
+														key={action.id}
+														initial={{ opacity: 0, y: -10 }}
+														animate={{ opacity: 1, y: 0 }}
+														exit={{ opacity: 0, y: 10 }}
+														transition={{ delay: index * 0.1 }}
+														className="flex items-center px-1 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
+													>
+														<div
+															className={cn(
+																"rounded-full size-2",
+																action.active
+																	? "bg-green-700"
+																	: "bg-destructive",
+															)}
+														/>
+														<span>{action.city}</span>
+													</motion.div>
+												))
+											) : (
+												<p className="text-sm text-muted-foreground">
+													There's no active locations
+												</p>
 											)}
 										</AnimatePresence>
 									</ScrollArea>
@@ -323,7 +339,7 @@ export default function Index({
 		},
 	];
 
-	// for edit service
+	// for add, edit, activate service
 	const formServiceDialogMode = useMemo(() => {
 		const isCreateMode =
 			globalProps.adminPortal?.currentQuery?.new === "service";
@@ -357,6 +373,7 @@ export default function Index({
 			title,
 			description,
 			isOpen,
+			forceMode: formServiceDialogMode.isEditMode ? "dialog" : undefined,
 			dialogWidth:
 				formServiceDialogMode.isEditMode && isDekstopLG ? "700px" : undefined,
 			onOpenChange: (_value: boolean) => {
@@ -407,17 +424,15 @@ export default function Index({
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Services</h1>
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-					<Button
-						onClick={(event) => {
-							event.preventDefault();
-							routeTo.newService();
-						}}
-					>
-						<Plus />
-						Add Service
-					</Button>
-				)}
+				<Button
+					onClick={(event) => {
+						event.preventDefault();
+						routeTo.newService();
+					}}
+				>
+					<Plus />
+					Add Service
+				</Button>
 			</PageContainer>
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
@@ -450,15 +465,15 @@ export default function Index({
 					<ResponsiveDialog {...formServiceDialog}>
 						{(formServiceDialogMode.isEditMode ||
 							formServiceDialogMode.isCreateMode) && (
-								<FormServiceDialogContent
-									{...{
-										selectedService,
-										locations,
-										forceMode: formServiceDialog.forceMode,
-										handleOpenChange: formServiceDialog.onOpenChange,
-									}}
-								/>
-							)}
+							<FormServiceDialogContent
+								{...{
+									selectedService,
+									locations,
+									forceMode: formServiceDialog.forceMode,
+									handleOpenChange: formServiceDialog.onOpenChange,
+								}}
+							/>
+						)}
 
 						{formServiceDialogMode.isActivateMode && (
 							<ActivateServiceDialog

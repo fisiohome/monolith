@@ -135,7 +135,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 					<Form {...form}>
 						<form
 							onSubmit={form.handleSubmit(onSubmit)}
-							className="grid space-y-4 lg:w-8/12"
+							className="grid gap-4 lg:w-8/12"
 						>
 							<FormField
 								control={form.control}
@@ -160,24 +160,24 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 								control={form.control}
 								name="adminType"
 								render={({ field }) => (
-									<FormItem className="flex flex-col">
-										<FormLabel className="mt-1 mb-1">Type</FormLabel>
+									<FormItem className="grid !my-1">
+										<FormLabel className="h-6">Type</FormLabel>
 										<Popover>
 											<PopoverTrigger asChild>
 												<FormControl>
 													<Button
 														variant="outline"
 														className={cn(
-															"justify-between px-3 w-[200px]",
+															'w-[200px] justify-between text-muted-foreground font-normal !mt-0 px-3',
 															!field.value && "text-muted-foreground",
 														)}
 													>
 														{field.value
 															? humanize(
-																	adminTypeList.find(
-																		(type) => type === field.value,
-																	) || "",
-																)?.toUpperCase()
+																adminTypeList.find(
+																	(type) => type === field.value,
+																) || "",
+															)?.toUpperCase()
 															: "Select admin type"}
 														<ChevronsUpDown className="opacity-50" />
 													</Button>
@@ -187,7 +187,6 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 												<Command>
 													<CommandInput
 														placeholder="Search admin type..."
-														className="my-1 -mr-2 border-0 h-9"
 													/>
 													<CommandList>
 														<CommandEmpty>No admin type found.</CommandEmpty>
