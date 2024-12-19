@@ -40,7 +40,9 @@ module InertiaAdminPortal
                 update_status: update_status_admin_portal_services_path
               },
               location_management: {
-                index: admin_portal_locations_path
+                index: admin_portal_locations_path,
+                create_bulk: create_bulk_admin_portal_locations_path,
+                update_bulk: update_bulk_admin_portal_locations_path
               }
             }
           },

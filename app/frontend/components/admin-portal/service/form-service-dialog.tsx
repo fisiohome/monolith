@@ -140,13 +140,13 @@ export function FormServiceDialogContent({
 		[locationsForm.fields],
 	);
 	function onSubmit(values: z.infer<typeof formSchema>) {
-		console.log("Submitting form to create the service...");
 		const baseURL =
 			globalProps.adminPortal.router.adminPortal.serviceManagement.index;
 		const routeURL =
 			mode === "add" ? baseURL : `${baseURL}/${selectedService?.id}`;
 
 		if (mode === "add") {
+			console.log("Submitting form to create the service...");
 			router.post(
 				routeURL,
 				deepTransformKeysToSnakeCase({
@@ -176,6 +176,9 @@ export function FormServiceDialogContent({
 			return;
 		}
 
+		console.log(
+			`Submitting form to update the service with name ${values.name}...`,
+		);
 		router.put(
 			routeURL,
 			deepTransformKeysToSnakeCase({
@@ -197,7 +200,7 @@ export function FormServiceDialogContent({
 				},
 			},
 		);
-		console.log("Service successfully updated...");
+		console.log(`Service with name ${values.name} successfully updated...`);
 	}
 
 	// watch the cities selected data

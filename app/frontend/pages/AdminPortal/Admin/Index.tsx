@@ -541,7 +541,7 @@ export default function Index({
 					<div className="flex items-center justify-end space-x-2">
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button variant="secondary" size="icon">
+								<Button variant="outline" size="icon">
 									<Ellipsis />
 								</Button>
 							</DropdownMenuTrigger>

@@ -10,13 +10,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { populateQueryParams } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
 import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
 import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, Table as TableTanstack } from "@tanstack/react-table";
-import { Plus } from "lucide-react";
+import { Ellipsis, Plus } from "lucide-react";
 import { useMemo } from "react";
 
 export interface PageProps {
@@ -24,22 +33,43 @@ export interface PageProps {
 		data: Location[];
 		metadata: Metadata;
 	};
+	selectedLocations: Location[] | null;
 }
 export type TableToolbarDataProps = TableTanstack<
 	PageProps["locations"]["data"][number]
 >;
 
-export default function Index({ locations }: PageProps) {
+export default function Index({ locations, selectedLocations }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 
 	// table management
 	const routeTo = {
-		newLocation: () => {
+		newLocations: () => {
 			router.get(
 				pageURL,
 				{ new: "location" },
 				{
-					only: ["selectedLocation", "flash", "adminPortal"],
+					only: ["selectedLocations", "flash", "adminPortal"],
+					preserveScroll: true,
+				},
+			);
+		},
+		editLocation: (ids: number[]) => {
+			router.get(
+				pageURL,
+				{ edit: ids.join(",") },
+				{
+					only: ["selectedLocations", "flash", "adminPortal"],
+					preserveScroll: true,
+				},
+			);
+		},
+		deleteLocation: (id: number) => {
+			router.get(
+				pageURL,
+				{ delete: id },
+				{
+					only: ["selectedLocations", "flash", "adminPortal"],
 					preserveScroll: true,
 				},
 			);
@@ -87,41 +117,87 @@ export default function Index({ locations }: PageProps) {
 			enableSorting: false,
 			enableHiding: false,
 		},
+		{
+			id: "actions",
+			cell: ({ row }) => {
+				return (
+					<div className="flex items-center justify-end space-x-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="icon">
+									<Ellipsis />
+								</Button>
+							</DropdownMenuTrigger>
+
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>Actions</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+
+								<DropdownMenuGroup>
+									<DropdownMenuItem
+										onSelect={() => routeTo.editLocation([row.original.id])}
+									>
+										Edit
+									</DropdownMenuItem>
+								</DropdownMenuGroup>
+
+								{/* <DropdownMenuSeparator />
+								<DropdownMenuItem
+									onSelect={() => routeTo.deleteLocation(row.original.id)}
+								>
+									Delete
+								</DropdownMenuItem> */}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+		},
 	];
 
 	// for add location
-	const formLocationDialogMode = useMemo(() => {
+	const formDialogMode = useMemo(() => {
 		const isCreateMode =
 			globalProps.adminPortal?.currentQuery?.new === "location";
+		const isEditMode = !!globalProps.adminPortal?.currentQuery?.edit;
 
-		return { isCreateMode };
+		return { isCreateMode, isEditMode };
 	}, [globalProps.adminPortal?.currentQuery]);
-	const formLocationDialog = useMemo<ResponsiveDialogProps>(() => {
-		const isOpen = formLocationDialogMode.isCreateMode;
-		const title = "New Location";
-		const description = "Add new locations available for service.";
+	const formDialog = useMemo<ResponsiveDialogProps>(() => {
+		const isOpen = formDialogMode.isCreateMode || formDialogMode.isEditMode;
+		let title = "New Location";
+		let description = "Add new locations available for service.";
+
+		if (formDialogMode.isEditMode) {
+			title = "Update Location";
+			description = "Update the details of available location data.";
+		}
 
 		return {
 			title,
 			description,
 			isOpen,
-			forceMode: formLocationDialogMode.isCreateMode ? "dialog" : undefined,
+			forceMode: formDialogMode.isCreateMode ? "dialog" : undefined,
 			onOpenChange: () => {
-				const { fullUrl, queryParams } = populateQueryParams(pageURL, {
-					new: null,
-				});
+				const objQueryParams = formDialogMode.isEditMode
+					? { edit: null }
+					: { new: null };
+				const { fullUrl, queryParams } = populateQueryParams(
+					pageURL,
+					objQueryParams,
+				);
 
 				router.get(
 					fullUrl,
 					{ ...queryParams },
 					{
-						only: ["selectedLocation", "flash", "adminPortal"],
+						only: ["selectedLocations", "flash", "adminPortal"],
 						preserveScroll: true,
 					},
 				);
 			},
 		};
-	}, [pageURL, formLocationDialogMode]);
+	}, [pageURL, formDialogMode]);
 
 	return (
 		<>
@@ -132,7 +208,7 @@ export default function Index({ locations }: PageProps) {
 				<Button
 					onClick={(event) => {
 						event.preventDefault();
-						routeTo.newLocation();
+						routeTo.newLocations();
 					}}
 				>
 					<Plus />
@@ -150,13 +226,13 @@ export default function Index({ locations }: PageProps) {
 					)}
 				/>
 
-				{formLocationDialog.isOpen && (
-					<ResponsiveDialog {...formLocationDialog}>
+				{formDialog.isOpen && (
+					<ResponsiveDialog {...formDialog}>
 						<FormUpsertLocation
 							{...{
-								selectedLocations: [],
-								forceMode: formLocationDialog.forceMode,
-								handleOpenChange: formLocationDialog.onOpenChange,
+								selectedLocations,
+								forceMode: formDialog.forceMode,
+								handleOpenChange: formDialog.onOpenChange,
 							}}
 						/>
 					</ResponsiveDialog>

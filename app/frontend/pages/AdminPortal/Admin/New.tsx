@@ -168,16 +168,16 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 													<Button
 														variant="outline"
 														className={cn(
-															'w-[200px] justify-between text-muted-foreground font-normal !mt-0 px-3',
+															"w-[200px] justify-between text-muted-foreground font-normal !mt-0 px-3",
 															!field.value && "text-muted-foreground",
 														)}
 													>
 														{field.value
 															? humanize(
-																adminTypeList.find(
-																	(type) => type === field.value,
-																) || "",
-															)?.toUpperCase()
+																	adminTypeList.find(
+																		(type) => type === field.value,
+																	) || "",
+																)?.toUpperCase()
 															: "Select admin type"}
 														<ChevronsUpDown className="opacity-50" />
 													</Button>
@@ -185,9 +185,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 											</PopoverTrigger>
 											<PopoverContent align="start" className="w-[200px] p-0">
 												<Command>
-													<CommandInput
-														placeholder="Search admin type..."
-													/>
+													<CommandInput placeholder="Search admin type..." />
 													<CommandList>
 														<CommandEmpty>No admin type found.</CommandEmpty>
 														<CommandGroup>

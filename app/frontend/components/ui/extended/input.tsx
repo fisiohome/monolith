@@ -62,7 +62,7 @@ const useInputContext = () => {
 
 interface InputRootProps
 	extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size">,
-	VariantProps<typeof inputVariants> {
+		VariantProps<typeof inputVariants> {
 	error?: boolean;
 	textError?: string;
 	maxLength?: number;
@@ -180,7 +180,7 @@ const InputComponent = React.forwardRef<HTMLInputElement, InputRootProps>(
 			error && [
 				"border-red-500 text-red-500",
 				!["flushedfilled", "flushed"].includes(variant as string) &&
-				"focus:outline-red-500",
+					"focus:outline-red-500",
 			],
 			disabled && "opacity-50 cursor-not-allowed",
 			labelPadding,

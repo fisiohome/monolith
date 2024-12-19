@@ -54,7 +54,8 @@
         "bradlc.vscode-tailwindcss",
         "marcoroth.turbo-lsp",
         "redhat.vscode-yaml",
-        "Shopify.ruby-extensions-pack"
+        "Shopify.ruby-extensions-pack",
+        "testdouble.vscode-standard-ruby"
       ]
     }
   }

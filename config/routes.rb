@@ -44,7 +44,12 @@ Rails.application.routes.draw do
             put "update-status" => "services#update_status"
           end
         end
-        resources :locations, only: [:index, :create]
+        resources :locations, only: [:index] do
+          collection do
+            post "create-bulk" => "locations#create_bulk"
+            put "update-bulk" => "locations#update_bulk"
+          end
+        end
       end
     end
 

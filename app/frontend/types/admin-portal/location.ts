@@ -21,5 +21,5 @@ export type GroupByLocation = {
 };
 
 // from get indonesian province external API: https://api.cahyadsn.com/
-export type StateID = { kode: string; nama: string }
-export type CityID = { kode: string; nama: string }
+export type StateID = { kode: string; nama: string };
+export type CityID = { kode: string; nama: string };

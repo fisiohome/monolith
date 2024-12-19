@@ -62,6 +62,8 @@ export interface AdminPortal {
 			};
 			locationManagement: {
 				index: string;
+				createBulk: string;
+				updateBulk: string;
 			};
 		};
 	};
