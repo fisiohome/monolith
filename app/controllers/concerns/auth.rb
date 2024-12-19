@@ -27,7 +27,7 @@ module Auth
 
       deep_transform_keys_to_camel_case(
         {
-          current_user: authenticate_user! ? user_data["admin"].merge(user: user_data.slice("id", "email")) : nil
+          current_user: (authenticate_user! || controller_name === "registrations") ? user_data["admin"].merge(user: user_data.slice("id", "email")) : nil
         }
       )
     }
