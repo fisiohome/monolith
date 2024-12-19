@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Head } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import { Eye, EyeClosed } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -67,131 +67,144 @@ const SignIn = ({ rememberable }: { rememberable: boolean }) => {
 		<>
 			<Head title="Sign In" />
 
-			<article className="flex items-center justify-center w-full h-screen p-4">
-				<Card className="w-full mx-auto md:w-6/12 lg:w-3/12 bg-muted/50">
-					<CardHeader>
-						<CardTitle className="text-xl">Log in to Admin Portal</CardTitle>
+			<article className="flex flex-col items-center justify-center gap-6 p-4 min-h-svh bg-background md:p-10">
+				<section className="flex flex-col w-full max-w-sm gap-6">
+					<Card className="w-full mx-auto bg-sidebar">
+						<CardHeader>
+							<Link href="/" className="flex gap-2 mb-1 font-medium">
+								<div className="flex items-center justify-center rounded-lg size-6 bg-primary text-primary-foreground">
+									<img
+										src="/icon.png"
+										alt="Fisiohome icon"
+										className="rounded-md"
+									/>
+								</div>
+								Fisiohome
+							</Link>
 
-						<CardDescription>
-							Enter your email below to login to your account
-						</CardDescription>
-					</CardHeader>
+							<CardTitle className="text-xl">Log in to Admin Portal</CardTitle>
 
-					<CardContent>
-						<Form {...form}>
-							{/* <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4"> */}
-							<form method="post" action="/sign-in" className="grid gap-4">
-								<input
-									type="hidden"
-									name="authenticity_token"
-									value={
-										(
-											document.querySelector(
-												"meta[name='csrf-token']",
-											) as HTMLMetaElement
-										)?.content
-									}
-									hidden
-								/>
+							<CardDescription>
+								Enter your email below to login to your account
+							</CardDescription>
+						</CardHeader>
 
-								<FormField
-									control={form.control}
-									name="user[email]"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Email</FormLabel>
+						<CardContent>
+							<Form {...form}>
+								{/* <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4"> */}
+								<form method="post" action="/sign-in" className="grid gap-4">
+									<input
+										type="hidden"
+										name="authenticity_token"
+										value={
+											(
+												document.querySelector(
+													"meta[name='csrf-token']",
+												) as HTMLMetaElement
+											)?.content
+										}
+										hidden
+									/>
 
-											<FormControl>
-												<Input
-													{...field}
-													placeholder="your_email@domain.com"
-													autoFocus
-													autoComplete="email"
-												/>
-											</FormControl>
-
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<FormField
-									control={form.control}
-									name="user[password]"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel className="flex items-center">
-												Password
-												{/* <a href={props.forgotPasswordPath} className="inline-block ml-auto text-sm underline">
-                          Forgot your password?
-                        </a> */}
-											</FormLabel>
-
-											<FormControl>
-												<div className="relative">
-													<Input
-														{...field}
-														type={passwordVisibility ? "text" : "password"}
-														placeholder="********"
-														autoComplete="current-password"
-													/>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon"
-														className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
-														onClick={() => {
-															setPasswordVisibility(!passwordVisibility);
-														}}
-													>
-														{!passwordVisibility ? (
-															<Eye className="size-4" />
-														) : (
-															<EyeClosed className="size-4" />
-														)}
-														<span className="sr-only">
-															Toggle Password Visibility
-														</span>
-													</Button>
-												</div>
-											</FormControl>
-
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								{rememberable && (
 									<FormField
 										control={form.control}
-										name="user[remember_me]"
+										name="user[email]"
 										render={({ field }) => (
-											<FormItem className="flex items-center space-x-2">
+											<FormItem>
+												<FormLabel>Email</FormLabel>
+
 												<FormControl>
-													<Checkbox
-														name={field.name}
-														checked={field.value}
-														onCheckedChange={field.onChange}
-														value={field.value ? 1 : 0}
+													<Input
+														{...field}
+														placeholder="your_email@domain.com"
+														autoFocus
+														autoComplete="email"
 													/>
 												</FormControl>
-												<FormLabel className="!mt-0 text-muted-foreground">
-													Remember me for 3 days
-												</FormLabel>
+
+												<FormMessage />
 											</FormItem>
 										)}
 									/>
-								)}
 
-								<div className="mt-4">
-									<Button type="submit" className="w-full">
-										{form.formState.isSubmitting ? "Loading..." : "Login"}
-									</Button>
-								</div>
-							</form>
-						</Form>
-					</CardContent>
-				</Card>
+									<FormField
+										control={form.control}
+										name="user[password]"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel className="flex items-center">
+													Password
+													{/* <a href={props.forgotPasswordPath} className="inline-block ml-auto text-sm underline">
+														Forgot your password?
+													</a> */}
+												</FormLabel>
+
+												<FormControl>
+													<div className="relative">
+														<Input
+															{...field}
+															type={passwordVisibility ? "text" : "password"}
+															placeholder="********"
+															autoComplete="current-password"
+														/>
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon"
+															className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
+															onClick={() => {
+																setPasswordVisibility(!passwordVisibility);
+															}}
+														>
+															{!passwordVisibility ? (
+																<Eye className="size-4" />
+															) : (
+																<EyeClosed className="size-4" />
+															)}
+															<span className="sr-only">
+																Toggle Password Visibility
+															</span>
+														</Button>
+													</div>
+												</FormControl>
+
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									{rememberable && (
+										<FormField
+											control={form.control}
+											name="user[remember_me]"
+											render={({ field }) => (
+												<FormItem className="flex items-center space-x-2">
+													<FormControl>
+														<Checkbox
+															name={field.name}
+															checked={field.value}
+															onCheckedChange={field.onChange}
+															value={field.value ? 1 : 0}
+														/>
+													</FormControl>
+													<FormLabel className="!mt-0 text-muted-foreground">
+														Remember me for 3 days
+													</FormLabel>
+												</FormItem>
+											)}
+										/>
+									)}
+
+									<div className="mt-4">
+										<Button type="submit" className="w-full">
+											{form.formState.isSubmitting ? "Loading..." : "Login"}
+										</Button>
+									</div>
+								</form>
+							</Form>
+						</CardContent>
+					</Card>
+				</section>
 			</article>
 		</>
 	);
