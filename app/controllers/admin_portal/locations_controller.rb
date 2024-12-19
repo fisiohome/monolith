@@ -39,7 +39,7 @@ module AdminPortal
     end
 
     def create_bulk
-      logger.info("Starting the process to create a new locations.")
+      logger.info("Starting the process to create a new location in a bulk.")
 
       locations_params = location_list_params
       errors = []
@@ -78,7 +78,7 @@ module AdminPortal
     end
 
     def update_bulk
-      logger.info("Start the process of updating location details.")
+      logger.info("Start the process of updating location details in a bulk.")
 
       locations_params = location_list_params
       errors = []
@@ -122,7 +122,29 @@ module AdminPortal
         redirect_to admin_portal_locations_path, notice: success_message
       end
     ensure
-      logger.info("Process for updating the locations completed.")
+      logger.info("Process for updating the locations is finished.")
+    end
+
+    def destroy_bulk
+      logger.info("Start the process for delete the locations in a bulk.")
+
+      location_ids = location_list_params.pluck("id")
+      Location.transaction do
+        logger.info("Deleting #{location_ids.size} locations.")
+        Location.where(id: location_ids).delete_all
+      end
+
+      success_message = "Locations deleted successfully."
+      logger.info(success_message)
+      redirect_to admin_portal_locations_path, notice: success_message
+    rescue => error
+      base_error_message = "Failed to delete the locations."
+      logger.error("#{base_error_message}: #{error&.message}")
+      flash[:alert] = base_error_message
+
+      redirect_to admin_portal_locations_path(delete: location_ids.join(","))
+    ensure
+      logger.info("Process for delete the locations is finished.")
     end
 
     private

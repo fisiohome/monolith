@@ -5,20 +5,20 @@ export type ResponsiveDialogMode = "dialog" | "drawer";
 
 export interface Auth {
 	currentUser:
-		| null
-		| (Pick<
-				Admin,
-				| "id"
-				| "name"
-				| "adminType"
-				| "isSuperAdmin?"
-				| "isAdminL1?"
-				| "isAdminL12?"
-				| "isAdminL13?"
-				| "isAdminBacklog?"
-		  > & {
-				user: Pick<User, "id" | "email">;
-		  });
+	| null
+	| (Pick<
+		Admin,
+		| "id"
+		| "name"
+		| "adminType"
+		| "isSuperAdmin?"
+		| "isAdminL1?"
+		| "isAdminL12?"
+		| "isAdminL13?"
+		| "isAdminBacklog?"
+	> & {
+		user: Pick<User, "id" | "email">;
+	});
 }
 export interface FlashMessage {
 	success: string | null;
@@ -64,6 +64,7 @@ export interface AdminPortal {
 				index: string;
 				createBulk: string;
 				updateBulk: string;
+				deleteBulk: string;
 			};
 		};
 	};

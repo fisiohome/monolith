@@ -48,6 +48,7 @@ Rails.application.routes.draw do
           collection do
             post "create-bulk" => "locations#create_bulk"
             put "update-bulk" => "locations#update_bulk"
+            delete "delete-bulk" => "locations#destroy_bulk"
           end
         end
       end
