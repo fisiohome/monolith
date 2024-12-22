@@ -48,6 +48,7 @@ export function NavMain({
 								asChild
 								tooltip={item.title}
 								isActive={item.isActive}
+								className="motion-preset-slide-down"
 							>
 								<Link href={item.url}>
 									<item.icon />
@@ -57,7 +58,7 @@ export function NavMain({
 							{item.items?.length ? (
 								<>
 									<CollapsibleTrigger asChild>
-										<SidebarMenuAction className="data-[state=open]:rotate-90">
+										<SidebarMenuAction className="data-[state=open]:rotate-90 motion-preset-slide-down">
 											<ChevronRight />
 											<span className="sr-only">Toggle</span>
 										</SidebarMenuAction>
@@ -65,7 +66,10 @@ export function NavMain({
 									<CollapsibleContent>
 										<SidebarMenuSub>
 											{item.items?.map((subItem) => (
-												<SidebarMenuSubItem key={subItem.title}>
+												<SidebarMenuSubItem
+													key={subItem.title}
+													className="motion-preset-slide-down motion-delay-100"
+												>
 													<SidebarMenuSubButton
 														asChild
 														isActive={subItem.isActive}

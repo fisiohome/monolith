@@ -89,7 +89,10 @@ export default function AppTopBar() {
 			<div className="flex items-center gap-2 px-4">
 				<SidebarTrigger className="-ml-1" />
 
-				<Separator orientation="vertical" className="h-4 bg-muted-foreground" />
+				<Separator
+					orientation="vertical"
+					className="h-4 bg-muted-foreground/25"
+				/>
 
 				{/* <Breadcrumb>
           <BreadcrumbList>

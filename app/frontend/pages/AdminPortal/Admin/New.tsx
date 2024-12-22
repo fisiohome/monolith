@@ -28,13 +28,7 @@ import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, router, usePage } from "@inertiajs/react";
-import {
-	Check,
-	ChevronLeft,
-	ChevronsUpDown,
-	Eye,
-	EyeClosed,
-} from "lucide-react";
+import { Check, ChevronsUpDown, Eye, EyeClosed } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -108,35 +102,19 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 	return (
 		<>
 			<Head title="Create Admin" />
-			<article className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min p-6 space-y-4">
-				<div className="space-y-6 lg:w-6/12">
-					<div className="flex items-center gap-4">
-						<div className="flex items-center gap-2">
-							<ChevronLeft
-								className="cursor-pointer"
-								onClick={() => {
-									window.history.back();
-								}}
-							/>
-
-							<Separator
-								orientation="vertical"
-								className="h-5 bg-muted-foreground/50"
-							/>
-						</div>
-
-						<h1 className="text-xl font-bold tracking-tight">
-							<span>Create Admin</span>
-						</h1>
+			<article className="min-h-[100vh] flex-1 rounded-xl bg-sidebar md:min-h-min p-6 space-y-4">
+				<section className="flex flex-col justify-center gap-4 mx-auto w-12/12 lg:w-6/12 xl:w-4/12">
+					<div className="flex flex-col space-y-0.5">
+						<h1 className="font-bold leading-none tracking-tight">New Admin</h1>
+						<span className="text-sm text-muted-foreground">
+							Add a new admin account.
+						</span>
 					</div>
 
-					<Separator className="bg-muted-foreground/50" />
+					<Separator />
 
 					<Form {...form}>
-						<form
-							onSubmit={form.handleSubmit(onSubmit)}
-							className="grid gap-4 lg:w-8/12"
-						>
+						<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
 							<FormField
 								control={form.control}
 								name="name"
@@ -322,7 +300,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 								)}
 							/>
 
-							<div className="!mt-10 lg:!mt-6 gap-4 flex flex-col md:flex-row md:justify-end">
+							<div className="!mt-10 lg:!mt-6 gap-4 lg:gap-2 w-full flex flex-col md:flex-row lg:col-span-full md:justify-between">
 								<Button
 									type="button"
 									variant="outline"
@@ -340,7 +318,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 							</div>
 						</form>
 					</Form>
-				</div>
+				</section>
 			</article>
 		</>
 	);

@@ -42,7 +42,6 @@ export default function AppSidebar({
 		globalProps.adminPortal.router.auth.registration.edit,
 	]);
 	const navMainProps = useMemo<React.ComponentProps<typeof NavMain>>(() => {
-		// const label = 'Users Management'
 		const items = [
 			{
 				title: "User Management",
@@ -112,7 +111,10 @@ export default function AppSidebar({
 			return updatedMenu;
 		});
 
-		return { items };
+		return {
+			// label: "User Management",
+			items,
+		};
 	}, [
 		currentUrl,
 		globalProps.adminPortal.router.adminPortal,
@@ -138,7 +140,7 @@ export default function AppSidebar({
 					</SidebarMenuItem>
 				</SidebarMenu>
 			</SidebarHeader>
-			<SidebarContent className="motion-preset-slide-right">
+			<SidebarContent>
 				<NavMain {...navMainProps} />
 				{/* <NavProjects projects={data.projects} /> */}
 				{/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}

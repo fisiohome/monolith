@@ -67,7 +67,7 @@ const SignIn = ({ rememberable }: { rememberable: boolean }) => {
 		<>
 			<Head title="Sign In" />
 
-			<article className="flex flex-col items-center justify-center gap-6 p-4 min-h-svh bg-background md:p-10">
+			<article className="flex flex-col items-center justify-center gap-6 p-4 min-h-svh bg-background md:p-10 motion-preset-fade">
 				<section className="flex flex-col w-full max-w-sm gap-6">
 					<Card className="w-full mx-auto bg-sidebar">
 						<CardHeader>

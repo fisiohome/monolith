@@ -1,5 +1,13 @@
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
-import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -268,8 +276,8 @@ export function FormUpsertLocation({
 														>
 															{field.value
 																? states.find(
-																	(state) => state.nama === field.value,
-																)?.nama || field.value
+																		(state) => state.nama === field.value,
+																	)?.nama || field.value
 																: "Select state/province"}
 															<ChevronsUpDown className="opacity-50" />
 														</Button>
@@ -366,8 +374,8 @@ export function FormUpsertLocation({
 														>
 															{field.value
 																? cities.find(
-																	(city) => city.nama === field.value,
-																)?.nama || field.value
+																		(city) => city.nama === field.value,
+																	)?.nama || field.value
 																: "Select city"}
 															<ChevronsUpDown className="opacity-50" />
 														</Button>
@@ -444,7 +452,11 @@ export interface DeleteLocationAlertProps extends ComponentProps<"dialog"> {
 	selectedLocations: Location[];
 }
 
-export function DeleteLocationAlert({ isOpen, onOpenChange, selectedLocations }: DeleteLocationAlertProps) {
+export function DeleteLocationAlert({
+	isOpen,
+	onOpenChange,
+	selectedLocations,
+}: DeleteLocationAlertProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
 	const [isLoading, setIsLoading] = useState(false);
 	const form = useForm<z.infer<typeof FORM_SCHEMA>>({
@@ -457,12 +469,13 @@ export function DeleteLocationAlert({ isOpen, onOpenChange, selectedLocations }:
 	const onSubmit = (values: z.infer<typeof FORM_SCHEMA>) => {
 		console.log("Deleting the locations...");
 
-		const routeURL = globalProps.adminPortal.router.adminPortal.locationManagement.deleteBulk;
+		const routeURL =
+			globalProps.adminPortal.router.adminPortal.locationManagement.deleteBulk;
 		router.delete(routeURL, {
 			preserveScroll: true,
 			preserveState: true,
 			data: deepTransformKeysToSnakeCase({
-				locations: values.locations
+				locations: values.locations,
 			}),
 			onStart: () => {
 				setIsLoading(true);
@@ -489,11 +502,7 @@ export function DeleteLocationAlert({ isOpen, onOpenChange, selectedLocations }:
 					<form onSubmit={form.handleSubmit(onSubmit)}>
 						<AlertDialogFooter>
 							<AlertDialogCancel>Cancel</AlertDialogCancel>
-							<Button
-								type="submit"
-								variant="destructive"
-								disabled={isLoading}
-							>
+							<Button type="submit" variant="destructive" disabled={isLoading}>
 								{isLoading ? (
 									<>
 										<LoaderIcon className="animate-spin" />
@@ -508,5 +517,5 @@ export function DeleteLocationAlert({ isOpen, onOpenChange, selectedLocations }:
 				</Form>
 			</AlertDialogContent>
 		</AlertDialog>
-	)
+	);
 }

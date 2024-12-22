@@ -1,5 +1,8 @@
 import ToolbarTable from "@/components/admin-portal/location/data-table-toolbar";
-import { DeleteLocationAlert, FormUpsertLocation } from "@/components/admin-portal/location/form-dialog-content";
+import {
+	DeleteLocationAlert,
+	FormUpsertLocation,
+} from "@/components/admin-portal/location/form-dialog-content";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
@@ -205,10 +208,9 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 		return {
 			isOpen,
 			onOpenChange: (_value: boolean) => {
-				const { fullUrl, queryParams } = populateQueryParams(
-					pageURL,
-					{ delete: null },
-				);
+				const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+					delete: null,
+				});
 
 				router.get(
 					fullUrl,
@@ -218,9 +220,9 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 						preserveScroll: true,
 					},
 				);
-			}
-		}
-	}, [pageURL, formDialogMode.isDeleteMode])
+			},
+		};
+	}, [pageURL, formDialogMode.isDeleteMode]);
 
 	return (
 		<>
@@ -262,7 +264,10 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 				)}
 
 				{alertFormDialog.isOpen && (
-					<DeleteLocationAlert {...alertFormDialog} selectedLocations={selectedLocations || []} />
+					<DeleteLocationAlert
+						{...alertFormDialog}
+						selectedLocations={selectedLocations || []}
+					/>
 				)}
 			</PageContainer>
 		</>
