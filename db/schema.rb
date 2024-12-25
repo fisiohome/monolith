@@ -82,11 +82,11 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_03_170200) do
 
   create_table "therapist_addresses", force: :cascade do |t|
     t.uuid "therapist_id", null: false
-    t.bigint "addresses_id", null: false
+    t.bigint "address_id", null: false
     t.boolean "active", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["addresses_id"], name: "index_therapist_addresses_on_addresses_id"
+    t.index ["address_id"], name: "index_therapist_addresses_on_address_id"
     t.index ["therapist_id", "active"], name: "index_therapist_addresses_on_therapist_id_and_active", unique: true, where: "(active = true)"
     t.index ["therapist_id"], name: "index_therapist_addresses_on_therapist_id"
   end
@@ -129,19 +129,19 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_03_170200) do
     t.string "registration_number", null: false
     t.enum "gender", null: false, enum_type: "gender_enum"
     t.integer "batch", null: false
-    t.string "specialization", default: [], array: true
-    t.string "modality", default: [], array: true
+    t.string "specializations", default: [], array: true
+    t.string "modalities", default: [], array: true
     t.enum "employment_type", null: false, enum_type: "employment_type_enum"
     t.enum "employment_status", null: false, enum_type: "employment_status_enum"
     t.uuid "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "service_id"
-    t.index ["modality"], name: "index_therapists_on_modality", using: :gin
+    t.index ["modalities"], name: "index_therapists_on_modalities", using: :gin
     t.index ["phone_number"], name: "index_therapists_on_phone_number", unique: true
     t.index ["registration_number"], name: "index_therapists_on_registration_number", unique: true
     t.index ["service_id"], name: "index_therapists_on_service_id"
-    t.index ["specialization"], name: "index_therapists_on_specialization", using: :gin
+    t.index ["specializations"], name: "index_therapists_on_specializations", using: :gin
     t.index ["user_id"], name: "index_therapists_on_user_id"
   end
 
@@ -170,7 +170,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_03_170200) do
   add_foreign_key "admins", "users"
   add_foreign_key "location_services", "locations"
   add_foreign_key "location_services", "services"
-  add_foreign_key "therapist_addresses", "addresses", column: "addresses_id"
+  add_foreign_key "therapist_addresses", "addresses"
   add_foreign_key "therapist_addresses", "therapists"
   add_foreign_key "therapist_bank_details", "bank_details"
   add_foreign_key "therapist_bank_details", "therapists"

@@ -4,6 +4,7 @@ class TherapistBankDetail < ApplicationRecord
   # define the associations
   belongs_to :therapist
   belongs_to :bank_detail
+  accepts_nested_attributes_for :bank_detail
 
   # cycle callbacks
   before_save :ensure_single_active_bank_detail, if: :active

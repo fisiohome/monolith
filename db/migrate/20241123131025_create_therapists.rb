@@ -10,8 +10,8 @@ class CreateTherapists < ActiveRecord::Migration[8.0]
       t.string :registration_number, null: false
       t.enum :gender, enum_type: :gender_enum, null: false
       t.integer :batch, null: false
-      t.string :specialization, array: true, default: []
-      t.string :modality, array: true, default: []
+      t.string :specializations, array: true, default: []
+      t.string :modalities, array: true, default: []
       t.enum :employment_type, enum_type: :employment_type_enum, null: false
       t.enum :employment_status, enum_type: :employment_status_enum, null: false
       t.references :user, type: :uuid, null: false, foreign_key: true
@@ -20,7 +20,7 @@ class CreateTherapists < ActiveRecord::Migration[8.0]
     end
     add_index :therapists, :phone_number, unique: true
     add_index :therapists, :registration_number, unique: true
-    add_index :therapists, :specialization, using: "gin"
-    add_index :therapists, :modality, using: "gin"
+    add_index :therapists, :specializations, using: "gin"
+    add_index :therapists, :modalities, using: "gin"
   end
 end

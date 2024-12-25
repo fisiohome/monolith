@@ -54,12 +54,12 @@ export default function AppSidebar({
 						url: globalProps.adminPortal.router.authenticatedRootPath,
 						isActive: false,
 					},
-					// {
-					// 	title: "Therapists",
-					// 	url: globalProps.adminPortal.router.adminPortal.therapistManagement
-					// 		.index,
-					// 	isActive: false,
-					// },
+					{
+						title: "Therapists",
+						url: globalProps.adminPortal.router.adminPortal.therapistManagement
+							.index,
+						isActive: false,
+					},
 				],
 			},
 			{

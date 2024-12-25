@@ -3,10 +3,9 @@ class TherapistAddress < ApplicationRecord
 
   # define the associations
   belongs_to :therapist
-  belongs_to :addresses
+  belongs_to :address
 
   # define the validation
-  validates :address_id, presence: true
   validates :active, uniqueness: {scope: :therapist_id, message: "only one active address is allowed per therapist"}, if: -> { active }
 
   private

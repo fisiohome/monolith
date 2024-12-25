@@ -2,7 +2,7 @@ class Service < ApplicationRecord
   include Activation
 
   # define the associations
-  has_one :therapist, dependent: :destroy
+  has_one :therapist
 
   has_many :location_services, dependent: :destroy
   has_many :locations, through: :location_services

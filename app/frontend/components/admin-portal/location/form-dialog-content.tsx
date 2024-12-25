@@ -98,10 +98,6 @@ export function FormUpsertLocation({
 
 	// get states and cities data
 	const [states, setStates] = useState<StateID[]>([]);
-	// ? when we get the cities data?
-	// for edit mode, will be fetch while click select city button
-	// for add mode, will be fetch while state/province data selected
-	const [cities, setCities] = useState<CityID[]>([]);
 	useEffect(() => {
 		const getStatesIDData = async () => {
 			const data = await getStatesID();
@@ -110,6 +106,10 @@ export function FormUpsertLocation({
 
 		getStatesIDData();
 	}, []);
+	// ? when we get the cities data?
+	// for edit mode, will be fetch while click select city button
+	// for add mode, will be fetch while state/province data selected
+	const [cities, setCities] = useState<CityID[]>([]);
 
 	// form states data
 	const buttonProps = useMemo<ResponsiveDialogButton>(() => {
