@@ -50,9 +50,9 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 
 	return (
 		<>
-			<div className="grid w-full grid-cols-3 gap-4">
+			<div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
 				<div className="space-y-1">
-					<p className="text-xs text-muted-foreground">Created Date</p>
+					<p className="text-xs text-muted-foreground">Created date</p>
 					<p className="font-semibold">
 						{format(row.original.createdAt, "PPP")}
 					</p>
@@ -67,10 +67,21 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 					</p>
 				</div>
 				<div className="space-y-1">
-					<p className="text-xs text-muted-foreground">Last Sign In</p>
+					<p className="text-xs text-muted-foreground">Last sign-in</p>
 					<p className="font-semibold">
 						{row?.original?.user?.lastSignInAt
 							? formatDistanceToNow(row?.original?.user?.lastSignInAt, {
+									includeSeconds: true,
+									addSuffix: true,
+								})
+							: "-"}
+					</p>
+				</div>
+				<div className="space-y-1">
+					<p className="text-xs text-muted-foreground">Last online session</p>
+					<p className="font-semibold">
+						{row?.original?.user?.lastOnlineAt
+							? formatDistanceToNow(row?.original?.user?.lastOnlineAt, {
 									includeSeconds: true,
 									addSuffix: true,
 								})

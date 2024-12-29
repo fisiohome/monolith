@@ -129,7 +129,7 @@ GEM
       multi_xml (>= 0.5.2)
     i18n (1.14.6)
       concurrent-ruby (~> 1.0)
-    inertia_rails (3.4.0)
+    inertia_rails (3.6.0)
       railties (>= 6)
     inertia_rails-contrib (0.3.0)
       inertia_rails
@@ -385,7 +385,7 @@ DEPENDENCIES
   capybara
   debug
   devise (~> 4.9)
-  inertia_rails (~> 3.4)
+  inertia_rails (~> 3.6)
   inertia_rails-contrib (~> 0.3.0)
   jbuilder
   kamal

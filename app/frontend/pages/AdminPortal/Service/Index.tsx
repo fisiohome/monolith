@@ -299,6 +299,8 @@ export default function Index({
 		{
 			id: "actions",
 			cell: ({ row }) => {
+				if (globalProps.auth.currentUserType === "THERAPIST") return;
+
 				return (
 					<div className="flex items-center justify-end space-x-2">
 						<DropdownMenu>
@@ -424,15 +426,17 @@ export default function Index({
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Services</h1>
-				<Button
-					onClick={(event) => {
-						event.preventDefault();
-						routeTo.newService();
-					}}
-				>
-					<Plus />
-					Add Service
-				</Button>
+				{globalProps.auth.currentUserType === "ADMIN" && (
+					<Button
+						onClick={(event) => {
+							event.preventDefault();
+							routeTo.newService();
+						}}
+					>
+						<Plus />
+						Add Service
+					</Button>
+				)}
 			</PageContainer>
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">

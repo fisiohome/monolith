@@ -79,7 +79,7 @@ export default function Index({ therapists }: PageProps) {
 			},
 		},
 		{
-			accessorKey: "status",
+			accessorKey: "onlineStatus",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Status" />
 			),
@@ -128,46 +128,60 @@ export default function Index({ therapists }: PageProps) {
 					);
 				}
 
-				return (
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger className="space-x-1">
-								<div className="flex items-center space-x-2">
-									<div
-										className={cn(
-											"rounded-full size-2",
-											isOnline ? "bg-green-700" : "bg-muted-foreground",
-										)}
-									/>
-									<span>{isOnline ? "Online" : "Offline"}</span>
-								</div>
-							</TooltipTrigger>
-							<TooltipContent>
-								{isOnline ? (
-									<span>
-										Current IP: <b>{currentIP}</b>
-									</span>
-								) : (
-									<div className="flex flex-col">
-										<span>
-											Last IP: <b>{lastIP}</b>
-										</span>
-										{lastOnlineAt && (
-											<span>
-												Last Online Session:{" "}
-												<b>
-													{formatDistanceToNow(lastOnlineAt, {
-														includeSeconds: true,
-														addSuffix: true,
-													})}
-												</b>
-											</span>
-										)}
+				if (globalProps.auth.currentUser?.["isSuperAdmin?"]) {
+					return (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger className="space-x-1">
+									<div className="flex items-center space-x-2">
+										<div
+											className={cn(
+												"rounded-full size-2",
+												isOnline ? "bg-green-700" : "bg-muted-foreground",
+											)}
+										/>
+										<span>{isOnline ? "Online" : "Offline"}</span>
 									</div>
-								)}
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isOnline ? (
+										<span>
+											Current IP: <b>{currentIP}</b>
+										</span>
+									) : (
+										<div className="flex flex-col">
+											<span>
+												Last IP: <b>{lastIP}</b>
+											</span>
+											{lastOnlineAt && (
+												<span>
+													Last Online Session:{" "}
+													<b>
+														{formatDistanceToNow(lastOnlineAt, {
+															includeSeconds: true,
+															addSuffix: true,
+														})}
+													</b>
+												</span>
+											)}
+										</div>
+									)}
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					);
+				}
+
+				return (
+					<div className="flex items-center space-x-2">
+						<div
+							className={cn(
+								"rounded-full size-2",
+								isOnline ? "bg-green-700" : "bg-muted-foreground",
+							)}
+						/>
+						<span>{isOnline ? "Online" : "Offline"}</span>
+					</div>
 				);
 			},
 		},
@@ -179,7 +193,7 @@ export default function Index({ therapists }: PageProps) {
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Therapists</h1>
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+				{globalProps.auth.currentUserType === "ADMIN" && (
 					<Button asChild>
 						<Link
 							href={

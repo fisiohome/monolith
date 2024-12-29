@@ -8,9 +8,10 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { humanize } from "@/lib/utils";
+import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
 import { Link, usePage } from "@inertiajs/react";
-import { HandPlatter, HousePlus, Users } from "lucide-react";
+import { HandPlatter, HousePlus, LayoutDashboard, Users } from "lucide-react";
 import type * as React from "react";
 import { useMemo } from "react";
 import { NavMain } from "./nav-main";
@@ -23,11 +24,12 @@ export default function AppSidebar({
 	console.log(globalProps);
 	const navUserProps = useMemo<React.ComponentProps<typeof NavUser>>(() => {
 		const user = {
-			name: globalProps.auth.currentUser?.adminType
-				? humanize(globalProps.auth.currentUser?.adminType)
-				: "Admin",
+			name: humanize(globalProps.auth.currentUser?.name || "Admin"),
 			email: globalProps.auth.currentUser?.user.email || "",
 			avatar: "",
+			type:
+				(globalProps.auth.currentUser?.adminType as AdminTypes[number]) ||
+				"THERAPIST",
 		};
 		const url = {
 			logout: globalProps.adminPortal.router.logout,
@@ -36,52 +38,74 @@ export default function AppSidebar({
 
 		return { user, url };
 	}, [
-		globalProps.auth.currentUser?.user.email,
 		globalProps.auth.currentUser?.adminType,
+		globalProps.auth.currentUser?.user.email,
+		globalProps.auth.currentUser?.name,
 		globalProps.adminPortal.router.logout,
 		globalProps.adminPortal.router.auth.registration.edit,
 	]);
 	const navMainProps = useMemo<React.ComponentProps<typeof NavMain>>(() => {
+		const dashboardMenu = {
+			title: "Dashboard",
+			url: globalProps.adminPortal.router.authenticatedRootPath,
+			icon: LayoutDashboard,
+			isActive: true,
+			items: [],
+		};
+		let userManagementMenu = {
+			title: "User Management",
+			url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
+			icon: Users,
+			isActive: true,
+			items: [
+				{
+					title: "Admins",
+					url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
+					isActive: false,
+				},
+				{
+					title: "Therapists",
+					url: globalProps.adminPortal.router.adminPortal.therapistManagement
+						.index,
+					isActive: false,
+				},
+			],
+		};
+		const serviceManagementMenu = {
+			title: "Service Management",
+			url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
+			icon: HandPlatter,
+			isActive: false,
+			items: [
+				{
+					title: "Services",
+					url: globalProps.adminPortal.router.adminPortal.serviceManagement
+						.index,
+					isActive: false,
+				},
+				{
+					title: "Locations",
+					url: globalProps.adminPortal.router.adminPortal.locationManagement
+						.index,
+					isActive: false,
+				},
+			],
+		};
+
+		// filtering menu items for therapist user account
+		if (globalProps.auth.currentUserType === "THERAPIST") {
+			userManagementMenu = {
+				...userManagementMenu,
+				items: userManagementMenu.items.filter(
+					(item) => item.title !== "Admins",
+				),
+			};
+		}
+
 		const items = [
-			{
-				title: "User Management",
-				url: globalProps.adminPortal.router.authenticatedRootPath,
-				icon: Users,
-				isActive: true,
-				items: [
-					{
-						title: "Admins",
-						url: globalProps.adminPortal.router.authenticatedRootPath,
-						isActive: false,
-					},
-					{
-						title: "Therapists",
-						url: globalProps.adminPortal.router.adminPortal.therapistManagement
-							.index,
-						isActive: false,
-					},
-				],
-			},
-			{
-				title: "Service Management",
-				url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
-				icon: HandPlatter,
-				isActive: false,
-				items: [
-					{
-						title: "Services",
-						url: globalProps.adminPortal.router.adminPortal.serviceManagement
-							.index,
-						isActive: false,
-					},
-					{
-						title: "Locations",
-						url: globalProps.adminPortal.router.adminPortal.locationManagement
-							.index,
-						isActive: false,
-					},
-				],
-			},
+			dashboardMenu,
+			userManagementMenu,
+			serviceManagementMenu,
 		].map((menu) => {
 			const isActiveLink = (currentUrl: string, menuUrl: string) => {
 				const isRoot =
@@ -95,7 +119,7 @@ export default function AppSidebar({
 			};
 			const updatedMenu = { ...menu, isActive: false };
 
-			if (menu.items && Array.isArray(menu.items)) {
+			if (menu.items && Array.isArray(menu.items) && menu.items.length) {
 				updatedMenu.items = menu.items.map((subItem) => {
 					const isActive = isActiveLink(currentUrl, subItem.url);
 					if (isActive) {
@@ -119,6 +143,7 @@ export default function AppSidebar({
 		currentUrl,
 		globalProps.adminPortal.router.adminPortal,
 		globalProps.adminPortal.router.authenticatedRootPath,
+		globalProps.auth.currentUserType,
 	]);
 
 	return (

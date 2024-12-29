@@ -1,24 +1,30 @@
 import type { Admin } from "./admin-portal/admin";
+import type { Service } from "./admin-portal/service";
+import type { Therapist } from "./admin-portal/therapist";
 import type { User } from "./auth";
 
 export type ResponsiveDialogMode = "dialog" | "drawer";
-
+type CurrentUserType = "ADMIN" | "THERAPIST";
+type CurrentUserAdmin = Pick<
+	Admin,
+	| "id"
+	| "name"
+	| "adminType"
+	| "isSuperAdmin?"
+	| "isAdminL1?"
+	| "isAdminL12?"
+	| "isAdminL13?"
+	| "isAdminBacklog?"
+> & {
+	user: Pick<User, "id" | "email">;
+};
+type CurrentUserTypeTherapist = Pick<Therapist, "id" | "name"> & {
+	user: Pick<User, "id" | "email">;
+	service: Pick<Service, "id" | "name" | "code">;
+};
 export interface Auth {
-	currentUser:
-		| null
-		| (Pick<
-				Admin,
-				| "id"
-				| "name"
-				| "adminType"
-				| "isSuperAdmin?"
-				| "isAdminL1?"
-				| "isAdminL12?"
-				| "isAdminL13?"
-				| "isAdminBacklog?"
-		  > & {
-				user: Pick<User, "id" | "email">;
-		  });
+	currentUser: null | (CurrentUserAdmin & CurrentUserTypeTherapist);
+	currentUserType: CurrentUserType;
 }
 export interface FlashMessage {
 	success: string | null;

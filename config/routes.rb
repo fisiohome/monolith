@@ -22,15 +22,17 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     authenticated :user do
-      root to: "admin_portal/admins#index", as: :authenticated_root
+      root to: "admin_portal/dashboards#index", as: :authenticated_root
 
       namespace :admin_portal, path: "admin-portal" do
-        root to: "admins#index"
+        root to: "dashboards#index"
 
         # resources :users, path: "accounts", as: "account_management"
         put "suspend" => "users#suspend_account"
         put "activate" => "users#activate_account"
 
+        resources :dashboards, only: [:index]
+        resources :therapists, path: "therapist-management"
         resources :admins, path: "admin-management", except: [:show, :edit] do
           collection do
             get "generate-reset-password-url" => "admins#generate_reset_password_url"
@@ -38,12 +40,12 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :therapists
         resources :services, only: [:index, :create, :update, :destroy] do
           collection do
             put "update-status" => "services#update_status"
           end
         end
+
         resources :locations, only: [:index] do
           collection do
             post "create-bulk" => "locations#create_bulk"

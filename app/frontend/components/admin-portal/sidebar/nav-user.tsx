@@ -22,6 +22,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { generateInitials } from "@/lib/utils";
+import type { AdminTypes } from "@/types/admin-portal/admin";
 import { Link } from "@inertiajs/react";
 import {
 	ChevronsUpDown,
@@ -40,6 +41,7 @@ export function NavUser({
 		name: string;
 		email: string;
 		avatar: string;
+		type: AdminTypes[number] | "THERAPIST";
 	};
 	url: {
 		logout: string;
@@ -62,17 +64,22 @@ export function NavUser({
 							size="lg"
 							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 						>
-							<Avatar className="w-8 h-8 rounded-lg">
+							<Avatar className="rounded-lg size-10">
 								<AvatarImage src={user.avatar} alt={user.name} />
 								<AvatarFallback className="rounded-lg">
 									{generateInitials(user.name)}
 								</AvatarFallback>
 							</Avatar>
-							<div className="grid flex-1 text-sm leading-tight text-left">
-								<span className="font-semibold capitalize truncate">
-									{user.name}
+							<div className="grid my-1 text-sm leading-tight text-left">
+								<span className="text-[8px] uppercase bg-primary px-1 rounded text-primary-foreground justify-self-start">
+									{user.type.replaceAll("_", " ")}
 								</span>
-								<span className="text-xs truncate">{user.email}</span>
+								<div className="flex flex-col">
+									<span className="font-semibold capitalize truncate">
+										{user.name}
+									</span>
+									<span className="text-xs truncate">{user.email}</span>
+								</div>
 							</div>
 							<ChevronsUpDown className="ml-auto size-4" />
 						</SidebarMenuButton>

@@ -15,7 +15,7 @@ module Auth
     # end
 
     inertia_share auth: -> {
-      user_data = current_user.as_json(
+      admin_serialize = current_user.as_json(
         only: %i[id email],
         include: {
           admin: {
@@ -24,10 +24,37 @@ module Auth
           }
         }
       )
+      therapist_serialize = current_user.as_json(
+        only: %i[id email],
+        include: {
+          therapist: {
+            only: %i[id name],
+            include: {
+              service: {
+                only: %i[id name code]
+              }
+            }
+          }
+        }
+      )
+      authenticated_user = nil
+      authenticated_user_type = "ADMIN"
+
+      if authenticate_user! || controller_name === "registrations"
+        if admin_serialize["admin"]
+          authenticated_user = admin_serialize["admin"]&.merge(user: admin_serialize.slice("id", "email"))
+          authenticated_user_type = "ADMIN"
+        end
+        if therapist_serialize["therapist"]
+          authenticated_user = therapist_serialize["therapist"]&.merge(user: therapist_serialize.slice("id", "email"))
+          authenticated_user_type = "THERAPIST"
+        end
+      end
 
       deep_transform_keys_to_camel_case(
         {
-          current_user: (authenticate_user! || controller_name === "registrations") ? user_data["admin"].merge(user: user_data.slice("id", "email")) : nil
+          current_user: authenticated_user,
+          current_user_type: authenticated_user_type
         }
       )
     }

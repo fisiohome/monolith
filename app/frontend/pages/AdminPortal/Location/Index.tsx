@@ -97,7 +97,9 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 						/>
 
 						<div className="flex gap-2">
-							<Badge variant="default">{row.original.countryCode}</Badge>
+							<Badge variant="outline" className="shadow">
+								{row.original.countryCode}
+							</Badge>
 							<p className="font-semibold">{row.original.country}</p>
 						</div>
 					</div>
@@ -123,6 +125,8 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 		{
 			id: "actions",
 			cell: ({ row }) => {
+				if (globalProps.auth.currentUserType === "THERAPIST") return;
+
 				return (
 					<div className="flex items-center justify-end space-x-2">
 						<DropdownMenu>
@@ -230,15 +234,17 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Locations</h1>
-				<Button
-					onClick={(event) => {
-						event.preventDefault();
-						routeTo.newLocations();
-					}}
-				>
-					<Plus />
-					Add Location
-				</Button>
+				{globalProps.auth.currentUserType === "ADMIN" && (
+					<Button
+						onClick={(event) => {
+							event.preventDefault();
+							routeTo.newLocations();
+						}}
+					>
+						<Plus />
+						Add Location
+					</Button>
+				)}
 			</PageContainer>
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">

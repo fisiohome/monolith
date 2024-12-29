@@ -2,6 +2,7 @@ module AdminPortal
   class AdminsController < ApplicationController
     # before_action :set_admin, only: %i[ show edit update destroy ]
     before_action :set_admin, only: %i[update destroy]
+    before_action :restrict_therapist_access
 
     # GET /admins
     def index
@@ -24,7 +25,15 @@ module AdminPortal
                         nil
           end
         )
-        .sort_by { |u| u.user.is_online? ? 1 : 0 }.reverse
+        .sort_by { |u|
+        if u.user.is_online?
+          2
+        elsif u.user.last_online_at
+          1
+        else
+          0
+        end
+      }.reverse
       # .order(sort_by_last_online_at)
 
       # fetch paginated data with the order query
@@ -198,6 +207,12 @@ module AdminPortal
     end
 
     private
+
+    def restrict_therapist_access
+      unless current_user&.admin&.present?
+        redirect_to admin_portal_therapists_path, alert: "You do not have access to this resource."
+      end
+    end
 
     # Use callbacks to share common setup or constraints between actions.
     def set_admin

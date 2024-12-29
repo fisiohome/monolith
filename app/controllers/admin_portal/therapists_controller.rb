@@ -8,7 +8,15 @@ module AdminPortal
       page = params.fetch(:page, 1)
       limit = params.fetch(:limit, 10)
 
-      therapist_collections = Therapist.order(created_at: "DESC")
+      therapist_collections = Therapist.order(created_at: "DESC").sort_by { |u|
+        if u.user.is_online?
+          2
+        elsif u.user.last_online_at
+          1
+        else
+          0
+        end
+      }.reverse
       @pagy, @therapists = pagy_array(therapist_collections, page:, limit:)
 
       render inertia: "AdminPortal/Therapist/Index", props: deep_transform_keys_to_camel_case({

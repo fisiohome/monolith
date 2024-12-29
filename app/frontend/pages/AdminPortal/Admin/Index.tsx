@@ -406,7 +406,9 @@ export default function Index({
 			cell: ({ row }) => {
 				return (
 					<>
-						<Badge>{humanize(row.original.adminType).toUpperCase()}</Badge>
+						<Badge variant="accent" className="text-nowrap">
+							{humanize(row.original.adminType).toUpperCase()}
+						</Badge>
 					</>
 				);
 			},
@@ -461,46 +463,60 @@ export default function Index({
 					);
 				}
 
-				return (
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger className="space-x-1">
-								<div className="flex items-center space-x-2">
-									<div
-										className={cn(
-											"rounded-full size-2",
-											isOnline ? "bg-green-700" : "bg-muted-foreground",
-										)}
-									/>
-									<span>{isOnline ? "Online" : "Offline"}</span>
-								</div>
-							</TooltipTrigger>
-							<TooltipContent>
-								{isOnline ? (
-									<span>
-										Current IP: <b>{currentIP}</b>
-									</span>
-								) : (
-									<div className="flex flex-col">
-										<span>
-											Last IP: <b>{lastIP}</b>
-										</span>
-										{lastOnlineAt && (
-											<span>
-												Last Online Session:{" "}
-												<b>
-													{formatDistanceToNow(lastOnlineAt, {
-														includeSeconds: true,
-														addSuffix: true,
-													})}
-												</b>
-											</span>
-										)}
+				if (globalProps.auth.currentUser?.["isSuperAdmin?"]) {
+					return (
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger className="space-x-1">
+									<div className="flex items-center space-x-2">
+										<div
+											className={cn(
+												"rounded-full size-2",
+												isOnline ? "bg-green-700" : "bg-muted-foreground",
+											)}
+										/>
+										<span>{isOnline ? "Online" : "Offline"}</span>
 									</div>
-								)}
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isOnline ? (
+										<span>
+											Current IP: <b>{currentIP}</b>
+										</span>
+									) : (
+										<div className="flex flex-col">
+											<span>
+												Last IP: <b>{lastIP}</b>
+											</span>
+											{lastOnlineAt && (
+												<span>
+													Last Online Session:{" "}
+													<b>
+														{formatDistanceToNow(lastOnlineAt, {
+															includeSeconds: true,
+															addSuffix: true,
+														})}
+													</b>
+												</span>
+											)}
+										</div>
+									)}
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					);
+				}
+
+				return (
+					<div className="flex items-center space-x-2">
+						<div
+							className={cn(
+								"rounded-full size-2",
+								isOnline ? "bg-green-700" : "bg-muted-foreground",
+							)}
+						/>
+						<span>{isOnline ? "Online" : "Offline"}</span>
+					</div>
 				);
 			},
 		},
