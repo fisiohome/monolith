@@ -1,6 +1,8 @@
 module AdminPortal
   class DashboardsController < ApplicationController
     def index
+      Rails.logger.info "Starting AdminPortal::DashboardsController#index"
+
       # --- Admins ---
       @total_admins = Admin.count
       @active_admins = Admin.joins(:user).where(["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]).count
@@ -104,6 +106,10 @@ module AdminPortal
           }
         }
       }
+    rescue => e
+      Rails.logger.error "Error in AdminPortal::DashboardsController#index: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      render inertia: "AdminPortal/Dashboard/Index", props: {error: "An error occurred while loading the dashboard."}, status: :internal_server_error
     end
   end
 end
