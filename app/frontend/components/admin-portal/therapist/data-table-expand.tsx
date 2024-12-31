@@ -270,15 +270,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 											)}
 										</div>
 									) : (
-										<div className="flex items-center space-x-2">
-											<div
-												className={cn(
-													"rounded-full size-2",
-													isOnline ? "bg-green-700" : "bg-gray-500",
-												)}
-											/>
-											<span>{isOnline ? "Online" : "Offline"}</span>
-										</div>
+										<span>{isOnline ? "Online" : "Offline"}</span>
 									)}
 								</TooltipContent>
 							</Tooltip>
@@ -369,7 +361,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 														detail.active ? "bg-emerald-500" : "bg-gray-500"
 													}
 												>
-													{detail.active ? "Active" : "Inactive"}
+													{detail.active ? "ACTIVE" : "INACTIVE"}
 												</Badge>
 											</div>
 
@@ -415,7 +407,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 														item.active ? "bg-emerald-500" : "bg-gray-500"
 													}
 												>
-													{item.active ? "Active" : "Inactive"}
+													{item.active ? "ACTIVE" : "INACTIVE"}
 												</Badge>
 											</div>
 

@@ -1,6 +1,7 @@
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import ExpandSubTable from "@/components/admin-portal/therapist/data-table-expand";
+import DotBadgeWithLabel from "@/components/shared/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -283,10 +284,9 @@ export default function Index({ therapists }: PageProps) {
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger>
-									<div className="flex items-center space-x-2">
-										<div className="bg-red-700 rounded-full size-2" />
+									<DotBadgeWithLabel variant="destructive">
 										<span>Suspended</span>
-									</div>
+									</DotBadgeWithLabel>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
 									<div className="flex flex-col">
@@ -317,15 +317,9 @@ export default function Index({ therapists }: PageProps) {
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger className="space-x-1">
-									<div className="flex items-center space-x-2">
-										<div
-											className={cn(
-												"rounded-full size-2",
-												isOnline ? "bg-green-700" : "bg-gray-500",
-											)}
-										/>
+									<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
 										<span>{isOnline ? "Online" : "Offline"}</span>
-									</div>
+									</DotBadgeWithLabel>
 								</TooltipTrigger>
 								<TooltipContent>
 									{isOnline ? (
@@ -357,15 +351,9 @@ export default function Index({ therapists }: PageProps) {
 				}
 
 				return (
-					<div className="flex items-center space-x-2">
-						<div
-							className={cn(
-								"rounded-full size-2",
-								isOnline ? "bg-green-700" : "bg-gray-500",
-							)}
-						/>
+					<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
 						<span>{isOnline ? "Online" : "Offline"}</span>
-					</div>
+					</DotBadgeWithLabel>
 				);
 			},
 		},
