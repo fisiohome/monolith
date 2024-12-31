@@ -54,8 +54,6 @@ export default function Index({
 	services,
 	therapists,
 }: PageProps) {
-	console.log({ locations, therapists });
-
 	const statsDashboards = useMemo(() => {
 		const adminTotal = {
 			title: "Total Admins",

@@ -4,16 +4,16 @@ module AdminPortal
       Rails.logger.info "Starting AdminPortal::DashboardsController#index"
 
       # --- Admins ---
-      @total_admins = Admin.count
-      @active_admins = Admin.joins(:user).where(["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]).count
-      @admins_by_type = Admin.group(:admin_type).count
+      @total_admins = Admin.count || 0
+      @active_admins = Admin.joins(:user).where(["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]).count || 0
+      @admins_by_type = Admin.group(:admin_type).count || {}
       @this_month_admins = Admin.where(
         created_at: Time.current.all_month
-      ).count
+      ).count || 0
 
       @last_month_admins = Admin.where(
         created_at: 1.month.ago.all_month
-      ).count
+      ).count || 0
 
       @percentage_increment_admins = if @last_month_admins.positive?
         ((@this_month_admins - @last_month_admins) / @last_month_admins.to_f) * 100
@@ -22,20 +22,20 @@ module AdminPortal
       end
 
       # --- Therapists ---
-      @total_therapists = Therapist.count
-      @therapists_by_gender = Therapist.group(:gender).count
-      @therapists_by_employment_status = Therapist.group(:employment_status).count
-      @therapists_by_employment_type = Therapist.group(:employment_type).count
-      @therapists_by_service = Therapist.joins(:service).group("services.name").count
+      @total_therapists = Therapist.count || 0
+      @therapists_by_gender = Therapist.group(:gender).count || {}
+      @therapists_by_employment_status = Therapist.group(:employment_status).count || {}
+      @therapists_by_employment_type = Therapist.group(:employment_type).count || {}
+      @therapists_by_service = Therapist.joins(:service).group("services.name").count || {}
 
       # Example: monthly increment of new therapists
       @this_month_therapists = Therapist.where(
         created_at: Time.current.all_month
-      ).count
+      ).count || 0
 
       @last_month_therapists = Therapist.where(
         created_at: 1.month.ago.all_month
-      ).count
+      ).count || 0
 
       @percentage_increment_therapists = if @last_month_therapists.positive?
         ((@this_month_therapists - @last_month_therapists) / @last_month_therapists.to_f) * 100
@@ -44,22 +44,22 @@ module AdminPortal
       end
 
       # --- Services ---
-      @total_services = Service.count
-      @active_services = Service.where(active: true).count
+      @total_services = Service.count || 0
+      @active_services = Service.where(active: true).count || 0
 
       # --- Locations ---
-      @total_locations = Location.count
+      @total_locations = Location.count || 0
       @top_5_cities_with_therapists = Location
         .joins(addresses: :therapist_addresses)
         .where(therapist_addresses: {active: true})
         .group(:city)
         .order("COUNT(therapist_addresses.id) DESC")
         .limit(5)
-        .count
+        .count || {}
 
       # --- LocationServices ---
-      @total_location_services = LocationService.distinct.count(:location_id)
-      @active_location_services = LocationService.where(active: true).distinct.count(:location_id)
+      @total_location_services = LocationService.distinct.count(:location_id) || 0
+      @active_location_services = LocationService.where(active: true).distinct.count(:location_id) || 0
 
       # Render with Inertia
       render inertia: "AdminPortal/Dashboard/Index", props: {
