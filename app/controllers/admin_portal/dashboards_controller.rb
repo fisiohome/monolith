@@ -108,8 +108,7 @@ module AdminPortal
       }
     rescue => e
       Rails.logger.error "Error in AdminPortal::DashboardsController#index: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
-      render inertia: "AdminPortal/Dashboard/Index", props: {error: "An error occurred while loading the dashboard."}, status: :internal_server_error
+      render inertia: "AdminPortal/Dashboard/Index", props: {errors: "An error occurred while loading the dashboard, Errors: #{e.message}."}, status: :internal_server_error
     end
   end
 end
