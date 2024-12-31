@@ -397,8 +397,8 @@ export default function FormTherapist({
 		defaultValues: {
 			user: {
 				email: "",
-				password: "Therapist00!",
-				passwordConfirmation: "Therapist00!",
+				password: "Therapist123!",
+				passwordConfirmation: "Therapist123!",
 			},
 			name: "",
 			batch: 1,
