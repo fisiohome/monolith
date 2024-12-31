@@ -15,8 +15,6 @@ import {
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
 import {
 	cn,
-	copyToClipboard,
-	formatPhoneNumber,
 	generateInitials,
 	populateQueryParams,
 	removeWhiteSpaces,
@@ -27,17 +25,8 @@ import type { Metadata } from "@/types/pagy";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, ExpandedState, Row } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
-import {
-	ChevronDown,
-	ChevronUp,
-	Clipboard,
-	InfinityIcon,
-	Mail,
-	Phone,
-	Plus,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, InfinityIcon, Plus } from "lucide-react";
 import { useMemo } from "react";
-import { toast } from "sonner";
 
 export interface PageProps {
 	therapists: {
@@ -48,7 +37,6 @@ export interface PageProps {
 export type TableRowDataProps = Row<PageProps["therapists"]["data"][number]>;
 
 export default function Index({ therapists }: PageProps) {
-	console.log(therapists.data[0]);
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 
 	// table state management
@@ -333,7 +321,7 @@ export default function Index({ therapists }: PageProps) {
 										<div
 											className={cn(
 												"rounded-full size-2",
-												isOnline ? "bg-green-700" : "bg-muted-foreground",
+												isOnline ? "bg-green-700" : "bg-gray-500",
 											)}
 										/>
 										<span>{isOnline ? "Online" : "Offline"}</span>
@@ -373,7 +361,7 @@ export default function Index({ therapists }: PageProps) {
 						<div
 							className={cn(
 								"rounded-full size-2",
-								isOnline ? "bg-green-700" : "bg-muted-foreground",
+								isOnline ? "bg-green-700" : "bg-gray-500",
 							)}
 						/>
 						<span>{isOnline ? "Online" : "Offline"}</span>

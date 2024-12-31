@@ -90,7 +90,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 				icon: Microscope,
 				label: "Specializations",
 				value: data.specializations?.length ? (
-					<div className="flex flex-wrap items-center justify-end gap-1">
+					<div className="flex flex-wrap items-center justify-end gap-1 text-center">
 						{data.specializations.map((specialization) => (
 							<Badge key={specialization}>{specialization}</Badge>
 						))}
@@ -103,7 +103,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 				icon: Stethoscope,
 				label: "Treatment Modalities",
 				value: data.modalities?.length ? (
-					<div className="flex flex-wrap items-center justify-end gap-1">
+					<div className="flex flex-wrap items-center justify-end gap-1 text-center">
 						{data.modalities.map((modality) => (
 							<Badge key={modality} variant="secondary">
 								{modality}
@@ -274,7 +274,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 											<div
 												className={cn(
 													"rounded-full size-2",
-													isOnline ? "bg-green-700" : "bg-muted-foreground",
+													isOnline ? "bg-green-700" : "bg-gray-500",
 												)}
 											/>
 											<span>{isOnline ? "Online" : "Offline"}</span>
@@ -346,13 +346,50 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 					</CardContent>
 				</Card>
 
-				{/* <Card className="col-span-full md:col-span-6">
+				<Card className="col-span-full md:col-span-6">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-1.5">
 							<CreditCard className="size-4" />
 							Bank Accounts
 						</CardTitle>
 					</CardHeader>
+					<CardContent>
+						{data.bankDetails?.length ? (
+							<div className="grid gap-4">
+								{data.bankDetails.map((detail) => (
+									<Fragment key={detail.id}>
+										<div className="grid gap-2">
+											<div className="flex items-start justify-between gap-2">
+												<p className="font-medium">
+													{detail.bankName.toUpperCase()}
+												</p>
+
+												<Badge
+													className={
+														detail.active ? "bg-emerald-500" : "bg-gray-500"
+													}
+												>
+													{detail.active ? "Active" : "Inactive"}
+												</Badge>
+											</div>
+
+											<div className="grid font-light">
+												<span>{detail.accountHolderName}</span>
+												<span>{detail.accountNumber}</span>
+											</div>
+										</div>
+
+										<Separator />
+									</Fragment>
+								))}
+							</div>
+						) : (
+							<p>
+								There's no bank details yet, let's get started by adding the
+								data first.
+							</p>
+						)}
+					</CardContent>
 				</Card>
 
 				<Card className="col-span-full md:col-span-6">
@@ -362,7 +399,63 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 							Addresses
 						</CardTitle>
 					</CardHeader>
-				</Card> */}
+					<CardContent>
+						{data.addresses?.length ? (
+							<div className="grid gap-4">
+								{data.addresses.map((item) => (
+									<Fragment key={item.id}>
+										<div className="grid gap-2">
+											<div className="flex items-start justify-between gap-2">
+												<p className="font-medium">
+													{item.location.country} - {item.location.state}
+												</p>
+
+												<Badge
+													className={
+														item.active ? "bg-emerald-500" : "bg-gray-500"
+													}
+												>
+													{item.active ? "Active" : "Inactive"}
+												</Badge>
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>Country:</span>
+												<span className="font-medium">
+													{item.location.countryCode} - {item.location.country}
+												</span>
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>State - City:</span>
+												<span className="font-medium">
+													{item.location.state} - {item.location.city}
+												</span>
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>Postal Code:</span>
+												<span className="font-medium">{item.postalCode}</span>
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>Address:</span>
+												<span className="font-medium">{item.address}</span>
+											</div>
+										</div>
+
+										<Separator />
+									</Fragment>
+								))}
+							</div>
+						) : (
+							<p>
+								There's no addresses yet, let's get started by adding the data
+								first.
+							</p>
+						)}
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);

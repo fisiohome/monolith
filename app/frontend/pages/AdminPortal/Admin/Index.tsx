@@ -472,7 +472,7 @@ export default function Index({
 										<div
 											className={cn(
 												"rounded-full size-2",
-												isOnline ? "bg-green-700" : "bg-muted-foreground",
+												isOnline ? "bg-green-700" : "bg-gray-500",
 											)}
 										/>
 										<span>{isOnline ? "Online" : "Offline"}</span>
@@ -512,7 +512,7 @@ export default function Index({
 						<div
 							className={cn(
 								"rounded-full size-2",
-								isOnline ? "bg-green-700" : "bg-muted-foreground",
+								isOnline ? "bg-green-700" : "bg-gray-500",
 							)}
 						/>
 						<span>{isOnline ? "Online" : "Offline"}</span>

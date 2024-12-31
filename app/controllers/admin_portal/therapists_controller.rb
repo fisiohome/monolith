@@ -135,7 +135,10 @@ module AdminPortal
 
         # serialize the therapist addresses
         therapist_serialize["addresses"] = therapist.therapist_addresses.map do |therapist_address|
-          therapist_address.address.attributes.merge(active: therapist_address.active)
+          therapist_address.address.attributes.merge(
+            active: therapist_address.active,
+            location: therapist_address.address.location.attributes
+          )
         end
       end
     end
