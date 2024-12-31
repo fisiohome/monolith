@@ -83,7 +83,7 @@ class Therapist < ApplicationRecord
     when "ACTIVE"
       user.update(suspend_at: nil, suspend_end: nil) # Remove suspension
     when "HOLD", "INACTIVE"
-      suspend_duration = (employment_status == "HOLD") ? 7.days : nil # Example: 7 days suspension for "HOLD"
+      suspend_duration = (employment_status == "HOLD") ? 30.days : nil # Example: 30 days suspension for "HOLD"
       user.update(
         suspend_at: Time.current,
         suspend_end: suspend_duration ? Time.current + suspend_duration : nil

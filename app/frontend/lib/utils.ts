@@ -1,14 +1,41 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+/**
+ * Merges multiple class names into a single string.
+ *
+ * This function takes any number of class name inputs, processes them using
+ * `clsx` to handle conditional class names, and then merges them using
+ * `twMerge` to ensure Tailwind CSS classes are combined correctly.
+ *
+ * @param inputs - An array of class values which can be strings, objects, arrays, etc.
+ * @returns A single string containing the merged class names.
+ */
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
+/**
+ * Navigates the browser to the previous page in the session history.
+ *
+ * This function uses the `window.history.back()` method to move the user
+ * to the previous page they visited. It is typically used in navigation
+ * components to provide a "back" button functionality.
+ */
 export function goBackHandler() {
 	window.history.back();
 }
 
+/**
+ * Generates initials from a given input string.
+ *
+ * This function takes a string input, converts it to lowercase, splits it into individual words,
+ * extracts the first letter of each word, converts those letters to uppercase, and then combines them
+ * to form the initials.
+ *
+ * @param input - The input string from which to generate initials.
+ * @returns A string containing the initials of the input words.
+ */
 export function generateInitials(input: string): string {
 	// Convert the input to lowercase and split it into individual words
 	const wordArray = input.toLowerCase().split(" ");
@@ -36,6 +63,14 @@ export function humanize(str: string): string {
 	);
 }
 
+/**
+ * Creates a debounced function that delays invoking the provided function until after the specified delay has elapsed
+ * since the last time the debounced function was invoked.
+ *
+ * @param fn - The function to debounce.
+ * @param delay - The number of milliseconds to delay.
+ * @returns A new debounced function.
+ */
 export function debounce(fn: (...args: any[]) => void, delay: number) {
 	let timer: ReturnType<typeof setTimeout>;
 
@@ -45,6 +80,22 @@ export function debounce(fn: (...args: any[]) => void, delay: number) {
 	};
 }
 
+/**
+ * Populates the query parameters of a given URL with additional parameters.
+ *
+ * @param url - The base URL to which query parameters will be added.
+ * @param args - An array of objects containing key-value pairs to be added as query parameters.
+ * @returns An object containing:
+ *   - `baseUrl`: The base URL without any query parameters.
+ *   - `fullUrl`: The full URL with the updated query parameters.
+ *   - `queryParams`: An object representing the updated query parameters.
+ *
+ * @example
+ * ```typescript
+ * const result = populateQueryParams('https://example.com', { foo: 'bar' }, { baz: 'qux' });
+ * console.log(result.fullUrl); // 'https://example.com?foo=bar&baz=qux'
+ * ```
+ */
 export function populateQueryParams(
 	url: string,
 	...args: Record<string, any>[]
@@ -120,4 +171,20 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 	}
 }
 
+/**
+ * Removes all white spaces from the given string.
+ *
+ * @param data - The string from which white spaces will be removed.
+ * @returns A new string with all white spaces removed.
+ */
 export const removeWhiteSpaces = (data: string) => data.replace(/\s/g, "");
+
+/**
+ * Formats a phone number string to the format: +62 xxx-xxxx-xxxx.
+ *
+ * @param phone - The phone number string to be formatted.
+ * @returns The formatted phone number string.
+ */
+export function formatPhoneNumber(phone: string) {
+	return phone.replace(/(\+\d{2})(\d{3})(\d{4})(\d{5})/, "$1 $2-$3-$4");
+}

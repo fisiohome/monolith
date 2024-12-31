@@ -11,7 +11,12 @@ import { humanize } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
 import { Link, usePage } from "@inertiajs/react";
-import { HandPlatter, HousePlus, LayoutDashboard, Users } from "lucide-react";
+import {
+	BriefcaseMedical,
+	HousePlus,
+	LayoutDashboard,
+	Users,
+} from "lucide-react";
 import type * as React from "react";
 import { useMemo } from "react";
 import { NavMain } from "./nav-main";
@@ -74,7 +79,7 @@ export default function AppSidebar({
 		const serviceManagementMenu = {
 			title: "Service Management",
 			url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
-			icon: HandPlatter,
+			icon: BriefcaseMedical,
 			isActive: false,
 			items: [
 				{

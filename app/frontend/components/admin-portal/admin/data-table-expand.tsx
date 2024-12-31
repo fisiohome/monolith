@@ -12,10 +12,10 @@ import {
 	Pencil,
 	Trash2,
 } from "lucide-react";
-import { type ComponentProps, useMemo } from "react";
+import { useMemo } from "react";
 import { DeleteAdminAlert } from "./feature-actions";
 
-interface ExpandSubTableProps extends ComponentProps<"div"> {
+interface ExpandSubTableProps {
 	row: TableRowDataProps;
 	routeTo: {
 		editAdmin: (id: number) => void;
@@ -52,7 +52,7 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 		<>
 			<div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
 				<div className="space-y-1">
-					<p className="text-xs text-muted-foreground">Created date</p>
+					<p className="text-xs text-muted-foreground">Join date</p>
 					<p className="font-semibold">
 						{format(row.original.createdAt, "PPP")}
 					</p>
@@ -90,7 +90,7 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 				</div>
 				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 					<div className="space-y-1">
-						<p className="text-xs text-muted-foreground">Last IP</p>
+						<p className="text-xs text-muted-foreground">Last IP Address</p>
 						<p className="font-semibold">
 							{row?.original?.user?.lastSignInIp || "-"}
 						</p>
@@ -99,7 +99,9 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 				{globalProps.auth.currentUser?.["isSuperAdmin?"] &&
 					row.original.user["isOnline?"] && (
 						<div className="space-y-1">
-							<p className="text-xs text-muted-foreground">Current IP</p>
+							<p className="text-xs text-muted-foreground">
+								Current IP Address
+							</p>
 							<p className="font-semibold">
 								{row?.original?.user?.currentSignInIp || "-"}
 							</p>

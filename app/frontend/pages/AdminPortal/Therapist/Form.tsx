@@ -68,10 +68,12 @@ import {
 	AlertCircle,
 	Check,
 	ChevronsUpDown,
+	CreditCard,
 	Dot,
 	Eye,
 	EyeClosed,
 	LoaderIcon,
+	MapPinHouse,
 	Plus,
 } from "lucide-react";
 import { type ComponentProps, useEffect, useMemo, useState } from "react";
@@ -586,9 +588,12 @@ export default function FormTherapist({
 
 									<div className="grid grid-cols-1 gap-6 mt-4 col-span-full">
 										<div className="grid gap-4">
-											<p className="text-sm font-semibold tracking-tight">
-												Addresses
-											</p>
+											<div className="flex items-center gap-2">
+												<MapPinHouse className="size-4" />
+												<p className="text-sm font-semibold tracking-tight">
+													Addresses
+												</p>
+											</div>
 
 											<Separator />
 										</div>
@@ -1357,9 +1362,12 @@ export default function FormTherapist({
 
 									<div className="grid grid-cols-1 gap-6 mt-4 col-span-full lg:grid-cols-2">
 										<div className="grid gap-4 col-span-full">
-											<p className="text-sm font-semibold tracking-tight">
-												Bank Accounts
-											</p>
+											<div className="flex items-center gap-2">
+												<CreditCard className="size-4" />
+												<p className="text-sm font-semibold tracking-tight">
+													Bank Accounts
+												</p>
+											</div>
 
 											<Separator />
 										</div>

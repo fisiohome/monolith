@@ -55,9 +55,9 @@ export interface Therapist {
 	registrationNumber: string;
 	modalities: string[];
 	specializations: string[];
-	employmentStatus: string;
-	employmentType: string;
-	gender: string;
+	employmentStatus: TherapistEmploymentStatus[number];
+	employmentType: TherapistEmploymentType[number];
+	gender: TherapistGender[number];
 	user: User;
 	service: TherapistService;
 	bankDetails: TherapistBankDetail[];
