@@ -68,7 +68,7 @@ gem "inertia_rails-contrib", "~> 0.3.0"
 
 gem "vite_rails", "~> 3.0"
 
-gem "pagy", "~> 9.2"
+gem "pagy", "~> 9.3"
 
 gem "standard", "~> 1.43", group: [:development, :test]
 
