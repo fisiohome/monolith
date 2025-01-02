@@ -22,82 +22,6 @@ def log_message(message, type = :info)
   Rails.logger.debug { "#{color}[#{time}] #{message}#{reset}" }
 end
 
-# for seeding the accounts
-log_message("=== Starting to seed accounts... ===", :info)
-
-# seeding the default super admins
-log_message("Creating the Super Admins...", :info)
-
-begin
-  super_admins = [
-    {email: "tech@fisiohome.id", name: "Tech Admin"},
-    {email: "dendy@fisiohome.id", name: "Dendy"},
-    {email: "hasnal@fisiohome.id", name: "Hasnal"}
-  ]
-
-  super_admins.each_with_index do |admin_data, index|
-    user = User.where(email: admin_data[:email]).first_or_create do |user|
-      user.password = "Fisiohome123!"
-      user.password_confirmation = "Fisiohome123!"
-    end
-
-    admin = Admin.find_or_initialize_by(user: user)
-    admin.admin_type = "SUPER_ADMIN"
-    admin.name = admin_data[:name]
-    admin.save!
-
-    log_message("Super Admin #{index + 1}/#{super_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})", :success)
-  end
-rescue => e
-  log_message("Error while seeding Super Admins: #{e.message}", :error)
-end
-
-log_message("Super Admins seeding completed", :info)
-
-# seeding the default other admin
-Rails.logger.debug ""
-log_message("Creating the other admins...", :info)
-
-begin
-  other_admins = [
-    {email: "tech_admin_backlog@fisiohome.id", name: "Tech Admin Backlog"},
-    {email: "tech_admin_l1@fisiohome.id", name: "Tech Admin L1"},
-    {email: "tech_admin_l2@fisiohome.id", name: "Tech Admin L2"},
-    {email: "tech_admin_l3@fisiohome.id", name: "Tech Admin L3"}
-  ]
-
-  other_admins.each_with_index do |admin_data, index|
-    user = User.where(email: admin_data[:email]).first_or_create do |user|
-      user.password = "Fisiohome123!"
-      user.password_confirmation = "Fisiohome123!"
-    end
-
-    admin = Admin.find_or_initialize_by(user: user)
-
-    case admin_data[:name]
-    when "Tech Admin Backlog"
-      admin.admin_type = "ADMIN_BACKLOG"
-    when "Tech Admin L1"
-      admin.admin_type = "ADMIN_L1"
-    when "Tech Admin L2"
-      admin.admin_type = "ADMIN_L2"
-    when "Tech Admin L3"
-      admin.admin_type = "ADMIN_L3"
-    end
-
-    admin.name = admin_data[:name]
-    admin.save!
-
-    log_message("Super Admin #{index + 1}/#{other_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})", :success)
-  end
-rescue => e
-  log_message("Error while seeding Super Admins: #{e.message}", :error)
-end
-
-log_message("Other admins seeding completed", :info)
-
-log_message("=== All accounts seeding completed ===", :info)
-
 # for seeding the services and locations
 Rails.logger.debug ""
 log_message("=== Starting to create the services and locations... ===", :info)
@@ -200,6 +124,205 @@ log_message("Services seeding completed", :info)
 # rescue => e
 #   log_message("Error while seeding location_services: #{e.message}", :error)
 # end
-
 log_message("=== Services and locations seeding completed ===", :info)
+
+# for seeding the accounts
+log_message("=== Starting to seed accounts... ===", :info)
+
+# seeding the default super admins
+log_message("Creating the Super Admins...", :info)
+
+begin
+  super_admins = [
+    {email: "tech@fisiohome.id", name: "Tech Admin"},
+    {email: "dendy@fisiohome.id", name: "Dendy"},
+    {email: "hasnal@fisiohome.id", name: "Hasnal"}
+  ]
+
+  super_admins.each_with_index do |admin_data, index|
+    user = User.where(email: admin_data[:email]).first_or_create do |user|
+      user.password = "Fisiohome123!"
+      user.password_confirmation = "Fisiohome123!"
+    end
+
+    admin = Admin.find_or_initialize_by(user: user)
+    admin.admin_type = "SUPER_ADMIN"
+    admin.name = admin_data[:name]
+    admin.save!
+
+    log_message("Super Admin #{index + 1}/#{super_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})", :success)
+  end
+rescue => e
+  log_message("Error while seeding Super Admins: #{e.message}", :error)
+end
+
+log_message("Super Admins seeding completed", :info)
+
+# seeding the default other admin
+Rails.logger.debug ""
+log_message("Creating the other admins...", :info)
+
+begin
+  other_admins = [
+    {email: "tech_admin_backlog@fisiohome.id", name: "Tech Admin Backlog"},
+    {email: "tech_admin_l1@fisiohome.id", name: "Tech Admin L1"},
+    {email: "tech_admin_l2@fisiohome.id", name: "Tech Admin L2"},
+    {email: "tech_admin_l3@fisiohome.id", name: "Tech Admin L3"}
+  ]
+
+  other_admins.each_with_index do |admin_data, index|
+    user = User.where(email: admin_data[:email]).first_or_create do |user|
+      user.password = "Fisiohome123!"
+      user.password_confirmation = "Fisiohome123!"
+    end
+
+    admin = Admin.find_or_initialize_by(user: user)
+
+    case admin_data[:name]
+    when "Tech Admin Backlog"
+      admin.admin_type = "ADMIN_BACKLOG"
+    when "Tech Admin L1"
+      admin.admin_type = "ADMIN_L1"
+    when "Tech Admin L2"
+      admin.admin_type = "ADMIN_L2"
+    when "Tech Admin L3"
+      admin.admin_type = "ADMIN_L3"
+    end
+
+    admin.name = admin_data[:name]
+    admin.save!
+
+    log_message("Super Admin #{index + 1}/#{other_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})", :success)
+  end
+rescue => e
+  log_message("Error while seeding Super Admins: #{e.message}", :error)
+end
+
+log_message("Other admins seeding completed", :info)
+
+# seeding the default therapists
+Rails.logger.debug ""
+log_message("Creating the therapists...", :info)
+
+begin
+  therapists_data = [
+    {
+      email: "therapist1@fisiohome.id",
+      name: "Therapist One",
+      phone_number: "+6281234567890",
+      gender: "MALE",
+      batch: 1,
+      specializations: ["Muskuloskeletal", "Neuromuskuler"],
+      modalities: ["IR", "TENS", "US"],
+      employment_type: "KARPIS",
+      employment_status: "ACTIVE",
+      service_id: Service.find_by(name: "FISIOHOME").id,
+      addresses_attributes: [
+        {
+          location_id: Location.find_by(city: "KOTA ADM. JAKARTA SELATAN").id,
+          latitude: 0.0,
+          longitude: 0.0,
+          coordinates: [0.0, 0.0],
+          address: "Jl. Jend. Sudirman No.1, Jakarta Selatan",
+          postal_code: "12345",
+          active: true
+        }
+      ],
+      bank_details_attributes: [
+        {
+          bank_name: "BCA",
+          account_number: "1234567890",
+          account_holder_name: "Therapist One".upcase,
+          active: true
+        }
+      ]
+    },
+    {
+      email: "therapist2@fisiohome.id",
+      name: "Therapist Two",
+      phone_number: "+6281234567891",
+      gender: "FEMALE",
+      batch: 1,
+      specializations: ["Perawat aestetik injeksi wajah dan Infus"],
+      modalities: ["Alat infus dan Injeksi untuk wajah dan bahan2 lain strerilisasi"],
+      employment_type: "FLAT",
+      employment_status: "HOLD",
+      service_id: Service.find_by(name: "PUSAT_OKUPASI").id,
+      addresses_attributes: [
+        {
+          location_id: Location.find_by(city: "KOTA BANDUNG").id,
+          latitude: 0.0,
+          longitude: 0.0,
+          coordinates: [0.0, 0.0],
+          address: "Jl. Asia Afrika No.2, Bandung",
+          postal_code: "67890",
+          active: true
+        }
+      ],
+      bank_details_attributes: [
+        {
+          bank_name: "MANDIRI",
+          account_number: "0987654321",
+          account_holder_name: "Therapist Two".upcase,
+          active: true
+        },
+        {
+          bank_name: "BNI",
+          account_number: "1122334455",
+          account_holder_name: "Therapist Two".upcase,
+          active: false
+        },
+        {
+          bank_name: "BRI",
+          account_number: "5566778899",
+          account_holder_name: "Therapist Two".upcase,
+          active: false
+        }
+      ]
+    }
+  ]
+
+  therapists_data.each_with_index do |therapist_data, therapist_index|
+    # create or update user
+    user = User.where(email: therapist_data[:email]).first_or_create do |user|
+      user.password = "Therapist123!"
+      user.password_confirmation = "Therapist123!"
+
+      log_message("User created: #{therapist_data[:email]}", :success)
+    end
+
+    # create or update therapist and related records
+    therapist = Therapist.find_or_initialize_by(user_id: user.id)
+    therapist.assign_attributes(therapist_data.except(:email, :addresses_attributes, :bank_details_attributes).merge(user_id: user.id))
+    therapist.save!
+
+    therapist_data[:bank_details_attributes].each_with_index do |bank_data, bank_index|
+      bank_detail = BankDetail.find_or_initialize_by(bank_name: bank_data[:bank_name], account_number: bank_data[:account_number])
+      bank_detail.assign_attributes(bank_data.except(:active))
+      bank_detail.save!
+
+      TherapistBankDetail.find_or_initialize_by(therapist: therapist, bank_detail: bank_detail).update!(active: bank_data[:active])
+
+      log_message("Bank Detail #{bank_index + 1}/#{therapist_data[:bank_details_attributes].size} created/updated: #{bank_data[:bank_name]} - #{bank_data[:account_number]}", :success)
+    end
+
+    therapist_data[:addresses_attributes].each_with_index do |address_data, address_index|
+      address = Address.find_or_initialize_by(address: address_data[:address])
+      address.assign_attributes(address_data.except(:active))
+      address.save!
+
+      TherapistAddress.find_or_initialize_by(therapist: therapist, address: address).update!(active: address_data[:active])
+
+      log_message("Address #{address_index + 1}/#{therapist_data[:addresses_attributes].size} created/updated: #{address_data[:address]}", :success)
+    end
+
+    log_message("Therapist #{therapist_index + 1}/#{therapists_data.size} created/updated: #{therapist.name}", :success)
+  end
+rescue => e
+  log_message("Error while seeding therapists: #{e.message}", :error)
+end
+
+log_message("Therapists seeding completed", :info)
+
+log_message("=== All accounts seeding completed ===", :info)
 Rails.logger.debug ""

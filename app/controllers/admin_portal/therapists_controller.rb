@@ -8,15 +8,16 @@ module AdminPortal
       page = params.fetch(:page, 1)
       limit = params.fetch(:limit, 10)
 
-      therapist_collections = Therapist.order(created_at: "DESC").sort_by { |u|
-        if u.user.is_online?
-          2
-        elsif u.user.last_online_at
-          1
-        else
-          0
-        end
-      }.reverse
+      therapist_collections = Therapist.order(created_at: :desc).sort_by do |u|
+        [
+          u.user.is_online? ? 2 : 0,
+          u.user.last_online_at ? 1 : 0,
+          u.user.suspended? ? -1 : 0,
+          (u.employment_type == "KARPIS") ? 1 : 0,
+          {"ACTIVE" => 2, "HOLD" => 1, "INACTIVE" => 0}.fetch(u.employment_status, -1),
+          u.registration_number
+        ]
+      end.reverse
       @pagy, @therapists = pagy_array(therapist_collections, page:, limit:)
 
       render inertia: "AdminPortal/Therapist/Index", props: deep_transform_keys_to_camel_case({
@@ -139,6 +140,7 @@ module AdminPortal
       end
 
       render inertia: "AdminPortal/Therapist/Upsert", props: deep_transform_keys_to_camel_case({
+        current_path: (action_name === "new") ? new_admin_portal_therapist_path : edit_admin_portal_therapist_path(therapist),
         therapist: serialize_therapist(therapist),
         genders: Therapist.genders.map { |key, value| value },
         employment_types: Therapist.employment_types.map { |key, value| value },
@@ -153,7 +155,7 @@ module AdminPortal
 
       logger.error("Failed to save therapist: #{error_message}.")
       flash[:alert] = error_message
-      redirect_to request.referer || new_admin_portal_therapist_path, inertia: {
+      redirect_to determine_redirect_path, inertia: {
         errors: deep_transform_keys_to_camel_case(
           error.record.errors.messages.transform_values(&:uniq).merge({
             full_messages: error_message
@@ -166,7 +168,15 @@ module AdminPortal
       logger.error("Failed to save therapist: #{error.message}.")
       flash[:alert] = error.message
 
-      redirect_to request.referer || new_admin_portal_therapist_path
+      redirect_to determine_redirect_path
+    end
+
+    def determine_redirect_path
+      if action_name == "create"
+        new_admin_portal_therapist_path
+      else
+        edit_admin_portal_therapist_path(@therapist)
+      end
     end
 
     def set_default_active_therapist_address(therapist)

@@ -11,12 +11,13 @@ import type {
 	TherapistGender,
 } from "@/types/admin-portal/therapist";
 import { Head } from "@inertiajs/react";
-import FormTherapist from "./Form";
 import { useMemo } from "react";
+import FormTherapist from "./Form";
 
 export type FormMode = "create" | "update";
 
 export interface UpsertTherapistPageProps {
+	currentPath: string;
 	therapist: Partial<Therapist>;
 	genders: TherapistGender;
 	employmentTypes: TherapistEmploymentType;
@@ -26,6 +27,7 @@ export interface UpsertTherapistPageProps {
 }
 
 export default function UpsertTherapistPage({
+	currentPath,
 	therapist,
 	genders,
 	employmentTypes,
@@ -60,6 +62,7 @@ export default function UpsertTherapistPage({
 
 					<FormTherapist
 						mode={formMode}
+						currentPath={currentPath}
 						therapist={therapist}
 						genders={genders}
 						employmentTypes={employmentTypes}

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
 import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
@@ -13,7 +14,6 @@ import {
 	Trash2,
 } from "lucide-react";
 import { DeleteAdminAlert } from "./feature-actions";
-import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
 
 interface ExpandSubTableProps {
 	row: TableRowDataProps;

@@ -8,13 +8,13 @@ class Therapist < ApplicationRecord
   has_one :therapist_document, dependent: :destroy
   accepts_nested_attributes_for :therapist_document
 
-  has_many :therapist_addresses, dependent: :destroy
+  has_many :therapist_addresses, -> { order(active: :desc) }, dependent: :destroy
   has_many :addresses, through: :therapist_addresses, dependent: :destroy
   has_one :active_therapist_address, -> { where(active: true) }, class_name: "TherapistAddress"
   has_one :active_address, through: :active_therapist_address, source: :address
   accepts_nested_attributes_for :therapist_addresses
 
-  has_many :therapist_bank_details, dependent: :destroy
+  has_many :therapist_bank_details, -> { order(active: :desc) }, dependent: :destroy
   has_many :bank_details, through: :therapist_bank_details, dependent: :destroy
   has_one :active_therapist_bank_detail, -> { where(active: true) }, class_name: "TherapistBankDetail"
   has_one :active_bank_detail, through: :active_therapist_bank_detail, source: :bank_detail

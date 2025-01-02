@@ -1,4 +1,3 @@
-import { LoadingBasic } from "@/components/shared/loading";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -49,6 +48,7 @@ import { TagsInput } from "@/components/ui/tags-input";
 import { Textarea } from "@/components/ui/textarea";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { groupLocationsByCountry } from "@/lib/locations";
+import { type TherapistFormSchema, getFormSchema } from "@/lib/therapists";
 import { cn, goBackHandler } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
 import type { Service } from "@/types/admin-portal/service";
@@ -60,7 +60,7 @@ import type {
 } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Deferred, router, usePage } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import {
 	AlertCircle,
 	Check,
@@ -76,7 +76,6 @@ import {
 import { type ComponentProps, useEffect, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import type { FormMode } from "./Upsert";
-import { getFormSchema, type TherapistFormSchema } from "@/lib/therapists";
 
 interface FormSectionContainerProps extends ComponentProps<"div"> {
 	number: string | number;
@@ -106,6 +105,7 @@ function FormSectionContainer({
 }
 
 export interface FormTherapistProps {
+	currentPath: string;
 	mode: FormMode;
 	therapist: Partial<Therapist>;
 	genders: TherapistGender;
@@ -116,6 +116,7 @@ export interface FormTherapistProps {
 }
 
 export default function FormTherapist({
+	currentPath,
 	mode,
 	therapist,
 	genders,
@@ -180,10 +181,10 @@ export default function FormTherapist({
 	const fetchData = {
 		getEmploymentStatuses: () => {
 			router.get(
-				globalProps.adminPortal.router.adminPortal.therapistManagement.new,
+				currentPath,
 				{},
 				{
-					only: ["employment_statuses"],
+					only: ["employmentStatuses"],
 					preserveState: true,
 					preserveScroll: true,
 					onStart: () => {
@@ -226,7 +227,7 @@ export default function FormTherapist({
 		},
 		getServices: () => {
 			router.get(
-				globalProps.adminPortal.router.adminPortal.therapistManagement.new,
+				currentPath,
 				{},
 				{
 					only: ["services"],
@@ -254,51 +255,48 @@ export default function FormTherapist({
 			state?: string | null;
 			city?: string | null;
 		}) => {
-			router.get(
-				globalProps.adminPortal.router.adminPortal.therapistManagement.new,
-				query,
-				{
-					preserveState: true,
-					preserveScroll: true,
-					onStart: () => {
+			router.get(currentPath, query, {
+				only: ["locations"],
+				preserveState: true,
+				preserveScroll: true,
+				onStart: () => {
+					setIsLoading((prev) => ({
+						...prev,
+						states: !!query?.country,
+						cities: !!query?.state,
+					}));
+				},
+				onSuccess: () => {
+					// setup the states list
+					if (query?.country) {
+						const states =
+							groupLocationsByCountry(locations)
+								?.filter((location) => location.country === query.country)
+								?.flatMap((location) =>
+									location.states.map((state) => state.name),
+								) || [];
+						setSelectCollections((prev) => ({ ...prev, states }));
+					}
+
+					// setup the cities list
+					if (query?.state) {
+						const cities =
+							locations
+								?.filter((location) => location.state === query.state)
+								?.map((location) => location.city) || [];
+						setSelectCollections((prev) => ({ ...prev, cities }));
+					}
+				},
+				onFinish: () => {
+					setTimeout(() => {
 						setIsLoading((prev) => ({
 							...prev,
-							states: !!query?.country,
-							cities: !!query?.state,
+							states: false,
+							cities: false,
 						}));
-					},
-					onSuccess: () => {
-						// setup the states list
-						if (query?.country) {
-							const states =
-								groupLocationsByCountry(locations)
-									?.filter((location) => location.country === query.country)
-									?.flatMap((location) =>
-										location.states.map((state) => state.name),
-									) || [];
-							setSelectCollections((prev) => ({ ...prev, states }));
-						}
-
-						// setup the cities list
-						if (query?.state) {
-							const cities =
-								locations
-									?.filter((location) => location.state === query.state)
-									?.map((location) => location.city) || [];
-							setSelectCollections((prev) => ({ ...prev, cities }));
-						}
-					},
-					onFinish: () => {
-						setTimeout(() => {
-							setIsLoading((prev) => ({
-								...prev,
-								states: false,
-								cities: false,
-							}));
-						}, 250);
-					},
+					}, 250);
 				},
-			);
+			});
 		},
 	};
 	const form = useForm<TherapistFormSchema>({
@@ -403,6 +401,7 @@ export default function FormTherapist({
 		const payload = deepTransformKeysToSnakeCase({
 			therapist: isUpdate ? { ...restValues } : { ...restValues, user },
 		});
+		console.log(`Payload data: ${payload}`);
 
 		if (isUpdate) {
 			router.put(submitURL, payload, submitConfig);
@@ -643,110 +642,105 @@ export default function FormTherapist({
 															)}
 														/>
 
-														<Deferred
-															data="locations"
-															fallback={<LoadingBasic />}
-														>
-															<FormField
-																control={form.control}
-																name={`addresses.${fieldIndex}.state`}
-																render={({ field }) => (
-																	<FormItem className="grid !mt-1 self-end">
-																		<FormLabel className="h-6">
-																			State/Province
-																		</FormLabel>
-																		<Popover modal>
-																			<PopoverTrigger asChild>
-																				<FormControl>
-																					<Button
-																						variant="outline"
-																						className={cn(
-																							"w-[75%] md:w-[50%] lg:w-[75%] xl:w-[75%] justify-between text-muted-foreground font-normal !mt-0 px-3",
-																							!field.value &&
-																								"text-muted-foreground",
+														<FormField
+															control={form.control}
+															name={`addresses.${fieldIndex}.state`}
+															render={({ field }) => (
+																<FormItem className="grid !mt-1 self-end">
+																	<FormLabel className="h-6">
+																		State/Province
+																	</FormLabel>
+																	<Popover modal>
+																		<PopoverTrigger asChild>
+																			<FormControl>
+																				<Button
+																					variant="outline"
+																					className={cn(
+																						"w-[75%] md:w-[50%] lg:w-[75%] xl:w-[75%] justify-between text-muted-foreground font-normal !mt-0 px-3",
+																						!field.value &&
+																							"text-muted-foreground",
+																					)}
+																					onClick={() =>
+																						fetchData.getLocations({
+																							country: address.country,
+																						})
+																					}
+																				>
+																					<span className="truncate">
+																						{field.value
+																							? selectCollections?.states?.find(
+																									(state) =>
+																										state === field.value,
+																								) || field.value
+																							: "Select state/province"}
+																					</span>
+																					<ChevronsUpDown className="opacity-50" />
+																				</Button>
+																			</FormControl>
+																		</PopoverTrigger>
+																		<PopoverContent
+																			align="start"
+																			className="w-[250px] p-0"
+																		>
+																			<Command>
+																				<CommandInput
+																					disabled={isLoading.states}
+																					placeholder="Search state/province..."
+																				/>
+																				<CommandList>
+																					<CommandEmpty>
+																						No state or province found.
+																					</CommandEmpty>
+
+																					<CommandGroup>
+																						{isLoading.states ? (
+																							<CommandItem
+																								value={undefined}
+																								disabled
+																							>
+																								<LoaderIcon className="animate-spin" />
+																								<span>Please wait...</span>
+																							</CommandItem>
+																						) : (
+																							selectCollections?.states?.map(
+																								(state) => (
+																									<CommandItem
+																										value={state}
+																										key={state}
+																										onSelect={async () => {
+																											// set the state data selected
+																											form.setValue(
+																												`addresses.${fieldIndex}.state`,
+																												state,
+																											);
+																											form.trigger(
+																												`addresses.${fieldIndex}.state`,
+																											);
+																										}}
+																									>
+																										{state}
+																										<Check
+																											className={cn(
+																												"ml-auto",
+																												state === field.value
+																													? "opacity-100"
+																													: "opacity-0",
+																											)}
+																										/>
+																									</CommandItem>
+																								),
+																							)
 																						)}
-																						onClick={() =>
-																							fetchData.getLocations({
-																								country: address.country,
-																							})
-																						}
-																					>
-																						<span className="truncate">
-																							{field.value
-																								? selectCollections?.states?.find(
-																										(state) =>
-																											state === field.value,
-																									) || field.value
-																								: "Select state/province"}
-																						</span>
-																						<ChevronsUpDown className="opacity-50" />
-																					</Button>
-																				</FormControl>
-																			</PopoverTrigger>
-																			<PopoverContent
-																				align="start"
-																				className="w-[250px] p-0"
-																			>
-																				<Command>
-																					<CommandInput
-																						disabled={isLoading.states}
-																						placeholder="Search state/province..."
-																					/>
-																					<CommandList>
-																						<CommandEmpty>
-																							No state or province found.
-																						</CommandEmpty>
+																					</CommandGroup>
+																				</CommandList>
+																			</Command>
+																		</PopoverContent>
+																	</Popover>
 
-																						<CommandGroup>
-																							{isLoading.states ? (
-																								<CommandItem
-																									value={undefined}
-																									disabled
-																								>
-																									<LoaderIcon className="animate-spin" />
-																									<span>Please wait...</span>
-																								</CommandItem>
-																							) : (
-																								selectCollections?.states?.map(
-																									(state) => (
-																										<CommandItem
-																											value={state}
-																											key={state}
-																											onSelect={async () => {
-																												// set the state data selected
-																												form.setValue(
-																													`addresses.${fieldIndex}.state`,
-																													state,
-																												);
-																												form.trigger(
-																													`addresses.${fieldIndex}.state`,
-																												);
-																											}}
-																										>
-																											{state}
-																											<Check
-																												className={cn(
-																													"ml-auto",
-																													state === field.value
-																														? "opacity-100"
-																														: "opacity-0",
-																												)}
-																											/>
-																										</CommandItem>
-																									),
-																								)
-																							)}
-																						</CommandGroup>
-																					</CommandList>
-																				</Command>
-																			</PopoverContent>
-																		</Popover>
-
-																		<FormMessage />
-																	</FormItem>
-																)}
-															/>
-														</Deferred>
+																	<FormMessage />
+																</FormItem>
+															)}
+														/>
 
 														<FormField
 															control={form.control}
@@ -1078,90 +1072,87 @@ export default function FormTherapist({
 										)}
 									/>
 
-									<Deferred data="services" fallback={<LoadingBasic />}>
-										<FormField
-											control={form.control}
-											name="service.name"
-											render={({ field }) => (
-												<FormItem className="grid !mt-1 self-end">
-													<FormLabel className="h-6">Service</FormLabel>
-													<Popover>
-														<PopoverTrigger asChild>
-															<FormControl>
-																<Button
-																	variant="outline"
-																	className={cn(
-																		"w-[75%] md:w-[50%] lg:w-[75%] xl:w-[75%] justify-between text-muted-foreground font-normal !mt-0 px-3",
-																		!field.value && "text-muted-foreground",
-																	)}
-																	onClick={() => {
-																		fetchData.getServices();
-																	}}
-																>
-																	{field.value
-																		? services
-																				?.find(
-																					(service) =>
-																						service.name === field.value,
-																				)
-																				?.name.replaceAll("_", " ") ||
-																			field.value
-																		: "Select service"}
-																	<ChevronsUpDown className="opacity-50" />
-																</Button>
-															</FormControl>
-														</PopoverTrigger>
-														<PopoverContent
-															align="start"
-															className="w-[250px] p-0"
-														>
-															<Command>
-																<CommandInput placeholder="Search service..." />
-																<CommandList>
-																	<CommandEmpty>No service found.</CommandEmpty>
-																	<CommandGroup>
-																		{isLoading.services ? (
-																			<CommandItem value={undefined} disabled>
-																				<LoaderIcon className="animate-spin" />
-																				<span>Please wait...</span>
+									<FormField
+										control={form.control}
+										name="service.name"
+										render={({ field }) => (
+											<FormItem className="grid !mt-1 self-end">
+												<FormLabel className="h-6">Service</FormLabel>
+												<Popover>
+													<PopoverTrigger asChild>
+														<FormControl>
+															<Button
+																variant="outline"
+																className={cn(
+																	"w-[75%] md:w-[50%] lg:w-[75%] xl:w-[75%] justify-between text-muted-foreground font-normal !mt-0 px-3",
+																	!field.value && "text-muted-foreground",
+																)}
+																onClick={() => {
+																	fetchData.getServices();
+																}}
+															>
+																{field.value
+																	? services
+																			?.find(
+																				(service) =>
+																					service.name === field.value,
+																			)
+																			?.name.replaceAll("_", " ") || field.value
+																	: "Select service"}
+																<ChevronsUpDown className="opacity-50" />
+															</Button>
+														</FormControl>
+													</PopoverTrigger>
+													<PopoverContent
+														align="start"
+														className="w-[250px] p-0"
+													>
+														<Command>
+															<CommandInput placeholder="Search service..." />
+															<CommandList>
+																<CommandEmpty>No service found.</CommandEmpty>
+																<CommandGroup>
+																	{isLoading.services ? (
+																		<CommandItem value={undefined} disabled>
+																			<LoaderIcon className="animate-spin" />
+																			<span>Please wait...</span>
+																		</CommandItem>
+																	) : (
+																		services?.map((service) => (
+																			<CommandItem
+																				value={String(service.id)}
+																				key={service.id}
+																				onSelect={() => {
+																					const { id, name, code } = service;
+																					form.setValue("service", {
+																						id,
+																						name,
+																						code,
+																					});
+																				}}
+																			>
+																				<Check
+																					className={cn(
+																						"mr-2 h-4 w-4",
+																						service.name === field.value
+																							? "opacity-100"
+																							: "opacity-0",
+																					)}
+																				/>
+																				{service.name.replaceAll("_", " ")}
 																			</CommandItem>
-																		) : (
-																			services?.map((service) => (
-																				<CommandItem
-																					value={String(service.id)}
-																					key={service.id}
-																					onSelect={() => {
-																						const { id, name, code } = service;
-																						form.setValue("service", {
-																							id,
-																							name,
-																							code,
-																						});
-																					}}
-																				>
-																					<Check
-																						className={cn(
-																							"mr-2 h-4 w-4",
-																							service.name === field.value
-																								? "opacity-100"
-																								: "opacity-0",
-																						)}
-																					/>
-																					{service.name.replaceAll("_", " ")}
-																				</CommandItem>
-																			))
-																		)}
-																	</CommandGroup>
-																</CommandList>
-															</Command>
-														</PopoverContent>
-													</Popover>
+																		))
+																	)}
+																</CommandGroup>
+															</CommandList>
+														</Command>
+													</PopoverContent>
+												</Popover>
 
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
-									</Deferred>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
 
 									<FormField
 										control={form.control}
