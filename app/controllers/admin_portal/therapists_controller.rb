@@ -39,28 +39,12 @@ module AdminPortal
     # GET /therapists/new
     def new
       @therapist = Therapist.new
-
-      # for get the location collections
-      locations_lambda = lambda do
-        return nil unless params[:country] || params[:state] || params[:city]
-        Location.all
-      end
-
-      render inertia: "AdminPortal/Therapist/New", props: deep_transform_keys_to_camel_case({
-        therapist: @therapist,
-        genders: Therapist.genders.map { |key, value| value },
-        employment_types: Therapist.employment_types.map { |key, value| value },
-        employment_statuses: Therapist.employment_statuses.map { |key, value| value },
-        services: -> { Service.active },
-        locations: -> { locations_lambda.call }
-      })
+      render_upsert_form(@therapist)
     end
 
     # GET /therapists/1/edit
     def edit
-      render inertia: "Therapist/Edit", props: {
-        therapist: serialize_therapist(@therapist)
-      }
+      render_upsert_form(@therapist)
     end
 
     # POST /therapists
@@ -79,11 +63,16 @@ module AdminPortal
 
     # PATCH/PUT /therapists/1
     def update
-      if @therapist.update(therapist_params)
-        redirect_to @therapist, notice: "Therapist was successfully updated."
-      else
-        redirect_to edit_therapist_url(@therapist), inertia: {errors: @therapist.errors}
-      end
+      update_service = UpdateTherapistService.new(@therapist, therapist_params)
+      @therapist = update_service.call
+      set_default_active_therapist_bank_detail(@therapist)
+      set_default_active_therapist_address(@therapist)
+
+      redirect_to admin_portal_therapists_path, notice: "Therapist was successfully updated."
+    rescue ActiveRecord::RecordInvalid => e
+      handle_record_invalid(e)
+    rescue => e
+      handle_generic_error(e)
     end
 
     # DELETE /therapists/1
@@ -112,8 +101,8 @@ module AdminPortal
         specializations: [],
         service: %i[id name code],
         user: %i[email password password_confirmation],
-        bank_details: %i[bank_name account_number account_holder_name active],
-        addresses: %i[country country_code state city postal_code address active]
+        bank_details: %i[id bank_name account_number account_holder_name active],
+        addresses: %i[id country country_code state city postal_code address active]
       )
     end
 
@@ -143,12 +132,28 @@ module AdminPortal
       end
     end
 
+    def render_upsert_form(therapist)
+      locations_lambda = lambda do
+        return nil unless params[:country] || params[:state] || params[:city]
+        Location.all
+      end
+
+      render inertia: "AdminPortal/Therapist/Upsert", props: deep_transform_keys_to_camel_case({
+        therapist: serialize_therapist(therapist),
+        genders: Therapist.genders.map { |key, value| value },
+        employment_types: Therapist.employment_types.map { |key, value| value },
+        employment_statuses: Therapist.employment_statuses.map { |key, value| value },
+        services: InertiaRails.defer { Service.active },
+        locations: InertiaRails.defer { locations_lambda.call }
+      })
+    end
+
     def handle_record_invalid(error)
       error_message = error.record.errors.full_messages.uniq.to_sentence
 
-      logger.error("Failed to create a new therapist: #{error_message}.")
+      logger.error("Failed to save therapist: #{error_message}.")
       flash[:alert] = error_message
-      redirect_to new_admin_portal_therapist_path, inertia: {
+      redirect_to request.referer || new_admin_portal_therapist_path, inertia: {
         errors: deep_transform_keys_to_camel_case(
           error.record.errors.messages.transform_values(&:uniq).merge({
             full_messages: error_message
@@ -158,10 +163,10 @@ module AdminPortal
     end
 
     def handle_generic_error(error)
-      logger.error("Failed to create a new therapist: #{error.message}.")
+      logger.error("Failed to save therapist: #{error.message}.")
       flash[:alert] = error.message
 
-      redirect_to new_admin_portal_therapist_path
+      redirect_to request.referer || new_admin_portal_therapist_path
     end
 
     def set_default_active_therapist_address(therapist)

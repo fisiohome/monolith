@@ -8,11 +8,21 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useActionPermissions } from "@/hooks/admin-portal/use-therapist-utils";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
 import {
 	cn,
@@ -26,7 +36,13 @@ import type { Metadata } from "@/types/pagy";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, ExpandedState, Row } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
-import { ChevronDown, ChevronUp, InfinityIcon, Plus } from "lucide-react";
+import {
+	ChevronDown,
+	ChevronUp,
+	Ellipsis,
+	InfinityIcon,
+	Plus,
+} from "lucide-react";
 import { useMemo } from "react";
 
 export interface PageProps {
@@ -40,7 +56,7 @@ export type TableRowDataProps = Row<PageProps["therapists"]["data"][number]>;
 export default function Index({ therapists }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 
-	// table state management
+	// data table state management
 	const currentExpanded = useMemo<ExpandedState>(() => {
 		const { queryParams } = populateQueryParams(pageURL);
 		const expandedList = queryParams?.expanded
@@ -58,6 +74,13 @@ export default function Index({ therapists }: PageProps) {
 
 		return adminsIndex;
 	}, [pageURL, therapists.data]);
+	const routeTo = {
+		edit: (id: number | string) => {
+			const url = `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}/${id}/edit`;
+
+			router.get(url);
+		},
+	};
 	const columns: ColumnDef<PageProps["therapists"]["data"][number]>[] = [
 		{
 			id: "select",
@@ -354,6 +377,81 @@ export default function Index({ therapists }: PageProps) {
 					<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
 						<span>{isOnline ? "Online" : "Offline"}</span>
 					</DotBadgeWithLabel>
+				);
+			},
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => {
+				const { isShowEdit, isPermitted } = useActionPermissions({
+					authData: globalProps.auth,
+					user: row.original.user,
+				});
+
+				if (!isPermitted) return;
+
+				return (
+					<div className="flex items-center justify-end space-x-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="icon">
+									<Ellipsis />
+								</Button>
+							</DropdownMenuTrigger>
+
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>Actions</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+
+								<DropdownMenuGroup>
+									{isShowEdit && (
+										<DropdownMenuItem
+											onSelect={() => routeTo.edit(row.original.id)}
+										>
+											Edit
+										</DropdownMenuItem>
+									)}
+								</DropdownMenuGroup>
+
+								{/* {(isShowChangePassword || isShowSuspend) && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuGroup>
+											{isShowChangePassword && (
+												<DropdownMenuItem
+													onSelect={() =>
+														routeTo.changePassword(row.original.id)
+													}
+												>
+													Change Password
+												</DropdownMenuItem>
+											)}
+											{isShowSuspend && (
+												<DropdownMenuItem
+													onSelect={() => routeTo.suspendAdmin(row.original.id)}
+												>
+													{row.original.user["suspended?"]
+														? "Activate"
+														: "Suspend"}
+												</DropdownMenuItem>
+											)}
+										</DropdownMenuGroup>
+									</>
+								)} */}
+
+								{/* {isShowDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DeleteAdminAlert row={row}>
+											<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+												Delete
+											</DropdownMenuItem>
+										</DeleteAdminAlert>
+									</>
+								)} */}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
 				);
 			},
 		},

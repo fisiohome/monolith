@@ -21,7 +21,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useHover } from "@uidotdev/usehooks";
 import { type ComponentProps, useMemo, useState } from "react";
 import {
 	Label,
@@ -235,18 +234,18 @@ export function TherapistByEmploymentTypeChart({
 			},
 			{} as Record<string, number>,
 		);
+		const colors = [
+			"hsl(var(--chart-1))",
+			"hsl(var(--chart-2))",
+			"hsl(var(--chart-3))",
+			"hsl(var(--chart-4))",
+			"hsl(var(--chart-5))",
+		];
 		const config = {
 			...Object.fromEntries(
 				Object.keys(transformedData).map((type) => {
-					let colors = [
-						"hsl(var(--chart-1))",
-						"hsl(var(--chart-2))",
-						"hsl(var(--chart-3))",
-						"hsl(var(--chart-4))",
-						"hsl(var(--chart-5))",
-					];
-					colors = colors.sort(() => 0.5 - Math.random());
-					const color = colors.pop() || "hsl(var(--chart-1))";
+					const selectedColors = colors.sort(() => 0.5 - Math.random());
+					const color = selectedColors.pop() || "hsl(var(--chart-1))";
 					return [type, { label: type.toUpperCase(), color }];
 				}),
 			),
@@ -383,18 +382,18 @@ export function TherapistByGenderChart({
 			},
 			{} as Record<string, number>,
 		);
+		const colors = [
+			"hsl(var(--chart-1))",
+			"hsl(var(--chart-2))",
+			"hsl(var(--chart-3))",
+			"hsl(var(--chart-4))",
+			"hsl(var(--chart-5))",
+		];
 		const config = {
 			...Object.fromEntries(
-				Object.keys(transformedData).map((type, index) => {
-					let colors = [
-						"hsl(var(--chart-1))",
-						"hsl(var(--chart-2))",
-						"hsl(var(--chart-3))",
-						"hsl(var(--chart-4))",
-						"hsl(var(--chart-5))",
-					];
-					colors = colors.sort(() => 0.5 - Math.random());
-					const color = colors.pop() || "hsl(var(--chart-1))";
+				Object.keys(transformedData).map((type) => {
+					const selectedColors = colors.sort(() => 0.5 - Math.random());
+					const color = selectedColors.pop() || "hsl(var(--chart-1))";
 					return [type, { label: type.toUpperCase(), color }];
 				}),
 			),

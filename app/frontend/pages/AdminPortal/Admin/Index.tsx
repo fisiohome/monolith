@@ -34,6 +34,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
 import { cn, populateQueryParams, removeWhiteSpaces } from "@/lib/utils";
 import { generateInitials, humanize } from "@/lib/utils";
 import type { Admin, AdminTypes } from "@/types/admin-portal/admin";
@@ -511,35 +512,18 @@ export default function Index({
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				const isCurrentUser = useMemo(
-					() =>
-						globalProps.auth.currentUser?.user.email ===
-						row.original.user.email,
-					[row.original.user.email],
-				);
-				const isShowDelete = useMemo(
-					() =>
-						globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
-					[isCurrentUser],
-				);
-				const isShowEdit = useMemo(
-					() =>
-						globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
-					[isCurrentUser],
-				);
-				const isShowChangePassword = useMemo(
-					() =>
-						!isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-					[isCurrentUser],
-				);
-				const isShowSuspend = useMemo(
-					() =>
-						!isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-					[isCurrentUser],
-				);
+				const {
+					isShowEdit,
+					isShowChangePassword,
+					isShowSuspend,
+					isShowDelete,
+					isPermitted,
+				} = useActionPermissions({
+					currentUser: globalProps.auth.currentUser,
+					user: row.original.user,
+				});
 
-				if (!globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser)
-					return;
+				if (!isPermitted) return;
 
 				return (
 					<div className="flex items-center justify-end space-x-2">

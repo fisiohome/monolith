@@ -48,6 +48,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_03_170200) do
     t.string "account_holder_name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["bank_name", "account_number"], name: "index_bank_details_on_bank_name_and_account_number", unique: true
   end
 
   create_table "location_services", force: :cascade do |t|

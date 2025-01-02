@@ -15,7 +15,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
-import { cn, formatPhoneNumber, generateInitials } from "@/lib/utils";
+import { cn, generateInitials } from "@/lib/utils";
 import type { TableRowDataProps } from "@/pages/AdminPortal/Therapist/Index";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
@@ -36,6 +36,7 @@ import {
 	Users,
 } from "lucide-react";
 import { Fragment, useMemo } from "react";
+import { formatPhoneNumberIntl } from "react-phone-number-input";
 
 export interface ExpandSubTableProps {
 	row: TableRowDataProps;
@@ -65,7 +66,9 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 			{
 				icon: Phone,
 				label: "Phone",
-				value: formatPhoneNumber(data?.phoneNumber) || "-",
+				value: data?.phoneNumber
+					? formatPhoneNumberIntl(data.phoneNumber)
+					: "-",
 			},
 			{ icon: Mail, label: "Email", value: data.user.email },
 		];
@@ -348,7 +351,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 					<CardContent>
 						{data.bankDetails?.length ? (
 							<div className="grid gap-4">
-								{data.bankDetails.map((detail) => (
+								{data.bankDetails.map((detail, index) => (
 									<Fragment key={detail.id}>
 										<div className="grid gap-2">
 											<div className="flex items-start justify-between gap-2">
@@ -356,13 +359,11 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 													{detail.bankName.toUpperCase()}
 												</p>
 
-												<Badge
-													className={
-														detail.active ? "bg-emerald-500" : "bg-gray-500"
-													}
-												>
-													{detail.active ? "ACTIVE" : "INACTIVE"}
-												</Badge>
+												{detail.active && (
+													<Badge className="text-[10px] bg-emerald-500">
+														{detail.active ? "ACTIVE" : "INACTIVE"}
+													</Badge>
+												)}
 											</div>
 
 											<div className="grid font-light">
@@ -371,7 +372,8 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 											</div>
 										</div>
 
-										<Separator />
+										{data.bankDetails.length > 1 &&
+											index + 1 !== data.bankDetails.length && <Separator />}
 									</Fragment>
 								))}
 							</div>
@@ -394,7 +396,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 					<CardContent>
 						{data.addresses?.length ? (
 							<div className="grid gap-4">
-								{data.addresses.map((item) => (
+								{data.addresses.map((item, index) => (
 									<Fragment key={item.id}>
 										<div className="grid gap-2">
 											<div className="flex items-start justify-between gap-2">
@@ -402,13 +404,11 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 													{item.location.country} - {item.location.state}
 												</p>
 
-												<Badge
-													className={
-														item.active ? "bg-emerald-500" : "bg-gray-500"
-													}
-												>
-													{item.active ? "ACTIVE" : "INACTIVE"}
-												</Badge>
+												{item.active && (
+													<Badge className="text-[10px] bg-emerald-500">
+														{item.active ? "ACTIVE" : "INACTIVE"}
+													</Badge>
+												)}
 											</div>
 
 											<div className="flex flex-col font-light text-pretty">
@@ -436,7 +436,8 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 											</div>
 										</div>
 
-										<Separator />
+										{data.addresses.length > 1 &&
+											index + 1 !== data.addresses.length && <Separator />}
 									</Fragment>
 								))}
 							</div>

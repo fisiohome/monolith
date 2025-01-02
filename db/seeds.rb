@@ -109,11 +109,6 @@ log_message("Creating the locations...", :info)
 # FOR INDONESIAN COUNTRY BASED ON https://api.cahyadsn.com/
 begin
   locations = [
-    {country: "INDONESIA", country_code: "ID", state: "ACEH", city: "KOTA BANDA ACEH"},
-    {country: "INDONESIA", country_code: "ID", state: "SUMATERA UTARA", city: "KOTA MEDAN"},
-    {country: "INDONESIA", country_code: "ID", state: "RIAU", city: "KOTA PEKANBARU"},
-    {country: "INDONESIA", country_code: "ID", state: "SUMATERA SELATAN", city: "KOTA PALEMBANG"},
-    {country: "INDONESIA", country_code: "ID", state: "LAMPUNG", city: "KOTA BANDAR LAMPUNG"},
     {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA SELATAN"},
     {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA BARAT"},
     {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA TIMUR"},
@@ -129,30 +124,16 @@ begin
     {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA BEKASI"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. BEKASI"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA DEPOK"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA CIMAHI"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. PURWAKARTA"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. KARAWANG"},
     {country: "INDONESIA", country_code: "ID", state: "DAERAH ISTIMEWA YOGYAKARTA", city: "KOTA YOGYAKARTA"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KOTA SEMARANG"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KAB. SEMARANG"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KOTA SURAKARTA"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KAB. PURWOREJO"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KAB. BANYUMAS"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KAB. BREBES"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KAB. DEMAK"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA KEDIRI"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. KEDIRI"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA MALANG"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. MALANG"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA BATU"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA SURABAYA"},
     {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. SIDOARJO"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. PONOROGO"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. GRESIK"},
-    {country: "INDONESIA", country_code: "ID", state: "NUSA TENGGARA BARAT", city: "KAB. DOMPU"},
-    {country: "INDONESIA", country_code: "ID", state: "KALIMANTAN BARAT", city: "KOTA PONTIANAK"},
-    {country: "INDONESIA", country_code: "ID", state: "KALIMANTAN TIMUR", city: "KOTA SAMARINDA"},
-    {country: "INDONESIA", country_code: "ID", state: "SULAWESI SELATAN", city: "KOTA MAKASSAR"}
+    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. GRESIK"}
   ]
 
   locations.each_with_index do |loc, index|
