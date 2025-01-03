@@ -7,6 +7,7 @@ module AdminPortal
       # define the query params default values
       page = params.fetch(:page, 1)
       limit = params.fetch(:limit, 10)
+      selected_param = params[:change_password]
 
       therapist_collections = Therapist.order(created_at: :desc).sort_by do |u|
         [
@@ -20,13 +21,21 @@ module AdminPortal
       end.reverse
       @pagy, @therapists = pagy_array(therapist_collections, page:, limit:)
 
+      # get the selected data admin for form
+      selected_therapist_lambda = lambda do
+        return nil unless selected_param
+
+        serialize_therapist(Therapist.find_by(id: selected_param))
+      end
+
       render inertia: "AdminPortal/Therapist/Index", props: deep_transform_keys_to_camel_case({
         therapists: {
           metadata: pagy_metadata(@pagy),
           data: @therapists.map do |therapist|
             serialize_therapist(therapist)
           end
-        }
+        },
+        selected_therapist: -> { selected_therapist_lambda.call }
       })
     end
 
@@ -80,6 +89,38 @@ module AdminPortal
     def destroy
       @therapist.destroy!
       redirect_to therapists_url, notice: "Therapist was successfully destroyed."
+    end
+
+    # GET /generate-reset-password-url
+    def generate_reset_password_url
+      logger.info "Generating the URL page for change password form..."
+      permitted_params = params.permit(:email)
+      service = PasswordResetService.new(params: permitted_params, url_helper: self)
+      result = service.generate_reset_password_url
+
+      if result[:error]
+        render json: {error: result[:error]}, status: result[:status]
+      else
+        render json: {link: result[:link]}
+      end
+
+      logger.info "The proccess to generate the change password URL finished..."
+    end
+
+    # PUT /change-password
+    def change_password
+      logger.info "Starting proccess to change the password account..."
+      user_params = params.require(:user).permit(:password, :password_confirmation, :email)
+      service = PasswordResetService.new(params: user_params, url_helper: self)
+      result = service.change_password
+
+      if result[:alert]
+        redirect_to result[:redirect_to], alert: result[:alert]
+      else
+        redirect_to result[:redirect_to], notice: result[:notice]
+      end
+
+      logger.info "The proccess to change the password account finished..."
     end
 
     private

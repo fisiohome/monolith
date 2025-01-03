@@ -162,7 +162,7 @@ module AdminPortal
     def generate_reset_password_url
       logger.info "Generating the URL page for change password form..."
       permitted_params = params.permit(:email)
-      service = PasswordResetService.new(permitted_params[:email], self)
+      service = PasswordResetService.new(params: permitted_params, url_helper: self)
       result = service.generate_reset_password_url
 
       if result[:error]
@@ -178,8 +178,8 @@ module AdminPortal
     def change_password
       logger.info "Starting proccess to change the password account..."
       user_params = params.require(:user).permit(:password, :password_confirmation, :email)
-      service = PasswordResetService.new(user_params[:email], self)
-      result = service.change_password(user_params)
+      service = PasswordResetService.new(params: user_params, url_helper: self)
+      result = service.change_password
 
       if result[:alert]
         redirect_to result[:redirect_to], alert: result[:alert]

@@ -61,6 +61,8 @@ export interface AdminPortal {
 			therapistManagement: {
 				index: string;
 				new: string;
+				generateResetPasswordUrl: string;
+				changePassword: string;
 			};
 			serviceManagement: {
 				index: string;

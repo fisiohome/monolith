@@ -25,18 +25,13 @@ export const useActionPermissions = ({
 		[authData.currentUserType, isCurrentUser],
 	);
 
+	const isShowChangePassword = useMemo(
+		() => isCurrentUser || authData.currentUserType === "ADMIN",
+		[authData.currentUserType, isCurrentUser],
+	);
+
 	// const isShowDelete = useMemo(
 	//   () => currentUser?.["isSuperAdmin?"] && !isCurrentUser,
-	//   [currentUser?.["isSuperAdmin?"], isCurrentUser],
-	// );
-
-	// const isShowChangePassword = useMemo(
-	//   () => !isCurrentUser && currentUser?.["isSuperAdmin?"],
-	//   [currentUser?.["isSuperAdmin?"], isCurrentUser],
-	// );
-
-	// const isShowSuspend = useMemo(
-	//   () => !isCurrentUser && currentUser?.["isSuperAdmin?"],
 	//   [currentUser?.["isSuperAdmin?"], isCurrentUser],
 	// );
 
@@ -46,8 +41,7 @@ export const useActionPermissions = ({
 		isCurrentUser,
 		isShowEdit,
 		isPermitted,
+		isShowChangePassword,
 		// isShowDelete,
-		// isShowChangePassword,
-		// isShowSuspend,
 	};
 };

@@ -1,7 +1,12 @@
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import ExpandSubTable from "@/components/admin-portal/therapist/data-table-expand";
+import { ChangePasswordContent } from "@/components/admin-portal/therapist/feature-actions";
 import DotBadgeWithLabel from "@/components/shared/badge";
+import {
+	ResponsiveDialog,
+	type ResponsiveDialogProps,
+} from "@/components/shared/responsive-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,20 +48,21 @@ import {
 	InfinityIcon,
 	Plus,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export interface PageProps {
 	therapists: {
 		data: Therapist[];
 		metadata: Metadata;
 	};
+	selectedTherapist: Therapist | null;
 }
 export type TableRowDataProps = Row<PageProps["therapists"]["data"][number]>;
 
-export default function Index({ therapists }: PageProps) {
+export default function Index({ therapists, selectedTherapist }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 
-	// data table state management
+	// * data table state management
 	const currentExpanded = useMemo<ExpandedState>(() => {
 		const { queryParams } = populateQueryParams(pageURL);
 		const expandedList = queryParams?.expanded
@@ -80,7 +86,45 @@ export default function Index({ therapists }: PageProps) {
 
 			router.get(url);
 		},
+		changePassword: (id: number | string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ change_password: id },
+				{ only: ["selectedTherapist", "flash"], preserveScroll: true },
+			);
+		},
 	};
+	// for change password
+	const [linkGenerated, setLinkGenerated] = useState("");
+	const changePasswordDialog = useMemo<ResponsiveDialogProps>(() => {
+		const { queryParams } = populateQueryParams(pageURL, {});
+
+		return {
+			title: "Change Password",
+			description:
+				"Make password changes using the generate the form link or via form.",
+			isOpen: !!queryParams?.change_password || false,
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						change_password: null,
+					});
+					router.get(
+						fullUrl,
+						{},
+						{ only: ["selectedTherapist", "flash"], preserveScroll: true },
+					);
+
+					// reseting the link generated state
+					if (linkGenerated) {
+						setLinkGenerated("");
+					}
+				}
+			},
+		};
+	}, [pageURL, linkGenerated]);
 	const columns: ColumnDef<PageProps["therapists"]["data"][number]>[] = [
 		{
 			id: "select",
@@ -383,10 +427,11 @@ export default function Index({ therapists }: PageProps) {
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				const { isShowEdit, isPermitted } = useActionPermissions({
-					authData: globalProps.auth,
-					user: row.original.user,
-				});
+				const { isShowEdit, isShowChangePassword, isPermitted } =
+					useActionPermissions({
+						authData: globalProps.auth,
+						user: row.original.user,
+					});
 
 				if (!isPermitted) return;
 
@@ -409,6 +454,13 @@ export default function Index({ therapists }: PageProps) {
 											onSelect={() => routeTo.edit(row.original.id)}
 										>
 											Edit
+										</DropdownMenuItem>
+									)}
+									{isShowChangePassword && (
+										<DropdownMenuItem
+											onSelect={() => routeTo.changePassword(row.original.id)}
+										>
+											Change Password
 										</DropdownMenuItem>
 									)}
 								</DropdownMenuGroup>
@@ -483,13 +535,26 @@ export default function Index({ therapists }: PageProps) {
 					columns={columns}
 					data={therapists.data}
 					// toolbar={(table) => <ToolbarTable table={table} />}
-					// subComponent={(row) => <ExpandSubTable row={row} routeTo={routeTo} />}
 					subComponent={(row) => <ExpandSubTable row={row} />}
 					customPagination={(table) => (
 						<PaginationTable table={table} metadata={therapists.metadata} />
 					)}
 					currentExpanded={currentExpanded}
 				/>
+
+				{selectedTherapist && changePasswordDialog.isOpen && (
+					<ResponsiveDialog {...changePasswordDialog}>
+						<ChangePasswordContent
+							{...{
+								selectedTherapistAccount: selectedTherapist.user,
+								linkGenerated,
+								setLinkGenerated,
+								forceMode: changePasswordDialog.forceMode,
+								handleOpenChange: changePasswordDialog.onOpenChange,
+							}}
+						/>
+					</ResponsiveDialog>
+				)}
 			</PageContainer>
 		</>
 	);
