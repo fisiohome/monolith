@@ -161,48 +161,32 @@ module AdminPortal
     # GET /generate-reset-password-url
     def generate_reset_password_url
       logger.info "Generating the URL page for change password form..."
-      email = params[:email]
-      raw, hashed = Devise.token_generator.generate(User, :reset_password_token)
-      user = User.find_by(email: email)
+      permitted_params = params.permit(:email)
+      service = PasswordResetService.new(permitted_params[:email], self)
+      result = service.generate_reset_password_url
 
-      if user
-        logger.info "User found the URL will be generating for #{email}."
-        user.reset_password_token = hashed
-        user.reset_password_sent_at = Time.now.utc
-        user.save
-
-        reset_password_url = edit_user_password_url(reset_password_token: raw)
-        render json: {link: reset_password_url}
-        logger.info "URL successfully generated: #{reset_password_url}."
+      if result[:error]
+        render json: {error: result[:error]}, status: result[:status]
       else
-        failed_message = "Failed to generate change password link, the User not found."
-        logger.info failed_message
-        render json: {error: failed_message}, status: :not_found
+        render json: {link: result[:link]}
       end
+
+      logger.info "The proccess to generate the change password URL finished..."
     end
 
     # PUT /change-password
     def change_password
       logger.info "Starting proccess to change the password account..."
       user_params = params.require(:user).permit(:password, :password_confirmation, :email)
-      user = User.find_by(email: user_params[:email])
+      service = PasswordResetService.new(user_params[:email], self)
+      result = service.change_password(user_params)
 
-      if user.nil?
-        failed_message = "User with the given email (#{user_params[:email]}) not found."
-        logger.info failed_message
-        redirect_to admin_portal_admins_path, alert: failed_message
-        return
-      end
-
-      if user.update(password: user_params[:password], password_confirmation: user_params[:password_confirmation])
-        success_message = "Successfully to changed the password."
-        logger.info success_message
-        redirect_to admin_portal_admins_path, notice: success_message
+      if result[:alert]
+        redirect_to result[:redirect_to], alert: result[:alert]
       else
-        failed_message = user&.errors&.first&.full_message || "Failed to changed the password."
-        logger.info failed_message
-        redirect_to admin_portal_admins_path(change_password: user.admin.id), alert: failed_message
+        redirect_to result[:redirect_to], notice: result[:notice]
       end
+
       logger.info "The proccess to change the password account finished..."
     end
 
