@@ -7,7 +7,7 @@ module AdminPortal
       # define the query params default values
       page = params.fetch(:page, 1)
       limit = params.fetch(:limit, 10)
-      selected_param = params[:change_password]
+      selected_param = params[:change_password] || params[:delete]
 
       therapist_collections = Therapist.order(created_at: :desc).sort_by do |u|
         [
@@ -87,8 +87,18 @@ module AdminPortal
 
     # DELETE /therapists/1
     def destroy
-      @therapist.destroy!
-      redirect_to therapists_url, notice: "Therapist was successfully destroyed."
+      logger.info("Start the process for deleting the therapist account.")
+
+      ActiveRecord::Base.transaction do
+        @therapist.destroy!
+      end
+
+      redirect_to admin_portal_therapists_path, notice: "Therapist account and related data were successfully deleted."
+    rescue => e
+      logger.error("Failed to delete therapist with error: #{e.message}.")
+      redirect_to admin_portal_therapists_path(delete: @therapist.id), alert: "Failed to delete therapist account."
+    ensure
+      logger.info("Process for deleting the therapist account is finished.")
     end
 
     # GET /generate-reset-password-url

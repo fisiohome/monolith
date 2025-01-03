@@ -1,7 +1,10 @@
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import ExpandSubTable from "@/components/admin-portal/therapist/data-table-expand";
-import { ChangePasswordContent } from "@/components/admin-portal/therapist/feature-actions";
+import {
+	ChangePasswordContent,
+	DeleteTherapistAlert,
+} from "@/components/admin-portal/therapist/feature-actions";
 import DotBadgeWithLabel from "@/components/shared/badge";
 import {
 	ResponsiveDialog,
@@ -48,7 +51,7 @@ import {
 	InfinityIcon,
 	Plus,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 export interface PageProps {
 	therapists: {
@@ -80,51 +83,6 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 
 		return adminsIndex;
 	}, [pageURL, therapists.data]);
-	const routeTo = {
-		edit: (id: number | string) => {
-			const url = `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}/${id}/edit`;
-
-			router.get(url);
-		},
-		changePassword: (id: number | string) => {
-			const url = pageURL;
-
-			router.get(
-				url,
-				{ change_password: id },
-				{ only: ["selectedTherapist", "flash"], preserveScroll: true },
-			);
-		},
-	};
-	// for change password
-	const [linkGenerated, setLinkGenerated] = useState("");
-	const changePasswordDialog = useMemo<ResponsiveDialogProps>(() => {
-		const { queryParams } = populateQueryParams(pageURL, {});
-
-		return {
-			title: "Change Password",
-			description:
-				"Make password changes using the generate the form link or via form.",
-			isOpen: !!queryParams?.change_password || false,
-			onOpenChange: (value: boolean) => {
-				if (!value) {
-					const { fullUrl } = populateQueryParams(pageURL, {
-						change_password: null,
-					});
-					router.get(
-						fullUrl,
-						{},
-						{ only: ["selectedTherapist", "flash"], preserveScroll: true },
-					);
-
-					// reseting the link generated state
-					if (linkGenerated) {
-						setLinkGenerated("");
-					}
-				}
-			},
-		};
-	}, [pageURL, linkGenerated]);
 	const columns: ColumnDef<PageProps["therapists"]["data"][number]>[] = [
 		{
 			id: "select",
@@ -427,7 +385,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				const { isShowEdit, isShowChangePassword, isPermitted } =
+				const { isShowEdit, isShowChangePassword, isShowDelete, isPermitted } =
 					useActionPermissions({
 						authData: globalProps.auth,
 						user: row.original.user,
@@ -465,42 +423,16 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 									)}
 								</DropdownMenuGroup>
 
-								{/* {(isShowChangePassword || isShowSuspend) && (
+								{isShowDelete && (
 									<>
 										<DropdownMenuSeparator />
-										<DropdownMenuGroup>
-											{isShowChangePassword && (
-												<DropdownMenuItem
-													onSelect={() =>
-														routeTo.changePassword(row.original.id)
-													}
-												>
-													Change Password
-												</DropdownMenuItem>
-											)}
-											{isShowSuspend && (
-												<DropdownMenuItem
-													onSelect={() => routeTo.suspendAdmin(row.original.id)}
-												>
-													{row.original.user["suspended?"]
-														? "Activate"
-														: "Suspend"}
-												</DropdownMenuItem>
-											)}
-										</DropdownMenuGroup>
+										<DropdownMenuItem
+											onSelect={() => routeTo.delete(row.original.id)}
+										>
+											Delete
+										</DropdownMenuItem>
 									</>
-								)} */}
-
-								{/* {isShowDelete && (
-									<>
-										<DropdownMenuSeparator />
-										<DeleteAdminAlert row={row}>
-											<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-												Delete
-											</DropdownMenuItem>
-										</DeleteAdminAlert>
-									</>
-								)} */}
+								)}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
@@ -508,6 +440,82 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 			},
 		},
 	];
+
+	// * for table actions management state
+	const routeTo = {
+		edit: (id: number | string) => {
+			const url = `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}/${id}/edit`;
+
+			router.get(url);
+		},
+		changePassword: (id: number | string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ change_password: id },
+				{
+					only: ["selectedTherapist", "flash", "adminPortal"],
+					preserveScroll: true,
+				},
+			);
+		},
+		delete: (id: number | string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ delete: id },
+				{
+					only: ["selectedTherapist", "flash", "adminPortal"],
+					preserveScroll: true,
+				},
+			);
+		},
+	};
+	const formDialogMode = useMemo(() => {
+		const currentQuery = globalProps.adminPortal?.currentQuery;
+		const isChangePasswordMode = !!currentQuery?.changePassword;
+		const isDeleteMode = !!currentQuery?.delete;
+
+		return { isChangePasswordMode, isDeleteMode };
+	}, [globalProps.adminPortal?.currentQuery]);
+	const formDialog = useMemo<ResponsiveDialogProps>(() => {
+		const isOpen =
+			formDialogMode.isChangePasswordMode || formDialogMode.isDeleteMode;
+		let title = "Change Password";
+		let description =
+			"Make password changes using the generate the form link or via form.";
+
+		if (formDialogMode.isDeleteMode) {
+			title = "Are you absolutely sure?";
+			description =
+				"This action is irreversible. Deleting actions will permanently remove data from our servers and cannot be recovered.";
+		}
+
+		return {
+			title,
+			description,
+			isOpen,
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const objQueryParams = formDialogMode.isChangePasswordMode
+						? { change_password: null }
+						: { delete: null };
+					const { fullUrl } = populateQueryParams(pageURL, objQueryParams);
+
+					router.get(
+						fullUrl,
+						{},
+						{
+							only: ["selectedTherapist", "flash", "adminPortal"],
+							preserveScroll: true,
+						},
+					);
+				}
+			},
+		};
+	}, [pageURL, formDialogMode]);
 
 	return (
 		<>
@@ -542,19 +550,30 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 					currentExpanded={currentExpanded}
 				/>
 
-				{selectedTherapist && changePasswordDialog.isOpen && (
-					<ResponsiveDialog {...changePasswordDialog}>
-						<ChangePasswordContent
+				{selectedTherapist &&
+					formDialog.isOpen &&
+					formDialogMode.isChangePasswordMode && (
+						<ResponsiveDialog {...formDialog}>
+							<ChangePasswordContent
+								{...{
+									selectedTherapistAccount: selectedTherapist.user,
+									forceMode: formDialog.forceMode,
+									handleOpenChange: formDialog.onOpenChange,
+								}}
+							/>
+						</ResponsiveDialog>
+					)}
+
+				{selectedTherapist &&
+					formDialog.isOpen &&
+					formDialogMode.isDeleteMode && (
+						<DeleteTherapistAlert
 							{...{
-								selectedTherapistAccount: selectedTherapist.user,
-								linkGenerated,
-								setLinkGenerated,
-								forceMode: changePasswordDialog.forceMode,
-								handleOpenChange: changePasswordDialog.onOpenChange,
+								...formDialog,
+								selectedTherapist: selectedTherapist,
 							}}
 						/>
-					</ResponsiveDialog>
-				)}
+					)}
 			</PageContainer>
 		</>
 	);

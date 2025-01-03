@@ -30,10 +30,10 @@ export const useActionPermissions = ({
 		[authData.currentUserType, isCurrentUser],
 	);
 
-	// const isShowDelete = useMemo(
-	//   () => currentUser?.["isSuperAdmin?"] && !isCurrentUser,
-	//   [currentUser?.["isSuperAdmin?"], isCurrentUser],
-	// );
+	const isShowDelete = useMemo(
+		() => !!currentUser?.["isSuperAdmin?"],
+		[currentUser?.["isSuperAdmin?"]],
+	);
 
 	const isPermitted = useMemo(() => isShowEdit, [isShowEdit]);
 
@@ -42,6 +42,6 @@ export const useActionPermissions = ({
 		isShowEdit,
 		isPermitted,
 		isShowChangePassword,
-		// isShowDelete,
+		isShowDelete,
 	};
 };

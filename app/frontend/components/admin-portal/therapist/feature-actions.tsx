@@ -1,4 +1,13 @@
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
+import {
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Form,
@@ -23,17 +32,22 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
-import { Clipboard, Eye, EyeClosed, Loader2, PartyPopper } from "lucide-react";
-import { type ComponentProps, type Dispatch, useMemo, useState } from "react";
+import {
+	Clipboard,
+	Eye,
+	EyeClosed,
+	Loader2,
+	LoaderIcon,
+	PartyPopper,
+} from "lucide-react";
+import { type ComponentProps, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import type { z } from "zod";
+import { z } from "zod";
 
 /* change password feature */
 export interface ChangePasswordContentProps extends ComponentProps<"div"> {
 	selectedTherapistAccount: Therapist["user"];
-	linkGenerated: string;
-	setLinkGenerated: Dispatch<React.SetStateAction<string>>;
 	handleOpenChange?: (value: boolean) => void;
 	forceMode?: ResponsiveDialogMode;
 }
@@ -41,8 +55,6 @@ export interface ChangePasswordContentProps extends ComponentProps<"div"> {
 export const ChangePasswordContent = ({
 	className,
 	selectedTherapistAccount,
-	linkGenerated,
-	setLinkGenerated,
 	forceMode,
 }: ChangePasswordContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
@@ -52,6 +64,7 @@ export const ChangePasswordContent = ({
 	});
 
 	// for generated link reset password
+	const [linkGenerated, setLinkGenerated] = useState("");
 	const generateResetPasswordLink = async (email: string) => {
 		const { fullUrl } = populateQueryParams(
 			globalProps.adminPortal.router.adminPortal.therapistManagement
@@ -327,3 +340,79 @@ export const ChangePasswordContent = ({
 		</div>
 	);
 };
+
+// for delete the therapist
+export interface DeleteTherapistAlertProps extends ComponentProps<"dialog"> {
+	title: string;
+	description: string;
+	isOpen: boolean;
+	onOpenChange?: (open: boolean) => void;
+	selectedTherapist: Therapist;
+}
+
+export function DeleteTherapistAlert({
+	title,
+	description,
+	isOpen,
+	onOpenChange,
+	selectedTherapist,
+}: DeleteTherapistAlertProps) {
+	const { props: globalProps } = usePage<GlobalPageProps>();
+	const [isLoading, setIsLoading] = useState(false);
+	const formSchema = z.object({ id: z.string() });
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			id: selectedTherapist.id,
+		},
+		mode: "onSubmit",
+	});
+	const onSubmit = (values: z.infer<typeof formSchema>) => {
+		console.log("Deleting the therapist...");
+
+		const routeURL = `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}/${values.id}`;
+		router.delete(routeURL, {
+			preserveScroll: true,
+			preserveState: true,
+			onStart: () => {
+				setIsLoading(true);
+			},
+			onFinish: () => {
+				setTimeout(() => {
+					setIsLoading(false);
+				}, 250);
+			},
+		});
+
+		console.log("Finished process to delete the therapist...");
+	};
+
+	return (
+		<AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>{title}</AlertDialogTitle>
+					<AlertDialogDescription>{description}</AlertDialogDescription>
+				</AlertDialogHeader>
+
+				<Form {...form}>
+					<form onSubmit={form.handleSubmit(onSubmit)}>
+						<AlertDialogFooter>
+							<AlertDialogCancel>Cancel</AlertDialogCancel>
+							<Button type="submit" variant="destructive" disabled={isLoading}>
+								{isLoading ? (
+									<>
+										<LoaderIcon className="animate-spin" />
+										<span>Deleting...</span>
+									</>
+								) : (
+									<span>Delete</span>
+								)}
+							</Button>
+						</AlertDialogFooter>
+					</form>
+				</Form>
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+}
