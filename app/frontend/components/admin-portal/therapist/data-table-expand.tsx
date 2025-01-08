@@ -15,7 +15,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
-import { cn, formatPhoneNumber, generateInitials } from "@/lib/utils";
+import { cn, generateInitials } from "@/lib/utils";
 import type { TableRowDataProps } from "@/pages/AdminPortal/Therapist/Index";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
@@ -36,6 +36,7 @@ import {
 	Users,
 } from "lucide-react";
 import { Fragment, useMemo } from "react";
+import { formatPhoneNumberIntl } from "react-phone-number-input";
 
 export interface ExpandSubTableProps {
 	row: TableRowDataProps;
@@ -65,7 +66,9 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 			{
 				icon: Phone,
 				label: "Phone",
-				value: formatPhoneNumber(data?.phoneNumber) || "-",
+				value: data?.phoneNumber
+					? formatPhoneNumberIntl(data.phoneNumber)
+					: "-",
 			},
 			{ icon: Mail, label: "Email", value: data.user.email },
 		];
@@ -90,7 +93,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 				icon: Microscope,
 				label: "Specializations",
 				value: data.specializations?.length ? (
-					<div className="flex flex-wrap items-center justify-end gap-1">
+					<div className="flex flex-wrap items-center justify-end gap-1 text-center">
 						{data.specializations.map((specialization) => (
 							<Badge key={specialization}>{specialization}</Badge>
 						))}
@@ -103,7 +106,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 				icon: Stethoscope,
 				label: "Treatment Modalities",
 				value: data.modalities?.length ? (
-					<div className="flex flex-wrap items-center justify-end gap-1">
+					<div className="flex flex-wrap items-center justify-end gap-1 text-center">
 						{data.modalities.map((modality) => (
 							<Badge key={modality} variant="secondary">
 								{modality}
@@ -270,15 +273,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 											)}
 										</div>
 									) : (
-										<div className="flex items-center space-x-2">
-											<div
-												className={cn(
-													"rounded-full size-2",
-													isOnline ? "bg-green-700" : "bg-muted-foreground",
-												)}
-											/>
-											<span>{isOnline ? "Online" : "Offline"}</span>
-										</div>
+										<span>{isOnline ? "Online" : "Offline"}</span>
 									)}
 								</TooltipContent>
 							</Tooltip>
@@ -346,13 +341,49 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 					</CardContent>
 				</Card>
 
-				{/* <Card className="col-span-full md:col-span-6">
+				<Card className="col-span-full md:col-span-6">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-1.5">
 							<CreditCard className="size-4" />
 							Bank Accounts
 						</CardTitle>
 					</CardHeader>
+					<CardContent>
+						{data.bankDetails?.length ? (
+							<div className="grid gap-4">
+								{data.bankDetails.map((detail, index) => (
+									<Fragment key={detail.id}>
+										<div className="grid gap-2">
+											<div className="flex items-start justify-between gap-2">
+												<p className="font-medium">
+													{detail.bankName.toUpperCase()}
+												</p>
+
+												{detail.active && (
+													<Badge className="text-[10px] bg-emerald-500">
+														{detail.active ? "ACTIVE" : "INACTIVE"}
+													</Badge>
+												)}
+											</div>
+
+											<div className="grid font-light">
+												<span>{detail.accountHolderName}</span>
+												<span>{detail.accountNumber}</span>
+											</div>
+										</div>
+
+										{data.bankDetails.length > 1 &&
+											index + 1 !== data.bankDetails.length && <Separator />}
+									</Fragment>
+								))}
+							</div>
+						) : (
+							<p>
+								There's no bank details yet, let's get started by adding the
+								data first.
+							</p>
+						)}
+					</CardContent>
 				</Card>
 
 				<Card className="col-span-full md:col-span-6">
@@ -362,7 +393,62 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 							Addresses
 						</CardTitle>
 					</CardHeader>
-				</Card> */}
+					<CardContent>
+						{data.addresses?.length ? (
+							<div className="grid gap-4">
+								{data.addresses.map((item, index) => (
+									<Fragment key={item.id}>
+										<div className="grid gap-2">
+											<div className="flex items-start justify-between gap-2">
+												<p className="font-medium">
+													{item.location.country} - {item.location.state}
+												</p>
+
+												{item.active && (
+													<Badge className="text-[10px] bg-emerald-500">
+														{item.active ? "ACTIVE" : "INACTIVE"}
+													</Badge>
+												)}
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>Country:</span>
+												<span className="font-medium">
+													{item.location.countryCode} - {item.location.country}
+												</span>
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>State - City:</span>
+												<span className="font-medium">
+													{item.location.state} - {item.location.city}
+												</span>
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>Postal Code:</span>
+												<span className="font-medium">{item.postalCode}</span>
+											</div>
+
+											<div className="flex flex-col font-light text-pretty">
+												<span>Address:</span>
+												<span className="font-medium">{item.address}</span>
+											</div>
+										</div>
+
+										{data.addresses.length > 1 &&
+											index + 1 !== data.addresses.length && <Separator />}
+									</Fragment>
+								))}
+							</div>
+						) : (
+							<p>
+								There's no addresses yet, let's get started by adding the data
+								first.
+							</p>
+						)}
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);

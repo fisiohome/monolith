@@ -5,6 +5,7 @@ import {
 	FormServiceDialogContent,
 } from "@/components/admin-portal/service/form-service-dialog";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import DotBadgeWithLabel from "@/components/shared/badge";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
@@ -162,16 +163,12 @@ export default function Index({
 			),
 			enableHiding: false,
 			cell: ({ row }) => {
+				const isActive = row.original.active;
+
 				return (
-					<div className="flex items-center space-x-2">
-						<div
-							className={cn(
-								"rounded-full size-2",
-								row.original.active ? "bg-green-700" : "bg-destructive",
-							)}
-						/>
-						<span>{row.original.active ? "Active" : "Inactive"}</span>
-					</div>
+					<DotBadgeWithLabel variant={isActive ? "success" : "destructive"}>
+						<span>{isActive ? "Active" : "Inactive"}</span>
+					</DotBadgeWithLabel>
 				);
 			},
 		},
@@ -216,7 +213,7 @@ export default function Index({
 									<div className="space-y-2 col-span-full">
 										<h4 className="font-medium leading-none">Show Locations</h4>
 										<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
-											<div className="flex items-center space-x-1">
+											<div className="flex items-baseline space-x-1">
 												<div className="bg-green-700 rounded-full size-2" />
 												<span>{`${locationsActive?.length || 0} Locations`}</span>
 											</div>
@@ -224,7 +221,7 @@ export default function Index({
 												orientation="vertical"
 												className="bg-muted-foreground/25"
 											/>
-											<div className="flex items-center space-x-1">
+											<div className="flex items-baseline space-x-1">
 												<div className="rounded-full bg-destructive size-2" />
 												<span>{`${locationInactive?.length || 0} Locations`}</span>
 											</div>
@@ -246,7 +243,7 @@ export default function Index({
 														animate={{ opacity: 1, y: 0 }}
 														exit={{ opacity: 0, y: 10 }}
 														transition={{ delay: index * 0.1 }}
-														className="flex items-center px-1 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
+														className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
 													>
 														<div
 															className={cn(
@@ -276,7 +273,7 @@ export default function Index({
 													animate={{ opacity: 1, y: 0 }}
 													exit={{ opacity: 0, y: 10 }}
 													transition={{ delay: index * 0.1 }}
-													className="flex items-center px-1 space-x-2 rounded-md hover:bg-accent hover:text-accent-foreground"
+													className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
 												>
 													<div
 														className={cn(

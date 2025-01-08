@@ -318,7 +318,7 @@ export function FormServiceDialogContent({
 											<SelectContent>
 												{statuses.map((status) => (
 													<SelectItem key={status.value} value={status.value}>
-														<span className="flex items-center gap-2">
+														<span className="flex items-baseline gap-2">
 															<Dot
 																className={status.color}
 																width={10}

@@ -5,7 +5,6 @@ import {
 } from "@/components/admin-portal/dashboard/charts";
 import StatCard from "@/components/admin-portal/dashboard/stat-card";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import { LoadingBasic } from "@/components/shared/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Deferred, Head } from "@inertiajs/react";
 import { HandPlatter, MapPinned, ShieldCheck, Stethoscope } from "lucide-react";
@@ -54,8 +53,6 @@ export default function Index({
 	services,
 	therapists,
 }: PageProps) {
-	console.log({ locations, therapists });
-
 	const statsDashboards = useMemo(() => {
 		const adminTotal = {
 			title: "Total Admins",

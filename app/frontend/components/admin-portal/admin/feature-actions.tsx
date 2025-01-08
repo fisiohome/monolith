@@ -90,6 +90,15 @@ export const ChangePasswordContent = ({
 }: ChangePasswordContentProps) => {
 	const { props: globalProps } = usePage<GlobalPageProps>();
 	const { toast } = useToast();
+	const generateResetPasswordLink = async (email: string) => {
+		const { fullUrl } = populateQueryParams(
+			globalProps.adminPortal.router.adminPortal.adminManagement
+				.generateResetPasswordUrl,
+			{ email },
+		);
+		const response = await fetch(fullUrl, { method: "get" });
+		return response.json();
+	};
 
 	const [isLoading, setIsLoading] = useState({
 		generate: false,
@@ -102,17 +111,15 @@ export const ChangePasswordContent = ({
 		console.log(
 			`Generating the change password link for ${values.user.email}...`,
 		);
-		const { fullUrl } = populateQueryParams(
-			globalProps.adminPortal.router.adminPortal.adminManagement
-				.generateResetPasswordUrl,
-			{ email: values.user.email },
-		);
-		const response = await fetch(fullUrl, { method: "get" });
-		const data = await response.json();
+
+		const data = await generateResetPasswordLink(values.user.email);
 
 		if (!data?.link && data?.error) {
 			console.log(data.error);
 			toast({ description: data.error, variant: "destructive" });
+			setTimeout(() => {
+				setIsLoading({ ...isLoading, generate: false });
+			}, 250);
 			return;
 		}
 
@@ -120,6 +127,9 @@ export const ChangePasswordContent = ({
 		setLinkGenerated(data.link);
 		toast({ description: successMessage });
 		console.log(successMessage);
+		setTimeout(() => {
+			setIsLoading({ ...isLoading, generate: false });
+		}, 250);
 	};
 	const [passwordVisibility, setPasswordVisibility] = useState({
 		new: false,
@@ -178,7 +188,9 @@ export const ChangePasswordContent = ({
 					setIsLoading({ ...isLoading, form: true });
 				},
 				onFinish: () => {
-					setIsLoading({ ...isLoading, form: false });
+					setTimeout(() => {
+						setIsLoading({ ...isLoading, form: false });
+					}, 250);
 				},
 			},
 		);
@@ -278,11 +290,11 @@ export const ChangePasswordContent = ({
 			</div>
 
 			<div className="flex justify-center align-center !my-2">
-				<hr className="w-6/12 mt-2 bg-muted-foreground" />
-				<span className="mx-4 text-xs text-center text-nowrap text-muted-foreground">
+				<hr className="w-6/12 mt-2 bg-muted" />
+				<span className="mx-4 text-xs text-center text-nowrap text-muted-foreground/50">
 					or using form
 				</span>
-				<hr className="w-6/12 mt-2 bg-muted-foreground" />
+				<hr className="w-6/12 mt-2 bg-muted" />
 			</div>
 
 			<Form {...form}>

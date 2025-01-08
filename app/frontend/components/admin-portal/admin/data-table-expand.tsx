@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
 import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
@@ -12,7 +13,6 @@ import {
 	Pencil,
 	Trash2,
 } from "lucide-react";
-import { useMemo } from "react";
 import { DeleteAdminAlert } from "./feature-actions";
 
 interface ExpandSubTableProps {
@@ -27,26 +27,11 @@ interface ExpandSubTableProps {
 export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
 
-	const isCurrentUser = useMemo(
-		() => globalProps.auth.currentUser?.user.email === row.original.user.email,
-		[globalProps.auth.currentUser?.user.email, row.original.user.email],
-	);
-	const isShowDelete = useMemo(
-		() => globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
-		[isCurrentUser, globalProps.auth.currentUser],
-	);
-	const isShowEdit = useMemo(
-		() => globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
-		[isCurrentUser, globalProps.auth.currentUser],
-	);
-	const isShowChangePassword = useMemo(
-		() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-		[isCurrentUser, globalProps.auth.currentUser],
-	);
-	const isShowSuspend = useMemo(
-		() => !isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-		[isCurrentUser, globalProps.auth.currentUser],
-	);
+	const { isShowEdit, isShowChangePassword, isShowSuspend, isShowDelete } =
+		useActionPermissions({
+			currentUser: globalProps.auth.currentUser,
+			user: row.original.user,
+		});
 
 	return (
 		<>

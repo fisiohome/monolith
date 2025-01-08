@@ -42,7 +42,7 @@ module AdminPortal
 
       bank_details_count = 0
       @params[:bank_details].each do |bank_detail_params|
-        bank_detail = BankDetail.create!(bank_detail_params.except(:active))
+        bank_detail = BankDetail.create!(bank_detail_params.except(:active, :id))
         TherapistBankDetail.create!(
           therapist: @therapist,
           bank_detail: bank_detail,

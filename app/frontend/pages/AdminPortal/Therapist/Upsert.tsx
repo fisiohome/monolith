@@ -5,18 +5,20 @@ import {
 import type { Location } from "@/types/admin-portal/location";
 import type { Service } from "@/types/admin-portal/service";
 import type {
+	Therapist,
 	TherapistEmploymentStatus,
 	TherapistEmploymentType,
 	TherapistGender,
 } from "@/types/admin-portal/therapist";
 import { Head } from "@inertiajs/react";
+import { useMemo } from "react";
 import FormTherapist from "./Form";
 
-export interface NewTherapistPageProps {
-	therapist: {
-		id: null | string;
-		name: null | string;
-	};
+export type FormMode = "create" | "update";
+
+export interface UpsertTherapistPageProps {
+	currentPath: string;
+	therapist: Partial<Therapist>;
 	genders: TherapistGender;
 	employmentTypes: TherapistEmploymentType;
 	employmentStatuses: TherapistEmploymentStatus;
@@ -24,26 +26,43 @@ export interface NewTherapistPageProps {
 	locations: Location[];
 }
 
-export default function New({
+export default function UpsertTherapistPage({
+	currentPath,
 	therapist,
 	genders,
 	employmentTypes,
 	employmentStatuses,
 	services,
 	locations,
-}: NewTherapistPageProps) {
+}: UpsertTherapistPageProps) {
+	const formMode = useMemo<FormMode>(
+		() => (therapist?.id ? "update" : "create"),
+		[therapist],
+	);
+	const formHeader = useMemo(() => {
+		const title = formMode === "create" ? "New Therapist" : "Update Therapist";
+		const description =
+			formMode === "create"
+				? "Add a new therapist account."
+				: "Modify an existing therapist account.";
+
+		return { title, description };
+	}, [formMode]);
+
 	return (
 		<>
-			<Head title="Create Therapist" />
+			<Head title={formHeader.title} />
 
 			<FormPageContainer>
 				<section className="flex flex-col justify-center gap-4 mx-auto w-12/12 xl:w-8/12">
 					<FormPageHeader
-						title="New Therapist"
-						description="Add a new therapist account."
+						title={formHeader.title}
+						description={formHeader.description}
 					/>
 
 					<FormTherapist
+						mode={formMode}
+						currentPath={currentPath}
 						therapist={therapist}
 						genders={genders}
 						employmentTypes={employmentTypes}

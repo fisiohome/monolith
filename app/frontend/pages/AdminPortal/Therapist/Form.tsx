@@ -47,16 +47,13 @@ import { Separator } from "@/components/ui/separator";
 import { TagsInput } from "@/components/ui/tags-input";
 import { Textarea } from "@/components/ui/textarea";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import {
-	EMPLOYMENT_STATUSES,
-	EMPLOYMENT_TYPES,
-	GENDERS,
-} from "@/lib/constants";
 import { groupLocationsByCountry } from "@/lib/locations";
+import { type TherapistFormSchema, getFormSchema } from "@/lib/therapists";
 import { cn, goBackHandler } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
 import type { Service } from "@/types/admin-portal/service";
 import type {
+	Therapist,
 	TherapistEmploymentStatus,
 	TherapistEmploymentType,
 	TherapistGender,
@@ -78,92 +75,7 @@ import {
 } from "lucide-react";
 import { type ComponentProps, useEffect, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { isValidPhoneNumber } from "react-phone-number-input";
-import { z } from "zod";
-
-const formSchema = z
-	.object({
-		user: z.object({
-			email: z.string().email().min(1, { message: "Email is required" }),
-			password: z
-				.string()
-				.min(8, "Password must be at least 8 characters long")
-				.max(64, "Password must be no more than 64 characters")
-				.regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-				.regex(/\d/, "Password must contain at least one number")
-				.regex(/[\W_]/, "Password must contain at least one symbol"),
-			passwordConfirmation: z
-				.string()
-				.min(8, "Password confirmation must be at least 8 characters long")
-				.max(64, "Password confirmation must be no more than 64 characters")
-				.regex(
-					/[A-Z]/,
-					"Password confirmation must contain at least one uppercase letter",
-				)
-				.regex(/\d/, "Password confirmation must contain at least one number")
-				.regex(
-					/[\W_]/,
-					"Password confirmation must contain at least one symbol",
-				),
-		}),
-		name: z.string().min(3, { message: "Therapist name is required" }),
-		batch: z.coerce
-			.number({ message: "Invalid batch number" })
-			.min(1, { message: "Batch number is required" })
-			.nullable(),
-		phoneNumber: z
-			.string()
-			.min(1, { message: "Phone Number is required" })
-			.refine(isValidPhoneNumber, { message: "Invalid phone number" }),
-		gender: z.enum(GENDERS).nullable(),
-		employmentStatus: z.enum(EMPLOYMENT_STATUSES).nullable(),
-		employmentType: z.enum(EMPLOYMENT_TYPES).nullable(),
-		modalities: z.array(z.string()).nonempty("At least input one modality"),
-		specializations: z
-			.array(z.string())
-			.nonempty("At least input one specialization"),
-		bankDetails: z
-			.array(
-				z.object({
-					bankName: z.string().min(1, { message: "Bank name is required" }),
-					accountNumber: z
-						.string()
-						.min(1, { message: "Account number is required" }),
-					accountHolderName: z
-						.string()
-						.min(1, { message: "Account holder name is required" }),
-					active: z.boolean().default(false),
-				}),
-			)
-			.nonempty("At least input one bank detail"),
-		service: z.object({
-			id: z.number(),
-			name: z.string().min(1, { message: "Service name is required" }),
-			code: z.string().min(1, { message: "Service code is required" }),
-		}),
-		addresses: z
-			.array(
-				z.object({
-					id: z.union([z.string(), z.number()]).optional(),
-					country: z.string().min(1, { message: "Country is required" }),
-					countryCode: z
-						.string()
-						.min(1, { message: "Country code is required" }),
-					state: z.string().min(1, { message: "State is required" }),
-					city: z.string().min(1, { message: "City is required" }),
-					postalCode: z.string().min(1, { message: "Postal code is required" }),
-					address: z.string().min(1, { message: "Address is required" }),
-					active: z.boolean().default(false),
-				}),
-			)
-			.nonempty("At least input one address"),
-	})
-	.refine((data) => data.user.password === data.user.passwordConfirmation, {
-		message: "Passwords don't match",
-		path: ["passwordConfirmation"],
-	});
-
-export type FormTherapistValues = z.infer<typeof formSchema>;
+import type { FormMode } from "./Upsert";
 
 interface FormSectionContainerProps extends ComponentProps<"div"> {
 	number: string | number;
@@ -193,7 +105,9 @@ function FormSectionContainer({
 }
 
 export interface FormTherapistProps {
-	therapist: any;
+	currentPath: string;
+	mode: FormMode;
+	therapist: Partial<Therapist>;
 	genders: TherapistGender;
 	employmentTypes: TherapistEmploymentType;
 	employmentStatuses: TherapistEmploymentStatus;
@@ -202,6 +116,8 @@ export interface FormTherapistProps {
 }
 
 export default function FormTherapist({
+	currentPath,
+	mode,
 	therapist,
 	genders,
 	employmentTypes,
@@ -262,13 +178,13 @@ export default function FormTherapist({
 			cities: [] as string[],
 		};
 	});
-	const routerFetch = {
+	const fetchData = {
 		getEmploymentStatuses: () => {
 			router.get(
-				globalProps.adminPortal.router.adminPortal.therapistManagement.new,
+				currentPath,
 				{},
 				{
-					only: ["employment_statuses"],
+					only: ["employmentStatuses"],
 					preserveState: true,
 					preserveScroll: true,
 					onStart: () => {
@@ -311,7 +227,7 @@ export default function FormTherapist({
 		},
 		getServices: () => {
 			router.get(
-				globalProps.adminPortal.router.adminPortal.therapistManagement.new,
+				currentPath,
 				{},
 				{
 					only: ["services"],
@@ -339,78 +255,79 @@ export default function FormTherapist({
 			state?: string | null;
 			city?: string | null;
 		}) => {
-			router.get(
-				globalProps.adminPortal.router.adminPortal.therapistManagement.new,
-				query,
-				{
-					preserveState: true,
-					preserveScroll: true,
-					onStart: () => {
+			router.get(currentPath, query, {
+				only: ["locations"],
+				preserveState: true,
+				preserveScroll: true,
+				onStart: () => {
+					setIsLoading((prev) => ({
+						...prev,
+						states: !!query?.country,
+						cities: !!query?.state,
+					}));
+				},
+				onSuccess: () => {
+					// setup the states list
+					if (query?.country) {
+						const states =
+							groupLocationsByCountry(locations)
+								?.filter((location) => location.country === query.country)
+								?.flatMap((location) =>
+									location.states.map((state) => state.name),
+								) || [];
+						setSelectCollections((prev) => ({ ...prev, states }));
+					}
+
+					// setup the cities list
+					if (query?.state) {
+						const cities =
+							locations
+								?.filter((location) => location.state === query.state)
+								?.map((location) => location.city) || [];
+						setSelectCollections((prev) => ({ ...prev, cities }));
+					}
+				},
+				onFinish: () => {
+					setTimeout(() => {
 						setIsLoading((prev) => ({
 							...prev,
-							states: !!query?.country,
-							cities: !!query?.state,
+							states: false,
+							cities: false,
 						}));
-					},
-					onSuccess: () => {
-						// setup the states list
-						if (query?.country) {
-							const states =
-								groupLocationsByCountry(locations)
-									?.filter((location) => location.country === query.country)
-									?.flatMap((location) =>
-										location.states.map((state) => state.name),
-									) || [];
-							setSelectCollections((prev) => ({
-								...prev,
-								states: states,
-							}));
-						}
-
-						// setup the cities list
-						if (query?.state) {
-							const cities =
-								locations
-									?.filter((location) => location.state === query.state)
-									?.map((location) => location.city) || [];
-							setSelectCollections((prev) => ({
-								...prev,
-								cities: cities,
-							}));
-						}
-					},
-					onFinish: () => {
-						setTimeout(() => {
-							setIsLoading((prev) => ({
-								...prev,
-								states: false,
-								cities: false,
-							}));
-						}, 250);
-					},
+					}, 250);
 				},
-			);
+			});
 		},
 	};
-	const form = useForm<FormTherapistValues>({
-		resolver: zodResolver(formSchema),
+	const form = useForm<TherapistFormSchema>({
+		resolver: zodResolver(getFormSchema(mode)),
 		defaultValues: {
 			user: {
-				email: "",
-				password: "Therapist00!",
-				passwordConfirmation: "Therapist00!",
+				email: therapist?.user?.email || "",
+				password: "Therapist123!",
+				passwordConfirmation: "Therapist123!",
 			},
-			name: "",
-			batch: 1,
-			phoneNumber: "+62",
-			gender: "MALE",
-			employmentType: "FLAT",
-			employmentStatus: "INACTIVE",
-			modalities: [],
-			specializations: [],
-			bankDetails: [],
-			service: {},
-			addresses: [],
+			name: therapist.name || "",
+			batch: therapist.batch || 1,
+			phoneNumber: therapist.phoneNumber || "+62",
+			gender: therapist.gender || "MALE",
+			employmentType: therapist.employmentType || "FLAT",
+			employmentStatus: therapist.employmentStatus || "INACTIVE",
+			modalities: therapist.modalities || [],
+			specializations: therapist.specializations || [],
+			bankDetails: therapist.bankDetails || [],
+			service: therapist?.service || {},
+			addresses:
+				therapist.addresses?.map((addressItem) => ({
+					active: addressItem.active,
+					address: addressItem.address,
+					id: addressItem.id,
+					postalCode: addressItem.postalCode,
+					country: addressItem.location.country,
+					countryCode: addressItem.location.countryCode,
+					state: addressItem.location.state,
+					city: addressItem.location.city,
+				})) || [],
 		},
 		mode: "onBlur",
 	});
@@ -463,26 +380,38 @@ export default function FormTherapist({
 			});
 		}
 	}, [form, globalProps?.errors?.fullMessages]);
-	const onSubmit = (values: FormTherapistValues) => {
-		console.log("Submitting form to create the therapist...");
-		console.log(values);
-		router.post(
-			globalProps.adminPortal.router.adminPortal.therapistManagement.index,
-			deepTransformKeysToSnakeCase({ therapist: { ...values } }),
-			{
-				preserveScroll: true,
-				preserveState: true,
-				onStart: () => {
-					setIsLoading((prev) => ({ ...prev, submit: true }));
-				},
-				onFinish: () => {
-					setTimeout(() => {
-						setIsLoading((prev) => ({ ...prev, submit: false }));
-					}, 250);
-				},
-			},
+	const onSubmit = (values: TherapistFormSchema) => {
+		const isUpdate = mode === "update";
+		console.log(
+			`Submitting form to ${isUpdate ? "update" : "create"} the therapist...`,
 		);
-		console.log("Therapist successfully created...");
+
+		const submitURL = `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}${isUpdate ? `/${therapist.id}` : ""}`;
+		const submitConfig = {
+			preserveScroll: true,
+			preserveState: true,
+			onStart: () => setIsLoading((prev) => ({ ...prev, submit: true })),
+			onFinish: () =>
+				setTimeout(
+					() => setIsLoading((prev) => ({ ...prev, submit: false })),
+					250,
+				),
+		};
+		const { user, ...restValues } = values;
+		const payload = deepTransformKeysToSnakeCase({
+			therapist: isUpdate ? { ...restValues } : { ...restValues, user },
+		});
+		console.log(`Payload data: ${payload}`);
+
+		if (isUpdate) {
+			router.put(submitURL, payload, submitConfig);
+		} else {
+			router.post(submitURL, payload, submitConfig);
+		}
+
+		console.log(
+			`Therapist successfully ${isUpdate ? "updated" : "created"}...`,
+		);
 	};
 
 	return (
@@ -732,7 +661,7 @@ export default function FormTherapist({
 																							"text-muted-foreground",
 																					)}
 																					onClick={() =>
-																						routerFetch.getLocations({
+																						fetchData.getLocations({
 																							country: address.country,
 																						})
 																					}
@@ -830,7 +759,7 @@ export default function FormTherapist({
 																							"text-muted-foreground",
 																					)}
 																					onClick={() => {
-																						routerFetch.getLocations({
+																						fetchData.getLocations({
 																							state: form.getValues(
 																								`addresses.${fieldIndex}.state`,
 																							),
@@ -1005,9 +934,10 @@ export default function FormTherapist({
 												<FormControl>
 													<Input
 														{...field}
-														autoFocus
+														autoFocus={mode === "create"}
 														type="email"
 														autoComplete="email"
+														readOnly={mode === "update"}
 														placeholder="Enter the email..."
 													/>
 												</FormControl>
@@ -1017,100 +947,104 @@ export default function FormTherapist({
 										)}
 									/>
 
-									<FormField
-										control={form.control}
-										name="user.password"
-										render={({ field }) => (
-											<FormItem className="col-start-1">
-												<FormLabel>Password</FormLabel>
-												<FormControl>
-													<div className="relative">
-														<Input
-															{...field}
-															type={
-																passwordVisibility.new ? "text" : "password"
-															}
-															placeholder="Enter the password..."
-															autoComplete="new-password"
-														/>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
-															onClick={() => {
-																setPasswordVisibility({
-																	...passwordVisibility,
-																	new: !passwordVisibility.new,
-																});
-															}}
-														>
-															{!passwordVisibility.new ? (
-																<Eye className="size-4" />
-															) : (
-																<EyeClosed className="size-4" />
-															)}
-															<span className="sr-only">
-																Toggle Password Visibility
-															</span>
-														</Button>
-													</div>
-												</FormControl>
-												<FormDescription>
-													You can change this default password if necessary.
-												</FormDescription>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
+									{mode === "create" && (
+										<>
+											<FormField
+												control={form.control}
+												name="user.password"
+												render={({ field }) => (
+													<FormItem className="col-start-1">
+														<FormLabel>Password</FormLabel>
+														<FormControl>
+															<div className="relative">
+																<Input
+																	{...field}
+																	type={
+																		passwordVisibility.new ? "text" : "password"
+																	}
+																	placeholder="Enter the password..."
+																	autoComplete="new-password"
+																/>
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="icon"
+																	className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
+																	onClick={() => {
+																		setPasswordVisibility({
+																			...passwordVisibility,
+																			new: !passwordVisibility.new,
+																		});
+																	}}
+																>
+																	{!passwordVisibility.new ? (
+																		<Eye className="size-4" />
+																	) : (
+																		<EyeClosed className="size-4" />
+																	)}
+																	<span className="sr-only">
+																		Toggle Password Visibility
+																	</span>
+																</Button>
+															</div>
+														</FormControl>
+														<FormDescription>
+															You can change this default password if necessary.
+														</FormDescription>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
 
-									<FormField
-										control={form.control}
-										name="user.passwordConfirmation"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Password Confirmation</FormLabel>
-												<FormControl>
-													<div className="relative">
-														<Input
-															{...field}
-															type={
-																passwordVisibility.confirmation
-																	? "text"
-																	: "password"
-															}
-															placeholder="Enter the password confirmation..."
-															autoComplete="new-password"
-														/>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
-															onClick={() => {
-																setPasswordVisibility({
-																	...passwordVisibility,
-																	confirmation:
-																		!passwordVisibility.confirmation,
-																});
-															}}
-														>
-															{!passwordVisibility.confirmation ? (
-																<Eye className="size-4" />
-															) : (
-																<EyeClosed className="size-4" />
-															)}
-															<span className="sr-only">
-																Toggle Password Visibility
-															</span>
-														</Button>
-													</div>
-												</FormControl>
+											<FormField
+												control={form.control}
+												name="user.passwordConfirmation"
+												render={({ field }) => (
+													<FormItem>
+														<FormLabel>Password Confirmation</FormLabel>
+														<FormControl>
+															<div className="relative">
+																<Input
+																	{...field}
+																	type={
+																		passwordVisibility.confirmation
+																			? "text"
+																			: "password"
+																	}
+																	placeholder="Enter the password confirmation..."
+																	autoComplete="new-password"
+																/>
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="icon"
+																	className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
+																	onClick={() => {
+																		setPasswordVisibility({
+																			...passwordVisibility,
+																			confirmation:
+																				!passwordVisibility.confirmation,
+																		});
+																	}}
+																>
+																	{!passwordVisibility.confirmation ? (
+																		<Eye className="size-4" />
+																	) : (
+																		<EyeClosed className="size-4" />
+																	)}
+																	<span className="sr-only">
+																		Toggle Password Visibility
+																	</span>
+																</Button>
+															</div>
+														</FormControl>
 
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+										</>
+									)}
 								</>
 							)}
 
@@ -1154,7 +1088,7 @@ export default function FormTherapist({
 																	!field.value && "text-muted-foreground",
 																)}
 																onClick={() => {
-																	routerFetch.getServices();
+																	fetchData.getServices();
 																}}
 															>
 																{field.value
@@ -1184,7 +1118,7 @@ export default function FormTherapist({
 																			<span>Please wait...</span>
 																		</CommandItem>
 																	) : (
-																		services.map((service) => (
+																		services?.map((service) => (
 																			<CommandItem
 																				value={String(service.id)}
 																				key={service.id}
@@ -1263,7 +1197,7 @@ export default function FormTherapist({
 													defaultValue={field?.value || ""}
 													onOpenChange={(value) => {
 														if (value) {
-															routerFetch.getEmploymentStatuses();
+															fetchData.getEmploymentStatuses();
 														}
 													}}
 												>
@@ -1565,7 +1499,7 @@ export default function FormTherapist({
 						className="w-full lg:w-auto"
 						onClick={goBackHandler}
 					>
-						Back
+						{mode === "create" ? "Back" : "Cancel"}
 					</Button>
 
 					<Button
@@ -1576,10 +1510,12 @@ export default function FormTherapist({
 						{isLoading.submit ? (
 							<>
 								<LoaderIcon className="animate-spin" />
-								<span>Please wait...</span>
+								<span>
+									{mode === "create" ? "Please wait..." : "Updating..."}
+								</span>
 							</>
 						) : (
-							<span>Create</span>
+							<span>{mode === "create" ? "Create" : "Save"}</span>
 						)}
 					</Button>
 				</div>

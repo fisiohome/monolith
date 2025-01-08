@@ -8,14 +8,14 @@ class Therapist < ApplicationRecord
   has_one :therapist_document, dependent: :destroy
   accepts_nested_attributes_for :therapist_document
 
-  has_many :therapist_addresses, dependent: :destroy
-  has_many :addresses, through: :therapist_addresses, dependent: :destroy
+  has_many :therapist_addresses, -> { order(active: :desc) }
+  has_many :addresses, through: :therapist_addresses
   has_one :active_therapist_address, -> { where(active: true) }, class_name: "TherapistAddress"
   has_one :active_address, through: :active_therapist_address, source: :address
   accepts_nested_attributes_for :therapist_addresses
 
-  has_many :therapist_bank_details, dependent: :destroy
-  has_many :bank_details, through: :therapist_bank_details, dependent: :destroy
+  has_many :therapist_bank_details, -> { order(active: :desc) }
+  has_many :bank_details, through: :therapist_bank_details
   has_one :active_therapist_bank_detail, -> { where(active: true) }, class_name: "TherapistBankDetail"
   has_one :active_bank_detail, through: :active_therapist_bank_detail, source: :bank_detail
   accepts_nested_attributes_for :therapist_bank_details
@@ -26,7 +26,7 @@ class Therapist < ApplicationRecord
   after_destroy :destroy_associated_user
   after_save :update_user_suspend_status
 
-  # define the validation
+  # define the validations
   enum :gender, {MALE: "MALE", FEMALE: "FEMALE"}, prefix: true
   validates :gender, presence: true, inclusion: {in: ["MALE", "FEMALE"], message: "%{value} is not a valid gender"}
 
@@ -53,16 +53,22 @@ class Therapist < ApplicationRecord
   end
 
   def destroy_associated_bank_details
-    bank_details.each do |bank_detail|
-      logger.info "Deleting the associated Bank Detail: #{bank_detail.bank_name}"
-      BankDetail.find(bank_detail.id).destroy
+    logger.info "Deleting associated Bank Details"
+
+    therapist_bank_details.includes(:bank_detail).find_each do |bank_item|
+      logger.info "Deleting associated Bank Detail: #{bank_item.bank_detail&.id}"
+      bank_item.bank_detail&.destroy
+      bank_item.destroy
     end
   end
 
   def destroy_associated_addresses
-    addresses.each do |address|
-      logger.info "Deleting the associated Address: #{address.address}"
-      Address.find(address.id).destroy
+    logger.info "Deleting associated Addresses"
+
+    therapist_addresses.includes(:address).find_each do |address_item|
+      logger.info "Deleting associated Address: #{address_item.address&.id}"
+      address_item.address&.destroy
+      address_item.destroy
     end
   end
 

@@ -8,6 +8,7 @@ import {
 } from "@/components/admin-portal/admin/feature-actions";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import DotBadgeWithLabel from "@/components/shared/badge";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
@@ -33,6 +34,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
 import { cn, populateQueryParams, removeWhiteSpaces } from "@/lib/utils";
 import { generateInitials, humanize } from "@/lib/utils";
 import type { Admin, AdminTypes } from "@/types/admin-portal/admin";
@@ -434,10 +436,9 @@ export default function Index({
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger>
-									<div className="flex items-center space-x-2">
-										<div className="bg-red-700 rounded-full size-2" />
+									<DotBadgeWithLabel variant="destructive">
 										<span>Suspended</span>
-									</div>
+									</DotBadgeWithLabel>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
 									<div className="flex flex-col">
@@ -468,15 +469,9 @@ export default function Index({
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger className="space-x-1">
-									<div className="flex items-center space-x-2">
-										<div
-											className={cn(
-												"rounded-full size-2",
-												isOnline ? "bg-green-700" : "bg-muted-foreground",
-											)}
-										/>
+									<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
 										<span>{isOnline ? "Online" : "Offline"}</span>
-									</div>
+									</DotBadgeWithLabel>
 								</TooltipTrigger>
 								<TooltipContent>
 									{isOnline ? (
@@ -508,50 +503,27 @@ export default function Index({
 				}
 
 				return (
-					<div className="flex items-center space-x-2">
-						<div
-							className={cn(
-								"rounded-full size-2",
-								isOnline ? "bg-green-700" : "bg-muted-foreground",
-							)}
-						/>
+					<DotBadgeWithLabel variant={isOnline ? "success" : "default"}>
 						<span>{isOnline ? "Online" : "Offline"}</span>
-					</div>
+					</DotBadgeWithLabel>
 				);
 			},
 		},
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				const isCurrentUser = useMemo(
-					() =>
-						globalProps.auth.currentUser?.user.email ===
-						row.original.user.email,
-					[row.original.user.email],
-				);
-				const isShowDelete = useMemo(
-					() =>
-						globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser,
-					[isCurrentUser],
-				);
-				const isShowEdit = useMemo(
-					() =>
-						globalProps.auth.currentUser?.["isSuperAdmin?"] || isCurrentUser,
-					[isCurrentUser],
-				);
-				const isShowChangePassword = useMemo(
-					() =>
-						!isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-					[isCurrentUser],
-				);
-				const isShowSuspend = useMemo(
-					() =>
-						!isCurrentUser && globalProps.auth.currentUser?.["isSuperAdmin?"],
-					[isCurrentUser],
-				);
+				const {
+					isShowEdit,
+					isShowChangePassword,
+					isShowSuspend,
+					isShowDelete,
+					isPermitted,
+				} = useActionPermissions({
+					currentUser: globalProps.auth.currentUser,
+					user: row.original.user,
+				});
 
-				if (!globalProps.auth.currentUser?.["isSuperAdmin?"] && !isCurrentUser)
-					return;
+				if (!isPermitted) return;
 
 				return (
 					<div className="flex items-center justify-end space-x-2">

@@ -1,22 +1,39 @@
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import ExpandSubTable from "@/components/admin-portal/therapist/data-table-expand";
+import {
+	ChangePasswordContent,
+	DeleteTherapistAlert,
+} from "@/components/admin-portal/therapist/feature-actions";
+import DotBadgeWithLabel from "@/components/shared/badge";
+import {
+	ResponsiveDialog,
+	type ResponsiveDialogProps,
+} from "@/components/shared/responsive-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useActionPermissions } from "@/hooks/admin-portal/use-therapist-utils";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
 import {
 	cn,
-	copyToClipboard,
-	formatPhoneNumber,
 	generateInitials,
 	populateQueryParams,
 	removeWhiteSpaces,
@@ -30,28 +47,25 @@ import { format, formatDistanceToNow } from "date-fns";
 import {
 	ChevronDown,
 	ChevronUp,
-	Clipboard,
+	Ellipsis,
 	InfinityIcon,
-	Mail,
-	Phone,
 	Plus,
 } from "lucide-react";
 import { useMemo } from "react";
-import { toast } from "sonner";
 
 export interface PageProps {
 	therapists: {
 		data: Therapist[];
 		metadata: Metadata;
 	};
+	selectedTherapist: Therapist | null;
 }
 export type TableRowDataProps = Row<PageProps["therapists"]["data"][number]>;
 
-export default function Index({ therapists }: PageProps) {
-	console.log(therapists.data[0]);
+export default function Index({ therapists, selectedTherapist }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 
-	// table state management
+	// * data table state management
 	const currentExpanded = useMemo<ExpandedState>(() => {
 		const { queryParams } = populateQueryParams(pageURL);
 		const expandedList = queryParams?.expanded
@@ -295,10 +309,9 @@ export default function Index({ therapists }: PageProps) {
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger>
-									<div className="flex items-center space-x-2">
-										<div className="bg-red-700 rounded-full size-2" />
+									<DotBadgeWithLabel variant="destructive">
 										<span>Suspended</span>
-									</div>
+									</DotBadgeWithLabel>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
 									<div className="flex flex-col">
@@ -329,15 +342,9 @@ export default function Index({ therapists }: PageProps) {
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger className="space-x-1">
-									<div className="flex items-center space-x-2">
-										<div
-											className={cn(
-												"rounded-full size-2",
-												isOnline ? "bg-green-700" : "bg-muted-foreground",
-											)}
-										/>
+									<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
 										<span>{isOnline ? "Online" : "Offline"}</span>
-									</div>
+									</DotBadgeWithLabel>
 								</TooltipTrigger>
 								<TooltipContent>
 									{isOnline ? (
@@ -369,19 +376,146 @@ export default function Index({ therapists }: PageProps) {
 				}
 
 				return (
-					<div className="flex items-center space-x-2">
-						<div
-							className={cn(
-								"rounded-full size-2",
-								isOnline ? "bg-green-700" : "bg-muted-foreground",
-							)}
-						/>
+					<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
 						<span>{isOnline ? "Online" : "Offline"}</span>
+					</DotBadgeWithLabel>
+				);
+			},
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => {
+				const { isShowEdit, isShowChangePassword, isShowDelete, isPermitted } =
+					useActionPermissions({
+						authData: globalProps.auth,
+						user: row.original.user,
+					});
+
+				if (!isPermitted) return;
+
+				return (
+					<div className="flex items-center justify-end space-x-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="icon">
+									<Ellipsis />
+								</Button>
+							</DropdownMenuTrigger>
+
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>Actions</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+
+								<DropdownMenuGroup>
+									{isShowEdit && (
+										<DropdownMenuItem
+											onSelect={() => routeTo.edit(row.original.id)}
+										>
+											Edit
+										</DropdownMenuItem>
+									)}
+									{isShowChangePassword && (
+										<DropdownMenuItem
+											onSelect={() => routeTo.changePassword(row.original.id)}
+										>
+											Change Password
+										</DropdownMenuItem>
+									)}
+								</DropdownMenuGroup>
+
+								{isShowDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onSelect={() => routeTo.delete(row.original.id)}
+										>
+											Delete
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</div>
 				);
 			},
 		},
 	];
+
+	// * for table actions management state
+	const routeTo = {
+		edit: (id: number | string) => {
+			const url = `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}/${id}/edit`;
+
+			router.get(url);
+		},
+		changePassword: (id: number | string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ change_password: id },
+				{
+					only: ["selectedTherapist", "flash", "adminPortal"],
+					preserveScroll: true,
+				},
+			);
+		},
+		delete: (id: number | string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ delete: id },
+				{
+					only: ["selectedTherapist", "flash", "adminPortal"],
+					preserveScroll: true,
+				},
+			);
+		},
+	};
+	const formDialogMode = useMemo(() => {
+		const currentQuery = globalProps.adminPortal?.currentQuery;
+		const isChangePasswordMode = !!currentQuery?.changePassword;
+		const isDeleteMode = !!currentQuery?.delete;
+
+		return { isChangePasswordMode, isDeleteMode };
+	}, [globalProps.adminPortal?.currentQuery]);
+	const formDialog = useMemo<ResponsiveDialogProps>(() => {
+		const isOpen =
+			formDialogMode.isChangePasswordMode || formDialogMode.isDeleteMode;
+		let title = "Change Password";
+		let description =
+			"Make password changes using the generate the form link or via form.";
+
+		if (formDialogMode.isDeleteMode) {
+			title = "Are you absolutely sure?";
+			description =
+				"This action is irreversible. Deleting actions will permanently remove data from our servers and cannot be recovered.";
+		}
+
+		return {
+			title,
+			description,
+			isOpen,
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const objQueryParams = formDialogMode.isChangePasswordMode
+						? { change_password: null }
+						: { delete: null };
+					const { fullUrl } = populateQueryParams(pageURL, objQueryParams);
+
+					router.get(
+						fullUrl,
+						{},
+						{
+							only: ["selectedTherapist", "flash", "adminPortal"],
+							preserveScroll: true,
+						},
+					);
+				}
+			},
+		};
+	}, [pageURL, formDialogMode]);
 
 	return (
 		<>
@@ -409,13 +543,37 @@ export default function Index({ therapists }: PageProps) {
 					columns={columns}
 					data={therapists.data}
 					// toolbar={(table) => <ToolbarTable table={table} />}
-					// subComponent={(row) => <ExpandSubTable row={row} routeTo={routeTo} />}
 					subComponent={(row) => <ExpandSubTable row={row} />}
 					customPagination={(table) => (
 						<PaginationTable table={table} metadata={therapists.metadata} />
 					)}
 					currentExpanded={currentExpanded}
 				/>
+
+				{selectedTherapist &&
+					formDialog.isOpen &&
+					formDialogMode.isChangePasswordMode && (
+						<ResponsiveDialog {...formDialog}>
+							<ChangePasswordContent
+								{...{
+									selectedTherapistAccount: selectedTherapist.user,
+									forceMode: formDialog.forceMode,
+									handleOpenChange: formDialog.onOpenChange,
+								}}
+							/>
+						</ResponsiveDialog>
+					)}
+
+				{selectedTherapist &&
+					formDialog.isOpen &&
+					formDialogMode.isDeleteMode && (
+						<DeleteTherapistAlert
+							{...{
+								...formDialog,
+								selectedTherapist: selectedTherapist,
+							}}
+						/>
+					)}
 			</PageContainer>
 		</>
 	);

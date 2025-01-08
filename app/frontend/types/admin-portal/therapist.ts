@@ -4,6 +4,7 @@ import type {
 	GENDERS,
 } from "../../lib/constants";
 import type { User } from "../auth";
+import type { Location } from "./location";
 
 export type TherapistGender = typeof GENDERS;
 export type TherapistEmploymentStatus = typeof EMPLOYMENT_STATUSES;
@@ -46,6 +47,7 @@ export interface TherapistAddress {
 	createdAt: string;
 	updatedAt: string;
 	active: boolean;
+	location: Location;
 }
 export interface Therapist {
 	id: string;
