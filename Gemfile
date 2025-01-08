@@ -64,7 +64,7 @@ gem "resend", "~> 0.17.1"
 
 gem "inertia_rails", "~> 3.6"
 
-gem "inertia_rails-contrib", "~> 0.3.0"
+gem "inertia_rails-contrib", "~> 0.4.0"
 
 gem "vite_rails", "~> 3.0"
 
