@@ -1,6 +1,6 @@
 class Location < ApplicationRecord
   # define the associations
-  has_many :addresses, dependent: :destroy
+  has_many :addresses
 
   has_many :location_services, dependent: :destroy
   has_many :services, through: :location_services

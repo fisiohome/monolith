@@ -15,6 +15,7 @@ module AdminPortal
         update_addresses
 
         # return the therapist or other objects you may need
+        Rails.logger.debug { "Therapist: #{@therapist.inspect} " }
         @therapist
       end
     end
@@ -29,11 +30,24 @@ module AdminPortal
     end
 
     def update_therapist
-      therapist_attrs = @params.except(:user, :bank_details, :addresses, :service)
+      therapist_attrs = @params.except(:user, :bank_details, :addresses, :service, :specializations, :modalities)
       @therapist.update!(therapist_attrs)
 
+      # handle specializations and modalities explicitly
+      if @params[:specializations].present?
+        @therapist.update!(specializations: @params[:specializations])
+        Rails.logger.info("Updated therapist specializations: #{@therapist.specializations}.")
+      end
+
+      if @params[:modalities].present?
+        @therapist.update!(modalities: @params[:modalities])
+        Rails.logger.info("Updated therapist modalities: #{@therapist.modalities}}.")
+      end
+
+      # update service if provided
       if @params[:service].present?
         @therapist.update!(service_id: @params[:service][:id])
+        Rails.logger.info("Updated therapist service: #{@params[:service][:name]}.")
       end
 
       Rails.logger.info("Updated therapist profile with name: #{@therapist.name}.")
