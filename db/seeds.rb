@@ -8,26 +8,12 @@
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
 
-# Helper for logging with colors and timestamps
-def log_message(message, type = :info)
-  colors = {
-    info: "\e[34m", # Blue
-    success: "\e[32m", # Green
-    warn: "\e[33m", # Yellow
-    error: "\e[31m" # Red
-  }
-  reset = "\e[0m"
-  time = Time.zone.now.strftime("%Y-%m-%d %H:%M:%S")
-  color = colors[type] || colors[:info]
-  Rails.logger.debug { "#{color}[#{time}] #{message}#{reset}" }
-end
-
 # for seeding the services and locations
-Rails.logger.debug ""
-log_message("=== Starting to create the services and locations... ===", :info)
+Rails.logger.info ""
+Rails.logger.info("=== Starting to create the services and locations... ===")
 
 # seeding the locations
-log_message("Creating the locations...", :info)
+Rails.logger.info("Creating the locations...")
 
 # country name and country code based on https://api.countrystatecity.in/play as uppercase value
 # FOR INDONESIAN COUNTRY BASED ON https://api.cahyadsn.com/
@@ -64,17 +50,17 @@ begin
     location = Location.find_or_initialize_by(city: loc[:city])
     location.assign_attributes(loc)
     location.save!
-    log_message("Location #{index + 1}/#{locations.size} created/updated: #{loc[:city]}, #{loc[:state]}", :success)
+    Rails.logger.debug { "Location #{index + 1}/#{locations.size} created/updated: #{loc[:city]}, #{loc[:state]}" }
   end
 rescue => e
-  log_message("Error while seeding locations: #{e.message}", :error)
+  Rails.logger.error("Error while seeding locations: #{e.message}")
 end
 
-log_message("Locations seeding completed", :info)
+Rails.logger.info("Locations seeding completed")
 
 # seeding the services
-Rails.logger.debug ""
-log_message("Creating the services...", :info)
+Rails.logger.info ""
+Rails.logger.info("Creating the services...")
 
 begin
   services = [
@@ -90,13 +76,13 @@ begin
     service = Service.find_or_initialize_by(name: item[:name])
     service.assign_attributes(item)
     service.save!
-    log_message("Service #{index + 1}/#{services.size} created/updated: #{item[:name]}, #{item[:code]}", :success)
+    Rails.logger.debug { "Service #{index + 1}/#{services.size} created/updated: #{item[:name]}, #{item[:code]}" }
   end
 rescue => e
-  log_message("Error while seeding services: #{e.message}", :error)
+  Rails.logger.error("Error while seeding services: #{e.message}")
 end
 
-log_message("Services seeding completed", :info)
+Rails.logger.info("Services seeding completed")
 
 # # seeding location_services: All services in all locations
 # puts ""
@@ -124,13 +110,14 @@ log_message("Services seeding completed", :info)
 # rescue => e
 #   log_message("Error while seeding location_services: #{e.message}", :error)
 # end
-log_message("=== Services and locations seeding completed ===", :info)
+Rails.logger.info("=== Services and locations seeding completed ===")
 
 # for seeding the accounts
-log_message("=== Starting to seed accounts... ===", :info)
+Rails.logger.info ""
+Rails.logger.info("=== Starting to seed accounts... ===")
 
 # seeding the default super admins
-log_message("Creating the Super Admins...", :info)
+Rails.logger.info("Creating the Super Admins...")
 
 begin
   super_admins = [
@@ -150,17 +137,17 @@ begin
     admin.name = admin_data[:name]
     admin.save!
 
-    log_message("Super Admin #{index + 1}/#{super_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})", :success)
+    Rails.logger.debug { "Super Admin #{index + 1}/#{super_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})" }
   end
 rescue => e
-  log_message("Error while seeding Super Admins: #{e.message}", :error)
+  Rails.logger.error("Error while seeding Super Admins: #{e.message}")
 end
 
-log_message("Super Admins seeding completed", :info)
+Rails.logger.info("Super Admins seeding completed")
 
 # seeding the default other admin
-Rails.logger.debug ""
-log_message("Creating the other admins...", :info)
+Rails.logger.info ""
+Rails.logger.info("Creating the other admins...")
 
 begin
   other_admins = [
@@ -192,17 +179,17 @@ begin
     admin.name = admin_data[:name]
     admin.save!
 
-    log_message("Super Admin #{index + 1}/#{other_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})", :success)
+    Rails.logger.debug { "Super Admin #{index + 1}/#{other_admins.size} created/updated: #{admin_data[:email]} (#{admin_data[:name]})" }
   end
 rescue => e
-  log_message("Error while seeding Super Admins: #{e.message}", :error)
+  Rails.logger.error("Error while seeding Super Admins: #{e.message}")
 end
 
-log_message("Other admins seeding completed", :info)
+Rails.logger.info("Other admins seeding completed")
 
 # seeding the default therapists
-Rails.logger.debug ""
-log_message("Creating the therapists...", :info)
+Rails.logger.info ""
+Rails.logger.info("Creating the therapists...")
 
 begin
   therapists_data = [
@@ -288,7 +275,7 @@ begin
       user.password = "Therapist123!"
       user.password_confirmation = "Therapist123!"
 
-      log_message("User created: #{therapist_data[:email]}", :success)
+      Rails.logger.debug { "User created: #{therapist_data[:email]}" }
     end
 
     # create or update therapist and related records
@@ -303,7 +290,7 @@ begin
 
       TherapistBankDetail.find_or_initialize_by(therapist: therapist, bank_detail: bank_detail).update!(active: bank_data[:active])
 
-      log_message("Bank Detail #{bank_index + 1}/#{therapist_data[:bank_details_attributes].size} created/updated: #{bank_data[:bank_name]} - #{bank_data[:account_number]}", :success)
+      Rails.logger.debug { "Bank Detail #{bank_index + 1}/#{therapist_data[:bank_details_attributes].size} created/updated: #{bank_data[:bank_name]} - #{bank_data[:account_number]}" }
     end
 
     therapist_data[:addresses_attributes].each_with_index do |address_data, address_index|
@@ -313,16 +300,16 @@ begin
 
       TherapistAddress.find_or_initialize_by(therapist: therapist, address: address).update!(active: address_data[:active])
 
-      log_message("Address #{address_index + 1}/#{therapist_data[:addresses_attributes].size} created/updated: #{address_data[:address]}", :success)
+      Rails.logger.debug { "Address #{address_index + 1}/#{therapist_data[:addresses_attributes].size} created/updated: #{address_data[:address]}" }
     end
 
-    log_message("Therapist #{therapist_index + 1}/#{therapists_data.size} created/updated: #{therapist.name}", :success)
+    Rails.logger.debug { "Therapist #{therapist_index + 1}/#{therapists_data.size} created/updated: #{therapist.name}" }
   end
 rescue => e
-  log_message("Error while seeding therapists: #{e.message}", :error)
+  Rails.logger.error("Error while seeding therapists: #{e.message}")
 end
 
-log_message("Therapists seeding completed", :info)
+Rails.logger.info("Therapists seeding completed")
 
-log_message("=== All accounts seeding completed ===", :info)
-Rails.logger.debug ""
+Rails.logger.info("=== All accounts seeding completed ===")
+Rails.logger.info ""
