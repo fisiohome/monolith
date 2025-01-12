@@ -1,11 +1,30 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# Example: Each entry references a location (from locations.yml) and a service (from services.yml).
+# We mark them all "active: true," but you can customize as needed.
 
-one:
-  location: one
-  service: one
-  is_active: false
+jakarta_selatan_fisiohome:
+  location: jakarta_selatan # => references "jakarta_selatan" in locations.yml
+  service: fisiohome # => references "fisiohome" in services.yml
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-two:
-  location: two
-  service: two
-  is_active: false
+jakarta_selatan_pusat_okupasi:
+  location: jakarta_selatan # => references "jakarta_selatan" in locations.yml
+  service: pusat_okupasi # => references "pusat_okupasi" in services.yml
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+bandung_fisiohome:
+  location: bandung # => references "bandung" in locations.yml
+  service: fisiohome # => references "fisiohome" in services.yml
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+bandung_pusat_okupasi:
+  location: bandung # => references "bandung" in locations.yml
+  service: pusat_okupasi # => references "pusat_okupasi" in services.yml
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

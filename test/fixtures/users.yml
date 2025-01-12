@@ -4,8 +4,67 @@
 # model remove the "{}" from the fixture names and add the columns immediately
 # below each fixture, per the syntax in the comments below
 #
-one: {}
-# column: value
-#
-two: {}
-# column: value
+super_admin_user:
+  # id: <%= SecureRandom.uuid %>
+  email: "super_admin@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Fisiohome123!") %>
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>
+
+admin_l1_user:
+  # id: <%= SecureRandom.uuid %>
+  email: "admin_l1@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Fisiohome123!") %>
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>
+
+therapist_user_one:
+  # id: <%= SecureRandom.uuid %>
+  email: "therapist1@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Therapist123!") %>
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+therapist_user_two:
+  # id: <%= SecureRandom.uuid %>
+  email: "therapist2@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Therapist123!") %>
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+therapist_user_delete:
+  # id: <%= SecureRandom.uuid %>
+  email: "therapist_delete@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Therapist123!") %>
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+active_user:
+  # id: <%= SecureRandom.uuid %>
+  email: "active_user@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Fisiohome123!") %>
+  last_online_at: <%= 2.minutes.ago %>
+  suspend_at:
+  suspend_end:
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>
+
+suspended_user:
+  # id: <%= SecureRandom.uuid %>
+  email: "suspended_user@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Fisiohome123!") %>
+  last_online_at: <%= 1.hour.ago %>
+  suspend_at: <%= 1.hour.ago %>
+  suspend_end: <%= 1.hour.from_now %>
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>
+
+permanently_suspended_user:
+  # id: <%= SecureRandom.uuid %>
+  email: "permanently_suspended_user@fisiohome.id"
+  encrypted_password: <%= Devise::Encryptor.digest(User, "Fisiohome123!") %>
+  last_online_at: <%= 1.hour.ago %>
+  suspend_at: <%= 2.hours.ago %>
+  suspend_end:
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>

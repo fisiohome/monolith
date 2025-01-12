@@ -9,6 +9,7 @@ module ActiveSupport
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
+    # fixtures :therapists, :addresses, :therapist_addresses, :users
 
     # Add more helper methods to be used by all tests here...
   end

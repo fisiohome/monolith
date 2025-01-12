@@ -1,11 +1,25 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  therapist: one
-  addresses: one
-  active: false
+therapist_one_addresses:
+  # therapist_id: "2438632a-aabe-4291-bae7-56b74e6f68f4"
+  therapist: therapist_one
+  address: jakarta_selatan_address # from addresses.yml (jakarta_selatan_address)
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-two:
-  therapist: two
-  addresses: two
+therapist_two_addresses:
+  # therapist_id: "1c234edd-2a46-4a22-aa2b-c1435ae8c60a"
+  therapist: therapist_two
+  address: bandung_address # from addresses.yml (bandung_address)
   active: false
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+delete_therapist_address:
+  # therapist_id: "1c234edd-2a46-4a22-aa2b-c1435ae8c60a"
+  therapist: delete_therapist
+  address: depok_address_for_therapist_delete # from addresses.yml (bandung_address)
+  active: false
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

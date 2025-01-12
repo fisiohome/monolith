@@ -1,11 +1,36 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  therapist: one
-  bank_detail: one
-  active: false
+therapist_one_bca:
+  therapist: therapist_one
+  bank_detail: bca_1 # BCA
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-two:
-  therapist: two
-  bank_detail: two
+therapist_two_mandiri:
+  therapist: therapist_two
+  bank_detail: mandiri_1 # MANDIRI
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+therapist_two_bni:
+  therapist: therapist_two
+  bank_detail: bni_1 # BNI
   active: false
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+therapist_two_bri:
+  therapist: therapist_two
+  bank_detail: bri_1 # BRI
+  active: false
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+therapist_delete_bri:
+  therapist: delete_therapist
+  bank_detail: bri_for_delete_therapist # BRI
+  active: false
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

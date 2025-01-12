@@ -1,15 +1,36 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  therapist: one
-  bank_name: MyString
-  account_number: MyString
-  account_holder_name: MyString
-  active: false
+bca_1:
+  bank_name: "BCA"
+  account_number: "1234567890"
+  account_holder_name: "THERAPIST ONE"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-two:
-  therapist: two
-  bank_name: MyString
-  account_number: MyString
-  account_holder_name: MyString
-  active: false
+mandiri_1:
+  bank_name: "MANDIRI"
+  account_number: "0987654321"
+  account_holder_name: "THERAPIST TWO"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+bni_1:
+  bank_name: "BNI"
+  account_number: "1122334455"
+  account_holder_name: "THERAPIST TWO"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+bri_1:
+  bank_name: "BRI"
+  account_number: "5566778899"
+  account_holder_name: "THERAPIST TWO"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+bri_for_delete_therapist:
+  bank_name: "BRI"
+  account_number: "5566778895"
+  account_holder_name: "THERAPIST DELETE"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

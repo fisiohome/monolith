@@ -1,9 +1,29 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  name: MyString
-  code: MyString
+fisiohome:
+  name: "FISIOHOME"
+  code: "FH"
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-two:
-  name: MyString
-  code: MyString
+pusat_okupasi:
+  name: "PUSAT_OKUPASI"
+  code: "PO"
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+caregiver:
+  name: "CAREGIVER_HOMECARE"
+  code: "PH"
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+aesthetic:
+  name: "AESTHETIC_HOMECARE"
+  code: "PH"
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

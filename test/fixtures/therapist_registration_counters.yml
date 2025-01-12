@@ -1,9 +1,11 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  service_code: 
-  last_number: 1
+fisiohome_counter:
+  service_code: "FH"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-two:
-  service_code: 
-  last_number: 1
+pusat_okupasi_counter:
+  service_code: "PO"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

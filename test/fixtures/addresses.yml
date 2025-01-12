@@ -1,19 +1,37 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  location: one
-  latitude: 1.5
-  longitude: 1.5
-  address: MyText
-  postal_code: MyString
-  coordinates: 1.5
-  active: false
+jakarta_selatan_address:
+  location: jakarta_selatan # refers to locations.yml (jakarta_selatan)
+  latitude: -6.2277
+  longitude: 106.8414
+  coordinates:
+    - -6.2277
+    - 106.8414
+  address: "Jl. Jend. Sudirman No.1, Jakarta Selatan"
+  postal_code: "12345"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-two:
-  location: two
-  latitude: 1.5
-  longitude: 1.5
-  address: MyText
-  postal_code: MyString
-  coordinates: 1.5
-  active: false
+bandung_address:
+  location: bandung # refers to locations.yml (bandung)
+  latitude: -6.9147
+  longitude: 107.6098
+  coordinates:
+    - -6.9147
+    - 107.6098
+  address: "Jl. Asia Afrika No.2, Bandung"
+  postal_code: "67890"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+depok_address_for_therapist_delete:
+  location: bandung # refers to locations.yml (bandung)
+  latitude: -6.9147
+  longitude: 107.6098
+  coordinates:
+    - -6.9147
+    - 107.6098
+  address: "Jl. Asia Afrika No.2, Bandung"
+  postal_code: "67890"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
