@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_10_200008) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_13_094326) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -72,12 +72,29 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_10_200008) do
     t.index ["city"], name: "index_locations_on_city", unique: true
   end
 
+  create_table "packages", force: :cascade do |t|
+    t.bigint "service_id", null: false
+    t.string "name", null: false
+    t.boolean "active", default: false, null: false
+    t.string "currency", null: false
+    t.integer "number_of_visit", default: 1, null: false
+    t.decimal "price_per_visit", null: false
+    t.decimal "discount"
+    t.decimal "total_price", null: false
+    t.decimal "fee_per_visit", null: false
+    t.decimal "total_fee", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["service_id"], name: "index_packages_on_service_id"
+  end
+
   create_table "services", force: :cascade do |t|
     t.string "name", null: false
     t.string "code", null: false
     t.boolean "active", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "description"
     t.index ["name"], name: "index_services_on_name", unique: true
   end
 
@@ -209,6 +226,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_10_200008) do
   add_foreign_key "admins", "users"
   add_foreign_key "location_services", "locations"
   add_foreign_key "location_services", "services"
+  add_foreign_key "packages", "services"
   add_foreign_key "therapist_addresses", "addresses"
   add_foreign_key "therapist_addresses", "therapists"
   add_foreign_key "therapist_adjusted_availabilities", "therapist_appointment_schedules"
@@ -217,6 +235,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_10_200008) do
   add_foreign_key "therapist_bank_details", "therapists"
   add_foreign_key "therapist_documents", "therapists"
   add_foreign_key "therapist_weekly_availabilities", "therapist_appointment_schedules"
-  add_foreign_key "therapists", "services"
   add_foreign_key "therapists", "users"
 end

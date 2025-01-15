@@ -871,7 +871,7 @@ export default function FormTherapist({
 																	<FormControl>
 																		<Textarea
 																			placeholder="Enter the address..."
-																			className="resize-none"
+																			// className="resize-none"
 																			{...field}
 																		/>
 																	</FormControl>
@@ -890,7 +890,7 @@ export default function FormTherapist({
 												);
 											})
 										) : (
-											<p className="w-10/12 mx-auto text-sm text-center col-span-full lg:w-5/12">
+											<p className="w-10/12 mx-auto text-sm font-light text-center col-span-full lg:w-5/12">
 												There's no address yet, click the add button to create
 												data.
 											</p>
@@ -1459,7 +1459,7 @@ export default function FormTherapist({
 												);
 											})
 										) : (
-											<p className="w-10/12 mx-auto text-sm text-center col-span-full lg:w-5/12">
+											<p className="w-10/12 mx-auto text-sm font-light text-center col-span-full lg:w-5/12">
 												There's no bank details yet, click the add button to
 												create data.
 											</p>

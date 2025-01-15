@@ -47,7 +47,7 @@ export const ResponsiveDialog = ({
 
 	if (isDekstop || forceMode === "dialog") {
 		return (
-			<Dialog open={isOpen} onOpenChange={onOpenChange}>
+			<Dialog open={isOpen} onOpenChange={onOpenChange} modal>
 				<DialogContent
 					onInteractOutside={(event) => {
 						event.preventDefault();

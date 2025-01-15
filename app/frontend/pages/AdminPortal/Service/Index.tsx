@@ -1,3 +1,4 @@
+import ToolbarTable from "@/components/admin-portal/service/data-table-toolbar";
 import {
 	ActivateServiceDialog,
 	DeleteServiceAlertDialog,
@@ -30,32 +31,40 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableFooter,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, humanize, populateQueryParams } from "@/lib/utils";
-import type { Location } from "@/types/admin-portal/location";
 import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps } from "@/types/globals";
-import { Head, router, usePage } from "@inertiajs/react";
+import { Deferred, Head, router, usePage } from "@inertiajs/react";
+import type { Table as TableTanstack } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
 import { Ellipsis, Info, Plus } from "lucide-react";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 export interface PageProps {
 	services: Service[];
 	selectedService: Service | null;
-	locations: Location[];
 }
 
-export default function Index({
-	services,
-	selectedService,
-	locations,
-}: PageProps) {
+export type TableToolbarDataProps = TableTanstack<
+	PageProps["services"][number]
+>;
+
+export default function Index({ services, selectedService }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 	const isDekstop = useMediaQuery("(min-width: 768px)");
-	const isDekstopLG = useMediaQuery("(min-width: 1024px)");
 
 	// tabs management
 	const tabActive = useMemo(
@@ -108,14 +117,7 @@ export default function Index({
 			);
 		},
 		editService: (id: number) => {
-			router.get(
-				pageURL,
-				{ edit: id },
-				{
-					only: ["selectedService", "flash", "adminPortal", "locations"],
-					preserveScroll: true,
-				},
-			);
+			router.get(`${pageURL}/${id}/edit`);
 		},
 		deleteService: (id: number) => {
 			router.get(
@@ -142,13 +144,13 @@ export default function Index({
 		{
 			accessorKey: "name",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Service Name" />
+				<DataTableColumnHeader column={column} title="Brand" />
 			),
 			enableHiding: false,
 			cell: ({ row }) => {
 				return (
 					<div className="flex items-center space-x-2">
-						<p className="font-medium uppercase">
+						<p className="font-medium uppercase text-nowrap">
 							{humanize(row.original.name)}
 						</p>
 						<Badge>{humanize(row.original.code).toUpperCase()}</Badge>
@@ -173,6 +175,173 @@ export default function Index({
 			},
 		},
 		{
+			accessorKey: "packages",
+			header: ({ column }) => (
+				<DataTableColumnHeader column={column} title="Packages" />
+			),
+			enableHiding: false,
+			cell: ({ row }) => {
+				const packages = useMemo(
+					() => row.original?.packages?.list || [],
+					[row.original.packages],
+				);
+				const packagesActive = useMemo(
+					() => packages.filter((item) => item.active) || [],
+					[packages],
+				);
+
+				// dialog state management
+				const [isOpenPackage, setIsOpenPackage] = useState(false);
+				const formDialogPackage = useMemo<ResponsiveDialogProps>(() => {
+					return {
+						title: `Our ${humanize(row.original.name)} Packages`,
+						description: "Shows active and inactive packages of the brand.",
+						isOpen: isOpenPackage,
+						forceMode: "dialog",
+						dialogWidth: "1000px",
+						onOpenChange: (value: boolean) => {
+							setIsOpenPackage(value);
+						},
+					};
+				}, [row.original.name, isOpenPackage]);
+
+				if (!packages?.length) {
+					return <span>No packages listed yet</span>;
+				}
+
+				return (
+					<div className="flex items-center space-x-2 whitespace-nowrap">
+						<span className="leading-none">
+							{packagesActive.length === packages.length
+								? "All packages have been activated"
+								: packagesActive.length
+									? `Only  ${packagesActive.length} out of ${packages.length} packages are active`
+									: "All packages are inactive"}
+						</span>
+
+						{globalProps.auth.currentUserType === "ADMIN" && (
+							<>
+								<Button
+									variant="link"
+									className="p-0"
+									onClick={() => {
+										setIsOpenPackage(!isOpenPackage);
+									}}
+								>
+									<Info />
+								</Button>
+
+								{formDialogPackage.isOpen && (
+									<ResponsiveDialog {...formDialogPackage}>
+										<div className="grid border rounded-xl">
+											<Table>
+												<TableHeader>
+													<TableRow>
+														<TableHead>Package</TableHead>
+														<TableHead>Status</TableHead>
+														<TableHead className="text-right">
+															Discount
+														</TableHead>
+														<TableHead className="text-right">
+															Price/Visit
+														</TableHead>
+														<TableHead className="text-right">
+															Total Price
+														</TableHead>
+														<TableHead className="text-right">
+															Fee/Visit
+														</TableHead>
+														<TableHead className="text-right">
+															Total Fee
+														</TableHead>
+													</TableRow>
+												</TableHeader>
+
+												<TableBody className="text-nowrap">
+													{packages.map((packageItem) => (
+														<Fragment key={packageItem.id}>
+															<TableRow>
+																<TableCell className="font-medium">
+																	<div className="flex flex-col items-start">
+																		<p>{packageItem.name}</p>
+																		<p className="font-light">
+																			{packageItem.numberOfVisit} Visit(s)
+																		</p>
+																	</div>
+																</TableCell>
+																<TableCell>
+																	<DotBadgeWithLabel
+																		variant={
+																			packageItem.active
+																				? "success"
+																				: "destructive"
+																		}
+																	>
+																		<span>
+																			{packageItem.active
+																				? "Active"
+																				: "Inactive"}
+																		</span>
+																	</DotBadgeWithLabel>
+																</TableCell>
+																<TableCell className="text-right">
+																	{packageItem.formattedDiscount}
+																</TableCell>
+																<TableCell className="text-right">
+																	{packageItem.formattedPricePerVisit}
+																</TableCell>
+																<TableCell className="font-medium text-right">
+																	{packageItem.formattedTotalPrice}
+																</TableCell>
+																<TableCell className="text-right">
+																	{packageItem.formattedFeePerVisit}
+																</TableCell>
+																<TableCell className="font-medium text-right">
+																	{packageItem.formattedTotalFee}
+																</TableCell>
+															</TableRow>
+														</Fragment>
+													))}
+												</TableBody>
+
+												<TableFooter>
+													<TableRow>
+														<TableCell colSpan={2}>Total</TableCell>
+														<TableCell colSpan={3} className="text-right">
+															<div className="flex flex-col space-y-0.5">
+																{row.original.packages?.totalPrices.map(
+																	(price) => (
+																		<span key={price.currency}>
+																			{price.formattedTotalPrice}
+																		</span>
+																	),
+																)}
+															</div>
+														</TableCell>
+														<TableCell colSpan={2} className="text-right">
+															<div className="flex flex-col space-y-0.5">
+																{row.original.packages?.totalPrices.map(
+																	(price) => (
+																		<span key={price.currency}>
+																			{price.formattedTotalFee}
+																		</span>
+																	),
+																)}
+															</div>
+														</TableCell>
+													</TableRow>
+												</TableFooter>
+											</Table>
+										</div>
+									</ResponsiveDialog>
+								)}
+							</>
+						)}
+					</div>
+				);
+			},
+		},
+		{
 			accessorKey: "locations",
 			header: ({ column }) => (
 				<DataTableColumnHeader column={column} title="Locations" />
@@ -180,63 +349,106 @@ export default function Index({
 			enableHiding: false,
 			cell: ({ row }) => {
 				const locations = useMemo(
-					() => row.original.locations,
+					() => row.original.locations || [],
 					[row.original.locations],
 				);
 				const locationsActive = useMemo(
-					() => row.original.locations.filter((location) => location.active),
-					[row.original.locations],
+					() => locations.filter((location) => location.active) || [],
+					[locations],
 				);
 				const locationInactive = useMemo(
-					() => row.original.locations.filter((location) => !location.active),
-					[row.original.locations],
+					() => locations.filter((location) => !location.active) || [],
+					[locations],
 				);
 
 				if (!locations?.length) {
-					return <span title="No locations listed yet">-</span>;
+					return <span>No locations listed yet</span>;
 				}
 
 				return (
 					<div className="flex items-center space-x-2 whitespace-nowrap">
 						<span className="leading-none">
-							{locationsActive.length
-								? `Active in ${locationsActive.length} of ${locations.length} locations`
-								: `Inactive in all of  ${locations.length} locations`}
+							{locationsActive.length === locations.length
+								? "Active in all locations"
+								: locationsActive.length
+									? `Active in ${locationsActive.length} of ${locations.length} locations`
+									: `Inactive in all of  ${locations.length} locations`}
 						</span>
 
-						<Popover>
-							<PopoverTrigger asChild>
-								<Info className="cursor-pointer size-4 hover:text-accent" />
-							</PopoverTrigger>
-							<PopoverContent className="w-full">
-								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-									<div className="space-y-2 col-span-full">
-										<h4 className="font-medium leading-none">Show Locations</h4>
-										<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
-											<div className="flex items-baseline space-x-1">
-												<div className="bg-green-700 rounded-full size-2" />
-												<span>{`${locationsActive?.length || 0} Locations`}</span>
+						{globalProps.auth.currentUserType === "ADMIN" && (
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button variant="link" className="p-0">
+										<Info />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-full">
+									<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+										<div className="space-y-2 col-span-full">
+											<div className="space-y-0.5">
+												<h4 className="font-medium leading-none">
+													Show Locations
+												</h4>
+												<p className="font-light">
+													Monitor active and inactive locations.
+												</p>
 											</div>
-											<Separator
-												orientation="vertical"
-												className="bg-muted-foreground/25"
-											/>
-											<div className="flex items-baseline space-x-1">
-												<div className="rounded-full bg-destructive size-2" />
-												<span>{`${locationInactive?.length || 0} Locations`}</span>
-											</div>
-											<Separator
-												orientation="vertical"
-												className="bg-muted-foreground/25"
-											/>
-											<p>{`${locations?.length || 0} Total Locations`}</p>
-										</div>
-									</div>
 
-									<ScrollArea className="w-full max-h-52 lg:max-h-32">
-										<AnimatePresence>
-											{locationsActive?.length ? (
-												locationsActive.map((action, index) => (
+											<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
+												<div className="flex items-baseline space-x-1">
+													<div className="bg-green-700 rounded-full size-2" />
+													<span>{`${locationsActive?.length || 0} Locations`}</span>
+												</div>
+												<Separator
+													orientation="vertical"
+													className="bg-muted-foreground/25"
+												/>
+												<div className="flex items-baseline space-x-1">
+													<div className="rounded-full bg-destructive size-2" />
+													<span>{`${locationInactive?.length || 0} Locations`}</span>
+												</div>
+												<Separator
+													orientation="vertical"
+													className="bg-muted-foreground/25"
+												/>
+												<p>{`${locations?.length || 0} Total Locations`}</p>
+											</div>
+										</div>
+
+										<ScrollArea className="w-full max-h-52 lg:max-h-32">
+											<AnimatePresence>
+												{locationsActive?.length ? (
+													locationsActive.map((action, index) => (
+														<motion.div
+															key={action.id}
+															initial={{ opacity: 0, y: -10 }}
+															animate={{ opacity: 1, y: 0 }}
+															exit={{ opacity: 0, y: 10 }}
+															transition={{ delay: index * 0.1 }}
+															className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+														>
+															<div
+																className={cn(
+																	"rounded-full size-2",
+																	action.active
+																		? "bg-green-700"
+																		: "bg-destructive",
+																)}
+															/>
+															<span>{action.city}</span>
+														</motion.div>
+													))
+												) : (
+													<p className="text-sm text-muted-foreground">
+														There's no active locations
+													</p>
+												)}
+											</AnimatePresence>
+										</ScrollArea>
+
+										<ScrollArea className="w-full max-h-52 lg:max-h-32">
+											<AnimatePresence>
+												{locationInactive.map((action, index) => (
 													<motion.div
 														key={action.id}
 														initial={{ opacity: 0, y: -10 }}
@@ -255,40 +467,13 @@ export default function Index({
 														/>
 														<span>{action.city}</span>
 													</motion.div>
-												))
-											) : (
-												<p className="text-sm text-muted-foreground">
-													There's no active locations
-												</p>
-											)}
-										</AnimatePresence>
-									</ScrollArea>
-
-									<ScrollArea className="w-full max-h-52 lg:max-h-32">
-										<AnimatePresence>
-											{locationInactive.map((action, index) => (
-												<motion.div
-													key={action.id}
-													initial={{ opacity: 0, y: -10 }}
-													animate={{ opacity: 1, y: 0 }}
-													exit={{ opacity: 0, y: 10 }}
-													transition={{ delay: index * 0.1 }}
-													className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
-												>
-													<div
-														className={cn(
-															"rounded-full size-2",
-															action.active ? "bg-green-700" : "bg-destructive",
-														)}
-													/>
-													<span>{action.city}</span>
-												</motion.div>
-											))}
-										</AnimatePresence>
-									</ScrollArea>
-								</div>
-							</PopoverContent>
-						</Popover>
+												))}
+											</AnimatePresence>
+										</ScrollArea>
+									</div>
+								</PopoverContent>
+							</Popover>
+						)}
 					</div>
 				);
 			},
@@ -338,49 +523,40 @@ export default function Index({
 		},
 	];
 
-	// for add, edit, activate service
+	// for add, activate service
 	const formServiceDialogMode = useMemo(() => {
 		const isCreateMode =
 			globalProps.adminPortal?.currentQuery?.new === "service";
-		const isEditMode = !!globalProps.adminPortal?.currentQuery?.edit;
 		const isActivateMode =
 			!!globalProps.adminPortal?.currentQuery?.updateStatus;
 
-		return { isCreateMode, isEditMode, isActivateMode };
+		return { isCreateMode, isActivateMode };
 	}, [globalProps.adminPortal?.currentQuery]);
 	const formServiceDialog = useMemo<ResponsiveDialogProps>(() => {
 		const isOpen =
 			formServiceDialogMode.isCreateMode ||
-			formServiceDialogMode.isEditMode ||
 			formServiceDialogMode.isActivateMode;
-		let title = "New Service";
-		let description = "Add a new service to be available on the system.";
-
-		if (formServiceDialogMode.isEditMode) {
-			title = "Update Service";
-			description = "Update services that are available on the system.";
-		}
+		let title = "New Brand";
+		let description = "Add a new brand to be available on the system.";
 
 		if (formServiceDialogMode.isActivateMode) {
-			title = selectedService?.active ? "Inactive Service" : "Activate Service";
+			title = selectedService?.active ? "Inactive Brand" : "Activate Brand";
 			description = selectedService?.active
-				? "Inactivate the service available on the system."
-				: "Re-activate the service available on the system.";
+				? "Inactivate the brand available on the system."
+				: "Re-activate the brand available on the system.";
 		}
 
 		return {
 			title,
 			description,
 			isOpen,
-			forceMode: formServiceDialogMode.isEditMode ? "dialog" : undefined,
-			dialogWidth:
-				formServiceDialogMode.isEditMode && isDekstopLG ? "700px" : undefined,
+			// forceMode: formServiceDialogMode.isEditMode ? "dialog" : undefined,
+			// dialogWidth:
+			// 	formServiceDialogMode.isEditMode && isDekstopLG ? "700px" : undefined,
 			onOpenChange: (_value: boolean) => {
-				const objQueryParams = formServiceDialogMode.isEditMode
-					? { edit: null }
-					: formServiceDialogMode.isActivateMode
-						? { update_status: null }
-						: { new: null };
+				const objQueryParams = formServiceDialogMode.isActivateMode
+					? { update_status: null }
+					: { new: null };
 				const { fullUrl, queryParams } = populateQueryParams(
 					pageURL,
 					objQueryParams,
@@ -396,7 +572,7 @@ export default function Index({
 				);
 			},
 		};
-	}, [pageURL, formServiceDialogMode, selectedService, isDekstopLG]);
+	}, [pageURL, formServiceDialogMode, selectedService]);
 	const removeFormServiceDialog = useMemo<DeleteServiceAlertDialogProps>(() => {
 		const isRemoveMode = !!globalProps.adminPortal?.currentQuery?.delete;
 
@@ -419,10 +595,10 @@ export default function Index({
 
 	return (
 		<>
-			<Head title="Service Availability" />
+			<Head title="Brand Availability" />
 
 			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">Services</h1>
+				<h1 className="text-2xl font-bold tracking-tight">Our Brands</h1>
 				{globalProps.auth.currentUserType === "ADMIN" && (
 					<Button
 						onClick={(event) => {
@@ -431,7 +607,7 @@ export default function Index({
 						}}
 					>
 						<Plus />
-						Add Service
+						Add Brand
 					</Button>
 				)}
 			</PageContainer>
@@ -456,7 +632,18 @@ export default function Index({
 					{tabList.map((tab) => (
 						<Fragment key={tab.value}>
 							<TabsContent value={tab.value}>
-								<DataTable columns={columns} data={services} />
+								<Deferred
+									data="services"
+									fallback={
+										<Skeleton className="col-span-full xl:col-span-2 h-[360px] rounded-md" />
+									}
+								>
+									<DataTable
+										columns={columns}
+										data={services}
+										toolbar={(table) => <ToolbarTable table={table} />}
+									/>
+								</Deferred>
 							</TabsContent>
 						</Fragment>
 					))}
@@ -464,12 +651,9 @@ export default function Index({
 
 				{formServiceDialog.isOpen && (
 					<ResponsiveDialog {...formServiceDialog}>
-						{(formServiceDialogMode.isEditMode ||
-							formServiceDialogMode.isCreateMode) && (
+						{formServiceDialogMode.isCreateMode && (
 							<FormServiceDialogContent
 								{...{
-									selectedService,
-									locations,
 									forceMode: formServiceDialog.forceMode,
 									handleOpenChange: formServiceDialog.onOpenChange,
 								}}

@@ -38,6 +38,17 @@ class ServiceTest < ActiveSupport::TestCase
     end
   end
 
+  # Test cascading delete for packages
+  test "should destroy associated packages when service is destroyed" do
+    fisiohome_package = packages(:basic_fisiohome)
+
+    # -2 because in the packages.yml have 2 packages for fisiohome service
+    assert_difference "Package.count", -2 do
+      @fisiohome_service.destroy
+    end
+    assert_nil Package.find_by(id: fisiohome_package.id), "Package  should be destroyed when associated service is destroyed"
+  end
+
   # Test callbacks
   test "transform_service_name should convert name to uppercase and replace spaces with underscores" do
     @fisiohome_service.name = "New Service Name"
@@ -51,7 +62,7 @@ class ServiceTest < ActiveSupport::TestCase
     assert_equal "LOWERCASE_CODE", @fisiohome_service.code
   end
 
-  # Test activation (if `Activation` module adds behavior)
+  # Test ActivationValidation (if `ActivationValidation` module adds behavior)
   test "activation module should allow service activation toggle" do
     assert_respond_to @fisiohome_service, :active?
 

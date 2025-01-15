@@ -13,6 +13,7 @@ import {
 	Pencil,
 	Trash2,
 } from "lucide-react";
+import { useMemo } from "react";
 import { DeleteAdminAlert } from "./feature-actions";
 
 interface ExpandSubTableProps {
@@ -33,88 +34,85 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 			user: row.original.user,
 		});
 
+	const cards = useMemo(() => {
+		const data: { title: string; value: string | JSX.Element }[] = [
+			{
+				title: "Join date",
+				value: format(row.original.createdAt, "PPP"),
+			},
+			{
+				title: "Last updated",
+				value: formatDistanceToNow(row.original.updatedAt, {
+					includeSeconds: true,
+					addSuffix: true,
+				}),
+			},
+			{
+				title: "Last sign-in",
+				value: row?.original?.user?.lastSignInAt
+					? formatDistanceToNow(row?.original?.user?.lastSignInAt, {
+							includeSeconds: true,
+							addSuffix: true,
+						})
+					: "-",
+			},
+			{
+				title: "Last online session",
+				value: row?.original?.user?.lastOnlineAt
+					? formatDistanceToNow(row?.original?.user?.lastOnlineAt, {
+							includeSeconds: true,
+							addSuffix: true,
+						})
+					: "-",
+			},
+		];
+
+		if (globalProps.auth.currentUser?.["isSuperAdmin?"]) {
+			data.push({
+				title: "Last IP Address",
+				value: row?.original?.user?.lastSignInIp || "-",
+			});
+
+			if (row.original.user["isOnline?"]) {
+				data.push({
+					title: "Current IP Address",
+					value: row?.original?.user?.currentSignInIp || "-",
+				});
+			}
+		}
+
+		if (row.original.user["suspended?"]) {
+			data.push({
+				title: "Suspend on",
+				value: row?.original?.user?.suspendAt
+					? format(row.original.user.suspendAt, "PP")
+					: "-",
+			});
+			data.push({
+				title: "Suspend until",
+				value: row?.original?.user?.suspendEnd ? (
+					format(row.original.user.suspendEnd, "PP")
+				) : (
+					<InfinityIcon className="size-4" />
+				),
+			});
+		}
+
+		return data;
+	}, [row.original, globalProps.auth.currentUser?.["isSuperAdmin?"]]);
+
 	return (
 		<>
 			<div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-				<div className="space-y-1">
-					<p className="text-xs text-muted-foreground">Join date</p>
-					<p className="font-semibold">
-						{format(row.original.createdAt, "PPP")}
-					</p>
-				</div>
-				<div className="space-y-1">
-					<p className="text-xs text-muted-foreground">Last updated</p>
-					<p className="font-semibold">
-						{formatDistanceToNow(row.original.updatedAt, {
-							includeSeconds: true,
-							addSuffix: true,
-						})}
-					</p>
-				</div>
-				<div className="space-y-1">
-					<p className="text-xs text-muted-foreground">Last sign-in</p>
-					<p className="font-semibold">
-						{row?.original?.user?.lastSignInAt
-							? formatDistanceToNow(row?.original?.user?.lastSignInAt, {
-									includeSeconds: true,
-									addSuffix: true,
-								})
-							: "-"}
-					</p>
-				</div>
-				<div className="space-y-1">
-					<p className="text-xs text-muted-foreground">Last online session</p>
-					<p className="font-semibold">
-						{row?.original?.user?.lastOnlineAt
-							? formatDistanceToNow(row?.original?.user?.lastOnlineAt, {
-									includeSeconds: true,
-									addSuffix: true,
-								})
-							: "-"}
-					</p>
-				</div>
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-					<div className="space-y-1">
-						<p className="text-xs text-muted-foreground">Last IP Address</p>
-						<p className="font-semibold">
-							{row?.original?.user?.lastSignInIp || "-"}
-						</p>
+				{cards.map((card) => (
+					<div
+						key={card.title}
+						className="p-2 space-y-1 rounded-md bg-background"
+					>
+						<p className="text-xs text-muted-foreground">{card.title}</p>
+						<p className="font-semibold">{card.value}</p>
 					</div>
-				)}
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] &&
-					row.original.user["isOnline?"] && (
-						<div className="space-y-1">
-							<p className="text-xs text-muted-foreground">
-								Current IP Address
-							</p>
-							<p className="font-semibold">
-								{row?.original?.user?.currentSignInIp || "-"}
-							</p>
-						</div>
-					)}
-				{row.original.user["suspended?"] && (
-					<>
-						<div className="space-y-1">
-							<p className="text-xs text-muted-foreground">Suspend on</p>
-							<p className="font-semibold">
-								{row?.original?.user?.suspendAt
-									? format(row.original.user.suspendAt, "PP")
-									: "-"}
-							</p>
-						</div>
-
-						<div className="space-y-1">
-							<p className="text-xs text-muted-foreground">Suspend until</p>
-							<p className="font-semibold">
-								{row?.original?.user?.suspendEnd ? (
-									format(row.original.user.suspendEnd, "PP")
-								) : (
-									<InfinityIcon className="size-4" />
-								)}
-							</p>
-						</div>
-					</>
-				)}
+				))}
 			</div>
 
 			<div className="grid items-center gap-2 mt-6 lg:flex">

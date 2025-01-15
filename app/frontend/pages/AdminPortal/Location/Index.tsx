@@ -9,7 +9,6 @@ import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
 } from "@/components/shared/responsive-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
@@ -88,18 +87,17 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 			enableHiding: false,
 			cell: ({ row }) => {
 				return (
-					<div className="flex items-start space-x-4">
+					<div className="flex items-center space-x-3">
 						<img
-							src={`https://flagcdn.com/h24/${row.original.countryCode.toLowerCase()}.png`}
-							height="24"
+							src={`https://flagcdn.com/h20/${row.original.countryCode.toLowerCase()}.webp`}
 							alt={row.original.country}
-							className="border"
+							className="h-4 border"
 						/>
 
-						<div className="flex gap-2">
-							<Badge variant="outline" className="shadow">
+						<div className="flex flex-col space-y-0.5">
+							<span className="text-xs font-light">
 								{row.original.countryCode}
-							</Badge>
+							</span>
 							<p className="font-semibold">{row.original.country}</p>
 						</div>
 					</div>

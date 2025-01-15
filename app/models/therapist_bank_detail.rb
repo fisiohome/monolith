@@ -1,5 +1,5 @@
 class TherapistBankDetail < ApplicationRecord
-  include Activation
+  include ActivationValidation
 
   # define the associations
   belongs_to :therapist

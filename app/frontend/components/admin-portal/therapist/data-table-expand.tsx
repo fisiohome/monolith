@@ -281,7 +281,9 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 
 						<div className="flex-1 leading-tight text-left">
 							<CardTitle className="text-base">{data.name}</CardTitle>
-							<CardDescription>#{data.registrationNumber}</CardDescription>
+							<CardDescription className="font-light">
+								#{data.registrationNumber}
+							</CardDescription>
 						</div>
 					</div>
 				</CardHeader>

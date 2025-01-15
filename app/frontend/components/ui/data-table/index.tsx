@@ -87,7 +87,7 @@ export function DataTable<TData, TValue>({
 		<div className="space-y-4">
 			{toolbar?.(table)}
 
-			<div className="border rounded-xl">
+			<div className="border rounded-xl bg-background">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
@@ -127,7 +127,7 @@ export function DataTable<TData, TValue>({
 										<TableRow>
 											<TableCell
 												colSpan={columns.length}
-												className="bg-background/75 hover:backdrop-brightness-125"
+												className="bg-sidebar hover:backdrop-brightness-95"
 											>
 												{subComponent(row)}
 											</TableCell>

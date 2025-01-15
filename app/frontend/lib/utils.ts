@@ -42,7 +42,8 @@ export function generateInitials(input: string): string {
 	// Extract the first letter of each word and combine them
 	const initials = wordArray
 		.map((word) => word.charAt(0).toUpperCase())
-		.join("");
+		.join("")
+		.slice(0, 2);
 
 	return initials;
 }

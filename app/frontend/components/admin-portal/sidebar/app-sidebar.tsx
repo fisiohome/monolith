@@ -77,13 +77,13 @@ export default function AppSidebar({
 			],
 		};
 		const serviceManagementMenu = {
-			title: "Service Management",
+			title: "Brand Management",
 			url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
 			icon: BriefcaseMedical,
 			isActive: false,
 			items: [
 				{
-					title: "Services",
+					title: "Brands",
 					url: globalProps.adminPortal.router.adminPortal.serviceManagement
 						.index,
 					isActive: false,

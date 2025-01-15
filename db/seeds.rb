@@ -18,33 +18,7 @@ Rails.logger.info("Creating the locations...")
 # country name and country code based on https://api.countrystatecity.in/play as uppercase value
 # FOR INDONESIAN COUNTRY BASED ON https://api.cahyadsn.com/
 begin
-  locations = [
-    {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA SELATAN"},
-    {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA BARAT"},
-    {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA TIMUR"},
-    {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA UTARA"},
-    {country: "INDONESIA", country_code: "ID", state: "DKI JAKARTA", city: "KOTA ADM. JAKARTA PUSAT"},
-    {country: "INDONESIA", country_code: "ID", state: "BANTEN", city: "KOTA TANGERANG SELATAN"},
-    {country: "INDONESIA", country_code: "ID", state: "BANTEN", city: "KAB. TANGERANG"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA BOGOR"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. BOGOR"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA BANDUNG"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. BANDUNG"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. BANDUNG BARAT"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA BEKASI"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. BEKASI"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA DEPOK"},
-    {country: "INDONESIA", country_code: "ID", state: "DAERAH ISTIMEWA YOGYAKARTA", city: "KOTA YOGYAKARTA"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KOTA SEMARANG"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KAB. SEMARANG"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KOTA SURAKARTA"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA MALANG"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. MALANG"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA BATU"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA SURABAYA"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. SIDOARJO"},
-    {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. GRESIK"}
-  ]
+  locations = LOCATIONS_DATA
 
   locations.each_with_index do |loc, index|
     location = Location.find_or_initialize_by(city: loc[:city])
@@ -60,29 +34,54 @@ Rails.logger.info("Locations seeding completed")
 
 # seeding the services
 Rails.logger.info ""
-Rails.logger.info("Creating the services...")
+Rails.logger.info("Creating the brands...")
 
 begin
-  services = [
-    {name: "FISIOHOME", code: "FH", active: true},
-    {name: "PUSAT_OKUPASI", code: "PO", active: true},
-    {name: "WICARAKU", code: "W", active: true},
-    {name: "PERAWAT_HOMECARE", code: "PH", active: true},
-    {name: "CAREGIVER_HOMECARE", code: "PH", active: true},
-    {name: "AESTHETIC_HOMECARE", code: "PH", active: true}
-  ]
+  services = SERVICES_DATA
 
   services.each_with_index do |item, index|
     service = Service.find_or_initialize_by(name: item[:name])
     service.assign_attributes(item)
     service.save!
-    Rails.logger.debug { "Service #{index + 1}/#{services.size} created/updated: #{item[:name]}, #{item[:code]}" }
+    Rails.logger.debug { "Brand #{index + 1}/#{services.size} created/updated: #{item[:name]}, #{item[:code]}" }
   end
 rescue => e
-  Rails.logger.error("Error while seeding services: #{e.message}")
+  Rails.logger.error("Error while seeding brands: #{e.message}")
 end
 
-Rails.logger.info("Services seeding completed")
+Rails.logger.info("Brands seeding completed")
+
+# Seeding the packages
+Rails.logger.info("")
+Rails.logger.info("Creating the packages...")
+
+begin
+  # Ensure services exist before creating packages
+  services = Service.all
+
+  # Define packages for each service
+  packages_list = PACKAGES_DATA
+
+  packages_list.each do |service_package|
+    service = Service.find_by(name: service_package[:service_name])
+    next unless service # Skip if the service does not exist
+
+    service_package[:packages].each_with_index do |pkg, index|
+      total_price = (pkg[:number_of_visit] * pkg[:price_per_visit]) - (pkg[:discount] || 0)
+      total_fee = pkg[:number_of_visit] * pkg[:fee_per_visit]
+
+      package = Package.find_or_initialize_by(service: service, name: pkg[:name])
+      package.assign_attributes(pkg.merge(total_price: total_price, total_fee: total_fee))
+      package.save!
+
+      Rails.logger.debug { "Package #{index + 1}/#{service_package[:packages].size} for brand #{service.name} created/updated: #{pkg[:name]}" }
+    end
+  end
+rescue => e
+  Rails.logger.error("Error while seeding packages: #{e.message}")
+end
+Rails.logger.info("")
+Rails.logger.info("Packages seeding completed")
 
 # # seeding location_services: All services in all locations
 # puts ""
@@ -117,14 +116,11 @@ Rails.logger.info ""
 Rails.logger.info("=== Starting to seed accounts... ===")
 
 # seeding the default super admins
+Rails.logger.info("")
 Rails.logger.info("Creating the Super Admins...")
 
 begin
-  super_admins = [
-    {email: "tech@fisiohome.id", name: "Tech Admin"},
-    {email: "dendy@fisiohome.id", name: "Dendy"},
-    {email: "hasnal@fisiohome.id", name: "Hasnal"}
-  ]
+  super_admins = SUPER_ADMINS_DATA
 
   super_admins.each_with_index do |admin_data, index|
     user = User.where(email: admin_data[:email]).first_or_create do |user|
@@ -142,7 +138,7 @@ begin
 rescue => e
   Rails.logger.error("Error while seeding Super Admins: #{e.message}")
 end
-
+Rails.logger.info("")
 Rails.logger.info("Super Admins seeding completed")
 
 # seeding the default other admin
@@ -150,12 +146,7 @@ Rails.logger.info ""
 Rails.logger.info("Creating the other admins...")
 
 begin
-  other_admins = [
-    {email: "tech_admin_backlog@fisiohome.id", name: "Tech Admin Backlog"},
-    {email: "tech_admin_l1@fisiohome.id", name: "Tech Admin L1"},
-    {email: "tech_admin_l2@fisiohome.id", name: "Tech Admin L2"},
-    {email: "tech_admin_l3@fisiohome.id", name: "Tech Admin L3"}
-  ]
+  other_admins = OTHER_ADMINS_DATA
 
   other_admins.each_with_index do |admin_data, index|
     user = User.where(email: admin_data[:email]).first_or_create do |user|
@@ -184,7 +175,7 @@ begin
 rescue => e
   Rails.logger.error("Error while seeding Super Admins: #{e.message}")
 end
-
+Rails.logger.info("")
 Rails.logger.info("Other admins seeding completed")
 
 # seeding the default therapists
@@ -192,84 +183,16 @@ Rails.logger.info ""
 Rails.logger.info("Creating the therapists...")
 
 begin
-  therapists_data = [
-    {
-      email: "therapist1@fisiohome.id",
-      name: "Therapist One",
-      phone_number: "+6281234567890",
-      gender: "MALE",
-      batch: 1,
-      specializations: ["Muskuloskeletal", "Neuromuskuler"],
-      modalities: ["IR", "TENS", "US"],
-      employment_type: "KARPIS",
-      employment_status: "ACTIVE",
-      service_id: Service.find_by(name: "FISIOHOME").id,
-      addresses_attributes: [
-        {
-          location_id: Location.find_by(city: "KOTA ADM. JAKARTA SELATAN").id,
-          latitude: 0.0,
-          longitude: 0.0,
-          coordinates: [0.0, 0.0],
-          address: "Jl. Jend. Sudirman No.1, Jakarta Selatan",
-          postal_code: "12345",
-          active: true
-        }
-      ],
-      bank_details_attributes: [
-        {
-          bank_name: "BCA",
-          account_number: "1234567890",
-          account_holder_name: "Therapist One".upcase,
-          active: true
-        }
-      ]
-    },
-    {
-      email: "therapist2@fisiohome.id",
-      name: "Therapist Two",
-      phone_number: "+6281234567891",
-      gender: "FEMALE",
-      batch: 1,
-      specializations: ["Perawat aestetik injeksi wajah dan Infus"],
-      modalities: ["Alat infus dan Injeksi untuk wajah dan bahan2 lain strerilisasi"],
-      employment_type: "FLAT",
-      employment_status: "HOLD",
-      service_id: Service.find_by(name: "PUSAT_OKUPASI").id,
-      addresses_attributes: [
-        {
-          location_id: Location.find_by(city: "KOTA BANDUNG").id,
-          latitude: 0.0,
-          longitude: 0.0,
-          coordinates: [0.0, 0.0],
-          address: "Jl. Asia Afrika No.2, Bandung",
-          postal_code: "67890",
-          active: true
-        }
-      ],
-      bank_details_attributes: [
-        {
-          bank_name: "MANDIRI",
-          account_number: "0987654321",
-          account_holder_name: "Therapist Two".upcase,
-          active: true
-        },
-        {
-          bank_name: "BNI",
-          account_number: "1122334455",
-          account_holder_name: "Therapist Two".upcase,
-          active: false
-        },
-        {
-          bank_name: "BRI",
-          account_number: "5566778899",
-          account_holder_name: "Therapist Two".upcase,
-          active: false
-        }
-      ]
-    }
-  ]
+  therapists_data = THERAPISTS_DATA
 
   therapists_data.each_with_index do |therapist_data, therapist_index|
+    # Find service and location IDs
+    service_id = Service.find_by(name: therapist_data[:service_name])&.id
+    addresses_attributes = therapist_data[:addresses_attributes].map do |address_data|
+      location_id = Location.find_by(city: address_data[:city])&.id
+      address_data.merge(location_id: location_id).except(:city)
+    end
+
     # create or update user
     user = User.where(email: therapist_data[:email]).first_or_create do |user|
       user.password = "Therapist123!"
@@ -280,7 +203,14 @@ begin
 
     # create or update therapist and related records
     therapist = Therapist.find_or_initialize_by(user_id: user.id)
-    therapist.assign_attributes(therapist_data.except(:email, :addresses_attributes, :bank_details_attributes).merge(user_id: user.id))
+    therapist.assign_attributes(
+      therapist_data.except(
+        :email, :service_name, :addresses_attributes, :bank_details_attributes
+      )
+      .merge(
+        user_id: user.id, service_id: service_id
+      )
+    )
     therapist.save!
 
     therapist_data[:bank_details_attributes].each_with_index do |bank_data, bank_index|
@@ -293,14 +223,14 @@ begin
       Rails.logger.debug { "Bank Detail #{bank_index + 1}/#{therapist_data[:bank_details_attributes].size} created/updated: #{bank_data[:bank_name]} - #{bank_data[:account_number]}" }
     end
 
-    therapist_data[:addresses_attributes].each_with_index do |address_data, address_index|
+    addresses_attributes.each_with_index do |address_data, address_index|
       address = Address.find_or_initialize_by(address: address_data[:address])
       address.assign_attributes(address_data.except(:active))
       address.save!
 
       TherapistAddress.find_or_initialize_by(therapist: therapist, address: address).update!(active: address_data[:active])
 
-      Rails.logger.debug { "Address #{address_index + 1}/#{therapist_data[:addresses_attributes].size} created/updated: #{address_data[:address]}" }
+      Rails.logger.debug { "Address #{address_index + 1}/#{addresses_attributes.size} created/updated: #{address_data[:address]}" }
     end
 
     Rails.logger.debug { "Therapist #{therapist_index + 1}/#{therapists_data.size} created/updated: #{therapist.name}" }
@@ -308,8 +238,8 @@ begin
 rescue => e
   Rails.logger.error("Error while seeding therapists: #{e.message}")
 end
-
+Rails.logger.info("")
 Rails.logger.info("Therapists seeding completed")
 
+Rails.logger.info("")
 Rails.logger.info("=== All accounts seeding completed ===")
-Rails.logger.info ""

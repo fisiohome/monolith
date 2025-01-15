@@ -1,0 +1,41 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# This model initially had no columns defined. If you add columns to the
+# model remove the "{}" from the fixture names and add the columns immediately
+# below each fixture, per the syntax in the comments below
+#
+basic_fisiohome:
+  service: fisiohome
+  name: "Basic Package"
+  active: true
+  currency: "USD"
+  number_of_visit: 5
+  price_per_visit: 100
+  discount: 50
+  total_price: 450
+  fee_per_visit: 10
+  total_fee: 50
+
+premium_pusat_okupasi:
+  service: pusat_okupasi
+  name: "Premium Package"
+  active: false
+  currency: "EUR"
+  number_of_visit: 10
+  price_per_visit: 200
+  discount: 100
+  total_price: 1900
+  fee_per_visit: 20
+  total_fee: 200
+
+zero_discount_package:
+  service: fisiohome
+  name: "Zero Discount Package"
+  active: true
+  currency: "USD"
+  number_of_visit: 5
+  price_per_visit: 50
+  discount: 0
+  total_price: 250
+  fee_per_visit: 5
+  total_fee: 25

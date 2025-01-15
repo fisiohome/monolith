@@ -1,14 +1,16 @@
 module AdminPortal
   class ServicesController < ApplicationController
-    before_action :get_service, only: %i[update destroy update_status]
+    include ActionView::Helpers::NumberHelper
+    before_action :get_service, only: %i[edit update destroy update_status]
 
     def index
       filter_by_status = params[:filter_by_status]
-      selected_param = params[:edit] || params[:delete] || params[:update_status]
+      filter_by_name = params[:name]
+      selected_param = params[:delete] || params[:update_status]
 
       # get services
       services = Service
-        .includes(:location_services)
+        .includes([:location_services, :packages])
         .all
         .where(
           if filter_by_status == "active"
@@ -18,37 +20,35 @@ module AdminPortal
                         nil
           end
         )
-        .sort_by { |item| item.active ? 0 : 1 }
+        .where(filter_by_name.present? ? ["name ILIKE ?", "%#{filter_by_name}%"] : nil)
+        .sort_by { |item| item.active ? 1 : 0 }
+        .reverse
 
       # get the selected service
       selected_service_lambda = lambda do
-        selected_param ? service = Service.includes(:location_services).find_by(id: selected_param) : nil
+        selected_param ? service = Service.includes([:location_services, :packages]).find_by(id: selected_param) : nil
         service ? deep_transform_keys_to_camel_case(serialize_service(service)) : nil
       end
 
-      # get the location collections
-      locations_lambda = lambda do
-        selected_param ? Location.all : nil
-      end
-
       render inertia: "AdminPortal/Service/Index", props: deep_transform_keys_to_camel_case({
-        services: services.map do |service|
-          serialize_service(service)
-        end,
-        selected_service: -> { selected_service_lambda.call },
-        locations: -> { locations_lambda.call }
+        services: InertiaRails.defer {
+          services.map do |service|
+            deep_transform_keys_to_camel_case(serialize_service(service))
+          end
+        },
+        selected_service: -> { selected_service_lambda.call }
       })
     end
 
     def create
-      logger.info("Starting the process to create a new service.")
-      new_service = Service.new(service_params)
+      logger.info("Starting the process to create a new brand.")
+      new_service = Service.new(create_service_params)
       if new_service.save
-        success_message = "New service with name #{new_service.name}, successfully created."
+        success_message = "New brand with name #{new_service.name}, successfully created."
         logger.info(success_message)
         redirect_to admin_portal_services_path, notice: success_message
       else
-        base_error_message = "Failed to create a new service."
+        base_error_message = "Failed to create a new brand."
         error_message = new_service&.errors&.first&.full_message || base_error_message
         logger.error("#{base_error_message} Errors: #{error_message}")
         flash[:alert] = error_message
@@ -58,77 +58,69 @@ module AdminPortal
           )
         }
       end
-      logger.info("Create a new service process finished.")
+      logger.info("Create a new brand process finished.")
+    end
+
+    def edit
+      # get the selected service
+      get_service_lambda = lambda do
+        service = Service.includes([:location_services, :packages]).find_by(id: params[:id])
+        service ? deep_transform_keys_to_camel_case(serialize_service(service)) : nil
+      end
+
+      # get the location collections
+      locations_lambda = lambda do
+        Location.all.map { |data| deep_transform_keys_to_camel_case(data.as_json) }
+      end
+
+      render inertia: "AdminPortal/Service/Edit", props: {
+        service: get_service_lambda.call,
+        locations: locations_lambda.call
+      }
     end
 
     def update
-      logger.info("Starting the process to update service.")
+      logger.info("Starting the process to update brand.")
 
-      update_service_params = params.require(:service).permit(:name, :code, :active, locations: [:id, :city, :active])
-      Service.transaction do
-        if @service.update(update_service_params.except(:locations))
-          logger.info("Service details with name #{@service.name} updated successfully. Proceeding to update locations.")
+      update_service = UpdateBrandService.new(@service, update_service_params)
 
-          # Handle locations update
-          locations_data = update_service_params[:locations] || []
-          locations_data.each do |location_data|
-            location = Location.find_by(city: location_data[:city])
+      if update_service.call
+        logger.info("Successfully updated the brand with name #{@service.name}.")
+        redirect_to admin_portal_services_path, notice: "Brand updated successfully."
+      else
+        error_messages = @service.errors.to_hash.merge({full_messages: @service.errors.full_messages})
+        logger.error("Failed to update the brand with name #{@service.name}. Errors: #{error_messages}")
+        flash[:alert] = "Brand update failed."
 
-            unless location
-              logger.warn("Location not found for city: #{location_data[:city]}")
-              next
-            end
-
-            location_service = LocationService.find_or_initialize_by(location: location, service: @service)
-            location_service.active = location_data[:active]
-
-            unless location_service.save
-              error_message = location_service.errors.full_messages.to_sentence
-              logger.error("Failed to update LocationService for location_id: #{location.id}, service_id: #{@service.id}. Errors: #{error_message}")
-              raise ActiveRecord::Rollback, "Failed to update location services."
-            end
-          end
-
-          success_message = "Successfully updated the service with name #{@service.name}."
-          logger.info(success_message)
-          redirect_to admin_portal_services_path, notice: success_message
-        else
-          base_error_message = "Failed to update the service with name #{@service.name}."
-          error_message = @service&.errors&.first&.full_message || base_error_message
-          logger.error("#{base_error_message} Errors: #{error_message}.")
-          flash[:alert] = error_message
-          redirect_to admin_portal_services_path(edit: @service.id), inertia: {
-            errors: deep_transform_keys_to_camel_case(
-              @service.errors.to_hash.merge({full_messages: @service.errors.full_messages})
-            )
-          }
-        end
+        redirect_to edit_admin_portal_service_path(@service), inertia: {
+          errors: deep_transform_keys_to_camel_case(error_messages)
+        }
       end
 
-      logger.info("Update service process finished.")
+      logger.info("Update brand process finished.")
     end
 
     def destroy
-      logger.info("Starting process to delete the service.")
+      logger.info("Starting process to delete the brand.")
 
       @service.destroy
-      success_message = "Successfully to delete the service with name: #{@service.name}."
+      success_message = "Successfully to delete the brand with name: #{@service.name}."
       logger.info(success_message)
       redirect_to admin_portal_services_path, notice: success_message
 
-      logger.info("Delete the service process finished.")
+      logger.info("Delete the brand process finished.")
     end
 
     def update_status
-      logger.info("Starting the process to update service status.")
+      logger.info("Starting the process to update brand status.")
 
       # toggle the service status
       if @service.update(active: !@service.is_active?)
-        success_message = "Successfully to #{@service.is_active? ? "activate" : "inactive"} the service with name #{@service.name}."
+        success_message = "Successfully to #{@service.is_active? ? "activate" : "inactive"} the brand with name #{@service.name}."
         logger.info(success_message)
         redirect_to admin_portal_services_path, notice: success_message
       else
-        base_error_message = "Failed to #{@service.is_active? ? "activate" : "inactive"} the service with name #{@service.name}."
+        base_error_message = "Failed to #{@service.is_active? ? "activate" : "inactive"} the brand with name #{@service.name}."
         error_message = @service&.errors&.first&.full_message || base_error_message
         logger.error("#{base_error_message} Errors: #{error_message}.")
         flash[:alert] = error_message
@@ -138,7 +130,7 @@ module AdminPortal
           )
         }
       end
-      logger.info("Update service status process finished.")
+      logger.info("Update brand status process finished.")
     end
 
     private
@@ -148,7 +140,7 @@ module AdminPortal
 
       # error if not found existing service
       unless @service
-        error_message = "The existing service could not be found."
+        error_message = "The existing brand could not be found."
         logger.error(error_message)
         flash[:alert] = error_message
         redirect_to admin_portal_services_path
@@ -161,11 +153,47 @@ module AdminPortal
         serialized_service["locations"] = service.location_services.map do |location_service|
           location_service.location.attributes.merge(active: location_service.active)
         end
+
+        # include the packages
+        packages_data = service.packages.map do |package|
+          package.attributes.merge(
+            formatted_price_per_visit: package.formatted_price_per_visit,
+            formatted_total_price: package.formatted_total_price,
+            formatted_fee_per_visit: package.formatted_fee_per_visit,
+            formatted_total_fee: package.formatted_total_fee,
+            formatted_discount: package.formatted_discount
+          )
+        end
+        # get the prices total grouping by currencies
+        packages_grouped_by_currency = service.packages.group_by(&:currency)
+        total_prices = packages_grouped_by_currency.map do |currency, packages|
+          total_price = packages.sum(&:total_price)
+          total_fee = packages.sum(&:total_fee)
+          {
+            currency: currency,
+            total_price: total_price,
+            formatted_total_price: number_to_currency(total_price, unit: currency, precision: 2, format: "%u %n"),
+            total_fee: total_fee,
+            formatted_total_fee: number_to_currency(total_fee, unit: currency, precision: 2, format: "%u %n")
+          }
+        end
+        serialized_service["packages"] = {
+          list: packages_data,
+          total_prices:
+        }
       end
     end
 
-    def service_params
-      params.require(:service).permit(:name, :code, :active)
+    def create_service_params
+      params.require(:service).permit(:name, :description, :code, :active)
+    end
+
+    def update_service_params
+      params.require(:service).permit(
+        :name, :description, :code, :active,
+        locations: [:id, :city, :active],
+        packages: [:id, :active, :name, :currency, :number_of_visit, :price_per_visit, :fee_per_visit, :discount]
+      )
     end
   end
 end

@@ -1,5 +1,5 @@
 class TherapistRegistrationCounter < ApplicationRecord
-  include ServiceCode
+  include ServiceCodeValidation
 
   # define the validation
   validates :service_code, uniqueness: true

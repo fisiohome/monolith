@@ -11,12 +11,16 @@ module AdminPortal
       limit = params.fetch(:limit, 10)
       filter_by_account_status = params[:filter_by_account_status]
       filter_by_email = params[:email]
+      filter_by_name = params[:name]
+      filter_by_admin_type = params[:admin_type]
       # sort_by_last_online_at = params.fetch(:sort_by_last_online_at, "last_online_at asc")
 
       #  join the admin with user and apply the generated order query
       query = Admin
         .joins(:user)
         .where(filter_by_email.present? ? ["users.email ILIKE ?", "%#{filter_by_email}%"] : nil)
+        .where(filter_by_name.present? ? ["name ILIKE ?", "%#{filter_by_name}%"] : nil)
+        .where(filter_by_admin_type.present? ? ["admin_type ILIKE ?", "%#{filter_by_admin_type}%"] : nil)
         .where(
           if filter_by_account_status == "active"
             ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
@@ -28,8 +32,8 @@ module AdminPortal
         .sort_by { |u|
         if u.user.is_online?
           2
-        elsif u.user.last_online_at
-          1
+        elsif u.user.suspended?
+          -1
         else
           0
         end

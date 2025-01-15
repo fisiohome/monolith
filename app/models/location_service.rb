@@ -1,5 +1,5 @@
 class LocationService < ApplicationRecord
-  include Activation
+  include ActivationValidation
 
   # define the associations
   belongs_to :location

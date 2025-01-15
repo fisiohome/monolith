@@ -7,18 +7,33 @@ module AdminPortal
       # define the query params default values
       page = params.fetch(:page, 1)
       limit = params.fetch(:limit, 10)
+      filter_by_name = params[:name]
+      filter_by_account_status = params[:account_status]
       selected_param = params[:change_password] || params[:delete]
 
-      therapist_collections = Therapist.order(created_at: :desc).sort_by do |u|
-        [
-          u.user.is_online? ? 2 : 0,
-          u.user.last_online_at ? 1 : 0,
-          u.user.suspended? ? -1 : 0,
-          (u.employment_type == "KARPIS") ? 1 : 0,
-          {"ACTIVE" => 2, "HOLD" => 1, "INACTIVE" => 0}.fetch(u.employment_status, -1),
-          u.registration_number
-        ]
-      end.reverse
+      therapist_collections = Therapist
+        .joins(:user)
+        .where(filter_by_name.present? ? ["name ILIKE ?", "%#{filter_by_name}%"] : nil)
+        .where(
+          if filter_by_account_status == "ACTIVE"
+            ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
+          else
+            (filter_by_account_status == "INACTIVE") ? ["(users.suspend_at IS NOT NULL AND users.suspend_at <= ?) AND (users.suspend_end IS NULL OR users.suspend_end >= ?)", Time.current, Time.current] :
+                        nil
+          end
+        )
+        .order(created_at: :desc)
+        .sort_by do |u|
+          [
+            u.user.is_online? ? 2 : 0,
+            u.user.last_online_at ? 1 : 0,
+            u.user.suspended? ? -1 : 0,
+            (u.employment_type == "KARPIS") ? 1 : 0,
+            {"ACTIVE" => 2, "HOLD" => 1, "INACTIVE" => 0}.fetch(u.employment_status, -1),
+            u.registration_number
+          ]
+        end
+        .reverse
       @pagy, @therapists = pagy_array(therapist_collections, page:, limit:)
 
       # get the selected data admin for form

@@ -46,7 +46,7 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :services, only: [:index, :create, :update, :destroy] do
+        resources :services, only: [:index, :create, :update, :edit, :destroy] do
           collection do
             put "update-status" => "services#update_status"
           end

@@ -44,7 +44,7 @@ export function FormPageHeader({
 }: FormPageHeaderProps) {
 	return (
 		<>
-			<div className={cn("flex flex-col space-y-0.5", className)}>
+			<div className={cn("flex flex-col space-y-1.5", className)}>
 				<h1 className="font-bold leading-none tracking-tight">{title}</h1>
 				<span className="text-sm text-muted-foreground">{description}</span>
 			</div>

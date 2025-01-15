@@ -1,6 +1,7 @@
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import ExpandSubTable from "@/components/admin-portal/therapist/data-table-expand";
+import ToolbarTable from "@/components/admin-portal/therapist/data-table-toolbar";
 import {
 	ChangePasswordContent,
 	DeleteTherapistAlert,
@@ -42,6 +43,7 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
 import { Head, Link, router, usePage } from "@inertiajs/react";
+import type { Table as TableTanstack } from "@tanstack/react-table";
 import type { ColumnDef, ExpandedState, Row } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -61,6 +63,9 @@ export interface PageProps {
 	selectedTherapist: Therapist | null;
 }
 export type TableRowDataProps = Row<PageProps["therapists"]["data"][number]>;
+export type TableToolbarDataProps = TableTanstack<
+	PageProps["therapists"]["data"][number]
+>;
 
 export default function Index({ therapists, selectedTherapist }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
@@ -114,7 +119,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 									<Button
 										variant="ghost"
 										size="icon"
-										className="w-5 h-5 border shadow border-primary/25"
+										className="border shadow size-8 lg:size-5 border-primary/25"
 										onClick={() => table.toggleAllRowsExpanded()}
 									>
 										{table.getIsAllRowsExpanded() ? (
@@ -185,7 +190,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 									<Button
 										variant="ghost"
 										size="icon"
-										className="w-5 h-5 border shadow border-primary/25"
+										className="border shadow size-8 lg:size-5 border-primary/25"
 										onClick={toggleExpand}
 									>
 										{row.getIsExpanded() ? <ChevronUp /> : <ChevronDown />}
@@ -241,7 +246,9 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 							<div className="flex-1 space-y-1 text-sm leading-tight text-left">
 								<div>
 									<p className="font-semibold truncate">{name}</p>
-									<p className="text-xs truncate">#{registrationNumber}</p>
+									<p className="text-xs font-light truncate">
+										#{registrationNumber}
+									</p>
 								</div>
 							</div>
 						</div>
@@ -542,7 +549,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 				<DataTable
 					columns={columns}
 					data={therapists.data}
-					// toolbar={(table) => <ToolbarTable table={table} />}
+					toolbar={(table) => <ToolbarTable table={table} />}
 					subComponent={(row) => <ExpandSubTable row={row} />}
 					customPagination={(table) => (
 						<PaginationTable table={table} metadata={therapists.metadata} />

@@ -1,18 +1,20 @@
 class Service < ApplicationRecord
-  include Activation
+  include ActivationValidation
 
-  # define the associations
+  # * define the associations
   has_one :therapist
 
   has_many :location_services, dependent: :destroy
   has_many :locations, through: :location_services
-  has_one :active_locations, -> { where(active: true) }, class_name: "LocationService"
+  has_many :active_locations, -> { where(active: true) }, class_name: "LocationService"
 
-  # define the validation
+  has_many :packages, dependent: :destroy
+
+  # * define the validation
   validates :code, presence: true
   validates :name, presence: true, uniqueness: true
 
-  # define the callbacks
+  # * define the callbacks
   before_save :transform_service_name
 
   private

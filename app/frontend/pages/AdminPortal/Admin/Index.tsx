@@ -263,7 +263,7 @@ export default function Index({
 									<Button
 										variant="ghost"
 										size="icon"
-										className="w-5 h-5 border shadow border-primary/25"
+										className="border shadow size-8 lg:size-5 border-primary/25"
 										onClick={() => table.toggleAllRowsExpanded()}
 									>
 										{table.getIsAllRowsExpanded() ? (
@@ -334,7 +334,7 @@ export default function Index({
 									<Button
 										variant="ghost"
 										size="icon"
-										className="w-5 h-5 border shadow border-primary/25"
+										className="border shadow size-8 lg:size-5 border-primary/25"
 										onClick={toggleExpand}
 									>
 										{row.getIsExpanded() ? <ChevronUp /> : <ChevronDown />}
@@ -635,7 +635,9 @@ export default function Index({
 								<DataTable
 									columns={columns}
 									data={admins.data}
-									toolbar={(table) => <ToolbarTable table={table} />}
+									toolbar={(table) => (
+										<ToolbarTable table={table} adminTypeList={adminTypeList} />
+									)}
 									subComponent={(row) => (
 										<ExpandSubTable row={row} routeTo={routeTo} />
 									)}

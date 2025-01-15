@@ -1,4 +1,4 @@
-module ServiceCode
+module ServiceCodeValidation
   extend ActiveSupport::Concern
   SERVICE_CODES = Service.distinct.pluck(:code).freeze
 
