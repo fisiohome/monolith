@@ -1,0 +1,66 @@
+schedule_for_therapist_one:
+  therapist: therapist_one
+  time_zone: "Asia/Jakarta"
+  appointment_duration_in_minutes: 60
+  max_advance_booking_in_days: 7
+  min_booking_before_in_hours: 24
+  buffer_time_in_minutes: 5
+
+  available_now: true
+  start_date_window:
+  end_date_window:
+
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+schedule_for_therapist_two:
+  therapist: therapist_two
+  time_zone: "Asia/Jakarta"
+  appointment_duration_in_minutes: 45
+  max_advance_booking_in_days: 14
+  min_booking_before_in_hours: 8
+  buffer_time_in_minutes: 10
+
+  available_now: false
+  start_date_window: <%= Date.current %>
+  end_date_window: <%= Date.current + 30 %>
+
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+window_schedule:
+  therapist: therapist_one
+  time_zone: "Asia/Jakarta"
+  appointment_duration_in_minutes: 60
+  max_advance_booking_in_days: 7
+  min_booking_before_in_hours: 24
+  buffer_time_in_minutes: 5
+  available_now: false
+  start_date_window: <%= Date.current %>
+  end_date_window: <%= Date.current + 30 %>
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+instant_schedule:
+  therapist: therapist_one
+  time_zone: "Asia/Jakarta"
+  appointment_duration_in_minutes: 45
+  max_advance_booking_in_days: 14
+  min_booking_before_in_hours: 8
+  buffer_time_in_minutes: 10
+  available_now: true
+  # no start_date_window / end_date_window needed
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+therapist_schedule_delete:
+  therapist: delete_therapist
+  time_zone: "Asia/Jakarta"
+  appointment_duration_in_minutes: 45
+  max_advance_booking_in_days: 14
+  min_booking_before_in_hours: 8
+  buffer_time_in_minutes: 10
+  available_now: true
+  # no start_date_window / end_date_window needed
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_05_141418) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_10_200008) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -92,6 +92,33 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_05_141418) do
     t.index ["therapist_id"], name: "index_therapist_addresses_on_therapist_id"
   end
 
+  create_table "therapist_adjusted_availabilities", force: :cascade do |t|
+    t.bigint "therapist_appointment_schedule_id", null: false
+    t.date "specific_date", null: false
+    t.time "start_time"
+    t.time "end_time"
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["therapist_appointment_schedule_id", "specific_date", "start_time", "end_time"], name: "index_therapist_adjusted_availabilities_on_schedule_and_time", unique: true
+    t.index ["therapist_appointment_schedule_id"], name: "idx_on_therapist_appointment_schedule_id_dddb00587e"
+  end
+
+  create_table "therapist_appointment_schedules", force: :cascade do |t|
+    t.uuid "therapist_id", null: false
+    t.integer "appointment_duration_in_minutes", default: 90, null: false
+    t.integer "buffer_time_in_minutes", default: 30, null: false
+    t.string "time_zone", default: "Asia/Jakarta", null: false
+    t.boolean "available_now", default: true, null: false
+    t.date "start_date_window"
+    t.date "end_date_window"
+    t.integer "max_advance_booking_in_days", default: 14, null: false
+    t.integer "min_booking_before_in_hours", default: 24, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["therapist_id"], name: "index_therapist_appointment_schedules_on_therapist_id"
+  end
+
   create_table "therapist_bank_details", force: :cascade do |t|
     t.uuid "therapist_id", null: false
     t.bigint "bank_detail_id", null: false
@@ -122,6 +149,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_05_141418) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["service_code"], name: "index_therapist_registration_counters_on_service_code", unique: true
+  end
+
+  create_table "therapist_weekly_availabilities", force: :cascade do |t|
+    t.bigint "therapist_appointment_schedule_id", null: false
+    t.string "day_of_week", null: false
+    t.time "start_time", null: false
+    t.time "end_time", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["therapist_appointment_schedule_id", "day_of_week", "start_time", "end_time"], name: "index_therapist_weekly_availabilities_on_schedule_and_time", unique: true
+    t.index ["therapist_appointment_schedule_id"], name: "idx_on_therapist_appointment_schedule_id_71a804a72f"
   end
 
   create_table "therapists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -173,9 +211,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_05_141418) do
   add_foreign_key "location_services", "services"
   add_foreign_key "therapist_addresses", "addresses"
   add_foreign_key "therapist_addresses", "therapists"
+  add_foreign_key "therapist_adjusted_availabilities", "therapist_appointment_schedules"
+  add_foreign_key "therapist_appointment_schedules", "therapists"
   add_foreign_key "therapist_bank_details", "bank_details"
   add_foreign_key "therapist_bank_details", "therapists"
   add_foreign_key "therapist_documents", "therapists"
+  add_foreign_key "therapist_weekly_availabilities", "therapist_appointment_schedules"
   add_foreign_key "therapists", "services"
   add_foreign_key "therapists", "users"
 end

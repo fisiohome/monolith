@@ -20,9 +20,12 @@ class Therapist < ApplicationRecord
   has_one :active_bank_detail, through: :active_therapist_bank_detail, source: :bank_detail
   accepts_nested_attributes_for :therapist_bank_details
 
+  has_one :therapist_appointment_schedule, dependent: :destroy
+  # or has_many :therapist_appointment_schedules if you plan to support multiple
+
   # cycle callbacks
   before_create :assign_registration_number
-  before_destroy :destroy_associated_bank_details, :destroy_associated_addresses
+  before_destroy :destroy_associated_bank_details, :destroy_associated_addresses, :destroy_associated_appointment_schedule
   after_destroy :destroy_associated_user
   after_save :update_user_suspend_status
 
@@ -50,6 +53,13 @@ class Therapist < ApplicationRecord
 
     logger.info "Deleting the associated User: #{user.email}"
     user.destroy
+  end
+
+  def destroy_associated_appointment_schedule
+    return if therapist_appointment_schedule.blank?
+
+    logger.info "Deleting the associated appointment schedule: #{therapist_appointment_schedule.id}"
+    therapist_appointment_schedule.destroy
   end
 
   def destroy_associated_bank_details
