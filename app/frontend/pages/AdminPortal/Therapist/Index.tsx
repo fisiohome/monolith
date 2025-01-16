@@ -550,7 +550,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 					columns={columns}
 					data={therapists.data}
 					toolbar={(table) => <ToolbarTable table={table} />}
-					subComponent={(row) => <ExpandSubTable row={row} />}
+					subComponent={(row) => <ExpandSubTable row={row} routeTo={routeTo} />}
 					customPagination={(table) => (
 						<PaginationTable table={table} metadata={therapists.metadata} />
 					)}

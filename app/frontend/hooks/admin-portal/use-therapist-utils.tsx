@@ -35,7 +35,10 @@ export const useActionPermissions = ({
 		[currentUser?.["isSuperAdmin?"]],
 	);
 
-	const isPermitted = useMemo(() => isShowEdit, [isShowEdit]);
+	const isPermitted = useMemo(
+		() => authData.currentUserType === "ADMIN" || isCurrentUser,
+		[authData.currentUserType, isCurrentUser],
+	);
 
 	return {
 		isCurrentUser,

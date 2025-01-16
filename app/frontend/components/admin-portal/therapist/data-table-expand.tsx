@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -14,6 +15,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useActionPermissions } from "@/hooks/admin-portal/use-therapist-utils";
+import { useAuth } from "@/hooks/use-auth";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
 import { cn, generateInitials } from "@/lib/utils";
 import type { TableRowDataProps } from "@/pages/AdminPortal/Therapist/Index";
@@ -31,8 +34,10 @@ import {
 	Mail,
 	MapPinHouse,
 	Microscope,
+	Pencil,
 	Phone,
 	Stethoscope,
+	Trash2,
 	Users,
 } from "lucide-react";
 import { Fragment, useMemo } from "react";
@@ -40,19 +45,24 @@ import { formatPhoneNumberIntl } from "react-phone-number-input";
 
 export interface ExpandSubTableProps {
 	row: TableRowDataProps;
-	// routeTo: {
-	// 	editAdmin: (id: number) => void;
-	// 	changePassword: (id: number) => void;
-	// 	suspendAdmin: (id: number) => void;
-	// };
+	routeTo: {
+		edit: (id: string | number) => void;
+		changePassword: (id: string | number) => void;
+		delete: (id: string | number) => void;
+	};
 }
-export default function ExpandSubTable({ row }: ExpandSubTableProps) {
+export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
+	const { isAuthCurrentUser, isAuthAdmin, isAuthSuperAdmin } = useAuth({
+		user: row.original.user,
+		auth: globalProps.auth,
+	});
+	const { isShowEdit, isShowChangePassword, isShowDelete, isPermitted } =
+		useActionPermissions({
+			authData: globalProps.auth,
+			user: row.original.user,
+		});
 
-	const data = row.original;
-	const nameInitial = generateInitials(data.name);
-	const isCurrent =
-		row.original.user.email === globalProps.auth.currentUser?.user.email;
 	const isOnline = row.original.user["isOnline?"];
 	const currentIP = row.original.user.currentSignInIp;
 	const lastIP = row.original.user.lastSignInIp;
@@ -62,39 +72,45 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 	const suspendEnd = row.original.user.suspendEnd;
 	const profiles = useMemo(() => {
 		const personalDetails = [
-			{ icon: Users, label: "Gender", value: data.gender },
+			{ icon: Users, label: "Gender", value: row.original.gender },
 			{
 				icon: Phone,
 				label: "Phone",
-				value: data?.phoneNumber
-					? formatPhoneNumberIntl(data.phoneNumber)
+				value: row.original?.phoneNumber
+					? formatPhoneNumberIntl(row.original.phoneNumber)
 					: "-",
 			},
-			{ icon: Mail, label: "Email", value: data.user.email },
+			{ icon: Mail, label: "Email", value: row.original.user.email },
 		];
 		const employmentDetails = [
-			{ icon: Group, label: "Batch", value: data.batch },
+			{ icon: Group, label: "Batch", value: row.original.batch },
 			{
 				icon: Activity,
 				label: "Status",
 				value: (
-					<Badge className={getEmpStatusBadgeVariant(data.employmentStatus)}>
-						{data.employmentStatus}
+					<Badge
+						className={getEmpStatusBadgeVariant(row.original.employmentStatus)}
+					>
+						{row.original.employmentStatus}
 					</Badge>
 				),
 			},
 			{
 				icon: Hospital,
 				label: "Therapist at",
-				value: `${data.service.code} - ${data.service.name}`,
+				value: `${row.original.service.code} - ${row.original.service.name}`,
 			},
-			{ icon: BriefcaseMedical, label: "Type", value: data.employmentType },
+			{
+				icon: BriefcaseMedical,
+				label: "Type",
+				value: row.original.employmentType,
+			},
 			{
 				icon: Microscope,
 				label: "Specializations",
-				value: data.specializations?.length ? (
+				value: row.original.specializations?.length ? (
 					<div className="flex flex-wrap items-center justify-end gap-1 text-center">
-						{data.specializations.map((specialization) => (
+						{row.original.specializations.map((specialization) => (
 							<Badge key={specialization}>{specialization}</Badge>
 						))}
 					</div>
@@ -105,9 +121,9 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 			{
 				icon: Stethoscope,
 				label: "Treatment Modalities",
-				value: data.modalities?.length ? (
+				value: row.original.modalities?.length ? (
 					<div className="flex flex-wrap items-center justify-end gap-1 text-center">
-						{data.modalities.map((modality) => (
+						{row.original.modalities.map((modality) => (
 							<Badge key={modality} variant="secondary">
 								{modality}
 							</Badge>
@@ -131,7 +147,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 				items: employmentDetails,
 			},
 		];
-	}, [data]);
+	}, [row.original]);
 	const accounts = useMemo(() => {
 		type itemID =
 			| "lastOnlineAt"
@@ -144,8 +160,8 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 			{
 				id: "lastOnlineAt" as itemID,
 				title: "Last Online Session",
-				value: data?.user?.lastOnlineAt
-					? formatDistanceToNow(data?.user?.lastOnlineAt, {
+				value: row.original?.user?.lastOnlineAt
+					? formatDistanceToNow(row.original?.user?.lastOnlineAt, {
 							includeSeconds: true,
 							addSuffix: true,
 						})
@@ -154,8 +170,8 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 			{
 				id: "lastSignInAt" as itemID,
 				title: "Last Sign-in",
-				value: data?.user?.lastSignInAt
-					? formatDistanceToNow(data?.user?.lastSignInAt, {
+				value: row.original?.user?.lastSignInAt
+					? formatDistanceToNow(row.original?.user?.lastSignInAt, {
 							includeSeconds: true,
 							addSuffix: true,
 						})
@@ -163,16 +179,16 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 			},
 		];
 
-		if (globalProps.auth.currentUserType === "ADMIN") {
+		if (isAuthAdmin) {
 			items.push({
 				id: "currentSignInIp" as itemID,
 				title: "Current IP Address",
-				value: data?.user?.currentSignInIp || "-",
+				value: row.original?.user?.currentSignInIp || "-",
 			});
 			items.push({
 				id: "lastSignInIp" as itemID,
 				title: "Last IP Address",
-				value: data?.user?.lastSignInIp || "-",
+				value: row.original?.user?.lastSignInIp || "-",
 			});
 		}
 
@@ -194,13 +210,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 			icon: Fingerprint,
 			items,
 		};
-	}, [
-		data?.user,
-		globalProps.auth.currentUserType,
-		isSuspended,
-		suspendedAt,
-		suspendEnd,
-	]);
+	}, [row.original?.user, isAuthAdmin, isSuspended, suspendedAt, suspendEnd]);
 
 	return (
 		<div className="grid w-full grid-cols-12 gap-2 text-sm motion-preset-bounce">
@@ -211,20 +221,20 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 							<Tooltip>
 								<TooltipTrigger>
 									<Avatar className="border rounded-lg size-10">
-										<AvatarImage src="#" alt={data.name} />
+										<AvatarImage src="#" alt={row.original.name} />
 										<AvatarFallback
 											className={cn(
 												"text-sm rounded-lg",
 												isSuspended
 													? "bg-destructive text-destructive-foreground"
-													: isCurrent
+													: isAuthCurrentUser
 														? "bg-primary text-primary-foreground"
 														: isOnline
 															? "bg-emerald-700 text-white"
 															: "",
 											)}
 										>
-											{nameInitial}
+											{generateInitials(row.original.name)}
 										</AvatarFallback>
 									</Avatar>
 								</TooltipTrigger>
@@ -247,7 +257,7 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 												</b>
 											</span>
 										</div>
-									) : globalProps.auth.currentUser?.["isSuperAdmin?"] ? (
+									) : isAuthSuperAdmin ? (
 										<div className="flex flex-col">
 											{isOnline ? (
 												<span>
@@ -280,9 +290,9 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 						</TooltipProvider>
 
 						<div className="flex-1 leading-tight text-left">
-							<CardTitle className="text-base">{data.name}</CardTitle>
+							<CardTitle className="text-base">{row.original.name}</CardTitle>
 							<CardDescription className="font-light">
-								#{data.registrationNumber}
+								#{row.original.registrationNumber}
 							</CardDescription>
 						</div>
 					</div>
@@ -351,9 +361,9 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{data.bankDetails?.length ? (
+						{row.original.bankDetails?.length ? (
 							<div className="grid gap-4">
-								{data.bankDetails.map((detail, index) => (
+								{row.original.bankDetails.map((detail, index) => (
 									<Fragment key={detail.id}>
 										<div className="grid gap-2">
 											<div className="flex items-start justify-between gap-2">
@@ -374,8 +384,10 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 											</div>
 										</div>
 
-										{data.bankDetails.length > 1 &&
-											index + 1 !== data.bankDetails.length && <Separator />}
+										{row.original.bankDetails.length > 1 &&
+											index + 1 !== row.original.bankDetails.length && (
+												<Separator />
+											)}
 									</Fragment>
 								))}
 							</div>
@@ -396,9 +408,9 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{data.addresses?.length ? (
+						{row.original.addresses?.length ? (
 							<div className="grid gap-4">
-								{data.addresses.map((item, index) => (
+								{row.original.addresses.map((item, index) => (
 									<Fragment key={item.id}>
 										<div className="grid gap-2">
 											<div className="flex items-start justify-between gap-2">
@@ -438,8 +450,10 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 											</div>
 										</div>
 
-										{data.addresses.length > 1 &&
-											index + 1 !== data.addresses.length && <Separator />}
+										{row.original.addresses.length > 1 &&
+											index + 1 !== row.original.addresses.length && (
+												<Separator />
+											)}
 									</Fragment>
 								))}
 							</div>
@@ -452,6 +466,40 @@ export default function ExpandSubTable({ row }: ExpandSubTableProps) {
 					</CardContent>
 				</Card>
 			</div>
+
+			{isPermitted && (
+				<div className="grid items-center gap-2 mt-6 col-span-full lg:flex">
+					{isShowEdit && (
+						<Button
+							variant="outline"
+							onClick={() => routeTo.edit(row.original.id)}
+						>
+							<Pencil />
+							Edit
+						</Button>
+					)}
+
+					{isShowChangePassword && (
+						<Button
+							variant="outline"
+							onClick={() => routeTo.changePassword(row.original.id)}
+						>
+							<Fingerprint />
+							Change Password
+						</Button>
+					)}
+
+					{isShowDelete && (
+						<Button
+							variant="destructive"
+							onClick={() => routeTo.delete(row.original.id)}
+						>
+							<Trash2 />
+							Delete
+						</Button>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }

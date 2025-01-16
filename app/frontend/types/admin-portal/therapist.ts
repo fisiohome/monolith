@@ -3,25 +3,13 @@ import type {
 	EMPLOYMENT_TYPES,
 	GENDERS,
 } from "../../lib/constants";
-import type { User } from "../auth";
+import type { UserSerialize } from "../auth";
 import type { Location } from "./location";
 
 export type TherapistGender = typeof GENDERS;
 export type TherapistEmploymentStatus = typeof EMPLOYMENT_STATUSES;
 export type TherapistEmploymentType = typeof EMPLOYMENT_TYPES;
-export type TherapistUser = Pick<
-	User,
-	| "id"
-	| "email"
-	| "isOnline?"
-	| "lastOnlineAt"
-	| "lastSignInAt"
-	| "currentSignInIp"
-	| "lastSignInIp"
-	| "suspendAt"
-	| "suspendEnd"
-	| "suspended?"
->;
+export type TherapistUser = UserSerialize;
 export interface TherapistService {
 	id: number;
 	name: string;
@@ -60,7 +48,7 @@ export interface Therapist {
 	employmentStatus: TherapistEmploymentStatus[number];
 	employmentType: TherapistEmploymentType[number];
 	gender: TherapistGender[number];
-	user: User;
+	user: TherapistUser;
 	service: TherapistService;
 	bankDetails: TherapistBankDetail[];
 	addresses: TherapistAddress[];

@@ -12,3 +12,17 @@ export type User = {
 	suspendAt: string | null;
 	suspendEnd: string | null;
 } & Timestamp;
+
+export type UserSerialize = Pick<
+	User,
+	| "id"
+	| "email"
+	| "isOnline?"
+	| "lastOnlineAt"
+	| "lastSignInAt"
+	| "currentSignInIp"
+	| "lastSignInIp"
+	| "suspendAt"
+	| "suspendEnd"
+	| "suspended?"
+>;

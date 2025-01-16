@@ -1,5 +1,5 @@
 import type { ADMIN_TYPES } from "../../lib/constants";
-import type { User } from "../auth";
+import type { UserSerialize } from "../auth";
 import type { Timestamp } from "../globals";
 
 export type AdminTypes = typeof ADMIN_TYPES;
@@ -12,17 +12,5 @@ export type Admin = {
 	"isAdminL12?": boolean;
 	"isAdminL13?": boolean;
 	"isAdminBacklog?": boolean;
-	user: Pick<
-		User,
-		| "id"
-		| "email"
-		| "isOnline?"
-		| "lastOnlineAt"
-		| "lastSignInAt"
-		| "currentSignInIp"
-		| "lastSignInIp"
-		| "suspendAt"
-		| "suspendEnd"
-		| "suspended?"
-	>;
+	user: UserSerialize;
 } & Timestamp;
