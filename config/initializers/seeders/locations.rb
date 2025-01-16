@@ -23,5 +23,6 @@ LOCATIONS_DATA = [
   {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA BATU"},
   {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA SURABAYA"},
   {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. SIDOARJO"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. GRESIK"}
+  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. GRESIK"},
+  {country: "INDONESIA", country_code: "ID", state: "BALI", city: "KOTA DENPASAR"}
 ].freeze

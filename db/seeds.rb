@@ -56,10 +56,10 @@ Rails.logger.info("")
 Rails.logger.info("Creating the packages...")
 
 begin
-  # Ensure services exist before creating packages
+  # check if the services is existed
   services = Service.all
+  raise "No service founds. Skipping the packages seeding." if services.empty?
 
-  # Define packages for each service
   packages_list = PACKAGES_DATA
 
   packages_list.each do |service_package|
@@ -84,32 +84,37 @@ Rails.logger.info("")
 Rails.logger.info("Packages seeding completed")
 
 # # seeding location_services: All services in all locations
-# puts ""
-# log_message("Seeding the association location_services...", :info)
+Rails.logger.info ""
+Rails.logger.info("Create the association location_services...")
 
-# begin
-#   locations = Location.all
-#   services = Service.all
+begin
+  # check if the services is existed
+  services = Service.all
+  raise "No service founds. Skipping the packages seeding." if services.empty?
 
-#   if locations.empty? || services.empty?
-#     log_message("No locations or services found. Skipping location_services seeding.", :warn)
-#   else
-#     locations.each_with_index do |location, loc_index|
-#       services.each_with_index do |service, svc_index|
-#         location_service = LocationService.find_or_initialize_by(location_id: location.id, service_id: service.id)
-#         location_service.active = true # Set active status as needed
-#         location_service.save!
+  # check if the locations is existed
+  locations = Location.all
+  raise "No location founds. Skipping the packages seeding." if locations.empty?
 
-#         log_message("LocationService #{loc_index + 1}/#{locations.size}, Service #{svc_index + 1}/#{services.size} created: " \
-#                     "Location: #{location.city}, Service: #{service.name}", :success)
-#       end
-#     end
-#     log_message("All location_services seeded successfully.", :success)
-#   end
-# rescue => e
-#   log_message("Error while seeding location_services: #{e.message}", :error)
-# end
-Rails.logger.info("=== Services and locations seeding completed ===")
+  location_service_list = LOCATION_SERVICES_DATA
+
+  location_service_list.each do |location_service|
+    service = Service.find_by(name: location_service[:service_name])
+    next unless service # Skip if the service does not exist
+
+    location_service[:cities].each_with_index do |city, index|
+      location = Location.find_by(city:)
+
+      # Link location and service
+      LocationService.find_or_create_by!(location_id: location.id, service_id: service.id) { |ls| ls.active = true }
+      Rails.logger.debug { "Linked Service '#{service.name}' to Location '#{location.city}'" }
+    end
+  end
+rescue => e
+  Rails.logger.error("Error while seeding location_services: #{e.message}")
+end
+Rails.logger.info ""
+Rails.logger.info("=== Brands and locations seeding completed ===")
 
 # for seeding the accounts
 Rails.logger.info ""
