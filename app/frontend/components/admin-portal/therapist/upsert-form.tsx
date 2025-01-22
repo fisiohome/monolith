@@ -54,6 +54,7 @@ import { router, usePage } from "@inertiajs/react";
 import {
 	AlertCircle,
 	Check,
+	ChevronsRight,
 	ChevronsUpDown,
 	CreditCard,
 	Dot,
@@ -789,7 +790,8 @@ function ContractDetailForm({
 					}
 					size="sm"
 					type="button"
-					className="w-full mx-auto col-span-full lg:w-6/12"
+					variant="secondary"
+					className="w-full mx-auto col-span-full lg:w-4/12"
 					onClick={() => {
 						bankDetailsForm?.append({
 							bankName: "",
@@ -903,9 +905,15 @@ function AddressForm({
 			!address?.city ||
 			!address?.country ||
 			!address?.postalCode ||
-			!address?.state
+			!address?.state ||
+			!!address?.lat ||
+			!!address?.lng
 		);
 	}, [address]);
+	const isSeeOnGMapsDisabled = useMemo(
+		() => !address?.lat || !address?.lng,
+		[address?.lat, address?.lng],
+	);
 
 	// for map state management
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
@@ -1267,22 +1275,95 @@ function AddressForm({
 				)}
 			/>
 
-			<Button
-				size="sm"
-				type="button"
-				disabled={isCalcCoordinatesDisabled}
-				className={cn(
-					"",
-					!address?.lat && !address?.lng ? "animate-pulse" : "",
-				)}
-				onClick={async (event) => {
-					event.preventDefault();
+			<div className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center col-span-full">
+				<FormField
+					control={form.control}
+					name={`addresses.${fieldIndex}.lat`}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Latitude</FormLabel>
+							<FormControl>
+								<Input
+									{...field}
+									readOnly
+									type="number"
+									min={0}
+									value={field?.value || ""}
+									placeholder="Enter the latitude..."
+									className="field-sizing-content"
+								/>
+							</FormControl>
 
-					await calculateCoordinate();
-				}}
-			>
-				Calculate Coordinate
-			</Button>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					control={form.control}
+					name={`addresses.${fieldIndex}.lng`}
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Longitude</FormLabel>
+							<FormControl>
+								<Input
+									{...field}
+									readOnly
+									type="number"
+									min={0}
+									value={field?.value || ""}
+									placeholder="Enter the longitude..."
+									className="field-sizing-content"
+								/>
+							</FormControl>
+
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<div className="flex flex-col gap-2 items center">
+					<Button
+						size="sm"
+						type="button"
+						variant="secondary"
+						disabled={isCalcCoordinatesDisabled}
+						className={cn(
+							"",
+							!address?.lat && !address?.lng ? "animate-pulse" : "",
+						)}
+						onClick={async (event) => {
+							event.preventDefault();
+
+							await calculateCoordinate();
+						}}
+					>
+						Calculate Coordinate
+						<ChevronsRight />
+					</Button>
+
+					<Button
+						size="sm"
+						type="button"
+						variant="outline"
+						disabled={isSeeOnGMapsDisabled}
+						onClick={(event) => {
+							event.preventDefault();
+							// const basemap: "roadmap" | "satellite" | "terrain" = "roadmap";
+							// const layer: "traffic" | "none" | "transit" | "bicycling" =
+							// 	"traffic";
+							// const zoom: number = 18;
+
+							window.open(
+								// `https://www.google.com/maps/@?api=1&map_action=map&center=${coordinates}&zoom=${zoom}&basemap=${basemap}&layer=${layer}&query=${coordinates}`,
+								`https://www.google.com/maps/search/?api=1&query=${coordinate.join(",")}`,
+							);
+						}}
+					>
+						See on Google Maps
+					</Button>
+				</div>
+			</div>
 
 			<HereMap
 				ref={mapRef}
@@ -1438,7 +1519,8 @@ function PersonalInformationForm({
 					}
 					size="sm"
 					type="button"
-					className="w-full mx-auto col-span-full lg:w-6/12"
+					variant="secondary"
+					className="w-full mx-auto col-span-full lg:w-4/12"
 					onClick={() => {
 						addressesForm?.append({
 							country: "INDONESIA",

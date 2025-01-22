@@ -1,3 +1,5 @@
+import plugin from "tailwindcss/plugin";
+
 /** @type {import('tailwindcss').Config} */
 const defaultTheme = require('tailwindcss/defaultTheme')
 
@@ -100,6 +102,13 @@ module.exports = {
 		require('@tailwindcss/typography'),
 		require('@tailwindcss/container-queries'),
 		require("tailwindcss-animate"),
-		require('tailwindcss-motion')
+		require('tailwindcss-motion'),
+		plugin(({ addUtilities }) => {
+			addUtilities({
+				".field-sizing-content": {
+					"field-sizing": "content",
+				},
+			});
+		}),
 	]
 }
