@@ -1,6 +1,6 @@
 import type { Timestamp } from "../globals";
-import type { Package, PackageTotalPrice } from "../package";
 import type { Location } from "./location";
+import type { Package, PackageTotalPrice } from "./package";
 
 type LocationService = Location & { active: boolean };
 

@@ -1,4 +1,4 @@
-import type { Timestamp } from "./globals";
+import type { Timestamp } from "../globals";
 
 export type Package = {
 	id: number;

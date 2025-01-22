@@ -12,7 +12,7 @@ import type {
 } from "@/types/admin-portal/therapist";
 import { Head } from "@inertiajs/react";
 import { useMemo } from "react";
-import FormTherapist from "./Form";
+import FormTherapist from "../../../components/admin-portal/therapist/upsert-form";
 
 export type FormMode = "create" | "update";
 
@@ -51,7 +51,18 @@ export default function UpsertTherapistPage({
 
 	return (
 		<>
-			<Head title={formHeader.title} />
+			<Head title={formHeader.title}>
+				<link
+					rel="stylesheet"
+					type="text/css"
+					href="https://js.api.here.com/v3/3.1/mapsjs-ui.css"
+				/>
+				<script
+					type="text/javascript"
+					charSet="utf-8"
+					src="https://js.api.here.com/v3/3.1/mapsjs-ui.js"
+				/>
+			</Head>
 
 			<FormPageContainer>
 				<section className="flex flex-col justify-center gap-4 mx-auto w-12/12 xl:w-8/12">

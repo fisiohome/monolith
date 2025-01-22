@@ -158,6 +158,16 @@ export const getFormSchema = (mode: FormMode) => {
 					postalCode: z.string().min(1, { message: "Postal code is required" }),
 					address: z.string().min(1, { message: "Address is required" }),
 					active: z.boolean().default(false),
+					lat: z.coerce
+						.number({ message: "Latitude must be numerical value" })
+						.refine((value) => value > 0 || value < 0, {
+							message: "Number must be non-zero",
+						}),
+					lng: z.coerce
+						.number({ message: "Longitude must be numerical value" })
+						.refine((value) => value > 0 || value < 0, {
+							message: "Number must be non-zero",
+						}),
 				}),
 			)
 			.nonempty("At least input one address"),

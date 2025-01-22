@@ -533,6 +533,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 																			{...field}
 																			type="text"
 																			placeholder="Enter the currency..."
+																			autoComplete="transaction-currency"
 																			className="w-[35%] md:w-[25%] lg:w-[35%] xl:w-[35%]"
 																		/>
 																	</FormControl>
@@ -577,6 +578,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 																			type="number"
 																			min={0}
 																			step="0.5"
+																			autoComplete="transaction-amount"
 																			placeholder="Enter the price per visit..."
 																		>
 																			<InputExtended.Group>
@@ -604,6 +606,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 																			type="number"
 																			min={0}
 																			step="0.5"
+																			autoComplete="transaction-amount"
 																			placeholder="Enter the discount..."
 																		>
 																			<InputExtended.Group>
@@ -631,6 +634,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 																			type="number"
 																			min={0}
 																			step="0.5"
+																			autoComplete="transaction-amount"
 																			placeholder="Enter the fee per visit..."
 																		>
 																			<InputExtended.Group>

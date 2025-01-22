@@ -93,7 +93,7 @@ module AdminPortal
       set_default_active_therapist_bank_detail(@therapist)
       set_default_active_therapist_address(@therapist)
 
-      redirect_to admin_portal_therapists_path, notice: "Therapist was successfully updated."
+      redirect_to admin_portal_therapists_path(expanded: @therapist.id), notice: "Therapist was successfully updated."
     rescue ActiveRecord::RecordInvalid => e
       handle_record_invalid(e)
     rescue => e
@@ -169,7 +169,7 @@ module AdminPortal
         service: %i[id name code],
         user: %i[email password password_confirmation],
         bank_details: %i[id bank_name account_number account_holder_name active],
-        addresses: %i[id country country_code state city postal_code address active]
+        addresses: %i[id country country_code state city postal_code address active lat lng]
       )
     end
 

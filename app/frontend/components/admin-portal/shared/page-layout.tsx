@@ -23,7 +23,7 @@ export function FormPageContainer({
 	return (
 		<article
 			className={cn(
-				"min-h-[100vh] flex-1 rounded-xl bg-sidebar md:min-h-min p-6 space-y-4",
+				"min-h-[100vh] flex-1 rounded-xl bg-sidebar md:min-h-min p-4 md:p-6 space-y-4",
 				className,
 			)}
 		>
