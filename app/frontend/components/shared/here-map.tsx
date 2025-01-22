@@ -72,7 +72,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 		const mapContainerRef = useRef<HTMLDivElement>(null);
 		const mapRef = useRef<H.Map | null>(null); // Map instance
 		const mapPlatform = useRef<H.service.Platform | null>(null); // Platform instance
-		const mapBehavior = useRef<H.mapevents.Behavior | null>(null); // Map behavior (e.g., zoom, pan)
+		// const mapBehavior = useRef<H.mapevents.Behavior | null>(null); // Map behavior (e.g., zoom, pan)
 		const mapUI = useRef<H.ui.UI | null>(null); // Map UI components
 		const trafficInterval = useRef<Timer | null>(null);
 
@@ -110,8 +110,8 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 				map.addLayer((defaultLayers as any).vector.traffic.map);
 
 				// Add event behavior for map interactions
-				const mapEvents = new H.mapevents.MapEvents(map);
-				const behavior = new H.mapevents.Behavior(mapEvents);
+				// const mapEvents = new H.mapevents.MapEvents(map);
+				// const behavior = new H.mapevents.Behavior(mapEvents);
 
 				// Add UI controls to the map
 				const ui = H.ui.UI.createDefault(map, defaultLayers);
@@ -121,7 +121,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 				// Save references to the created components
 				mapRef.current = map;
 				mapPlatform.current = platform;
-				mapBehavior.current = behavior;
+				// mapBehavior.current = behavior;
 				mapUI.current = ui;
 
 				// remove the map copyrights
