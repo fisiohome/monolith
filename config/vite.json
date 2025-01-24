@@ -1,17 +1,18 @@
 {
-  "all": {
-    "sourceCodeDir": "app/frontend",
-    "watchAdditionalPaths": ["./app/views/**/*"]
-  },
-  "development": {
-    "autoBuild": true,
-    "publicOutputDir": "vite-dev",
-    "port": 3036,
-    "host": "0.0.0.0"
-  },
-  "test": {
-    "autoBuild": true,
-    "publicOutputDir": "vite-test",
-    "port": 3037
-  }
+	"all": {
+		"sourceCodeDir": "app/frontend",
+		"watchAdditionalPaths": ["./app/views/**/*"],
+		"packageManager": "bun"
+	},
+	"development": {
+		"autoBuild": true,
+		"publicOutputDir": "vite-dev",
+		"port": 3036,
+		"host": "0.0.0.0"
+	},
+	"test": {
+		"autoBuild": true,
+		"publicOutputDir": "vite-test",
+		"port": 3037
+	}
 }

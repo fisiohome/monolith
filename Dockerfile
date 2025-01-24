@@ -16,8 +16,15 @@ WORKDIR /rails
 
 # Install base packages
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client nodejs npm && \
+    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client unzip && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash && \
+    mv /root/.bun/bin/bun /usr/local/bin/bun
+
+# Verify Bun installation
+RUN bun --version
 
 # Set production environment
 ENV RAILS_ENV="production" \
@@ -39,6 +46,10 @@ RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
 
+# Install dependencies using Bun (if you use any JavaScript packages)
+COPY package.json bun.lockb ./
+RUN bun install --production
+
 # Copy application code
 COPY . .
 
@@ -48,13 +59,10 @@ RUN bundle exec bootsnap precompile app/ lib/
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
-
-
-
 # Final stage for app image
 FROM base
 
-# Copy built artifacts: gems, application
+# Copy built artifacts: gems, application, and Bun dependencies
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
 
