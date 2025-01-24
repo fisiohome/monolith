@@ -85,7 +85,10 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 		 */
 		const initializeMap = useCallback(() => {
 			console.log("Start process to initializing the HERE Map...");
-			const API_KEY = import.meta.env?.VITE_RUBY_HERE_MAPS_API_KEY;
+			console.log("env: ", import.meta.env);
+			const API_KEY =
+				import.meta.env?.VITE_RUBY_HERE_MAPS_API_KEY ||
+				"VNa1b7Ncnks8NwD3Y1O3mWt-xm1cfHWb2AieeSEmzlM";
 
 			// Check if map is already initialized
 			if (!mapRef.current && mapContainerRef.current) {

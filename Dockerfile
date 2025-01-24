@@ -27,6 +27,8 @@ RUN curl -fsSL https://bun.sh/install | bash && \
 RUN bun --version
 
 # Set production environment
+RUN echo ${VITE_RUBY_HERE_MAPS_API_KEY} 
+RUN echo ${RAILS_ENV} 
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
