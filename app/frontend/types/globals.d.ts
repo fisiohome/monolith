@@ -76,6 +76,9 @@ export interface AdminPortal {
 			};
 		};
 	};
+	protect: {
+		hereMapApiKey: string;
+	};
 }
 export type GlobalPageProps = {
 	auth: Auth;

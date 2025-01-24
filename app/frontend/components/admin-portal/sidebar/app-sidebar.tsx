@@ -26,7 +26,6 @@ export default function AppSidebar({
 	...props
 }: React.ComponentProps<typeof Sidebar>) {
 	const { props: globalProps, url: currentUrl } = usePage<GlobalPageProps>();
-	console.log("The global props: ", globalProps);
 	const navUserProps = useMemo<React.ComponentProps<typeof NavUser>>(() => {
 		const user = {
 			name: humanize(globalProps.auth.currentUser?.name || "Admin"),

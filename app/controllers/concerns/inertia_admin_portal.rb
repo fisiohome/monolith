@@ -51,7 +51,10 @@ module InertiaAdminPortal
           },
           current_query: request.query_parameters.presence,
           current_locale: I18n.locale,
-          current_timezone: Time.zone.name
+          current_timezone: Time.zone.name,
+          protect: {
+            here_map_api_key: Rails.application.credentials.here_map ? Rails.application.credentials.here_map.api_key : nil
+          }
         }
       )
     }

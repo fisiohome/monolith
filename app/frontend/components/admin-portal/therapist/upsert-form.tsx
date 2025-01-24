@@ -1636,7 +1636,6 @@ export default function FormTherapist({
 	const formAlertErrors = useMemo(() => {
 		const serverErrors = globalProps?.errors?.fullMessages;
 		const formErrors = form?.formState?.errors;
-		console.log("Zod form errors: ", formErrors);
 
 		const getErrorMessage = (fieldError: any) =>
 			fieldError?.root?.message || fieldError?.message;

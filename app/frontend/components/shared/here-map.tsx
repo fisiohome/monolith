@@ -4,7 +4,9 @@ import {
 	filterGeocodeByQueryScore,
 } from "@/lib/here-maps";
 import { cn, debounce } from "@/lib/utils";
+import type { GlobalPageProps } from "@/types/globals";
 import H from "@here/maps-api-for-javascript";
+import { usePage } from "@inertiajs/react";
 import {
 	type ComponentProps,
 	forwardRef,
@@ -68,6 +70,8 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 		},
 		ref,
 	) => {
+		const { props: globalProps } = usePage<GlobalPageProps>();
+
 		// Refs for HERE Maps components
 		const mapContainerRef = useRef<HTMLDivElement>(null);
 		const mapRef = useRef<H.Map | null>(null); // Map instance
@@ -85,10 +89,9 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 		 */
 		const initializeMap = useCallback(() => {
 			console.log("Start process to initializing the HERE Map...");
-			console.log("env: ", import.meta.env);
 			const API_KEY =
 				import.meta.env?.VITE_RUBY_HERE_MAPS_API_KEY ||
-				"VNa1b7Ncnks8NwD3Y1O3mWt-xm1cfHWb2AieeSEmzlM";
+				globalProps.adminPortal.protect.hereMapApiKey;
 
 			// Check if map is already initialized
 			if (!mapRef.current && mapContainerRef.current) {
@@ -141,7 +144,11 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 					}));
 				}
 			}
-		}, [coordinate, address.address]);
+		}, [
+			coordinate,
+			address.address,
+			globalProps.adminPortal.protect.hereMapApiKey,
+		]);
 		// Create svg icon once and reuse
 		const svgIcon = useMemo(() => {
 			const svg = `<svg width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
