@@ -20,6 +20,7 @@ services:
       - DB_HOST=${DB_HOST}
       - MONOLITH_DATABASE_USERNAME=${MONOLITH_DATABASE_USERNAME}
       - MONOLITH_DATABASE_PASSWORD=${MONOLITH_DATABASE_PASSWORD}
+      - VITE_RUBY_HERE_MAPS_API_KEY=${VITE_RUBY_HERE_MAPS_API_KEY}
     volumes:
       - web-storage:/rails/storage
     depends_on:
