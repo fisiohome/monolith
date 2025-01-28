@@ -46,6 +46,9 @@ module InertiaAdminPortal
                 create_bulk: create_bulk_admin_portal_locations_path,
                 update_bulk: update_bulk_admin_portal_locations_path,
                 delete_bulk: delete_bulk_admin_portal_locations_path
+              },
+              availability: {
+                index: admin_portal_availabilities_path
               }
             }
           },

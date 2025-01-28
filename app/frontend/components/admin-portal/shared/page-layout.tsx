@@ -7,7 +7,10 @@ export interface PageContainerProps extends ComponentProps<"article"> {}
 export const PageContainer = ({ children, className }: PageContainerProps) => {
 	return (
 		<article
-			className={cn("p-4 md:p-6 rounded-xl shadow-inner bg-sidebar", className)}
+			className={cn(
+				"p-4 md:p-6 rounded-xl shadow-inner bg-sidebar text-sidebar-foreground",
+				className,
+			)}
 		>
 			{children}
 		</article>

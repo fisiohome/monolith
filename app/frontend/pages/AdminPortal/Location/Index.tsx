@@ -231,7 +231,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 			<Head title="Location Availability" />
 
 			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">Locations</h1>
+				<h1 className="text-2xl font-bold tracking-tight">Our Locations</h1>
 				{globalProps.auth.currentUserType === "ADMIN" && (
 					<Button
 						onClick={(event) => {

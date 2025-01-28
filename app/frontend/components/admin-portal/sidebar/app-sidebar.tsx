@@ -13,6 +13,8 @@ import type { GlobalPageProps } from "@/types/globals";
 import { Link, usePage } from "@inertiajs/react";
 import {
 	BriefcaseMedical,
+	// Calendar1,
+	CalendarRange,
 	HousePlus,
 	LayoutDashboard,
 	Users,
@@ -56,11 +58,25 @@ export default function AppSidebar({
 			isActive: true,
 			items: [],
 		};
+		// const appointmentMenu = {
+		// 	title: "Appointment",
+		// 	url: "#",
+		// 	icon: Calendar1,
+		// 	isActive: true,
+		// 	items: [],
+		// };
+		// const availabilityMenu = {
+		// 	title: "Availability",
+		// 	url: globalProps.adminPortal.router.adminPortal.availability.index,
+		// 	icon: CalendarRange,
+		// 	isActive: true,
+		// 	items: [],
+		// };
 		let userManagementMenu = {
 			title: "User Management",
 			url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
 			icon: Users,
-			isActive: true,
+			isActive: false,
 			items: [
 				{
 					title: "Admins",
@@ -108,6 +124,8 @@ export default function AppSidebar({
 
 		const items = [
 			dashboardMenu,
+			// appointmentMenu,
+			// availabilityMenu,
 			userManagementMenu,
 			serviceManagementMenu,
 		].map((menu) => {

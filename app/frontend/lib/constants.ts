@@ -25,3 +25,13 @@ export const GENDERS = ["MALE", "FEMALE"] as const;
 
 export const EMPLOYMENT_STATUSES = ["ACTIVE", "HOLD", "INACTIVE"] as const;
 export const EMPLOYMENT_TYPES = ["KARPIS", "FLAT"] as const;
+
+export const DAY_NAMES = [
+	"Sunday",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+] as const;

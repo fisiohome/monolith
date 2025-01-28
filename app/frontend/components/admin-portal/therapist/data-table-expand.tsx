@@ -290,7 +290,9 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 						</TooltipProvider>
 
 						<div className="flex-1 leading-tight text-left">
-							<CardTitle className="text-base">{row.original.name}</CardTitle>
+							<CardTitle className="text-base uppercase">
+								{row.original.name}
+							</CardTitle>
 							<CardDescription className="text-xs">
 								#{row.original.registrationNumber}
 							</CardDescription>

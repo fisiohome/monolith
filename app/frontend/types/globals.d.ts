@@ -74,6 +74,9 @@ export interface AdminPortal {
 				updateBulk: string;
 				deleteBulk: string;
 			};
+			availability: {
+				index: string;
+			};
 		};
 	};
 	protect: {
