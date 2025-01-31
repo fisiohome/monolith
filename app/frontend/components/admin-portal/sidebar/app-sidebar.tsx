@@ -65,13 +65,13 @@ export default function AppSidebar({
 		// 	isActive: true,
 		// 	items: [],
 		// };
-		// const availabilityMenu = {
-		// 	title: "Availability",
-		// 	url: globalProps.adminPortal.router.adminPortal.availability.index,
-		// 	icon: CalendarRange,
-		// 	isActive: true,
-		// 	items: [],
-		// };
+		const availabilityMenu = {
+			title: "Availability",
+			url: globalProps.adminPortal.router.adminPortal.availability.index,
+			icon: CalendarRange,
+			isActive: true,
+			items: [],
+		};
 		let userManagementMenu = {
 			title: "User Management",
 			url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
@@ -125,7 +125,7 @@ export default function AppSidebar({
 		const items = [
 			dashboardMenu,
 			// appointmentMenu,
-			// availabilityMenu,
+			availabilityMenu,
 			userManagementMenu,
 			serviceManagementMenu,
 		].map((menu) => {

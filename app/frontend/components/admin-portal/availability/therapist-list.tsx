@@ -4,14 +4,20 @@ import { cn, generateInitials, populateQueryParams } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import { router, usePage } from "@inertiajs/react";
+import { motion } from "framer-motion";
 import { type ComponentProps, useCallback, useMemo } from "react";
 
 interface TherapistListCardProps {
 	therapist: Therapist;
 	isSelected: boolean;
+	index: number;
 }
 
-function TherapistListCard({ therapist, isSelected }: TherapistListCardProps) {
+function TherapistListCard({
+	therapist,
+	isSelected,
+	index,
+}: TherapistListCardProps) {
 	const { url: pageURL } = usePage<GlobalPageProps>();
 
 	const initials = useMemo(
@@ -23,12 +29,18 @@ function TherapistListCard({ therapist, isSelected }: TherapistListCardProps) {
 			therapist: therapist.id,
 		});
 		router.get(pageURL, queryParams, {
+			preserveScroll: true,
+			preserveState: true,
 			only: ["selectedTherapist", "adminPortal"],
 		});
 	}, [pageURL, therapist.id]);
 
 	return (
-		<button
+		<motion.button
+			initial={{ opacity: 0, y: 0 }}
+			animate={{ opacity: 1, y: 0 }}
+			exit={{ opacity: 0, y: 0 }}
+			transition={{ delay: index * 0.1 }}
 			type="button"
 			className={cn(
 				"flex items-center gap-2 p-2 font-semibold border rounded-md shadow-inner cursor-pointer text-muted-foreground bg-background border-border hover:shadow-xl hover:text-primary-foreground hover:bg-primary hover:ring-1 hover:ring-primary first:mt-2 last:mb-2 hover:no-underline hover:ring-offset-2 hover:ring-offset-background hover:scale-105 transition-all",
@@ -52,7 +64,7 @@ function TherapistListCard({ therapist, isSelected }: TherapistListCardProps) {
 					{therapist.service.name.replaceAll("_", " ")}
 				</p>
 			</div>
-		</button>
+		</motion.button>
 	);
 }
 
@@ -72,10 +84,11 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 			<ScrollArea className="w-full max-h-[85dvh] overflow-y-auto">
 				<div className="grid gap-2 mx-3">
 					{therapists?.length ? (
-						therapists.map((therapist) => (
+						therapists.map((therapist, therapistIndex) => (
 							<TherapistListCard
 								key={therapist.id}
 								therapist={therapist}
+								index={therapistIndex}
 								isSelected={
 									globalProps.adminPortal.currentQuery?.therapist ===
 									therapist.id

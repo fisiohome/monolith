@@ -8,7 +8,7 @@ import {
 } from "@/components/admin-portal/admin/feature-actions";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import DotBadgeWithLabel from "@/components/shared/badge";
+import DotBadgeWithLabel from "@/components/shared/dot-badge";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,

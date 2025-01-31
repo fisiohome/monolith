@@ -24,3 +24,9 @@ export const PASSWORD_WITH_CONFIRMATION_SCHEMA = z
 		message: "Passwords don't match",
 		path: ["passwordConfirmation"],
 	});
+
+// Validates time format "HH:mm" using a regex
+export const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+export const timeSchema = z
+	.string()
+	.regex(TIME_REGEX, { message: "Invalid time format (HH:MM)" });

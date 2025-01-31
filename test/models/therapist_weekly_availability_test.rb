@@ -5,13 +5,11 @@ class TherapistWeeklyAvailabilityTest < ActiveSupport::TestCase
     # Example fixture references
     @monday_morning = therapist_weekly_availabilities(:monday_morning_for_therapist_one)
     @monday_afternoon = therapist_weekly_availabilities(:monday_afternoon_for_therapist_one)
-    @friday_morning = therapist_weekly_availabilities(:friday_morning_for_therapist_two)
   end
 
   test "fixtures are valid" do
     assert @monday_morning.valid?, @monday_morning.errors.full_messages
     assert @monday_afternoon.valid?, @monday_afternoon.errors.full_messages
-    assert @friday_morning.valid?, @friday_morning.errors.full_messages
   end
 
   test "day_of_week must be from Date::DAYNAMES" do
@@ -44,7 +42,7 @@ class TherapistWeeklyAvailabilityTest < ActiveSupport::TestCase
       "Exact availability for this day/time range already exists"
   end
 
-  test "both start_time and end_time must be present or absent" do
+  test "time presence validation" do
     # 1) One is present, the other absent => invalid
     @monday_morning.start_time = "09:00"
     @monday_morning.end_time = nil
@@ -70,20 +68,33 @@ class TherapistWeeklyAvailabilityTest < ActiveSupport::TestCase
     assert @monday_morning.valid?, @monday_morning.errors.full_messages
   end
 
-  # ? TECH-DEBT - will be skipped for now, not running properly
-  # test "overlapping availability" do
-  #   # existing: day_of_week: "Monday", start_time: "09:00", end_time: "12:00"
-  #   existing = therapist_weekly_availabilities(:monday_morning_for_therapist_one)
+  test "overlapping availability detection" do
+    therapist_weekly_availabilities(:friday_morning_for_therapist_two)
+    overlap = therapist_weekly_availabilities(:friday_overlapping_for_therapist_two)
 
-  #   overlap = TherapistWeeklyAvailability.new(
-  #     therapist_appointment_schedule_id: existing.therapist_appointment_schedule_id,
-  #     day_of_week: "Monday",  # must match existing record
-  #     start_time: "11:00",    # overlaps 09:00–12:00
-  #     end_time: "13:00"
-  #   )
+    refute overlap.valid?
+    assert_includes overlap.errors[:base],
+      "Time range overlaps with existing availability for Friday"
+  end
 
-  #   # refute overlap.save, "Should not save overlapping availability"
-  #   refute overlap.valid?
-  #   assert_includes overlap.errors[:base], "Overlapping availability exists"
-  # end
+  test "non-overlapping availability" do
+    therapist_weekly_availabilities(:monday_morning_for_therapist_one)
+    therapist_weekly_availabilities(:monday_afternoon_for_therapist_one)
+    existing_evening = therapist_weekly_availabilities(:monday_evening_for_therapist_one)
+
+    assert existing_evening.valid?
+  end
+
+  test "different schedules don't conflict" do
+    # Copy schedule one's availability to schedule two
+    existing = therapist_weekly_availabilities(:friday_morning_for_therapist_two)
+    availability = TherapistWeeklyAvailability.new(
+      therapist_appointment_schedule_id: existing.therapist_appointment_schedule_id,
+      day_of_week: "Friday",
+      start_time: "13:00",
+      end_time: "14:00"
+    )
+
+    assert availability.valid?, availability.errors.full_messages
+  end
 end

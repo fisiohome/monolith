@@ -8,7 +8,7 @@ import { Deferred, Head } from "@inertiajs/react";
 
 export interface AvailabilityIndexProps {
 	therapists: Therapist[];
-	selectedTherapist: Therapist;
+	selectedTherapist: Therapist | null;
 	dayNames: (typeof DAY_NAMES)[number][];
 }
 

@@ -23,3 +23,19 @@ partial_availability_two:
   end_time: "14:00"
   created_at: <%= Time.zone.now %>
   updated_at: <%= Time.zone.now %>
+
+overlapping_availability_09:
+  therapist_appointment_schedule: schedule_for_therapist_one
+  specific_date: <%= Date.current + 7 %>
+  start_time: "09:00"
+  end_time: "12:00"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+overlapping_availability_11:
+  therapist_appointment_schedule: schedule_for_therapist_one
+  specific_date: <%= Date.current + 7 %>
+  start_time: "11:00"
+  end_time: "13:00"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

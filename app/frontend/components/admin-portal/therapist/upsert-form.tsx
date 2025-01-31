@@ -54,7 +54,6 @@ import { router, usePage } from "@inertiajs/react";
 import {
 	AlertCircle,
 	Check,
-	ChevronsRight,
 	ChevronsUpDown,
 	CreditCard,
 	Dot,
@@ -84,6 +83,7 @@ import type { FormMode } from "../../../pages/AdminPortal/Therapist/Upsert";
 import HereMap, { type HereMaphandler } from "@/components/shared/here-map";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { toast } from "sonner";
+import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
 
 // * for section container'
 interface FormSectionContainerProps extends ComponentProps<"div"> {
@@ -1323,15 +1323,11 @@ function AddressForm({
 				/>
 
 				<div className="flex flex-col gap-2 items center">
-					<Button
+					<PulsatingOutlineShadowButton
 						size="sm"
 						type="button"
-						variant="secondary"
+						variant="outline"
 						disabled={isCalcCoordinatesDisabled}
-						className={cn(
-							"",
-							!address?.lat && !address?.lng ? "animate-pulse" : "",
-						)}
 						onClick={async (event) => {
 							event.preventDefault();
 
@@ -1339,8 +1335,7 @@ function AddressForm({
 						}}
 					>
 						Calculate Coordinate
-						<ChevronsRight />
-					</Button>
+					</PulsatingOutlineShadowButton>
 
 					<Button
 						size="sm"

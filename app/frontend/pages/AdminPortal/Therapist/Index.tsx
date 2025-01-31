@@ -6,7 +6,7 @@ import {
 	ChangePasswordContent,
 	DeleteTherapistAlert,
 } from "@/components/admin-portal/therapist/feature-actions";
-import DotBadgeWithLabel from "@/components/shared/badge";
+import DotBadgeWithLabel from "@/components/shared/dot-badge";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,

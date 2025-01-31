@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { usePage } from "@inertiajs/react";
+import { type router, usePage } from "@inertiajs/react";
 import { LoaderIcon } from "lucide-react";
 import {
 	type ComponentProps,
@@ -28,10 +28,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import AdjustedAvailabilityForm from "./adjusted-availability";
 import WeeklyAvailabilityForm from "./weekly-availability";
+import { add } from "date-fns";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 
 // * for the scheduled form
 export interface ScheduleFormProps extends ComponentProps<"div"> {
-	selectedTherapist: Therapist;
+	selectedTherapist: Therapist | null;
 	dayNames: (typeof DAY_NAMES)[number][];
 }
 
@@ -41,7 +43,6 @@ export default function ScheduleForm({
 	dayNames,
 }: ScheduleFormProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	console.log(globalProps);
 
 	// for accordion management state
 	const accordions = useMemo(() => {
@@ -66,13 +67,29 @@ export default function ScheduleForm({
 	const form = useForm<AvailabilityFormSchema>({
 		resolver: zodResolver(AVAILABILITY_FORM_SCHEMA),
 		defaultValues: {
+			therapistId: selectedTherapist?.id || "",
+			timeZone: "Asia/Jakarta",
+			appointmentDurationInMinutes: 90,
+			bufferTimeInMinutes: 30,
+			maxAdvanceBookingInDays: 14,
+			minBookingBeforeInHours: 24,
+			availableNow: true,
 			weeklyAvailabilities: dayNames.map((day) => {
 				let times: NonNullable<
-					AvailabilityFormSchema["weeklyAvailabilities"][number]["times"]
+					NonNullable<
+						AvailabilityFormSchema["weeklyAvailabilities"]
+					>[number]["times"]
 				> = [];
 
 				if (day === "Tuesday") {
 					times = [{ startTime: "09:00", endTime: "12:00" }];
+
+					// overlap time error example
+					// times = [
+					// 	{ startTime: "09:00", endTime: "12:00" },
+					// 	{ startTime: "10:00", endTime: "11:00" },
+					// 	{ startTime: "08:00", endTime: "10:00" },
+					// ];
 				}
 
 				if (day === "Thursday") {
@@ -80,27 +97,80 @@ export default function ScheduleForm({
 						{ startTime: "09:00", endTime: "12:00" },
 						{ startTime: "13:00", endTime: "17:00" },
 					];
+
+					// duplicate time error example
+					// times = [
+					// 	{ startTime: "09:00", endTime: "12:00" },
+					// 	{ startTime: "09:00", endTime: "12:00" },
+					// ];
 				}
 
-				return {
-					dayOfWeek: day,
-					times,
-				};
+				return { dayOfWeek: day, times };
 			}),
+			adjustedAvailabilities: [
+				{
+					specificDate: add(new Date(), { days: 3 }),
+					reason: "Holiday",
+				},
+				{
+					specificDate: add(new Date(), { days: 5 }),
+					reason: "Morning session",
+					times: [
+						{ startTime: "09:00", endTime: "12:00" },
+						{ startTime: "13:00", endTime: "17:00" },
+					],
+
+					// duplicate time error example
+					// times: [
+					// 	{ startTime: "09:00", endTime: "12:00" },
+					// 	{ startTime: "09:00", endTime: "12:00" },
+					// ],
+				},
+				{
+					specificDate: add(new Date(), { days: 7 }),
+					times: [{ startTime: "09:00", endTime: "12:00" }],
+
+					// overlap time error example
+					// times: [
+					// 	{ startTime: "09:00", endTime: "12:00" },
+					// 	{ startTime: "10:00", endTime: "11:00" },
+					// 	{ startTime: "08:00", endTime: "10:00" },
+					// ],
+				},
+			],
 		},
 		mode: "onBlur",
 	});
-	const onSubmit = useCallback((values: AvailabilityFormSchema) => {
-		console.log(
-			"Starting process to saving the therapist appointment schedule...",
-		);
-		console.log(values);
-		console.log("Therapist appointment schedule successfully saved...");
-	}, []);
+	// TODO: submit the therapist availability
+	const onSubmit = useCallback(
+		(values: AvailabilityFormSchema) => {
+			console.log(
+				"Starting process to saving the therapist appointment schedule...",
+			);
+
+			const submitURL =
+				globalProps.adminPortal.router.adminPortal.availability.upsert;
+			const submitConfig = {
+				preserveScroll: true,
+				preserveState: true,
+				onStart: () => setIsLoading(true),
+				onFinish: () => setTimeout(() => setIsLoading(false), 250),
+			} satisfies Parameters<typeof router.put>["2"];
+			const payload = deepTransformKeysToSnakeCase({
+				...values,
+			}) satisfies Parameters<typeof router.put>["1"];
+			console.log("raw values", values);
+			console.log("payload", payload);
+
+			console.log("Therapist appointment schedule successfully saved...");
+		},
+		[globalProps.adminPortal.router.adminPortal.availability.upsert],
+	);
 
 	// use effect for get the form validation errors
 	useEffect(() => {
 		const formErrors = form.formState.errors;
+		console.log(formErrors);
 		const weeklyAvailabilitiesErrors = formErrors?.weeklyAvailabilities;
 
 		// * get the weekly availability root error
@@ -181,7 +251,7 @@ export default function ScheduleForm({
 					<div className="!mt-10 lg:!mt-6 gap-4 lg:gap-2 w-full flex flex-col md:flex-row md:justify-end bg-background p-3 rounded-lg shadow-inner border border-border">
 						<Button
 							type="submit"
-							disabled={isLoading}
+							disabled={isLoading || !selectedTherapist}
 							className={cn("w-full order-first md:order-last lg:w-auto")}
 						>
 							{isLoading ? (

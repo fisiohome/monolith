@@ -1,103 +1,117 @@
 import { z } from "zod";
 import { DAY_NAMES } from "./constants";
+import { timeSchema } from "./validation";
 
-// Utility: Validates time format "HH:mm" using a regex
-const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+// the start and end time form schema
+const startEndTimeSchema = z
+	.object({
+		startTime: timeSchema,
+		endTime: timeSchema,
+	})
+	.refine((data) => data.startTime < data.endTime, {
+		message: "End time must be after start time",
+		path: ["endTime"],
+	});
 
-// Utility: Converts time in "HH:mm" format to total minutes since midnight
-const toMinutes = (time: string) => {
-	const [hours, minutes] = time.split(":").map(Number);
-	return hours * 60 + minutes;
-};
+// the overlaps and duplicates validation helper
+const createOverlapValidator = (_context: string) => {
+	return z.array(startEndTimeSchema).superRefine((items, ctx) => {
+		// Check for duplicates first
+		const uniqueSlots = new Set(
+			items.map((i) => `${i.startTime}-${i.endTime}`),
+		);
 
-// Utility: Validates that for each time slot, startTime < endTime
-const validateTimeRange = (
-	times: Array<{ startTime: string; endTime: string }> | null,
-) => {
-	if (!times) return true; // If times are null, it's valid
-	return times.every(
-		({ startTime, endTime }) => toMinutes(startTime) < toMinutes(endTime),
-	);
-};
-const validateTimeRangeErrMessage =
-	"Each time slot's end-time must be after its start-time";
+		if (uniqueSlots.size !== items.length) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Has a duplicate time slots",
+			});
 
-// Utility: Ensures that there are no overlapping time slots in a day
-const hasNoOverlaps = (
-	times: Array<{ startTime: string; endTime: string }> | null,
-) => {
-	if (!times) return true; // If times are null, it's valid
-
-	// Convert each time slot to its start and end in total minutes
-	const sortedTimes = times
-		.map(({ startTime, endTime }) => ({
-			start: toMinutes(startTime),
-			end: toMinutes(endTime),
-		}))
-		// Sort by start time to make overlap checks easier
-		.sort((a, b) => a.start - b.start);
-
-	// Check if any time slot overlaps with the next one
-	for (let i = 0; i < sortedTimes.length - 1; i++) {
-		if (sortedTimes[i].end > sortedTimes[i + 1].start) {
-			return false;
+			return;
 		}
-	}
 
-	return true;
+		// Check for overlaps
+		for (let i = 0; i < items.length; i++) {
+			for (let j = i + 1; j < items.length; j++) {
+				const a = items[i];
+				const b = items[j];
+
+				if (a.startTime < b.endTime && a.endTime > b.startTime) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: "Has a time ranges overlap",
+					});
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: `Overlaps with another slot time: ${a.startTime} - ${a.endTime}`,
+						path: [j],
+					});
+				}
+			}
+		}
+	});
 };
 
-// Shared schema for a single time slot
-const timeSlotSchema = z.object({
-	startTime: z.string().regex(timeRegex, "Invalid time format"), // Start time must match "HH:mm"
-	endTime: z.string().regex(timeRegex, "Invalid time format"), // End time must match "HH:mm"
+// Weekly Availability Schema
+const weeklyAvailabilitiesSchema = z.object({
+	dayOfWeek: z.enum(DAY_NAMES),
+	times: createOverlapValidator("weekly availability").nullable(),
+});
+
+// Adjusted Availability Schema
+const adjustedAvailabilitiesSchema = z.object({
+	specificDate: z.coerce.date().nullable(),
+	reason: z.string().optional(),
+	times: createOverlapValidator("adjusted availability").nullable(),
 });
 
 // Main schema definition
-export const AVAILABILITY_FORM_SCHEMA = z.object({
-	// Weekly availabilities for each day of the week
-	weeklyAvailabilities: z
-		.array(
-			z.object({
-				dayOfWeek: z.enum(DAY_NAMES), // Must be a valid day of the week (e.g., "Monday")
-				times: z
-					.array(timeSlotSchema) // An array of time slots
-					.nullable() // Times can be null (no availability for the day)
-					.refine(validateTimeRange, {
-						message: validateTimeRangeErrMessage, // Ensure valid time ranges
-					}),
-			}),
-		)
-		.refine(
-			(weeklyAvailabilities) =>
-				// Check that there are no overlapping time slots for each day
-				weeklyAvailabilities.every(({ times }) => hasNoOverlaps(times)),
-			{
-				message: "Time slots must not overlap within the same day",
-			},
-		),
-	// Adjusted availabilities for a specific date
-	adjustedAvailabilities: z
-		.object({
-			specificDate: z.coerce.date(), // Specific date for the availability
-			times: z
-				.array(
-					z
-						.object({
-							reason: z.string().optional(),
-						})
-						.merge(timeSlotSchema),
-				) // An array of time slots
-				.nullable() // Times can be null (no availability for the specific date)
-				.refine(validateTimeRange, {
-					message: validateTimeRangeErrMessage, // Ensure valid time ranges
-				})
-				.refine(hasNoOverlaps, {
-					message: "Time slots must not overlap on the specific date", // Ensure no overlapping time slots
-				}),
-		})
-		.nullable(),
-});
+export const AVAILABILITY_FORM_SCHEMA = z
+	.object({
+		therapistId: z.string(),
+		timeZone: z.string(),
+		appointmentDurationInMinutes: z.number().int().positive(),
+		bufferTimeInMinutes: z.number().int().nonnegative(),
+		maxAdvanceBookingInDays: z.number().int().nonnegative(),
+		minBookingBeforeInHours: z.number().int().nonnegative(),
+		availableNow: z.boolean(),
+		startDateWindow: z.coerce.date().optional(),
+		endDateWindow: z.coerce.date().optional(),
+		weeklyAvailabilities: z.array(weeklyAvailabilitiesSchema).nullable(),
+		adjustedAvailabilities: z.array(adjustedAvailabilitiesSchema).nullable(),
+	})
+	.superRefine((data, ctx) => {
+		if (!data.availableNow) {
+			if (data.startDateWindow || data.endDateWindow) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "There is no need for a date window if it is available now",
+					path: ["availableNow"],
+				});
+			}
+		} else {
+			if (!data.startDateWindow || !data.endDateWindow) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "Date window required when not available now",
+					path: ["availableNow"],
+				});
+			} else if (data.startDateWindow > data.endDateWindow) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "End date must be after start date",
+					path: ["endDateWindow"],
+				});
+			}
+		}
 
-// Type inference for the form schema
+		if (data.bufferTimeInMinutes >= data.appointmentDurationInMinutes) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: "Buffer time must be less than appointment duration",
+				path: ["bufferTimeInMinutes"],
+			});
+		}
+	});
+
 export type AvailabilityFormSchema = z.infer<typeof AVAILABILITY_FORM_SCHEMA>;

@@ -74,8 +74,8 @@ class TherapistAdjustedAvailabilityTest < ActiveSupport::TestCase
       "Exact duplicate record already exists for this schedule, date, and time."
   end
 
-  test "cannot create partial if date is fully unavailable" do
-    # Suppose unavailable_entire_day covers Date.today + 10
+  test "mixed full/partial availability validations" do
+    # Test partial conflict with full unavailable
     partial_conflict = TherapistAdjustedAvailability.new(
       therapist_appointment_schedule: @unavailable_entire_day.therapist_appointment_schedule,
       specific_date: @unavailable_entire_day.specific_date,
@@ -83,21 +83,17 @@ class TherapistAdjustedAvailabilityTest < ActiveSupport::TestCase
       end_time: "10:00"
     )
     refute partial_conflict.valid?
-    assert_includes partial_conflict.errors[:base],
-      "Cannot create partial availability if date is already fully unavailable"
-  end
+    assert_includes partial_conflict.errors[:base], "Cannot create partial availability if date is already fully unavailable"
 
-  test "cannot mark date fully unavailable if partial availability exists" do
-    # partial_one is on some date
-    new_full_unavailable = TherapistAdjustedAvailability.new(
+    # Test full unavailable with existing partial
+    new_full = TherapistAdjustedAvailability.new(
       therapist_appointment_schedule: @partial_one.therapist_appointment_schedule,
       specific_date: @partial_one.specific_date,
       start_time: nil,
       end_time: nil
     )
-    refute new_full_unavailable.valid?
-    assert_includes new_full_unavailable.errors[:base],
-      "Cannot mark date fully unavailable if partial availability exists for this date"
+    refute new_full.valid?
+    assert_includes new_full.errors[:base], "Cannot mark date fully unavailable if partial availability exists for this date"
   end
 
   test "adjusted availability must be within schedule window if not available_now" do
@@ -126,30 +122,23 @@ class TherapistAdjustedAvailabilityTest < ActiveSupport::TestCase
     assert record.valid?, record.errors.full_messages
   end
 
-  # ? TECH-DEBT - will be skipped for now, not running properly
-  # test "overlapping partial availability is blocked" do
-  #   # partial_one is e.g. 09:00 to 12:00
-  #   overlap = TherapistAdjustedAvailability.new(
-  #     therapist_appointment_schedule: @partial_one.therapist_appointment_schedule,
-  #     specific_date: @partial_one.specific_date,
-  #     start_time: "10:00",
-  #     end_time: "11:00"
-  #   )
-  #   refute overlap.valid?
-  #   assert_includes overlap.errors[:base],
-  #     "Overlapping availability exists with another record on this date"
-  # end
-  #
-  # test "overlapping partial availability is blocked" do
-  # partial_one is e.g. 09:00 to 12:00
-  #   overlap = TherapistAdjustedAvailability.new(
-  #     therapist_appointment_schedule: @partial_one.therapist_appointment_schedule,
-  #     specific_date: @partial_one.specific_date,
-  #     start_time: "10:00",
-  #     end_time:   "11:00"
-  #   )
-  #   refute overlap.valid?
-  #   assert_includes overlap.errors[:base],
-  #                   "Overlapping availability exists with another record on this date"
-  # end
+  test "past date validation" do
+    past_record = TherapistAdjustedAvailability.new(
+      therapist_appointment_schedule: @instant_schedule,
+      specific_date: Date.current - 1.day,
+      start_time: "10:00",
+      end_time: "12:00"
+    )
+    refute past_record.valid?
+    assert_includes past_record.errors[:specific_date], "cannot be in the past"
+  end
+
+  test "overlapping time ranges validation" do
+    therapist_adjusted_availabilities(:overlapping_availability_09)
+    time_2 = therapist_adjusted_availabilities(:overlapping_availability_11)
+
+    refute time_2.valid?
+    assert_includes time_2.errors[:base],
+      "Time range overlaps with existing availability for #{time_2.specific_date}"
+  end
 end

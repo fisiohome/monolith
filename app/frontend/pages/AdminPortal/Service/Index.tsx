@@ -6,7 +6,7 @@ import {
 	FormServiceDialogContent,
 } from "@/components/admin-portal/service/form-service-dialog";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import DotBadgeWithLabel from "@/components/shared/badge";
+import DotBadgeWithLabel from "@/components/shared/dot-badge";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,

@@ -6,7 +6,6 @@ class TherapistAdjustedAvailability < ApplicationRecord
 
   # * define the validations
   validates :specific_date, presence: true
-
   validates :specific_date,
     uniqueness: {
       scope: [:therapist_appointment_schedule_id, :start_time, :end_time],
@@ -15,14 +14,12 @@ class TherapistAdjustedAvailability < ApplicationRecord
 
   # Must not exceed the parent schedule window (if not available_now)
   validate :adjusted_availabilities_within_date_window
-
   # Fully Unavailable vs. Partial Availability priority
   validate :no_mixing_full_and_partial_for_same_date
-
-  # ? TECH-DEBT - will be skipped for now, not running properly
-  # Overlapping checks validation (partial overlap)
-  # validate :no_overlapping_availabilities
-  # validate :no_overlapping_availabilities, unless: :unavailable?
+  #  Check that the date inputted cannot be a past date
+  validate :not_in_past, if: :specific_date
+  # Overlapping availability periods validation
+  validate :no_overlapping_times
 
   # If both start_time and end_time are nil => "Fully Unavailable"
   def unavailable?
@@ -30,6 +27,13 @@ class TherapistAdjustedAvailability < ApplicationRecord
   end
 
   private
+
+  # Past date prevention
+  def not_in_past
+    if specific_date.past?
+      errors.add(:specific_date, "cannot be in the past")
+    end
+  end
 
   # Adjusted Availabilities Must Not Exceed the Schedule Window
   def adjusted_availabilities_within_date_window
@@ -63,36 +67,20 @@ class TherapistAdjustedAvailability < ApplicationRecord
     end
   end
 
-  # ? TECH-DEBT - will be skipped for now, not running properly
   # Validates that there are no overlapping availability periods for the therapist.
   # Example of overlapping: if an availability exists from 10:00 to 12:00,
   # another availability from 11:00 to 13:00 would be considered overlapping.
-  # def no_overlapping_availabilities
-  #   # Only check partial overlap if we have times
-  #   return if unavailable?
+  def no_overlapping_times
+    return if start_time.nil? || end_time.nil?
 
-  #   overlapping = TherapistAdjustedAvailability
-  #     .where(therapist_appointment_schedule_id: therapist_appointment_schedule_id,
-  #       specific_date: specific_date)
-  #     .where.not(id: id)
-  #     .where.not(start_time: nil, end_time: nil)
-  #     .where("start_time < ? AND end_time > ?", end_time, start_time)
+    overlapping = TherapistAdjustedAvailability.where(
+      therapist_appointment_schedule_id: therapist_appointment_schedule_id,
+      specific_date: specific_date
+    ).where.not(id: id)
+      .where("(start_time < ?) AND (end_time > ?)", end_time, start_time)
 
-  #   if overlapping.exists?
-  #     errors.add(:base, "Overlapping availability exists with another record on this date")
-  #   end
-  # end
-  #
-  # def no_overlapping_availabilities
-  #   overlapping = TherapistAdjustedAvailability
-  #     .where(therapist_appointment_schedule_id: therapist_appointment_schedule_id)
-  #     .where(specific_date: specific_date)
-  #     .where.not(id: id)
-  #     .where.not(start_time: nil, end_time: nil) # only compare with partial records
-  #     .where("start_time < ? AND end_time > ?", end_time, start_time)
-
-  #   if overlapping.exists?
-  #     errors.add(:base, "Overlapping availability exists with another record")
-  #   end
-  # end
+    if overlapping.exists?
+      errors.add(:base, "Time range overlaps with existing availability for #{specific_date}")
+    end
+  end
 end
