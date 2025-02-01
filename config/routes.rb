@@ -32,7 +32,11 @@ Rails.application.routes.draw do
         put "activate" => "users#activate_account"
 
         resources :dashboards, only: [:index]
-        resources :availabilities, only: [:index]
+        resources :availabilities, only: [:index] do
+          collection do
+            put "upsert" => "availabilities#upsert"
+          end
+        end
         resources :therapists, path: "therapist-management" do
           collection do
             get "generate-reset-password-url" => "therapists#generate_reset_password_url"

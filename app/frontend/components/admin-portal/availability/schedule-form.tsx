@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import {
 	AVAILABILITY_FORM_SCHEMA,
 	type AvailabilityFormSchema,
@@ -15,7 +16,8 @@ import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type router, usePage } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
+import { add } from "date-fns";
 import { LoaderIcon } from "lucide-react";
 import {
 	type ComponentProps,
@@ -28,8 +30,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import AdjustedAvailabilityForm from "./adjusted-availability";
 import WeeklyAvailabilityForm from "./weekly-availability";
-import { add } from "date-fns";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 
 // * for the scheduled form
 export interface ScheduleFormProps extends ComponentProps<"div"> {
@@ -59,14 +59,19 @@ export default function ScheduleForm({
 				description:
 					"Find out when the therapist will be available for a specific dates.",
 			},
+			// {
+			// 	value: "appointment-settings" as const,
+			// 	title: "Appointment Settings",
+			// 	description:
+			// 		"Manage the time range limitation and the booked appointments.",
+			// },
 		];
 	}, []);
 
 	// for form management state
 	const [isLoading, setIsLoading] = useState(false);
-	const form = useForm<AvailabilityFormSchema>({
-		resolver: zodResolver(AVAILABILITY_FORM_SCHEMA),
-		defaultValues: {
+	const getFormDefaultValues = useCallback<() => AvailabilityFormSchema>(() => {
+		return {
 			therapistId: selectedTherapist?.id || "",
 			timeZone: "Asia/Jakarta",
 			appointmentDurationInMinutes: 90,
@@ -74,6 +79,8 @@ export default function ScheduleForm({
 			maxAdvanceBookingInDays: 14,
 			minBookingBeforeInHours: 24,
 			availableNow: true,
+			startDateWindow: undefined,
+			endDateWindow: undefined,
 			weeklyAvailabilities: dayNames.map((day) => {
 				let times: NonNullable<
 					NonNullable<
@@ -106,10 +113,11 @@ export default function ScheduleForm({
 				}
 
 				return { dayOfWeek: day, times };
-			}),
+			}) satisfies AvailabilityFormSchema["weeklyAvailabilities"],
 			adjustedAvailabilities: [
 				{
 					specificDate: add(new Date(), { days: 3 }),
+					times: null,
 					reason: "Holiday",
 				},
 				{
@@ -137,11 +145,14 @@ export default function ScheduleForm({
 					// 	{ startTime: "08:00", endTime: "10:00" },
 					// ],
 				},
-			],
-		},
+			] satisfies AvailabilityFormSchema["adjustedAvailabilities"],
+		};
+	}, [selectedTherapist, dayNames]);
+	const form = useForm<AvailabilityFormSchema>({
+		resolver: zodResolver(AVAILABILITY_FORM_SCHEMA),
+		defaultValues: getFormDefaultValues(),
 		mode: "onBlur",
 	});
-	// TODO: submit the therapist availability
 	const onSubmit = useCallback(
 		(values: AvailabilityFormSchema) => {
 			console.log(
@@ -153,24 +164,70 @@ export default function ScheduleForm({
 			const submitConfig = {
 				preserveScroll: true,
 				preserveState: true,
+				only: [
+					"adminPortal",
+					"therapists",
+					"flash",
+					"selectedTherapist",
+					"errors",
+				],
 				onStart: () => setIsLoading(true),
 				onFinish: () => setTimeout(() => setIsLoading(false), 250),
 			} satisfies Parameters<typeof router.put>["2"];
+			const formattedWeeklyAvailabilities =
+				values?.weeklyAvailabilities
+					?.filter((week) => !!week.times?.length)
+					?.flatMap((week) => {
+						if (week?.times?.length) {
+							return week?.times.map((time) => ({
+								dayOfWeek: week.dayOfWeek,
+								startTime: time.startTime,
+								endTime: time.endTime,
+							}));
+						}
+					}) || null;
+			const formattedAdjustedAvailabilities =
+				values?.adjustedAvailabilities?.flatMap((date) => {
+					if (date?.times?.length) {
+						return date?.times.map((time) => ({
+							specificDate: date.specificDate,
+							startTime: time.startTime,
+							endTime: time.endTime,
+							reason: date.reason,
+						}));
+					}
+
+					return [
+						{
+							specificDate: date.specificDate,
+							reason: date.reason,
+						},
+					];
+				}) || null;
 			const payload = deepTransformKeysToSnakeCase({
-				...values,
+				currentQuery: globalProps?.adminPortal?.currentQuery,
+				therapistAppointmentSchedule: {
+					...values,
+					therapistId: selectedTherapist?.id || "",
+					weeklyAvailabilities: formattedWeeklyAvailabilities,
+					adjustedAvailabilities: formattedAdjustedAvailabilities,
+				},
 			}) satisfies Parameters<typeof router.put>["1"];
-			console.log("raw values", values);
-			console.log("payload", payload);
+
+			router.put(submitURL, payload, submitConfig);
 
 			console.log("Therapist appointment schedule successfully saved...");
 		},
-		[globalProps.adminPortal.router.adminPortal.availability.upsert],
+		[
+			selectedTherapist,
+			globalProps.adminPortal.router.adminPortal.availability.upsert,
+			globalProps?.adminPortal?.currentQuery,
+		],
 	);
 
 	// use effect for get the form validation errors
 	useEffect(() => {
 		const formErrors = form.formState.errors;
-		console.log(formErrors);
 		const weeklyAvailabilitiesErrors = formErrors?.weeklyAvailabilities;
 
 		// * get the weekly availability root error

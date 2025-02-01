@@ -76,6 +76,7 @@ export interface AdminPortal {
 			};
 			availability: {
 				index: string;
+				upsert: string;
 			};
 		};
 	};

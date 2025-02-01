@@ -48,7 +48,8 @@ module InertiaAdminPortal
                 delete_bulk: delete_bulk_admin_portal_locations_path
               },
               availability: {
-                index: admin_portal_availabilities_path
+                index: admin_portal_availabilities_path,
+                upsert: upsert_admin_portal_availabilities_path
               }
             }
           },

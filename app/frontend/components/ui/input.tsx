@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import { LoaderIcon, type LucideIcon } from "lucide-react";
 import * as React from "react";
 import { Button } from "./button";
 
@@ -13,10 +13,11 @@ export interface InputProps
 	extends React.InputHTMLAttributes<HTMLInputElement> {
 	StartIcon?: IconProps;
 	EndIcon?: IconProps;
+	isLoading?: boolean;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-	({ className, type, StartIcon, EndIcon, ...props }, ref) => {
+	({ className, type, StartIcon, EndIcon, isLoading, ...props }, ref) => {
 		return (
 			<div className="relative w-full">
 				{StartIcon?.isButton ? (
@@ -53,14 +54,23 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 						type="button"
 						variant="ghost"
 						size="icon"
+						disabled={isLoading}
 						onClick={EndIcon.handleOnClick}
 						className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7"
 					>
-						<EndIcon.icon className="text-muted-foreground" size={16} />
+						{isLoading ? (
+							<LoaderIcon className="animate-spin" />
+						) : (
+							<EndIcon.icon className="text-muted-foreground" size={16} />
+						)}
 					</Button>
 				) : EndIcon?.icon ? (
 					<div className="absolute transform -translate-y-1/2 right-3 top-1/2">
-						<EndIcon.icon className="text-muted-foreground" size={16} />
+						{isLoading ? (
+							<LoaderIcon className="animate-spin" />
+						) : (
+							<EndIcon.icon className="text-muted-foreground" size={16} />
+						)}
 					</div>
 				) : (
 					<></>

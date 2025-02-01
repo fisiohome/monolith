@@ -1,11 +1,19 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn, generateInitials, populateQueryParams } from "@/lib/utils";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import {
+	cn,
+	debounce,
+	generateInitials,
+	populateQueryParams,
+} from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import { router, usePage } from "@inertiajs/react";
 import { motion } from "framer-motion";
-import { type ComponentProps, useCallback, useMemo } from "react";
+import { Search, X } from "lucide-react";
+import { type ComponentProps, useCallback, useMemo, useState } from "react";
 
 interface TherapistListCardProps {
 	therapist: Therapist;
@@ -31,16 +39,18 @@ function TherapistListCard({
 		router.get(pageURL, queryParams, {
 			preserveScroll: true,
 			preserveState: true,
-			only: ["selectedTherapist", "adminPortal"],
+			only: ["selectedTherapist", "adminPortal", "flash", "errors"],
 		});
 	}, [pageURL, therapist.id]);
 
 	return (
 		<motion.button
 			initial={{ opacity: 0, y: 0 }}
-			animate={{ opacity: 1, y: 0 }}
+			animate={{ opacity: 1, y: 0, scale: isSelected ? 1.05 : 1 }}
+			whileInView={{ opacity: 1 }}
 			exit={{ opacity: 0, y: 0 }}
 			transition={{ delay: index * 0.1 }}
+			whileHover={{ scale: 1.05, transition: { duration: 0.1, delay: 0 } }}
 			type="button"
 			className={cn(
 				"flex items-center gap-2 p-2 font-semibold border rounded-md shadow-inner cursor-pointer text-muted-foreground bg-background border-border hover:shadow-xl hover:text-primary-foreground hover:bg-primary hover:ring-1 hover:ring-primary first:mt-2 last:mb-2 hover:no-underline hover:ring-offset-2 hover:ring-offset-background hover:scale-105 transition-all",
@@ -73,7 +83,54 @@ export interface TherapistListProps extends ComponentProps<"div"> {
 }
 
 export function TherapistList({ className, therapists }: TherapistListProps) {
-	const { props: globalProps } = usePage<GlobalPageProps>();
+	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
+
+	// for search therapist
+	const [search, setSearch] = useState(
+		globalProps?.adminPortal?.currentQuery?.search || "",
+	);
+	const [isSearching, setIsSearching] = useState(false);
+	const updateQueryParams = useCallback(
+		debounce((value) => {
+			const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+				...value,
+			});
+
+			router.get(
+				fullUrl,
+				{ ...queryParams },
+				{
+					preserveScroll: true,
+					preserveState: true,
+					only: [
+						"therapists",
+						"selectedTherapist",
+						"adminPortal",
+						"flash",
+						"errors",
+					],
+					onStart: () => {
+						setIsSearching(true);
+					},
+					onFinish: () => {
+						setTimeout(() => {
+							setIsSearching(false);
+						}, 250);
+					},
+				},
+			);
+		}, 500),
+		[],
+	);
+	const onSearch = useCallback(
+		(value: string) => {
+			setSearch(value);
+			updateQueryParams(
+				deepTransformKeysToSnakeCase({ search: value, therapist: "" }),
+			);
+		},
+		[updateQueryParams],
+	);
 
 	return (
 		<div className={cn("space-y-2", className)}>
@@ -81,7 +138,30 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 				Therapists
 			</h2>
 
-			<ScrollArea className="w-full max-h-[85dvh] overflow-y-auto">
+			<Input
+				type="text"
+				placeholder="Search therapist..."
+				value={search}
+				StartIcon={{ icon: Search }}
+				isLoading={isSearching}
+				EndIcon={
+					search
+						? {
+								icon: X,
+								isButton: true,
+								handleOnClick: () => {
+									onSearch("");
+								},
+							}
+						: undefined
+				}
+				onChange={(event) => {
+					event.preventDefault();
+					onSearch(event.target.value);
+				}}
+			/>
+
+			<ScrollArea className="w-full max-h-[75dvh] overflow-y-auto">
 				<div className="grid gap-2 mx-3">
 					{therapists?.length ? (
 						therapists.map((therapist, therapistIndex) => (

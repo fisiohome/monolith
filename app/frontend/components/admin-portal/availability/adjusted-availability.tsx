@@ -1,3 +1,4 @@
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -18,7 +19,6 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { AvailabilityFormSchema } from "@/lib/availabilities";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";

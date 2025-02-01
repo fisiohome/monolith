@@ -1,18 +1,18 @@
-import type { AvailabilityFormSchema } from "@/lib/availabilities";
-import { cn } from "@/lib/utils";
-import { type ComponentProps, useMemo } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
+import type { AvailabilityFormSchema } from "@/lib/availabilities";
+import { cn } from "@/lib/utils";
 import { Copy, MinusCircle, PlusCircle, X } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { type ComponentProps, useMemo } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 
 function TimeInput({
 	name,

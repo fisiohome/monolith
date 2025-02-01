@@ -14,7 +14,9 @@ const startEndTimeSchema = z
 	});
 
 // the overlaps and duplicates validation helper
-const createOverlapValidator = (_context: string) => {
+const createOverlapValidator = (
+	_context: "weekly availability" | "adjusted availability",
+) => {
 	return z.array(startEndTimeSchema).superRefine((items, ctx) => {
 		// Check for duplicates first
 		const uniqueSlots = new Set(
@@ -82,14 +84,6 @@ export const AVAILABILITY_FORM_SCHEMA = z
 	})
 	.superRefine((data, ctx) => {
 		if (!data.availableNow) {
-			if (data.startDateWindow || data.endDateWindow) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "There is no need for a date window if it is available now",
-					path: ["availableNow"],
-				});
-			}
-		} else {
 			if (!data.startDateWindow || !data.endDateWindow) {
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
