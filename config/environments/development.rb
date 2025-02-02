@@ -81,4 +81,9 @@ Rails.application.configure do
 
   # additional configs
   config.action_mailer.delivery_method = :resend
+
+  # Replace the default in-process and non-durable queuing backend for Active Job.
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = {database: {writing: :queue}}
+  config.solid_queue.logger = ActiveSupport::Logger.new($stdout)
 end

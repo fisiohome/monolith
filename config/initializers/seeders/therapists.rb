@@ -51,9 +51,3 @@ def generate_therapist_data(index)
 end
 
 THERAPISTS_DATA = (1..2).map { |i| generate_therapist_data(i) }
-
-THERAPISTS_DATA.each_with_index do |therapist, index|
-  Rails.logger.info "Therapist #{index + 1}:"
-  Rails.logger.info therapist
-  Rails.logger.info "\n"
-end
