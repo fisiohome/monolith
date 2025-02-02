@@ -30,3 +30,6 @@ export const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 export const timeSchema = z
 	.string()
 	.regex(TIME_REGEX, { message: "Invalid time format (HH:MM)" });
+
+// schema for id's, can be as a string or number, can be also optional value
+export const idSchema = z.union([z.string(), z.number()]).optional();

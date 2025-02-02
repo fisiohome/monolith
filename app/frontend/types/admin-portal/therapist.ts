@@ -4,6 +4,7 @@ import type {
 	GENDERS,
 } from "../../lib/constants";
 import type { UserSerialize } from "../auth";
+import type { Availability } from "./availability";
 import type { Location } from "./location";
 
 export type TherapistGender = typeof GENDERS;
@@ -52,4 +53,5 @@ export interface Therapist {
 	service: TherapistService;
 	bankDetails: TherapistBankDetail[];
 	addresses: TherapistAddress[];
+	availability?: Availability;
 }

@@ -10,6 +10,7 @@ import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import {
 	AVAILABILITY_FORM_SCHEMA,
 	type AvailabilityFormSchema,
+	getDefaultValues,
 } from "@/lib/availabilities";
 import type { DAY_NAMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,6 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
-import { add } from "date-fns";
 import { LoaderIcon } from "lucide-react";
 import {
 	type ComponentProps,
@@ -70,89 +70,19 @@ export default function ScheduleForm({
 
 	// for form management state
 	const [isLoading, setIsLoading] = useState(false);
-	const getFormDefaultValues = useCallback<() => AvailabilityFormSchema>(() => {
-		return {
-			therapistId: selectedTherapist?.id || "",
-			timeZone: "Asia/Jakarta",
-			appointmentDurationInMinutes: 90,
-			bufferTimeInMinutes: 30,
-			maxAdvanceBookingInDays: 14,
-			minBookingBeforeInHours: 24,
-			availableNow: true,
-			startDateWindow: undefined,
-			endDateWindow: undefined,
-			weeklyAvailabilities: dayNames.map((day) => {
-				let times: NonNullable<
-					NonNullable<
-						AvailabilityFormSchema["weeklyAvailabilities"]
-					>[number]["times"]
-				> = [];
-
-				if (day === "Tuesday") {
-					times = [{ startTime: "09:00", endTime: "12:00" }];
-
-					// overlap time error example
-					// times = [
-					// 	{ startTime: "09:00", endTime: "12:00" },
-					// 	{ startTime: "10:00", endTime: "11:00" },
-					// 	{ startTime: "08:00", endTime: "10:00" },
-					// ];
-				}
-
-				if (day === "Thursday") {
-					times = [
-						{ startTime: "09:00", endTime: "12:00" },
-						{ startTime: "13:00", endTime: "17:00" },
-					];
-
-					// duplicate time error example
-					// times = [
-					// 	{ startTime: "09:00", endTime: "12:00" },
-					// 	{ startTime: "09:00", endTime: "12:00" },
-					// ];
-				}
-
-				return { dayOfWeek: day, times };
-			}) satisfies AvailabilityFormSchema["weeklyAvailabilities"],
-			adjustedAvailabilities: [
-				{
-					specificDate: add(new Date(), { days: 3 }),
-					times: null,
-					reason: "Holiday",
-				},
-				{
-					specificDate: add(new Date(), { days: 5 }),
-					reason: "Morning session",
-					times: [
-						{ startTime: "09:00", endTime: "12:00" },
-						{ startTime: "13:00", endTime: "17:00" },
-					],
-
-					// duplicate time error example
-					// times: [
-					// 	{ startTime: "09:00", endTime: "12:00" },
-					// 	{ startTime: "09:00", endTime: "12:00" },
-					// ],
-				},
-				{
-					specificDate: add(new Date(), { days: 7 }),
-					times: [{ startTime: "09:00", endTime: "12:00" }],
-
-					// overlap time error example
-					// times: [
-					// 	{ startTime: "09:00", endTime: "12:00" },
-					// 	{ startTime: "10:00", endTime: "11:00" },
-					// 	{ startTime: "08:00", endTime: "10:00" },
-					// ],
-				},
-			] satisfies AvailabilityFormSchema["adjustedAvailabilities"],
-		};
-	}, [selectedTherapist, dayNames]);
 	const form = useForm<AvailabilityFormSchema>({
 		resolver: zodResolver(AVAILABILITY_FORM_SCHEMA),
-		defaultValues: getFormDefaultValues(),
+		defaultValues: useMemo(
+			() => getDefaultValues({ days: dayNames, therapist: selectedTherapist }),
+			[selectedTherapist, dayNames],
+		),
 		mode: "onBlur",
 	});
+	useEffect(() => {
+		form.reset(
+			getDefaultValues({ days: dayNames, therapist: selectedTherapist }),
+		);
+	}, [form.reset, dayNames, selectedTherapist]);
 	const onSubmit = useCallback(
 		(values: AvailabilityFormSchema) => {
 			console.log(

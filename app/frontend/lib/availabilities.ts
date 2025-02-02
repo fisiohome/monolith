@@ -1,3 +1,5 @@
+import type { Therapist } from "@/types/admin-portal/therapist";
+import { TZDate } from "@date-fns/tz";
 import { z } from "zod";
 import { DAY_NAMES } from "./constants";
 import { timeSchema } from "./validation";
@@ -109,3 +111,88 @@ export const AVAILABILITY_FORM_SCHEMA = z
 	});
 
 export type AvailabilityFormSchema = z.infer<typeof AVAILABILITY_FORM_SCHEMA>;
+
+// get the form default values
+export const getDefaultValues = ({
+	days,
+	therapist,
+}: {
+	days: (typeof DAY_NAMES)[number][];
+	therapist: Therapist | null;
+}): AvailabilityFormSchema => {
+	const availability = therapist?.availability ?? {};
+
+	// Extracting values with proper typings and default values
+	const {
+		timeZone = "Asia/Jakarta",
+		appointmentDurationInMinutes = 90,
+		bufferTimeInMinutes = 30,
+		maxAdvanceBookingInDays = 14,
+		minBookingBeforeInHours = 24,
+		isAvailableNow = false,
+		startDateWindow,
+		endDateWindow,
+		weeklyAvailabilities = [],
+		adjustedAvailabilities = [],
+	}: Partial<Therapist["availability"]> = availability;
+
+	return {
+		therapistId: therapist?.id || "",
+		timeZone,
+		appointmentDurationInMinutes,
+		bufferTimeInMinutes,
+		maxAdvanceBookingInDays,
+		minBookingBeforeInHours,
+		availableNow: Boolean(isAvailableNow),
+		startDateWindow: startDateWindow
+			? new Date(String(startDateWindow))
+			: undefined,
+		endDateWindow: endDateWindow ? new Date(String(endDateWindow)) : undefined,
+
+		weeklyAvailabilities: days.map((day) => ({
+			dayOfWeek: day,
+			times: weeklyAvailabilities
+				.filter(
+					({ dayOfWeek }) => dayOfWeek.toLowerCase() === day.toLowerCase(),
+				)
+				.map(({ startTime, endTime }) => ({ startTime, endTime })),
+		})) satisfies AvailabilityFormSchema["weeklyAvailabilities"],
+
+		adjustedAvailabilities: adjustedAvailabilities.length
+			? (Object.values(
+					adjustedAvailabilities.reduce(
+						(
+							acc,
+							{ specificDate, startTime, endTime, reason, isUnavailable },
+						) => {
+							// parse a date to the specific timezone
+							const date = new TZDate(specificDate, timeZone);
+							const formattedDate = date.toString();
+
+							acc[formattedDate] ??= {
+								specificDate: date,
+								times: [],
+								reason: undefined,
+							};
+
+							if (isUnavailable) {
+								acc[formattedDate].reason = reason || "";
+								acc[formattedDate].times = null;
+							} else if (startTime && endTime) {
+								acc[formattedDate].times?.push({ startTime, endTime });
+								if (reason) acc[formattedDate].reason = reason;
+							}
+
+							return acc;
+						},
+						{} as Record<
+							string,
+							NonNullable<
+								AvailabilityFormSchema["adjustedAvailabilities"]
+							>[number]
+						>,
+					),
+				) satisfies AvailabilityFormSchema["adjustedAvailabilities"])
+			: [],
+	};
+};

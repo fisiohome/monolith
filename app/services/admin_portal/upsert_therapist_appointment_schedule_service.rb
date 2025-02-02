@@ -94,14 +94,16 @@ module AdminPortal
 
       adjusted_availabilities = adjusted_availability_params.map do |ap|
         TherapistAdjustedAvailability.new(ap.merge(
-          therapist_appointment_schedule_id: schedule.id
+          therapist_appointment_schedule_id: schedule.id,
+          # * save date in the app timezone
+          specific_date: ap[:specific_date].in_time_zone(Time.zone.name)
         ))
       end
 
       result = TherapistAdjustedAvailability.import(
         adjusted_availabilities,
         validate: true,
-        all_or_none: true
+        all_or_none: true # Rollback if any record fails
       )
 
       @adjusted_import_errors = result.failed_instances.present?

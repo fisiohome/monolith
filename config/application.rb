@@ -23,6 +23,7 @@ module Monolith
     #
     # config.time_zone = "Central Time (US & Canada)"
     config.time_zone = "Asia/Jakarta"
+    config.active_record.default_timezone = :local
     # config.eager_load_paths << Rails.root.join("extras")
 
     config.logger = Logger.new($stdout)

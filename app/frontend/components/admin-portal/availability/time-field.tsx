@@ -270,16 +270,14 @@ export default function BaseAvailabilityTimeField({
 				)}
 			</div>
 
-			<div className="flex justify-end">
-				<ActionButtons
-					fieldType={fieldType}
-					parentIndex={parentIndex}
-					timeIndex={timeIndex}
-					isValid={isValidAllTimes && !timeError}
-					hasSingleTime={hasSingleTime}
-					actions={actions}
-				/>
-			</div>
+			<ActionButtons
+				fieldType={fieldType}
+				parentIndex={parentIndex}
+				timeIndex={timeIndex}
+				isValid={isValidAllTimes && !timeError}
+				hasSingleTime={hasSingleTime}
+				actions={actions}
+			/>
 		</div>
 	);
 }

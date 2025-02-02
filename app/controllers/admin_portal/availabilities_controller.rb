@@ -2,13 +2,14 @@ module AdminPortal
   class AvailabilitiesController < ApplicationController
     include TherapistsHelper
 
-    # TODO: get the therapist selected schedule
     def index
       search_param = params[:search]
       selected_therapist_param = params[:therapist]
 
       therapists_lambda = lambda do
-        therapists = Therapist.joins(:user).where(search_param.present? ? ["name ILIKE ?", "%#{search_param}%"] : nil)
+        therapists = Therapist
+          .includes([:user])
+          .where(search_param.present? ? ["name ILIKE ?", "%#{search_param}%"] : nil)
         therapists.map do |therapist|
           deep_transform_keys_to_camel_case(serialize_therapist(therapist))
         end
@@ -17,7 +18,12 @@ module AdminPortal
       selected_therapist_lambda = lambda do
         return nil unless selected_therapist_param
 
-        serialize_therapist(Therapist.find_by(id: selected_therapist_param))
+        therapist = Therapist.includes([:user, therapist_appointment_schedule: [
+          :therapist_weekly_availabilities,
+          :therapist_adjusted_availabilities
+        ]]).find_by(id: selected_therapist_param)
+
+        deep_transform_keys_to_camel_case(serialize_therapist(therapist, {include_availability: true}))
       end
 
       day_names = Date::DAYNAMES

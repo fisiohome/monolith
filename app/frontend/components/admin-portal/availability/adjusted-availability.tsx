@@ -13,6 +13,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
 	Tooltip,
 	TooltipContent,
@@ -23,7 +24,13 @@ import type { AvailabilityFormSchema } from "@/lib/availabilities";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import { format, isSameDay } from "date-fns";
-import { AlertCircle, CalendarIcon, PlusCircle, X } from "lucide-react";
+import {
+	AlertCircle,
+	CalendarIcon,
+	MinusCircle,
+	PlusCircle,
+	X,
+} from "lucide-react";
 import {
 	type ComponentProps,
 	Fragment,
@@ -82,10 +89,6 @@ function AdjustedDateField({
 		name: `adjustedAvailabilities.${field.index}.times`,
 		keyName: "uuid",
 	});
-	const watchAdjustedTimes = useWatch({
-		control: form.control,
-		name: `adjustedAvailabilities.${field.index}.times`,
-	});
 	// for add the time availability
 	const onAddTime = useCallback(() => {
 		adjustedTimeFields.append({ startTime: "", endTime: "" });
@@ -113,7 +116,7 @@ function AdjustedDateField({
 					: "motion-translate-motion-scale-in-0 motion-opacity-in-0 motion-delay-100",
 			)}
 		>
-			<TableCell className={cn(watchAdjustedTimes?.length ? "align-top" : "")}>
+			<TableCell className="align-top">
 				<FormField
 					control={form.control}
 					name={`adjustedAvailabilities.${field.index}.specificDate`}
@@ -192,53 +195,97 @@ function AdjustedDateField({
 				</TableCell>
 			) : (
 				<Fragment>
-					<TableCell className="font-light text-muted-foreground">
-						Unavailable
-					</TableCell>
-					<TableCell className="flex justify-end">
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										size="icon"
-										variant="ghost"
-										className="rounded-full"
-										onClick={(event) => {
-											event.preventDefault();
-											onAddTime();
-										}}
-									>
-										<PlusCircle />
-									</Button>
-								</TooltipTrigger>
+					<TableCell
+						colSpan={2}
+						className="flex gap-2 font-light text-muted-foreground"
+					>
+						<div className="flex flex-wrap items-center w-full gap-2">
+							<p>Unavailable</p>
 
-								<TooltipContent>
-									<p>Add another time to this day</p>
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
-						<TooltipProvider>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										size="icon"
-										variant="ghost"
-										className="rounded-full"
-										onClick={(event) => {
-											event.preventDefault();
-											onRemoveDate(field.index);
-										}}
-									>
-										<X />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									<p>Remove this day</p>
-								</TooltipContent>
-							</Tooltip>
-						</TooltipProvider>
+							<div className="flex-none w-full">
+								<FormField
+									control={form.control}
+									name={`adjustedAvailabilities.${field.index}.reason`}
+									render={({ field }) => (
+										<FormItem>
+											<Textarea
+												{...field}
+												placeholder="Enter the reason (optional)..."
+											/>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+						</div>
+
+						<div className="flex justify-end">
+							{/* Note: this button is invisible because actually this button is not needed. The purposes is to adjust the UI, because in time-filed components there are 3 buttons. */}
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											size="icon"
+											variant="ghost"
+											className="invisible"
+											onClick={(event) => {
+												event.preventDefault();
+											}}
+										>
+											<MinusCircle />
+										</Button>
+									</TooltipTrigger>
+
+									<TooltipContent>
+										<p>Remove this time set</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											size="icon"
+											variant="ghost"
+											className="rounded-full"
+											onClick={(event) => {
+												event.preventDefault();
+												onAddTime();
+											}}
+										>
+											<PlusCircle />
+										</Button>
+									</TooltipTrigger>
+
+									<TooltipContent>
+										<p>Add another time to this day</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											size="icon"
+											variant="ghost"
+											className="rounded-full"
+											onClick={(event) => {
+												event.preventDefault();
+												onRemoveDate(field.index);
+											}}
+										>
+											<X />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>Remove this day</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+						</div>
 					</TableCell>
 				</Fragment>
 			)}
