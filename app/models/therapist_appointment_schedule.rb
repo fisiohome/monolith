@@ -21,7 +21,7 @@ class TherapistAppointmentSchedule < ApplicationRecord
   # If start/end dates are set, ensure start <= end
   validate :start_date_before_end_date, unless: :available_now?
   validate :start_date_or_available_now
-  validate :therapist_must_be_active
+  # validate :therapist_must_be_active
 
   private
 
@@ -37,9 +37,9 @@ class TherapistAppointmentSchedule < ApplicationRecord
     errors.add(:base, "You must set 'available now' or provide a 'start date'")
   end
 
-  def therapist_must_be_active
-    if therapist.employment_status != "ACTIVE"
-      errors.add(:base, "Cannot create or update a schedule for a non-active therapist")
-    end
-  end
+  # def therapist_must_be_active
+  #   if therapist.employment_status != "ACTIVE"
+  #     errors.add(:base, "Cannot create or update a schedule for a non-active therapist")
+  #   end
+  # end
 end
