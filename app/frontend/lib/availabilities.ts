@@ -129,7 +129,7 @@ export const getDefaultValues = ({
 		bufferTimeInMinutes = 30,
 		maxAdvanceBookingInDays = 14,
 		minBookingBeforeInHours = 24,
-		isAvailableNow = false,
+		isAvailableNow = true,
 		startDateWindow,
 		endDateWindow,
 		weeklyAvailabilities = [],
