@@ -5,7 +5,7 @@ import { Eye, EyeOff, X } from "lucide-react";
 import * as React from "react";
 
 const inputVariants = cva(
-	"h-9 w-full rounded-md border py-2 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground",
+	"h-9 shadow w-full rounded-md border py-2 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground",
 	{
 		variants: {
 			variant: {

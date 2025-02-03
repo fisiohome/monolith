@@ -1,5 +1,6 @@
 import AppSidebar from "@/components/admin-portal/sidebar/app-sidebar";
 import AppTopBar from "@/components/admin-portal/topbar/app-topbar";
+import { NavigationProvider } from "@/components/providers/navigation-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -21,15 +22,24 @@ export default function AdminLayout({ children }: PropsWithChildren) {
 		<ThemeProvider>
 			<ToastProvider>
 				<SidebarProvider style={sidebarStyle}>
-					<AppSidebar />
+					<NavigationProvider>
+						<AppSidebar />
 
-					<SidebarInset>
-						<AppTopBar />
+						<SidebarInset>
+							<AppTopBar />
 
-						<div className="flex flex-col flex-1 gap-4 pt-0 md:p-4 motion-preset-focus motion-delay-200">
-							{children}
-						</div>
-					</SidebarInset>
+							<div className="flex flex-col flex-1 gap-4 pt-0 md:p-4 motion-preset-focus motion-delay-200">
+								{children}
+							</div>
+
+							{/* NOTE: if needed the bottom nav (good for mobile device) */}
+							{/* <nav className="sticky bottom-0 z-20 flex items-center justify-center w-full p-4 rounded-xl bg-background">
+								<Button>
+									<span>Dashboard</span>
+								</Button>
+							</nav> */}
+						</SidebarInset>
+					</NavigationProvider>
 				</SidebarProvider>
 			</ToastProvider>
 		</ThemeProvider>

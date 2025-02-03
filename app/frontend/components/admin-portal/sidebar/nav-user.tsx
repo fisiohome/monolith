@@ -1,3 +1,4 @@
+import { useNavigation } from "@/components/providers/navigation-provider";
 import { type Theme, useTheme } from "@/components/providers/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -32,12 +33,10 @@ import {
 	Sun,
 	SunMoon,
 } from "lucide-react";
+import { useMemo } from "react";
 
-export function NavUser({
-	user,
-	url,
-}: {
-	user: {
+export interface NavUserProps {
+	userData: {
 		name: string;
 		email: string;
 		avatar: string;
@@ -47,13 +46,27 @@ export function NavUser({
 		logout: string;
 		account: string;
 	};
-}) {
+}
+
+export function NavUser() {
 	const { isMobile } = useSidebar();
+
+	// theme context
 	const { theme, setTheme } = useTheme();
 	const handleToggleTheme = (value: string) => {
 		const themeValue = value as Theme;
 		setTheme(themeValue);
 	};
+
+	// navigation context
+	const { navigation } = useNavigation();
+	const user = useMemo(
+		() => navigation.user?.userData,
+		[navigation.user?.userData],
+	);
+	const url = useMemo(() => navigation.user?.url, [navigation.user?.url]);
+
+	if (!user || !url) return;
 
 	return (
 		<SidebarMenu>

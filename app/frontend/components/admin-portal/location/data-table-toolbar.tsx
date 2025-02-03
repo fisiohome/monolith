@@ -59,8 +59,8 @@ export default function ToolbarTable({
 	};
 
 	return (
-		<section className="flex flex-col flex-wrap justify-start gap-4 lg:flex-row lg:gap-2">
-			<div className="w-full md:w-[200px]">
+		<section className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4 xl:grid-cols-5">
+			<div className="col-span-full md:col-span-1">
 				<Input
 					value={filterBy.country}
 					StartIcon={{ icon: Search }}
@@ -70,7 +70,7 @@ export default function ToolbarTable({
 				/>
 			</div>
 
-			<div className="w-full md:w-[200px]">
+			<div className="col-span-full md:col-span-1">
 				<Input
 					value={filterBy.state}
 					StartIcon={{ icon: Search }}
@@ -80,7 +80,7 @@ export default function ToolbarTable({
 				/>
 			</div>
 
-			<div className="w-full md:w-[200px]">
+			<div className="col-span-full md:col-span-1">
 				<Input
 					value={filterBy.city}
 					StartIcon={{ icon: Search }}

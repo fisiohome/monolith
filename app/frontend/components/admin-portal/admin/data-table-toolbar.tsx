@@ -62,8 +62,8 @@ export default function ToolbarTable({
 	};
 
 	return (
-		<section className="flex flex-col flex-wrap justify-start gap-4 lg:flex-row lg:gap-2">
-			<div className="w-full md:w-[200px]">
+		<section className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4 xl:grid-cols-5">
+			<div className="col-span-full md:col-span-1">
 				<Input
 					value={filterBy.name}
 					StartIcon={{ icon: Search }}
@@ -76,7 +76,7 @@ export default function ToolbarTable({
 				/>
 			</div>
 
-			<div className="w-full md:w-[200px]">
+			<div className="col-span-full md:col-span-1">
 				<Input
 					value={filterBy.email}
 					StartIcon={{ icon: Search }}
@@ -89,14 +89,14 @@ export default function ToolbarTable({
 				/>
 			</div>
 
-			<div className="w-full md:w-[200px]">
+			<div className="col-span-full md:col-span-1">
 				<Popover>
 					<PopoverTrigger asChild>
 						<Button
 							disabled={!globalProps.auth.currentUser?.["isSuperAdmin?"]}
 							variant="outline"
 							className={cn(
-								"w-[200px] justify-between text-muted-foreground !font-normal !mt-0 px-3",
+								"w-full flex justify-between text-muted-foreground !font-normal !mt-0 px-3",
 								!filterBy.adminType && "text-muted-foreground",
 							)}
 						>
@@ -109,7 +109,7 @@ export default function ToolbarTable({
 							<ChevronsUpDown className="opacity-50" />
 						</Button>
 					</PopoverTrigger>
-					<PopoverContent align="start" className="w-[200px] p-0">
+					<PopoverContent align="start" className="w-full md:w-[200px] p-0">
 						<Command>
 							<CommandInput placeholder="Search admin type..." />
 							<CommandList>

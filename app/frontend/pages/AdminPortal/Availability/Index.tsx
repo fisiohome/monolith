@@ -22,7 +22,9 @@ export default function AvailabilityIndex({
 			<Head title="Availability Time" />
 
 			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">Availability</h1>
+				<h1 className="text-2xl font-bold tracking-tight">
+					Therapist Availability
+				</h1>
 			</PageContainer>
 
 			<PageContainer className="grid flex-1 grid-cols-12 gap-6 md:min-h-min">

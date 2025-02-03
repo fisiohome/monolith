@@ -2,6 +2,7 @@
 
 import { ChevronRight, type LucideIcon } from "lucide-react";
 
+import { useNavigation } from "@/components/providers/navigation-provider";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -11,7 +12,6 @@ import {
 	SidebarGroup,
 	SidebarGroupLabel,
 	SidebarMenu,
-	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarMenuSub,
@@ -19,53 +19,63 @@ import {
 	SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { Link } from "@inertiajs/react";
+import { useMemo } from "react";
 
-export function NavMain({
-	items,
-	label,
-}: {
+export interface NavMainProps {
 	items: {
 		title: string;
 		url: string;
 		icon: LucideIcon;
 		isActive: boolean;
-		items?: {
+		subItems?: {
 			title: string;
 			url: string;
 			isActive: boolean;
 		}[];
 	}[];
 	label?: string;
-}) {
+}
+
+export function NavMain() {
+	// navigation context
+	const { navigation } = useNavigation();
+	const label = useMemo(() => navigation.main?.label, [navigation.main?.label]);
+	const items = useMemo(() => navigation.main?.items, [navigation.main?.items]);
+
+	if (!items) return;
+
 	return (
 		<SidebarGroup>
 			{label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
+
 			<SidebarMenu>
-				{items.map((item) => (
-					<Collapsible key={item.title} asChild defaultOpen={true}>
-						<SidebarMenuItem>
-							<SidebarMenuButton
+				{items.map((item) => {
+					if (item.subItems?.length) {
+						return (
+							<Collapsible
+								key={item.title}
 								asChild
-								tooltip={item.title}
-								isActive={item.isActive}
-								className="motion-preset-slide-down"
+								defaultOpen={true}
+								className="group/collapsible"
 							>
-								<Link href={item.url}>
-									<item.icon />
-									<span>{item.title}</span>
-								</Link>
-							</SidebarMenuButton>
-							{item.items?.length ? (
-								<>
+								<SidebarMenuItem>
 									<CollapsibleTrigger asChild>
-										<SidebarMenuAction className="data-[state=open]:rotate-90 motion-preset-slide-down">
-											<ChevronRight />
-											<span className="sr-only">Toggle</span>
-										</SidebarMenuAction>
+										<SidebarMenuButton
+											tooltip={item.title}
+											isActive={item.subItems.some(
+												(subItem) => !!subItem?.isActive,
+											)}
+											className="motion-preset-slide-down"
+										>
+											{item.icon && <item.icon />}
+											<span>{item.title}</span>
+											<ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+										</SidebarMenuButton>
 									</CollapsibleTrigger>
+
 									<CollapsibleContent>
 										<SidebarMenuSub>
-											{item.items?.map((subItem) => (
+											{item.subItems?.map((subItem) => (
 												<SidebarMenuSubItem
 													key={subItem.title}
 													className="motion-preset-slide-down motion-delay-100"
@@ -80,11 +90,27 @@ export function NavMain({
 											))}
 										</SidebarMenuSub>
 									</CollapsibleContent>
-								</>
-							) : null}
+								</SidebarMenuItem>
+							</Collapsible>
+						);
+					}
+
+					return (
+						<SidebarMenuItem key={item.title}>
+							<SidebarMenuButton
+								asChild
+								tooltip={item.title}
+								isActive={item.isActive}
+								className="motion-preset-slide-down"
+							>
+								<Link href={item.url}>
+									<item.icon />
+									<span>{item.title}</span>
+								</Link>
+							</SidebarMenuButton>
 						</SidebarMenuItem>
-					</Collapsible>
-				))}
+					);
+				})}
 			</SidebarMenu>
 		</SidebarGroup>
 	);
