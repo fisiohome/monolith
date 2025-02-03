@@ -58,7 +58,12 @@ function ActionButtons({
 	actions,
 }: ActionButtonsProps) {
 	return (
-		<div className={cn("flex justify-end", className)}>
+		<div
+			className={cn(
+				"flex justify-between md:justify-end gap-2 lg:gap-0",
+				className,
+			)}
+		>
 			{/* Duplicate Button (Weekly only) */}
 			{fieldType === "weekly" && (
 				<TooltipProvider>
@@ -239,10 +244,16 @@ export default function BaseAvailabilityTimeField({
 	const hasSingleTime = useMemo(() => timesArray?.length === 1, [timesArray]);
 
 	return (
-		<div className={cn("flex gap-2", className, motionClasses)}>
-			<div className="flex flex-wrap items-center w-full gap-2">
+		<div
+			className={cn(
+				"flex flex-col md:flex-row gap-2",
+				className,
+				motionClasses,
+			)}
+		>
+			<div className="flex flex-wrap items-center justify-between w-full gap-2 md:justify-normal">
 				<TimeInput name={`${timeFieldPath}.startTime` as const} />
-				<span>-</span>
+				<span className="text-center">-</span>
 				<TimeInput name={`${timeFieldPath}.endTime` as const} />
 
 				{timeError && (

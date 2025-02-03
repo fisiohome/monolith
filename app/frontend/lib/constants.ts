@@ -35,3 +35,9 @@ export const DAY_NAMES = [
 	"Friday",
 	"Saturday",
 ] as const;
+
+// * media query list
+export const IS_DEKSTOP_MEDIA_QUERY = "only screen and (min-width : 1024px)";
+export const IS_TABLET_MEDIA_QUERY =
+	"only screen and (min-width : 768px) and (max-width : 1023px)";
+export const IS_MOBILE_MEDIA_QUERY = "only screen and (max-width : 767px)";

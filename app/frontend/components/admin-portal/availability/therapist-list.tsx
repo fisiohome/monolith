@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { IS_DEKSTOP_MEDIA_QUERY, IS_TABLET_MEDIA_QUERY } from "@/lib/constants";
 import {
 	cn,
 	debounce,
@@ -11,6 +12,7 @@ import {
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import { router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import { motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
@@ -27,6 +29,8 @@ function TherapistListCard({
 	index,
 }: TherapistListCardProps) {
 	const { url: pageURL } = usePage<GlobalPageProps>();
+	const isTablet = useMediaQuery(IS_TABLET_MEDIA_QUERY);
+	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
 
 	const initials = useMemo(
 		() => generateInitials(therapist.name),
@@ -46,11 +50,23 @@ function TherapistListCard({
 	return (
 		<motion.button
 			initial={{ opacity: 0, y: 0 }}
-			animate={{ opacity: 1, y: 0, scale: isSelected ? 1.05 : 1 }}
+			animate={{
+				opacity: 1,
+				y: 0,
+				scale:
+					isSelected && (isTablet || isDekstop)
+						? 1.02
+						: isSelected && (!isTablet || !isDekstop)
+							? 1.05
+							: 1,
+			}}
 			whileInView={{ opacity: 1 }}
 			exit={{ opacity: 0, y: 0 }}
 			transition={{ delay: index * 0.1 }}
-			whileHover={{ scale: 1.05, transition: { duration: 0.1, delay: 0 } }}
+			whileHover={{
+				scale: isTablet || isDekstop ? 1.02 : 1.05,
+				transition: { duration: 0.1, delay: 0 },
+			}}
 			type="button"
 			className={cn(
 				"flex items-center gap-2 p-2 font-semibold border rounded-md shadow-inner cursor-pointer text-muted-foreground bg-background border-border hover:shadow-xl hover:text-primary-foreground hover:bg-primary hover:ring-1 hover:ring-primary first:mt-2 last:mb-2 hover:no-underline hover:ring-offset-2 hover:ring-offset-background hover:scale-105 transition-all",
@@ -161,7 +177,7 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 				}}
 			/>
 
-			<ScrollArea className="w-full max-h-[75dvh] overflow-y-auto">
+			<ScrollArea className="w-full max-h-[35dvh] xl:max-h-[75dvh] overflow-y-auto">
 				<div className="grid gap-2 mx-3">
 					{therapists?.length ? (
 						therapists.map((therapist, therapistIndex) => (
@@ -176,7 +192,7 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 							/>
 						))
 					) : (
-						<p className="mx-auto text-sm text-center text-muted-foreground">
+						<p className="mx-auto mt-2 text-sm text-center text-muted-foreground">
 							There are no active therapists yet. Let's start by activating an
 							existing therapist or adding a new one.
 						</p>

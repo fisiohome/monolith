@@ -28,15 +28,20 @@ export default function AvailabilityIndex({
 			<PageContainer className="grid flex-1 grid-cols-12 gap-6 md:min-h-min">
 				<Deferred
 					data={["therapists"]}
-					fallback={<Skeleton className="h-full col-span-4 rounded-md" />}
+					fallback={
+						<Skeleton className="h-full rounded-md col-span-full xl:col-span-4" />
+					}
 				>
-					<TherapistList therapists={therapists} className="col-span-4" />
+					<TherapistList
+						therapists={therapists}
+						className="col-span-full xl:col-span-4"
+					/>
 				</Deferred>
 
 				<ScheduleForm
 					selectedTherapist={selectedTherapist}
 					dayNames={dayNames}
-					className="col-span-8"
+					className="col-span-full xl:col-span-8"
 				/>
 			</PageContainer>
 		</>

@@ -8,8 +8,10 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { AvailabilityFormSchema } from "@/lib/availabilities";
+import { IS_MOBILE_MEDIA_QUERY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import { AlertCircle, PlusCircle } from "lucide-react";
 import {
 	type ComponentProps,
@@ -36,6 +38,7 @@ function WeeklyAvailabilityField({
 	selectedTherapist,
 }: WeeklyAvailabilityFieldProps) {
 	const form = useFormContext<AvailabilityFormSchema>();
+	const isMobile = useMediaQuery(IS_MOBILE_MEDIA_QUERY);
 
 	// for weekly availability fields
 	const watchWeeklyAvailabilities = useWatch({
@@ -117,7 +120,7 @@ function WeeklyAvailabilityField({
 					isTimesFormExist ? "align-top" : "",
 				)}
 			>
-				{field.dayOfWeek}
+				{isMobile ? field.dayOfWeek.slice(0, 3) : field.dayOfWeek}
 			</TableCell>
 
 			{selectedTherapist && timeAvailabilitiesFields?.fields?.length ? (
@@ -132,28 +135,30 @@ function WeeklyAvailabilityField({
 						</Alert>
 					)}
 
-					{timeAvailabilitiesFields?.fields?.map(
-						(timeField, timeFieldIndex) => (
-							<BaseAvailabilityTimeField
-								key={timeField.uuid}
-								fieldType="weekly"
-								parentIndex={fieldIndex}
-								timeIndex={timeFieldIndex}
-								timeFieldPath={
-									`weeklyAvailabilities.${fieldIndex}.times.${timeFieldIndex}` as const
-								}
-								timesArrayPath={
-									`weeklyAvailabilities.${fieldIndex}.times` as const
-								}
-								isRemoved={removed === timeFieldIndex}
-								actions={{
-									onAddTime,
-									onRemoveTime,
-									onDuplicate,
-								}}
-							/>
-						),
-					)}
+					<div className="flex flex-col w-full gap-4 lg:gap-2">
+						{timeAvailabilitiesFields?.fields?.map(
+							(timeField, timeFieldIndex) => (
+								<BaseAvailabilityTimeField
+									key={timeField.uuid}
+									fieldType="weekly"
+									parentIndex={fieldIndex}
+									timeIndex={timeFieldIndex}
+									timeFieldPath={
+										`weeklyAvailabilities.${fieldIndex}.times.${timeFieldIndex}` as const
+									}
+									timesArrayPath={
+										`weeklyAvailabilities.${fieldIndex}.times` as const
+									}
+									isRemoved={removed === timeFieldIndex}
+									actions={{
+										onAddTime,
+										onRemoveTime,
+										onDuplicate,
+									}}
+								/>
+							),
+						)}
+					</div>
 				</TableCell>
 			) : (
 				<Fragment>

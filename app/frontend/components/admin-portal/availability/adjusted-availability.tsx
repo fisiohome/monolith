@@ -21,8 +21,10 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { AvailabilityFormSchema } from "@/lib/availabilities";
+import { IS_MOBILE_MEDIA_QUERY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import { format, isSameDay } from "date-fns";
 import {
 	AlertCircle,
@@ -40,6 +42,167 @@ import {
 } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import BaseAvailabilityTimeField from "./time-field";
+
+const DateSelectedField = ({
+	parentIndex,
+	isDisabled,
+}: { parentIndex: number; isDisabled: (date: Date) => boolean }) => {
+	const form = useFormContext<AvailabilityFormSchema>();
+	const isMobile = useMediaQuery(IS_MOBILE_MEDIA_QUERY);
+
+	return (
+		<FormField
+			control={form.control}
+			name={`adjustedAvailabilities.${parentIndex}.specificDate`}
+			render={({ field }) => (
+				<FormItem className="field-sizing-content">
+					<Popover>
+						<PopoverTrigger asChild>
+							<FormControl>
+								<Button
+									variant={"outline"}
+									className={cn(
+										"pl-3 text-left font-normal",
+										!field.value && "text-muted-foreground",
+									)}
+								>
+									{field.value ? (
+										format(
+											new Date(String(field.value)),
+											isMobile ? "PP" : "PPP",
+										)
+									) : (
+										<span className="text-muted-foreground">Pick a date</span>
+									)}
+									<CalendarIcon className="ml-auto size-4 text-muted-foreground" />
+								</Button>
+							</FormControl>
+						</PopoverTrigger>
+						<PopoverContent className="w-auto p-0" align="start">
+							<Calendar
+								mode="single"
+								selected={field?.value || undefined}
+								onSelect={field.onChange}
+								disabled={(date) => isDisabled(date)}
+								initialFocus={true}
+							/>
+						</PopoverContent>
+					</Popover>
+
+					<FormMessage />
+				</FormItem>
+			)}
+		/>
+	);
+};
+
+const UnavailableField = ({ parentIndex }: { parentIndex: number }) => {
+	const form = useFormContext<AvailabilityFormSchema>();
+
+	return (
+		<div className="flex flex-wrap items-center w-full gap-2">
+			<p>Unavailable</p>
+
+			<div className="flex-none w-full">
+				<FormField
+					control={form.control}
+					name={`adjustedAvailabilities.${parentIndex}.reason`}
+					render={({ field }) => (
+						<FormItem>
+							<Textarea
+								{...field}
+								placeholder="Enter the reason (optional)..."
+							/>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			</div>
+		</div>
+	);
+};
+
+const UnavailableTableActions = ({
+	parentIndex,
+	onAddTime,
+	onRemoveDate,
+}: {
+	parentIndex: number;
+	onAddTime: () => void;
+	onRemoveDate: (index: number) => void;
+}) => {
+	return (
+		<div className="flex justify-between w-full gap-2 md:w-auto md:justify-normal lg:gap-0">
+			{/* Note: this button is invisible because actually this button is not needed. The purposes is to adjust the UI, because in time-filed components there are 3 buttons. */}
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							size="icon"
+							variant="ghost"
+							className="invisible"
+							onClick={(event) => {
+								event.preventDefault();
+							}}
+						>
+							<MinusCircle />
+						</Button>
+					</TooltipTrigger>
+
+					<TooltipContent>
+						<p>Remove this time set</p>
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							size="icon"
+							variant="ghost"
+							className="rounded-full"
+							onClick={(event) => {
+								event.preventDefault();
+								onAddTime();
+							}}
+						>
+							<PlusCircle />
+						</Button>
+					</TooltipTrigger>
+
+					<TooltipContent>
+						<p>Add another time to this day</p>
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							size="icon"
+							variant="ghost"
+							className="rounded-full"
+							onClick={(event) => {
+								event.preventDefault();
+								onRemoveDate(parentIndex);
+							}}
+						>
+							<X />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>Remove this day</p>
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+		</div>
+	);
+};
 
 // * for adjusted availability date field
 interface AdjustedDateFieldProps extends ComponentProps<"tr"> {
@@ -59,6 +222,7 @@ function AdjustedDateField({
 	actions: { isRemoved, onRemoveDate },
 }: AdjustedDateFieldProps) {
 	const form = useFormContext<AvailabilityFormSchema>();
+	const isMobile = useMediaQuery(IS_MOBILE_MEDIA_QUERY);
 
 	// for weekly availability fields
 	const watchAdjustedDates = useWatch({
@@ -106,6 +270,72 @@ function AdjustedDateField({
 		[adjustedTimeFields],
 	);
 
+	if (isMobile) {
+		return (
+			<TableRow
+				className={cn(
+					"",
+					className,
+					isRemoved
+						? "motion-opacity-out-0"
+						: "motion-translate-motion-scale-in-0 motion-opacity-in-0 motion-delay-100",
+				)}
+			>
+				<TableCell className="flex flex-col gap-6">
+					{formAvailabilityTimeError && (
+						<Alert variant="destructive" className="md:mb-4">
+							<AlertCircle className="size-4" />
+							<AlertTitle className="text-xs">Error</AlertTitle>
+							<AlertDescription className="text-xs">
+								{formAvailabilityTimeError}
+							</AlertDescription>
+						</Alert>
+					)}
+
+					<DateSelectedField
+						parentIndex={field.index}
+						isDisabled={getDisabledCalendarDates}
+					/>
+
+					{adjustedTimeFields?.fields?.length ? (
+						<div className="flex flex-col w-full gap-4">
+							{adjustedTimeFields?.fields?.map((timeField, timeFieldIndex) => (
+								<BaseAvailabilityTimeField
+									key={timeField.uuid}
+									fieldType="adjusted"
+									parentIndex={field.index}
+									timeIndex={timeFieldIndex}
+									timeFieldPath={
+										`adjustedAvailabilities.${field.index}.times.${timeFieldIndex}` as const
+									}
+									timesArrayPath={
+										`adjustedAvailabilities.${field.index}.times` as const
+									}
+									isRemoved={removed === timeFieldIndex}
+									actions={{
+										onAddTime,
+										onRemoveTime,
+										onRemoveDate,
+									}}
+								/>
+							))}
+						</div>
+					) : (
+						<div className="flex flex-wrap items-center w-full gap-2 font-light text-muted-foreground">
+							<UnavailableField parentIndex={field.index} />
+
+							<UnavailableTableActions
+								parentIndex={field.index}
+								onAddTime={onAddTime}
+								onRemoveDate={onRemoveDate}
+							/>
+						</div>
+					)}
+				</TableCell>
+			</TableRow>
+		);
+	}
+
 	return (
 		<TableRow
 			className={cn(
@@ -117,46 +347,9 @@ function AdjustedDateField({
 			)}
 		>
 			<TableCell className="align-top">
-				<FormField
-					control={form.control}
-					name={`adjustedAvailabilities.${field.index}.specificDate`}
-					render={({ field }) => (
-						<FormItem className="field-sizing-content">
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant={"outline"}
-											className={cn(
-												"pl-3 text-left font-normal",
-												!field.value && "text-muted-foreground",
-											)}
-										>
-											{field.value ? (
-												format(new Date(String(field.value)), "PPP")
-											) : (
-												<span className="text-muted-foreground">
-													Pick a date
-												</span>
-											)}
-											<CalendarIcon className="ml-auto size-4 text-muted-foreground" />
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-									<Calendar
-										mode="single"
-										selected={field?.value || undefined}
-										onSelect={field.onChange}
-										disabled={(date) => getDisabledCalendarDates(date)}
-										initialFocus={true}
-									/>
-								</PopoverContent>
-							</Popover>
-
-							<FormMessage />
-						</FormItem>
-					)}
+				<DateSelectedField
+					parentIndex={field.index}
+					isDisabled={getDisabledCalendarDates}
 				/>
 			</TableCell>
 
@@ -172,119 +365,40 @@ function AdjustedDateField({
 						</Alert>
 					)}
 
-					{adjustedTimeFields?.fields?.map((timeField, timeFieldIndex) => (
-						<BaseAvailabilityTimeField
-							key={timeField.uuid}
-							fieldType="adjusted"
-							parentIndex={field.index}
-							timeIndex={timeFieldIndex}
-							timeFieldPath={
-								`adjustedAvailabilities.${field.index}.times.${timeFieldIndex}` as const
-							}
-							timesArrayPath={
-								`adjustedAvailabilities.${field.index}.times` as const
-							}
-							isRemoved={removed === timeFieldIndex}
-							actions={{
-								onAddTime,
-								onRemoveTime,
-								onRemoveDate,
-							}}
-						/>
-					))}
+					<div className="flex flex-col w-full gap-4 lg:gap-2">
+						{adjustedTimeFields?.fields?.map((timeField, timeFieldIndex) => (
+							<BaseAvailabilityTimeField
+								key={timeField.uuid}
+								fieldType="adjusted"
+								parentIndex={field.index}
+								timeIndex={timeFieldIndex}
+								timeFieldPath={
+									`adjustedAvailabilities.${field.index}.times.${timeFieldIndex}` as const
+								}
+								timesArrayPath={
+									`adjustedAvailabilities.${field.index}.times` as const
+								}
+								isRemoved={removed === timeFieldIndex}
+								actions={{
+									onAddTime,
+									onRemoveTime,
+									onRemoveDate,
+								}}
+							/>
+						))}
+					</div>
 				</TableCell>
 			) : (
 				<Fragment>
-					<TableCell
-						colSpan={2}
-						className="flex gap-2 font-light text-muted-foreground"
-					>
-						<div className="flex flex-wrap items-center w-full gap-2">
-							<p>Unavailable</p>
+					<TableCell colSpan={2}>
+						<div className="flex gap-2 font-light text-muted-foreground">
+							<UnavailableField parentIndex={field.index} />
 
-							<div className="flex-none w-full">
-								<FormField
-									control={form.control}
-									name={`adjustedAvailabilities.${field.index}.reason`}
-									render={({ field }) => (
-										<FormItem>
-											<Textarea
-												{...field}
-												placeholder="Enter the reason (optional)..."
-											/>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-						</div>
-
-						<div className="flex justify-end">
-							{/* Note: this button is invisible because actually this button is not needed. The purposes is to adjust the UI, because in time-filed components there are 3 buttons. */}
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											size="icon"
-											variant="ghost"
-											className="invisible"
-											onClick={(event) => {
-												event.preventDefault();
-											}}
-										>
-											<MinusCircle />
-										</Button>
-									</TooltipTrigger>
-
-									<TooltipContent>
-										<p>Remove this time set</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											size="icon"
-											variant="ghost"
-											className="rounded-full"
-											onClick={(event) => {
-												event.preventDefault();
-												onAddTime();
-											}}
-										>
-											<PlusCircle />
-										</Button>
-									</TooltipTrigger>
-
-									<TooltipContent>
-										<p>Add another time to this day</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											type="button"
-											size="icon"
-											variant="ghost"
-											className="rounded-full"
-											onClick={(event) => {
-												event.preventDefault();
-												onRemoveDate(field.index);
-											}}
-										>
-											<X />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										<p>Remove this day</p>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
+							<UnavailableTableActions
+								parentIndex={field.index}
+								onAddTime={onAddTime}
+								onRemoveDate={onRemoveDate}
+							/>
 						</div>
 					</TableCell>
 				</Fragment>
