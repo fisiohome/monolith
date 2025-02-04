@@ -1,5 +1,4 @@
 import type { Therapist } from "@/types/admin-portal/therapist";
-import { TZDate } from "@date-fns/tz";
 import { z } from "zod";
 import { DAY_NAMES } from "./constants";
 import { timeSchema } from "./validation";
@@ -116,15 +115,17 @@ export type AvailabilityFormSchema = z.infer<typeof AVAILABILITY_FORM_SCHEMA>;
 export const getDefaultValues = ({
 	days,
 	therapist,
+	serverTimezone,
 }: {
 	days: (typeof DAY_NAMES)[number][];
 	therapist: Therapist | null;
+	serverTimezone: string;
 }): AvailabilityFormSchema => {
 	const availability = therapist?.availability ?? {};
 
 	// Extracting values with proper typings and default values
 	const {
-		timeZone = "Asia/Jakarta",
+		timeZone = serverTimezone || "Asia/Jakarta",
 		appointmentDurationInMinutes = 90,
 		bufferTimeInMinutes = 30,
 		maxAdvanceBookingInDays = 14,
@@ -166,7 +167,8 @@ export const getDefaultValues = ({
 							{ specificDate, startTime, endTime, reason, isUnavailable },
 						) => {
 							// parse a date to the specific timezone
-							const date = new TZDate(specificDate, timeZone);
+							// const date = new TZDate(specificDate, serverTimezone);
+							const date = new Date(String(specificDate));
 							const formattedDate = date.toString();
 
 							acc[formattedDate] ??= {

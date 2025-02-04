@@ -16,8 +16,11 @@ module AdminPortal
           process_weekly_availabilities(schedule)
           process_adjusted_availabilities(schedule)
 
-          # Check for failed imports
-          raise ActiveRecord::Rollback if import_errors?
+          # Check for failed imports and rollback transaction if any errors
+          if import_errors?
+            schedule.errors.add(:base, "Failed to save availabilities due to validation errors.")
+            raise ActiveRecord::Rollback
+          end
         end
         result(schedule)
       rescue ActiveRecord::RecordInvalid => e
@@ -62,6 +65,9 @@ module AdminPortal
     end
 
     def result(schedule)
+      # Debugging line can be removed or logged properly
+      # puts schedule.errors.inspect
+
       if schedule.errors.any?
         {success: false, errors: schedule.errors}
       else
@@ -85,6 +91,12 @@ module AdminPortal
         all_or_none: true # Rollback if any record fails
       )
 
+      # Capture import errors and attach to schedule
+      result.failed_instances.each do |failed|
+        failed.errors.each do |error|
+          schedule.errors.add(:weekly_availabilities, error.message)
+        end
+      end
       @weekly_import_errors = result.failed_instances.present?
     end
 
@@ -106,6 +118,12 @@ module AdminPortal
         all_or_none: true # Rollback if any record fails
       )
 
+      # Capture import errors and attach to schedule
+      result.failed_instances.each do |failed|
+        failed.errors.each do |error|
+          schedule.errors.add(:adjusted_availabilities, error.message)
+        end
+      end
       @adjusted_import_errors = result.failed_instances.present?
     end
   end

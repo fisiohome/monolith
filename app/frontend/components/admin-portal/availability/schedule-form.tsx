@@ -29,6 +29,7 @@ import {
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import AdjustedAvailabilityForm from "./adjusted-availability";
+import AppointmentSettingsForm from "./appointment-settings";
 import WeeklyAvailabilityForm from "./weekly-availability";
 
 // * for the scheduled form
@@ -43,6 +44,10 @@ export default function ScheduleForm({
 	dayNames,
 }: ScheduleFormProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
+	const serverTimezone = useMemo(
+		() => globalProps.adminPortal.currentTimezone,
+		[globalProps.adminPortal.currentTimezone],
+	);
 
 	// for accordion management state
 	const accordions = useMemo(() => {
@@ -59,12 +64,12 @@ export default function ScheduleForm({
 				description:
 					"Find out when the therapist will be available for a specific dates.",
 			},
-			// {
-			// 	value: "appointment-settings" as const,
-			// 	title: "Appointment Settings",
-			// 	description:
-			// 		"Manage the time range limitation and the booked appointments.",
-			// },
+			{
+				value: "appointment-settings" as const,
+				title: "Appointment Settings",
+				description:
+					"Manage the time range limitation and the booked appointments.",
+			},
 		];
 	}, []);
 
@@ -73,16 +78,25 @@ export default function ScheduleForm({
 	const form = useForm<AvailabilityFormSchema>({
 		resolver: zodResolver(AVAILABILITY_FORM_SCHEMA),
 		defaultValues: useMemo(
-			() => getDefaultValues({ days: dayNames, therapist: selectedTherapist }),
-			[selectedTherapist, dayNames],
+			() =>
+				getDefaultValues({
+					days: dayNames,
+					therapist: selectedTherapist,
+					serverTimezone,
+				}),
+			[selectedTherapist, dayNames, serverTimezone],
 		),
 		mode: "onBlur",
 	});
 	useEffect(() => {
 		form.reset(
-			getDefaultValues({ days: dayNames, therapist: selectedTherapist }),
+			getDefaultValues({
+				days: dayNames,
+				therapist: selectedTherapist,
+				serverTimezone,
+			}),
 		);
-	}, [form.reset, dayNames, selectedTherapist]);
+	}, [form.reset, dayNames, selectedTherapist, serverTimezone]);
 	const onSubmit = useCallback(
 		(values: AvailabilityFormSchema) => {
 			console.log(
@@ -227,6 +241,12 @@ export default function ScheduleForm({
 
 									{accordion.value === "adjusted-availability" && (
 										<AdjustedAvailabilityForm
+											selectedTherapist={selectedTherapist}
+										/>
+									)}
+
+									{accordion.value === "appointment-settings" && (
+										<AppointmentSettingsForm
 											selectedTherapist={selectedTherapist}
 										/>
 									)}
