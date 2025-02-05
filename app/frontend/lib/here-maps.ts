@@ -5,6 +5,15 @@ const BASE_URL = {
 	GEOCODE: "https://geocode.search.hereapi.com/v1/geocode",
 };
 
+// default constants for map coordinates
+export const MAP_DEFAULT_COORDINATE = [-6.2, 106.81]; // Default to Jakarta coordinates.
+export function isDefaultCoordinate(arrValue: number[]): boolean {
+	return (
+		arrValue.length === MAP_DEFAULT_COORDINATE.length &&
+		arrValue.every((value, index) => value === MAP_DEFAULT_COORDINATE[index])
+	);
+}
+
 export const filterGeocodeByQueryScore = (
 	bestResult: GeocodingResult,
 	currentResult: GeocodingResult,

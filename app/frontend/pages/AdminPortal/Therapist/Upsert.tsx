@@ -51,16 +51,12 @@ export default function UpsertTherapistPage({
 
 	return (
 		<>
+			{/* required if using Here Map Component */}
 			<Head title={formHeader.title}>
 				<link
 					rel="stylesheet"
 					type="text/css"
 					href="https://js.api.here.com/v3/3.1/mapsjs-ui.css"
-				/>
-				<script
-					type="text/javascript"
-					charSet="utf-8"
-					src="https://js.api.here.com/v3/3.1/mapsjs-ui.js"
 				/>
 			</Head>
 

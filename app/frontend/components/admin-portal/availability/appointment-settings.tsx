@@ -90,6 +90,7 @@ export default function AppointmentSettingsForm({
 													<CommandItem
 														value={timezone}
 														key={timezone}
+														disabled
 														onSelect={() => {
 															form.setValue("timeZone", timezone);
 														}}
