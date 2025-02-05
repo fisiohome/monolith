@@ -961,6 +961,14 @@ function AddressForm({
 			});
 		}
 	}, [fieldIndex, form.setError, form.setValue, form.trigger]);
+	const onResetCoordinate = useCallback(() => {
+		// Update form values with latitude and longitude
+		form.setValue(`addresses.${fieldIndex}.lat`, 0);
+		form.setValue(`addresses.${fieldIndex}.lng`, 0);
+
+		// remove the map markers
+		mapRef.current?.removeMarkers();
+	}, [form.setValue, fieldIndex]);
 
 	return (
 		<div
@@ -1322,7 +1330,7 @@ function AddressForm({
 					)}
 				/>
 
-				<div className="flex flex-col gap-2 items center">
+				<div className="flex flex-col gap-2">
 					<PulsatingOutlineShadowButton
 						size="sm"
 						type="button"
@@ -1336,6 +1344,26 @@ function AddressForm({
 					>
 						Calculate Coordinate
 					</PulsatingOutlineShadowButton>
+
+					<Button
+						size="sm"
+						type="button"
+						variant="destructive-outline"
+						disabled={isSeeOnGMapsDisabled}
+						onClick={(event) => {
+							event.preventDefault();
+
+							if (
+								window.confirm(
+									"Are you absolutely sure? \nThis action is irreversible. Resetting coordinates deletes the calculated latitude and longitude, so you must recalculate them.",
+								)
+							) {
+								onResetCoordinate();
+							}
+						}}
+					>
+						Reset Coordinate
+					</Button>
 
 					<Button
 						size="sm"

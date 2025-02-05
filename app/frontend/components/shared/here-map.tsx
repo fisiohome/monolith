@@ -83,6 +83,7 @@ const useHereMap = (
 	const platformRef = useRef<H.service.Platform | null>(null); // Platform instance
 	const behaviorRef = useRef<H.mapevents.Behavior | null>(null); // Map behavior (e.g., zoom, pan)
 	const uiRef = useRef<H.ui.UI | null>(null); // Map UI components
+	const markerGroupRef = useRef<H.map.Group | null>(null); // Map group marker instance
 
 	// Local state to display current center (for debugging/UI purposes)
 	const [centerMap, setCenterMap] = useState<{ lat: number; lng: number }>({
@@ -125,8 +126,14 @@ const useHereMap = (
 		(locations: MarkerData[]) => {
 			if (!mapRef.current) return;
 
-			// Create a group to manage markers
+			// If there is already a marker group, remove it first.
+			if (markerGroupRef.current) {
+				mapRef.current.removeObject(markerGroupRef.current);
+			}
+
+			// Create a new group for the markers and save it in the ref.
 			const group = new H.map.Group();
+			markerGroupRef.current = group;
 
 			for (const location of locations) {
 				if (!location.position || !location.address) {
@@ -165,15 +172,29 @@ const useHereMap = (
 
 			// Update the center state based on the first marker
 			if (locations[0]) {
-				setCenterMap((prev) => ({
-					...prev,
+				setCenterMap({
 					lat: locations[0].position.lat,
 					lng: locations[0].position.lng,
-				}));
+				});
 			}
 		},
 		[svgIcon, tapMarkersListener],
 	);
+
+	/**
+	 * Removes all markers from the map by removing the marker group object.
+	 * This function uses the `useCallback` hook to memoize the callback, ensuring
+	 * that the function is not recreated on every render.
+	 */
+	const removeMarkers = useCallback(() => {
+		if (mapRef.current && markerGroupRef.current) {
+			mapRef.current.removeObject(markerGroupRef.current);
+			markerGroupRef.current = null;
+		}
+
+		// update the center state
+		setCenterMap({ lat: 0, lng: 0 });
+	}, []);
 
 	/**
 	 * removeCopyrights:
@@ -348,6 +369,7 @@ const useHereMap = (
 	return {
 		initializeMap,
 		addMarkers,
+		removeMarkers,
 		geocodeAddress,
 		setCenter,
 		setZoom,
@@ -366,6 +388,7 @@ interface HereMaphandler {
 	setCenter: (lat: number, lng: number) => void;
 	setZoom: (zoomLevel: number) => void;
 	addMarkers: (locations: GeocodingResponse["items"]) => void;
+	removeMarkers: () => void;
 	geocodeAddress: () => Promise<GeocodingResult | null>;
 	getMapCenterPosition: () => H.geo.Point | null;
 	getMapZoom: () => number | null;
@@ -430,6 +453,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 		const {
 			initializeMap,
 			addMarkers,
+			removeMarkers,
 			geocodeAddress,
 			setCenter,
 			setZoom,
@@ -450,6 +474,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 				}));
 				addMarkers(formattedLocations);
 			},
+			removeMarkers,
 			geocodeAddress,
 			getMapCenterPosition,
 			getMapZoom,
