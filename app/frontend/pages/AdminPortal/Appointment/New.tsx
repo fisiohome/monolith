@@ -96,19 +96,25 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 
 	// form management state
 	const formDefaultvalues = useMemo(() => {
+		// for date of birth
 		const dateOfBirth = new Date(1952, 5, 21);
 		const age = calculateAge(dateOfBirth);
 
+		// for referral
 		const referralSource = "Other";
 		const isCustomReferral = checkIsCustomReferral(referralSource);
 		const customReferralSource = isCustomReferral ? "Linkedin" : undefined;
 
+		// for fisiohome partner name
 		const fisiohomePartnerName = "Other";
 		const isCustomFisiohomePartner =
 			checkIsCustomFisiohomePartner(fisiohomePartnerName);
 		const customFisiohomePartnerName = isCustomFisiohomePartner
 			? "Tokopedia"
 			: undefined;
+
+		// for appointment date
+		const appointmentDate = new Date(2025, 6, 1, 11, 0);
 
 		return {
 			contactInformation: {
@@ -138,6 +144,7 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 				service: { id: "7", name: "FISIOHOME_SPECIAL_TIER" },
 				package: { id: "1", name: "Order Visit", numberOfVisit: 1 },
 				preferredTherapistGender: "NO PREFERENCE",
+				appointmentDate,
 			},
 			additionalSettings: {
 				referralSource,

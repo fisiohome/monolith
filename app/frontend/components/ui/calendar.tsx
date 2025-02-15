@@ -1,7 +1,6 @@
 /**
  * * Docs: https://github.com/Maliksidk19/shadcn-datetime-picker/tree/main
  */
-import * as React from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check, ChevronLeft, ChevronRight, ChevronsUpDown } from "lucide-react";
@@ -15,6 +14,15 @@ import {
 	CommandItem,
 	CommandList,
 } from "./command";
+import { Children, useMemo, useState } from "react";
+// import {
+// 	Select,
+// 	SelectContent,
+// 	SelectItem,
+// 	SelectTrigger,
+// 	SelectValue,
+// } from "./select";
+// import { ScrollArea } from "./scroll-area";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -76,13 +84,11 @@ function Calendar({
 			}}
 			components={{
 				Dropdown: ({ value, onChange, children }: DropdownProps) => {
-					const options = React.Children.toArray(
-						children,
-					) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
-					const isMonth = React.useMemo(
-						() => options.length <= 12,
-						[options.length],
-					);
+					const [isOpen, setIsOpen] = useState(false);
+					const options = Children.toArray(children) as React.ReactElement<
+						React.HTMLProps<HTMLOptionElement>
+					>[];
+					const isMonth = useMemo(() => options.length <= 12, [options.length]);
 					const selected = options.find((child) => child.props.value === value);
 					const handleChange = (value: string) => {
 						const changeEvent = {
@@ -115,7 +121,7 @@ function Calendar({
 						// 	</SelectContent>
 						// </Select>
 
-						<Popover>
+						<Popover open={isOpen} onOpenChange={setIsOpen}>
 							<PopoverTrigger asChild>
 								<Button
 									variant="outline"
@@ -149,7 +155,21 @@ function Calendar({
 														""
 													}
 													onSelect={(currentValue) => {
+														// handle on select for month
+														if (isMonth) {
+															const selectedValue = options.find(
+																(option) =>
+																	option?.props?.children === currentValue,
+															)?.props?.value;
+
+															handleChange(String(selectedValue));
+															return;
+														}
+
+														// handle on select for year
 														handleChange(currentValue);
+														// close the popover
+														setIsOpen(false);
 													}}
 													className="capitalize"
 												>

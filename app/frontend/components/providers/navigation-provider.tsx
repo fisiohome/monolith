@@ -4,6 +4,7 @@ import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import {
 	BriefcaseMedical,
+	Calendar1,
 	CalendarRange,
 	LayoutDashboard,
 	Users,
@@ -68,13 +69,13 @@ export function NavigationProvider({
 			isActive: true,
 			subItems: [],
 		};
-		// const appointmentMenu = {
-		// 	title: "Appointment",
-		// 	url: "#",
-		// 	icon: Calendar1,
-		// 	isActive: true,
-		// 	subItems: [],
-		// };
+		const appointmentMenu = {
+			title: "Appointment",
+			url: globalProps.adminPortal.router.adminPortal.appointment.index,
+			icon: Calendar1,
+			isActive: true,
+			subItems: [],
+		};
 		const availabilityMenu = {
 			title: "Availability Time",
 			url: globalProps.adminPortal.router.adminPortal.availability.index,
@@ -134,7 +135,7 @@ export function NavigationProvider({
 
 		const items = [
 			dashboardMenu,
-			// appointmentMenu,
+			appointmentMenu,
 			availabilityMenu,
 			userManagementMenu,
 			serviceManagementMenu,

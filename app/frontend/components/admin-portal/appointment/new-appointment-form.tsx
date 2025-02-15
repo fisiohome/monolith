@@ -54,7 +54,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import {
 	calculateAge,
@@ -83,6 +83,14 @@ import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsati
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import HereMap from "@/components/shared/here-map";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // * component form container
 export interface FormContainerProps extends ComponentProps<"div"> {}
@@ -603,6 +611,35 @@ export function AppointmentSchedulingForm() {
 		},
 		[form.setValue, form.resetField],
 	);
+
+	// * for appointment date field
+	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
+	const [appointmentTime, setAppointmentTime] = useState<string>(
+		format(watchAppointmentSchedulingValue.appointmentDate, "HH:mm"),
+	);
+	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
+		new Date(watchAppointmentSchedulingValue.appointmentDate.toString()),
+	);
+	// Memoized calendar properties for the appointment date field
+	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
+		// Define the range of years to be displayed in the calendar
+		const currentYear = new Date().getFullYear();
+		const sixMonthsFromToday = new Date();
+		sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
+
+		return {
+			// Close the calendar popover when a day is clicked
+			onDayClick: () => setIsOpenAppointmentDate(false),
+			// Set the range of years to be displayed
+			fromYear: currentYear,
+			toYear: currentYear,
+			// Disable dates that are in the past or more than 6 months in the future
+			disabled: (date) => {
+				const today = new Date();
+				return date <= today || date > sixMonthsFromToday;
+			},
+		};
+	}, []);
 
 	return (
 		<FormStepItemContainer>
@@ -1127,6 +1164,123 @@ export function AppointmentSchedulingForm() {
 					</FormItem>
 				)}
 			/>
+
+			<div className="flex w-full gap-4">
+				<FormField
+					control={form.control}
+					name="appointmentScheduling.appointmentDate"
+					render={({ field }) => (
+						<FormItem className="flex-grow">
+							<FormLabel>Appointment Date</FormLabel>
+							<Popover
+								open={isOpenAppointmentDate}
+								onOpenChange={setIsOpenAppointmentDate}
+							>
+								<PopoverTrigger asChild>
+									<FormControl>
+										<Button
+											variant={"outline"}
+											className={cn(
+												"relative w-full pl-3 text-left font-normal shadow-inner bg-sidebar",
+												!field.value && "text-muted-foreground",
+											)}
+										>
+											{field.value ? (
+												format(field.value, "PPP")
+											) : (
+												<span>Pick a appointment date</span>
+											)}
+											<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
+										</Button>
+									</FormControl>
+								</PopoverTrigger>
+								<PopoverContent
+									className="w-auto p-0"
+									align="start"
+									side="bottom"
+								>
+									<Calendar
+										{...appointmentDateCalendarProps}
+										initialFocus
+										mode="single"
+										captionLayout="dropdown"
+										selected={new Date(appointmentDate || field.value)}
+										onSelect={(selectedDate) => {
+											// Set the selected time to the selected date
+											const [hours, minutes] = appointmentTime.split(":");
+											selectedDate?.setHours(
+												Number.parseInt(hours),
+												Number.parseInt(minutes),
+											);
+
+											// update state reference and form field value data
+											setAppointmentDate(selectedDate || null);
+											field.onChange(selectedDate);
+										}}
+										defaultMonth={field.value}
+									/>
+								</PopoverContent>
+							</Popover>
+
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					control={form.control}
+					name="appointmentScheduling.appointmentDate"
+					render={({ field }) => (
+						<FormItem className="flex-auto">
+							<FormLabel className="invisible">Time</FormLabel>
+							<FormControl>
+								<Select
+									defaultValue={appointmentTime}
+									onValueChange={(e) => {
+										setAppointmentTime(e);
+										if (appointmentDate) {
+											const [hours, minutes] = e.split(":");
+											const newDate = new Date(appointmentDate.getTime());
+											newDate.setHours(
+												Number.parseInt(hours),
+												Number.parseInt(minutes),
+											);
+											setAppointmentDate(newDate);
+											field.onChange(newDate);
+										}
+									}}
+								>
+									<SelectTrigger className="font-normal shadow-inner bg-sidebar focus:ring-0 w-[100px] focus:ring-offset-0">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<ScrollArea className="h-[15rem]">
+											{Array.from({ length: 96 }).map((_, i) => {
+												const hour = Math.floor(i / 4)
+													.toString()
+													.padStart(2, "0");
+												const minute = ((i % 4) * 15)
+													.toString()
+													.padStart(2, "0");
+												return (
+													<SelectItem
+														key={String(i)}
+														value={`${hour}:${minute}`}
+													>
+														{hour}:{minute}
+													</SelectItem>
+												);
+											})}
+										</ScrollArea>
+									</SelectContent>
+								</Select>
+							</FormControl>
+
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			</div>
 		</FormStepItemContainer>
 	);
 }
@@ -1149,6 +1303,16 @@ export function PatientDetailsForm() {
 		control: form.control,
 		name: "patientDetails.dateOfBirth",
 	});
+	// Memoized calendar properties for the date of birth field
+	const dateOfBirthCalendarProps = useMemo<CalendarProps>(() => {
+		return {
+			// Show 100 years range
+			fromYear: new Date().getFullYear() - 100,
+			toYear: new Date().getFullYear(),
+			// Disable future dates
+			disabled: (date) => date >= new Date(),
+		};
+	}, []);
 	useEffect(() => {
 		if (watchDateOfBirth && watchDateOfBirth instanceof Date) {
 			// Calculate age using your custom function
@@ -1207,16 +1371,18 @@ export function PatientDetailsForm() {
 										</Button>
 									</FormControl>
 								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
+								<PopoverContent
+									className="w-auto p-0"
+									align="start"
+									side="bottom"
+								>
 									<Calendar
+										{...dateOfBirthCalendarProps}
 										initialFocus
 										mode="single"
 										captionLayout="dropdown"
 										selected={new Date(field.value)}
 										onSelect={field.onChange}
-										fromYear={new Date().getFullYear() - 100}
-										toYear={new Date().getFullYear()}
-										disabled={(date) => date >= new Date()}
 										defaultMonth={field.value}
 									/>
 								</PopoverContent>

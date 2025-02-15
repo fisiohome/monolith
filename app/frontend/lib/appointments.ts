@@ -337,17 +337,17 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 		})
 		.refine((value) => !!value?.city, {
 			path: ["city"],
-			message: "Need to select the location",
+			message: "Please select a location",
 		}),
 	postalCode: z.string().min(1, { message: "Postal code is required" }),
 	latitude: z.coerce
-		.number({ message: "Latitude must be numerical value" })
-		.refine((value) => value > 0 || value < 0, {
+		.number({ message: "Latitude must be a numerical value" })
+		.refine((value) => value !== 0, {
 			message: "Latitude is required",
 		}),
 	longitude: z.coerce
-		.number({ message: "Longitude must be numerical value" })
-		.refine((value) => value > 0 || value < 0, {
+		.number({ message: "Longitude must be a numerical value" })
+		.refine((value) => value !== 0, {
 			message: "Longitude is required",
 		}),
 	address: z.string().min(1, "Address is required"),
@@ -358,7 +358,7 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 		})
 		.refine((value) => !!value?.name, {
 			path: ["name"],
-			message: "Need to select the service",
+			message: "Please select a service",
 		}),
 	package: z
 		.object({
@@ -368,10 +368,13 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 		})
 		.refine((value) => !!value?.name, {
 			path: ["name"],
-			message: "Need to select the package",
+			message: "Please select a package",
 		}),
 	preferredTherapistGender: z.enum(PREFERRED_THERAPIST_GENDER, {
-		required_error: "Need to select a preferred therapist gender",
+		required_error: "Please select a preferred therapist gender",
+	}),
+	appointmentDate: z.coerce.date().refine((date) => date > new Date(), {
+		message: "Appointment date must be in the future",
 	}),
 });
 export type AppointmentSchedulingSchema = z.infer<
