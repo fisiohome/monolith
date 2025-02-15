@@ -32,4 +32,17 @@ export const timeSchema = z
 	.regex(TIME_REGEX, { message: "Invalid time format (HH:MM)" });
 
 // schema for id's, can be as a string or number, can be also optional value
-export const idSchema = z.union([z.string(), z.number()]).optional();
+export const idSchema = z.union([z.string(), z.number()]);
+
+/**
+ * * schema for boolean value
+ *
+ * Reference: https://github.com/colinhacks/zod/issues/1630#issuecomment-1885010517
+ */
+export const boolSchema = z
+	.union([z.string(), z.number(), z.boolean()])
+	.transform((val) =>
+		typeof val === "string" && (val === "false" || val === "0")
+			? false
+			: Boolean(val),
+	);

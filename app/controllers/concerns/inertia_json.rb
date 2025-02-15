@@ -22,7 +22,7 @@ module InertiaJson
 
   def jbuilder(&block)
     JbuilderTemplate.new(view_context) do |json|
-      json.key_format!(camelize: :lower)
+      json.key_format! camelize: :lower
       json.deep_format_keys!
       instance_exec(json, &block)
     end.attributes!

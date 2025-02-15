@@ -32,11 +32,14 @@ Rails.application.routes.draw do
         put "activate" => "users#activate_account"
 
         resources :dashboards, only: [:index]
+        resources :appointments, only: [:index, :new, :create]
+
         resources :availabilities, only: [:index] do
           collection do
             put "upsert" => "availabilities#upsert"
           end
         end
+
         resources :therapists, path: "therapist-management" do
           collection do
             get "generate-reset-password-url" => "therapists#generate_reset_password_url"
@@ -63,6 +66,12 @@ Rails.application.routes.draw do
             put "update-bulk" => "locations#update_bulk"
             delete "delete-bulk" => "locations#destroy_bulk"
           end
+        end
+      end
+
+      namespace :api do
+        namespace :v1 do
+          resources :services, only: [:index]
         end
       end
     end

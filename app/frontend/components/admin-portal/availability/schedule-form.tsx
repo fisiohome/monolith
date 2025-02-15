@@ -108,13 +108,7 @@ export default function ScheduleForm({
 			const submitConfig = {
 				preserveScroll: true,
 				preserveState: true,
-				only: [
-					"adminPortal",
-					"therapists",
-					"flash",
-					"selectedTherapist",
-					"errors",
-				],
+				only: ["adminPortal", "therapists", "flash", "selectedTherapist"],
 				onStart: () => setIsLoading(true),
 				onFinish: () => setTimeout(() => setIsLoading(false), 250),
 			} satisfies Parameters<typeof router.put>["2"];
@@ -158,6 +152,23 @@ export default function ScheduleForm({
 				},
 			}) satisfies Parameters<typeof router.put>["1"];
 
+			// Check the validity of adjusted availabilities
+			const invalidAdjustedIndex = formattedAdjustedAvailabilities?.findIndex(
+				(item) => !item.specificDate,
+			);
+			if (invalidAdjustedIndex && invalidAdjustedIndex !== -1) {
+				const errorMessage = "Please provide a specific date.";
+				form.setError(
+					`adjustedAvailabilities.${invalidAdjustedIndex}.specificDate`,
+					{
+						type: "manual",
+						message: errorMessage,
+					},
+				);
+				toast.error(errorMessage);
+				return;
+			}
+
 			router.put(submitURL, payload, submitConfig);
 
 			console.log("Therapist appointment schedule successfully saved...");
@@ -166,6 +177,7 @@ export default function ScheduleForm({
 			selectedTherapist,
 			globalProps.adminPortal.router.adminPortal.availability.upsert,
 			globalProps?.adminPortal?.currentQuery,
+			form.setError,
 		],
 	);
 

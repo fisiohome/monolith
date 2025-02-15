@@ -1,0 +1,468 @@
+import { add, format } from "date-fns";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import { z } from "zod";
+import { boolSchema, idSchema } from "./validation";
+import {
+	FISIOHOME_PARTNER,
+	GENDERS,
+	PATIENT_CONDITIONS,
+	PATIENT_REFERRAL_OPTIONS,
+	PREFERRED_THERAPIST_GENDER,
+} from "./constants";
+
+export const DEFAULT_VALUES_LOCATION = { id: "", city: "" };
+export const DEFAULT_VALUES_SERVICE = { id: "", name: "" };
+export const DEFAULT_VALUES_PACKAGE = { id: "", name: "", numberOfVisit: 0 };
+export const APPOINTMENTS = [
+	{
+		date: add(new Date(), {}),
+		status: "upcoming",
+		schedules: [
+			{
+				id: 1,
+				brand: {
+					name: "Fisiohome",
+					code: "FH",
+					package: {
+						name: "Paket Executive",
+						visit: 4,
+					},
+				},
+				timezone: "Asia/Jakarta",
+				startTime: format(add(new Date(), { hours: 1 }), "HH:mm"),
+				endTime: format(add(new Date(), { hours: 2.5 }), "HH:mm"),
+				patient: {
+					name: "Patient 1",
+					phoneNumber: "+62123456",
+					email: "patient1@mail.com",
+					age: 28,
+					gender: "male",
+					address:
+						"Jl. Tridarma Utama Raya No.60, RT.2/RW.8, Pd. Labu, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12450",
+				},
+				therapist: {
+					name: "Therapist 1",
+					phoneNumber: "+62123456",
+					email: "therapist1@mail.com",
+					registrationNumber: "FH-0001",
+					gender: "male",
+					employmentType: "KARPIS",
+				},
+				admins: [
+					{
+						name: "Admin 1",
+						email: "admin1@mail.com",
+						adminType: "ADMIN_L1",
+					},
+					{
+						name: "Admin 2",
+						email: "admin2@mail.com",
+						adminType: "ADMIN_L2",
+					},
+					{
+						name: "Admin 3",
+						email: "admin3@mail.com",
+						adminType: "ADMIN_L3",
+					},
+				],
+			},
+			{
+				id: 2,
+				brand: {
+					name: "Fisiohome",
+					code: "FH",
+					package: {
+						name: "Paket Executive",
+						visit: 4,
+					},
+				},
+				timezone: "Asia/Jakarta",
+				startTime: format(add(new Date(), { hours: 3 }), "HH:mm"),
+				endTime: format(add(new Date(), { hours: 4.5 }), "HH:mm"),
+				patient: {
+					name: "Patient 1",
+					phoneNumber: "+62123456",
+					email: "patient1@mail.com",
+					age: 28,
+					gender: "male",
+					address:
+						"Jl. Tridarma Utama Raya No.60, RT.2/RW.8, Pd. Labu, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12450",
+				},
+				therapist: {
+					name: "Therapist 1",
+					phoneNumber: "+62123456",
+					email: "therapist1@mail.com",
+					registrationNumber: "FH-0001",
+					gender: "male",
+					employmentType: "KARPIS",
+				},
+				admins: [
+					{
+						name: "Admin 1",
+						email: "admin1@mail.com",
+						adminType: "ADMIN_L1",
+					},
+				],
+			},
+		],
+	},
+	{
+		date: add(new Date(), { days: 1 }),
+		status: "upcoming",
+		schedules: [
+			{
+				id: 1,
+				brand: {
+					name: "Fisiohome",
+					code: "FH",
+					package: {
+						name: "Paket Executive",
+						visit: 4,
+					},
+				},
+				timezone: "Asia/Jakarta",
+				startTime: format(add(new Date(), { days: 1, hours: -10 }), "HH:mm"),
+				endTime: format(add(new Date(), { days: 1, hours: -8.5 }), "HH:mm"),
+				patient: {
+					name: "Patient 1",
+					phoneNumber: "+62123456",
+					email: "patient1@mail.com",
+					age: 28,
+					gender: "male",
+					address:
+						"Jl. Tridarma Utama Raya No.60, RT.2/RW.8, Pd. Labu, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12450",
+				},
+				therapist: {
+					name: "Therapist 1",
+					phoneNumber: "+62123456",
+					email: "therapist1@mail.com",
+					registrationNumber: "FH-0001",
+					gender: "male",
+					employmentType: "KARPIS",
+				},
+				admins: [
+					{
+						name: "Admin 1",
+						email: "admin1@mail.com",
+						adminType: "ADMIN_L1",
+					},
+				],
+			},
+		],
+	},
+	{
+		date: add(new Date(), { days: 1 }),
+		status: "pending",
+		schedules: [
+			{
+				id: 1,
+				brand: {
+					name: "Fisiohome",
+					code: "FH",
+					package: {
+						name: "Paket Executive",
+						visit: 4,
+					},
+				},
+				timezone: "Asia/Jakarta",
+				startTime: format(add(new Date(), { hours: 3 }), "HH:mm"),
+				endTime: format(add(new Date(), { hours: 4.5 }), "HH:mm"),
+				patient: {
+					name: "Patient 1",
+					phoneNumber: "+62123456",
+					email: "patient1@mail.com",
+					age: 28,
+					gender: "male",
+					address:
+						"Jl. Tridarma Utama Raya No.60, RT.2/RW.8, Pd. Labu, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12450",
+				},
+				therapist: {
+					name: "Therapist 1",
+					phoneNumber: "+62123456",
+					email: "therapist1@mail.com",
+					registrationNumber: "FH-0001",
+					gender: "male",
+					employmentType: "KARPIS",
+				},
+				admins: [
+					{
+						name: "Admin 1",
+						email: "admin1@mail.com",
+						adminType: "ADMIN_L1",
+					},
+				],
+			},
+		],
+	},
+	{
+		date: add(new Date(), { days: -1 }),
+		status: "past",
+		schedules: [
+			{
+				id: 1,
+				brand: {
+					name: "Fisiohome",
+					code: "FH",
+					package: {
+						name: "Paket Executive",
+						visit: 4,
+					},
+				},
+				timezone: "Asia/Jakarta",
+				startTime: format(add(new Date(), { days: -1, hours: -10 }), "HH:mm"),
+				endTime: format(add(new Date(), { days: -1, hours: -8.5 }), "HH:mm"),
+				patient: {
+					name: "Patient 1",
+					phoneNumber: "+62123456",
+					email: "patient1@mail.com",
+					age: 28,
+					gender: "male",
+					address:
+						"Jl. Tridarma Utama Raya No.60, RT.2/RW.8, Pd. Labu, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12450",
+				},
+				therapist: {
+					name: "Therapist 1",
+					phoneNumber: "+62123456",
+					email: "therapist1@mail.com",
+					registrationNumber: "FH-0001",
+					gender: "male",
+					employmentType: "KARPIS",
+				},
+				admins: [
+					{
+						name: "Admin 1",
+						email: "admin1@mail.com",
+						adminType: "ADMIN_L1",
+					},
+				],
+			},
+		],
+	},
+	{
+		date: add(new Date(), { days: 1 }),
+		status: "cancel",
+		schedules: [
+			{
+				id: 1,
+				brand: {
+					name: "Fisiohome",
+					code: "FH",
+					package: {
+						name: "Paket Executive",
+						visit: 4,
+					},
+				},
+				timezone: "Asia/Jakarta",
+				startTime: format(add(new Date(), { days: 1, hours: -10 }), "HH:mm"),
+				endTime: format(add(new Date(), { days: 1, hours: -8.5 }), "HH:mm"),
+				patient: {
+					name: "Patient 1",
+					phoneNumber: "+62123456",
+					email: "patient1@mail.com",
+					age: 28,
+					gender: "male",
+					address:
+						"Jl. Tridarma Utama Raya No.60, RT.2/RW.8, Pd. Labu, Kec. Cilandak, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12450",
+				},
+				therapist: {
+					name: "Therapist 1",
+					phoneNumber: "+62123456",
+					email: "therapist1@mail.com",
+					registrationNumber: "FH-0001",
+					gender: "male",
+					employmentType: "KARPIS",
+				},
+				admins: [
+					{
+						name: "Admin 1",
+						email: "admin1@mail.com",
+						adminType: "ADMIN_L1",
+					},
+				],
+			},
+		],
+	},
+];
+
+/**
+ * * new appointment booking form schema
+ */
+
+// contact information schema
+export const CONTACT_INFORMATION_SCHEMA = z.object({
+	contactName: z
+		.string()
+		.min(3, "Contact name is required with minimum 3 characters"),
+	contactPhone: z
+		.string()
+		.min(1, { message: "Contact phone number is required" })
+		.refine(isValidPhoneNumber, { message: "Invalid phone number" }),
+	email: z.string().email("Format email tidak valid").optional(),
+	miitelLink: z.string().url("MiiTel link must be a valid URL").optional(),
+});
+export type ContactInformationSchema = z.infer<
+	typeof CONTACT_INFORMATION_SCHEMA
+>;
+
+// patient details schema
+export const PATIENT_DETAILS_SCHEMA = z.object({
+	fullName: z
+		.string()
+		.min(3, "Patient full name is required with minimum 3 characters"),
+	dateOfBirth: z.coerce
+		.date()
+		// Ensure the date is in the past
+		.refine((date) => date < new Date(), {
+			message: "Date of birth must be in the past",
+		}),
+	age: z.coerce.number().int().positive(),
+	gender: z.enum(GENDERS, {
+		required_error: "Need to select a patient gender",
+	}),
+	illnessOnsetDate: z.string().optional(),
+	complaintDescription: z.string().min(1, "Complaint description is required"),
+	condition: z.enum(PATIENT_CONDITIONS, {
+		required_error: "Need to select a patient condition",
+	}),
+	medicalHistory: z.string().min(1, "Medical history is required"),
+});
+export type PatientDetailsSchema = z.infer<typeof PATIENT_DETAILS_SCHEMA>;
+
+// appointment scheduling schema
+export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
+	location: z
+		.object({
+			id: idSchema,
+			city: z.string(),
+		})
+		.refine((value) => !!value?.city, {
+			path: ["city"],
+			message: "Need to select the location",
+		}),
+	postalCode: z.string().min(1, { message: "Postal code is required" }),
+	latitude: z.coerce
+		.number({ message: "Latitude must be numerical value" })
+		.refine((value) => value > 0 || value < 0, {
+			message: "Latitude is required",
+		}),
+	longitude: z.coerce
+		.number({ message: "Longitude must be numerical value" })
+		.refine((value) => value > 0 || value < 0, {
+			message: "Longitude is required",
+		}),
+	address: z.string().min(1, "Address is required"),
+	service: z
+		.object({
+			id: idSchema,
+			name: z.string(),
+		})
+		.refine((value) => !!value?.name, {
+			path: ["name"],
+			message: "Need to select the service",
+		}),
+	package: z
+		.object({
+			id: idSchema,
+			name: z.string(),
+			numberOfVisit: z.coerce.number().int().positive(),
+		})
+		.refine((value) => !!value?.name, {
+			path: ["name"],
+			message: "Need to select the package",
+		}),
+	preferredTherapistGender: z.enum(PREFERRED_THERAPIST_GENDER, {
+		required_error: "Need to select a preferred therapist gender",
+	}),
+});
+export type AppointmentSchedulingSchema = z.infer<
+	typeof APPOINTMENT_SCHEDULING_SCHEMA
+>;
+
+/**
+ * Checks if the given value is a custom referral.
+ *
+ * This function determines whether the provided value is not included in the predefined
+ * list of patient referral options (`PATIENT_REFERRAL_OPTIONS`). If the value is not found
+ * in the list, it is considered a custom referral.
+ *
+ * @param value - The referral value to check.
+ * @returns `true` if the value is a custom referral, `false` otherwise.
+ */
+export const checkIsCustomReferral = (value: string) => {
+	return (
+		value && !(PATIENT_REFERRAL_OPTIONS as unknown as string[]).includes(value)
+	);
+};
+/**
+ * Checks if the given value is not included in the PATIENT_REFERRAL_OPTIONS array.
+ *
+ * @param value - The string value to check against the PATIENT_REFERRAL_OPTIONS array.
+ * @returns A boolean indicating whether the value is not a custom Fisiohome partner.
+ */
+export const checkIsCustomFisiohomePartner = (value: string) => {
+	return value && !(FISIOHOME_PARTNER as unknown as string[]).includes(value);
+};
+
+// additional settings schema
+export const ADDITIONAL_SETTINGS_SCHEMA = z
+	.object({
+		referralSource: z.string().optional(),
+		customReferralSource: z.string().optional(),
+		fisiohomePartnerBooking: boolSchema.default(false),
+		fisiohomePartnerName: z.string().optional(),
+		customFisiohomePartnerName: z.string().optional(),
+		voucherCode: z.string().optional(),
+	})
+	.superRefine((data, ctx) => {
+		// Only perform the check if booking from partner is selected.
+		if (data.fisiohomePartnerBooking && !data.fisiohomePartnerName) {
+			// If booking is not selected, no need to check the name.
+			// Otherwise, check that the partner name exists and is not just whitespace.
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message:
+					"Please select the fisiohome partner's name to complete the partner booking",
+				path: ["fisiohomePartnerName"],
+			});
+		}
+
+		// checking if the custom referral source filled correctly
+		if (
+			checkIsCustomReferral(data.referralSource || "") &&
+			!data.customReferralSource
+		) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message:
+					"Please input the patient referral source to complete the partner booking",
+				path: ["customReferralSource"],
+			});
+		}
+
+		// checking if the custom fisiohome partner filled correctly
+		if (
+			checkIsCustomFisiohomePartner(data.fisiohomePartnerName || "") &&
+			!data.customFisiohomePartnerName
+		) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message:
+					"Please input the fisiohome partner to complete the partner booking.",
+				path: ["customFisiohomePartnerName"],
+			});
+		}
+	});
+export type AdditionalSettingsSchema = z.infer<
+	typeof ADDITIONAL_SETTINGS_SCHEMA
+>;
+
+// all merge schema
+export const APPOINTMENT_BOOKING_SCHEMA = z.object({
+	contactInformation: CONTACT_INFORMATION_SCHEMA,
+	patientDetails: PATIENT_DETAILS_SCHEMA,
+	appointmentScheduling: APPOINTMENT_SCHEDULING_SCHEMA,
+	additionalSettings: ADDITIONAL_SETTINGS_SCHEMA,
+});
+export type AppointmentBookingSchema = z.infer<
+	typeof APPOINTMENT_BOOKING_SCHEMA
+>;

@@ -1,5 +1,6 @@
-"use client";
-
+/**
+ * * Docs: https://www.extend-ui.com/docs/components/button-motion
+ */
 import { motion } from "framer-motion";
 import * as React from "react";
 
@@ -76,9 +77,7 @@ export const PulsatingOutlineShadowButton = React.forwardRef<
 					ref={ref}
 					disabled={disabled}
 					className={cn(
-						`relative z-10 shadow-none border-2 border-[${glowColor}] hover:bg-[${glowColor}]/40`,
-						disabled &&
-							"opacity-50 cursor-not-allowed border-gray-400 hover:bg-transparent",
+						`relative z-10 shadow-none text-primary border border-primary hover:bg-[${glowColor}]/40 hover:text-primary-foreground hover:bg-primary`,
 						className,
 					)}
 					{...props}

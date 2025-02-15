@@ -36,6 +36,61 @@ export const DAY_NAMES = [
 	"Saturday",
 ] as const;
 
+export const PREFERRED_THERAPIST_GENDER = [
+	"MALE",
+	"FEMALE",
+	"NO PREFERENCE",
+] as const;
+
+export const PATIENT_REFERRAL_OPTIONS = [
+	"Instagram",
+	"Facebook",
+	"Family or Close Related Person",
+] as const;
+
+export const FISIOHOME_PARTNER = [
+	"Cosmart",
+	"KlinikGo",
+	"The Asian Parent",
+	"Orami Circle",
+	"Ibu2canggih",
+	"Ibu Bayi Canggih",
+	"Kompas myValue",
+	"Blibli",
+	"LoveCare",
+	"Medlife",
+	"Medikids",
+	"Bumi Health",
+] as const;
+
+// * patient condition enums
+export const PATIENT_CONDITIONS = [
+	"Normal",
+	"Only able to sit",
+	"Bedridden",
+] as const;
+
+export const PATIENT_CONDITIONS_WITH_DESCRIPTION = PATIENT_CONDITIONS.map(
+	(condition) => {
+		let description = "";
+
+		switch (condition) {
+			case "Normal":
+				description = "Fully mobile with no restrictions.";
+				break;
+			case "Only able to sit":
+				description =
+					"Limited mobility, the patient can sit but not stand or walk.";
+				break;
+			case "Bedridden":
+				description = "The patient is confined to bed.";
+				break;
+		}
+
+		return { title: condition, description };
+	},
+);
+
 // * media query list
 export const IS_DEKSTOP_MEDIA_QUERY = "only screen and (min-width : 1024px)";
 export const IS_TABLET_MEDIA_QUERY =

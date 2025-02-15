@@ -21,6 +21,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import { populateQueryParams } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
 import type { GlobalPageProps } from "@/types/globals";
@@ -94,10 +95,11 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 							className="h-4 border"
 						/>
 
-						<div className="flex flex-col space-y-0.5">
+						<div className="flex flex-row items-center space-x-1.5">
 							<span className="text-xs font-light">
 								{row.original.countryCode}
 							</span>
+							<Separator orientation="vertical" className="h-4" />
 							<p className="font-semibold">{row.original.country}</p>
 						</div>
 					</div>

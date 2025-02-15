@@ -1,7 +1,9 @@
+import { GridPattern } from "@/components/shared/grid-pattern";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { ComponentProps } from "react";
 
+// * for page container
 export interface PageContainerProps extends ComponentProps<"article"> {}
 
 export const PageContainer = ({ children, className }: PageContainerProps) => {
@@ -17,6 +19,7 @@ export const PageContainer = ({ children, className }: PageContainerProps) => {
 	);
 };
 
+// * for form page container
 export interface FormPageContainerProps extends ComponentProps<"article"> {}
 
 export function FormPageContainer({
@@ -35,24 +38,63 @@ export function FormPageContainer({
 	);
 }
 
+// * for form page header
 export interface FormPageHeaderProps extends ComponentProps<"div"> {
 	title: string;
 	description: string;
+	separator?: boolean;
 }
 
 export function FormPageHeader({
 	className,
 	title,
 	description,
+	separator = true,
 }: FormPageHeaderProps) {
 	return (
 		<>
 			<div className={cn("flex flex-col space-y-1.5", className)}>
 				<h1 className="font-bold leading-none tracking-tight">{title}</h1>
-				<span className="text-sm text-muted-foreground">{description}</span>
+				<span className="text-sm text-muted-foreground text-pretty">
+					{description}
+				</span>
 			</div>
 
-			<Separator />
+			{separator && <Separator />}
 		</>
+	);
+}
+
+// * for form page header with grid pattern
+export interface FormPageHeaderGridPatternProps extends ComponentProps<"div"> {
+	title: string;
+	description: string;
+}
+
+export function FormPageHeaderGridPattern({
+	title,
+	description,
+}: FormPageHeaderGridPatternProps) {
+	return (
+		<div className="relative flex p-4 overflow-hidden border shadow-inner rounded-xl md:p-6 size-full bg-background border-border">
+			<div>
+				<h1 className="z-10 text-lg font-bold tracking-tighter whitespace-pre-wrap">
+					{title}
+				</h1>
+				<p className="text-sm text-muted-foreground text-pretty">
+					{description}
+				</p>
+			</div>
+
+			<GridPattern
+				width={20}
+				height={20}
+				x={-1}
+				y={-1}
+				className={cn(
+					"[mask-image:linear-gradient(to_bottom_right,white,transparent,transparent)] ",
+				)}
+			/>
+		</div>
 	);
 }

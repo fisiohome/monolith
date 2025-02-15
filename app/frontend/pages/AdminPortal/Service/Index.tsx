@@ -42,6 +42,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getBrandBadgeVariant } from "@/lib/services";
 import { cn, humanize, populateQueryParams } from "@/lib/utils";
 import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps } from "@/types/globals";
@@ -148,12 +149,25 @@ export default function Index({ services, selectedService }: PageProps) {
 			),
 			enableHiding: false,
 			cell: ({ row }) => {
+				const brandName = useMemo(
+					() => row.original.name.replaceAll("_", " ").toLowerCase(),
+					[row.original.name],
+				);
+				const brandCode = useMemo(
+					() => row.original.code.toUpperCase(),
+					[row.original.code],
+				);
+				const brandBadgeVariant = useMemo(
+					() => getBrandBadgeVariant(brandCode),
+					[brandCode],
+				);
+
 				return (
 					<div className="flex items-center space-x-2">
-						<p className="font-medium uppercase text-nowrap">
-							{humanize(row.original.name)}
-						</p>
-						<Badge>{humanize(row.original.code).toUpperCase()}</Badge>
+						<p className="font-medium uppercase text-nowrap">{brandName}</p>
+						<Badge className={cn("text-[10px]", brandBadgeVariant)}>
+							{brandCode}
+						</Badge>
 					</div>
 				);
 			},

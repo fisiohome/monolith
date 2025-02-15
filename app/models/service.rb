@@ -9,6 +9,7 @@ class Service < ApplicationRecord
   has_many :active_locations, -> { where(active: true) }, class_name: "LocationService"
 
   has_many :packages, dependent: :destroy
+  has_many :active_packages, -> { where(active: true) }, class_name: "Package"
 
   # * define the validation
   validates :code, presence: true

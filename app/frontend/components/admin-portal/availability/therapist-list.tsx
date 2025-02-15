@@ -43,7 +43,7 @@ function TherapistListCard({
 		router.get(pageURL, queryParams, {
 			preserveScroll: true,
 			preserveState: true,
-			only: ["selectedTherapist", "adminPortal", "flash", "errors"],
+			only: ["selectedTherapist", "adminPortal", "flash"],
 		});
 	}, [pageURL, therapist.id]);
 

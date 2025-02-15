@@ -47,9 +47,18 @@ module InertiaAdminPortal
                 update_bulk: update_bulk_admin_portal_locations_path,
                 delete_bulk: delete_bulk_admin_portal_locations_path
               },
+              appointment: {
+                index: admin_portal_appointments_path,
+                new: new_admin_portal_appointment_path
+              },
               availability: {
                 index: admin_portal_availabilities_path,
                 upsert: upsert_admin_portal_availabilities_path
+              }
+            },
+            api: {
+              service: {
+                index: api_v1_services_path
               }
             }
           },

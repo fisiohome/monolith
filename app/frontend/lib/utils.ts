@@ -189,3 +189,25 @@ export const removeWhiteSpaces = (data: string) => data.replace(/\s/g, "");
 export function formatPhoneNumber(phone: string) {
 	return phone.replace(/(\+\d{2})(\d{3})(\d{4})(\d{5})/, "$1 $2-$3-$4");
 }
+
+/**
+ * Calculates the age based on the given date of birth.
+ *
+ * @param dateOfBirth - The date of birth as a Date object.
+ * @returns The calculated age as a number.
+ */
+export function calculateAge(dateOfBirth: Date): number {
+	const today = new Date();
+	let age = today.getFullYear() - dateOfBirth.getFullYear();
+	const monthDiff = today.getMonth() - dateOfBirth.getMonth();
+
+	if (
+		monthDiff < 0 ||
+		(monthDiff === 0 && today.getDate() < dateOfBirth.getDate())
+	) {
+		// If the current month and day is before the birth month and day, subtract one year
+		age--;
+	}
+
+	return age;
+}

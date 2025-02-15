@@ -76,7 +76,7 @@ export function NavigationProvider({
 		// 	subItems: [],
 		// };
 		const availabilityMenu = {
-			title: "Therapist Availability",
+			title: "Availability Time",
 			url: globalProps.adminPortal.router.adminPortal.availability.index,
 			icon: CalendarRange,
 			isActive: true,

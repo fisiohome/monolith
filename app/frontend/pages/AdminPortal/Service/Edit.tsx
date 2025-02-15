@@ -139,7 +139,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
-			name: service?.name || "",
+			name: service?.name?.replaceAll("_", " ") || "",
 			description: service?.description || "",
 			code: service?.code || "",
 			active: !!service?.active,
@@ -735,9 +735,9 @@ export default function Edit({ service, locations }: EditPageProps) {
 																				{city.name}
 																			</MultiSelectorItem>
 																		))}
+																		<CommandSeparator className="mt-2" />
 																	</CommandGroup>
 																))}
-																<CommandSeparator />
 															</Fragment>
 														))}
 													</MultiSelectorList>

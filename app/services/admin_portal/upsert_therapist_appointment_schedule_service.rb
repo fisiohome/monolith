@@ -108,7 +108,7 @@ module AdminPortal
         TherapistAdjustedAvailability.new(ap.merge(
           therapist_appointment_schedule_id: schedule.id,
           # * save date in the app timezone
-          specific_date: ap[:specific_date].in_time_zone(Time.zone.name)
+          specific_date: ap[:specific_date]&.in_time_zone(Time.zone.name)
         ))
       end
 

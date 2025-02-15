@@ -74,6 +74,10 @@ export interface AdminPortal {
 				updateBulk: string;
 				deleteBulk: string;
 			};
+			appointment: {
+				index: string;
+				new: string;
+			};
 			availability: {
 				index: string;
 				upsert: string;

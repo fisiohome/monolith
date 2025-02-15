@@ -19,6 +19,22 @@ import { CheckIcon, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 import * as RPNInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
+import { cva, type VariantProps } from "class-variance-authority";
+
+const inputVariants = cva(
+	"flex rounded-e-lg rounded-s-none transition-colors",
+	{
+		variants: {
+			variant: {
+				default: "border border-input bg-background",
+				secondary: "bg-sidebar shadow-inner",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+		},
+	},
+);
 
 type PhoneInputProps = Omit<
 	React.ComponentProps<"input">,
@@ -26,42 +42,51 @@ type PhoneInputProps = Omit<
 > &
 	Omit<RPNInput.Props<typeof RPNInput.default>, "onChange"> & {
 		onChange?: (value: RPNInput.Value) => void;
-	};
+	} & VariantProps<typeof inputVariants>;
 
-const PhoneInput: React.ForwardRefExoticComponent<PhoneInputProps> =
-	React.forwardRef<React.ElementRef<typeof RPNInput.default>, PhoneInputProps>(
-		({ className, onChange, ...props }, ref) => {
-			return (
-				<RPNInput.default
-					ref={ref}
-					className={cn("flex", className)}
-					flagComponent={FlagComponent}
-					countrySelectComponent={CountrySelect}
-					inputComponent={InputComponent}
-					smartCaret={false}
-					/**
-					 * Handles the onChange event.
-					 *
-					 * react-phone-number-input might trigger the onChange event as undefined
-					 * when a valid phone number is not entered. To prevent this,
-					 * the value is coerced to an empty string.
-					 *
-					 * @param {E164Number | undefined} value - The entered value
-					 */
-					onChange={(value) => onChange?.(value || ("" as RPNInput.Value))}
-					{...props}
-				/>
-			);
-		},
+const PhoneInput = React.forwardRef<
+	React.ElementRef<typeof RPNInput.default>,
+	PhoneInputProps
+>(({ className, onChange, variant, ...props }, ref) => {
+	// Create a wrapper to inject the `variant` into our custom InputComponent.
+	const InputWithVariant = React.forwardRef<
+		HTMLInputElement,
+		React.ComponentProps<"input">
+	>((inputProps, inputRef) => (
+		<InputComponent {...inputProps} variant={variant} ref={inputRef} />
+	));
+	InputWithVariant.displayName = "InputWithVariant";
+
+	return (
+		<RPNInput.default
+			ref={ref}
+			className={cn("flex", className)}
+			flagComponent={FlagComponent}
+			countrySelectComponent={CountrySelect}
+			inputComponent={InputWithVariant}
+			smartCaret={false}
+			/**
+			 * Handles the onChange event.
+			 *
+			 * react-phone-number-input might trigger the onChange event as undefined
+			 * when a valid phone number is not entered. To prevent this,
+			 * the value is coerced to an empty string.
+			 *
+			 * @param {E164Number | undefined} value - The entered value
+			 */
+			onChange={(value) => onChange?.(value || ("" as RPNInput.Value))}
+			{...props}
+		/>
 	);
+});
 PhoneInput.displayName = "PhoneInput";
 
 const InputComponent = React.forwardRef<
 	HTMLInputElement,
-	React.ComponentProps<"input">
->(({ className, ...props }, ref) => (
+	React.ComponentProps<"input"> & VariantProps<typeof inputVariants>
+>(({ className, variant, ...props }, ref) => (
 	<Input
-		className={cn("rounded-e-lg rounded-s-none", className)}
+		className={cn(inputVariants({ variant, className }))}
 		{...props}
 		ref={ref}
 	/>
@@ -146,9 +171,13 @@ const CountrySelectOption = ({
 		<CommandItem className="gap-2" onSelect={() => onChange(country)}>
 			<FlagComponent country={country} countryName={countryName} />
 			<span className="flex-1 text-sm">{countryName}</span>
-			<span className="text-sm text-foreground/50">{`+${RPNInput.getCountryCallingCode(country)}`}</span>
+			<span className="text-sm text-foreground/50">{`+${RPNInput.getCountryCallingCode(
+				country,
+			)}`}</span>
 			<CheckIcon
-				className={`ml-auto size-4 ${country === selectedCountry ? "opacity-100" : "opacity-0"}`}
+				className={`ml-auto size-4 ${
+					country === selectedCountry ? "opacity-100" : "opacity-0"
+				}`}
 			/>
 		</CommandItem>
 	);

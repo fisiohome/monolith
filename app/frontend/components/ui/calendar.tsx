@@ -1,9 +1,20 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import type * as React from "react";
-import { DayPicker } from "react-day-picker";
-
-import { buttonVariants } from "@/components/ui/button";
+/**
+ * * Docs: https://github.com/Maliksidk19/shadcn-datetime-picker/tree/main
+ */
+import * as React from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Check, ChevronLeft, ChevronRight, ChevronsUpDown } from "lucide-react";
+import { DayPicker, type DropdownProps } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "./command";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -20,8 +31,13 @@ function Calendar({
 			classNames={{
 				months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
 				month: "space-y-4",
+				vhidden: "vhidden hidden",
 				caption: "flex justify-center pt-1 relative items-center",
 				caption_label: "text-sm font-medium",
+				caption_dropdowns: cn(
+					"flex justify-between gap-2",
+					props.captionLayout === "dropdown" && "w-full",
+				),
 				nav: "space-x-1 flex items-center",
 				nav_button: cn(
 					buttonVariants({ variant: "outline" }),
@@ -48,7 +64,8 @@ function Calendar({
 				day_range_end: "day-range-end",
 				day_selected:
 					"bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-				day_today: "bg-accent text-accent-foreground",
+				day_today:
+					"text-accent border border-accent relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-accent after:rounded-full",
 				day_outside:
 					"day-outside text-muted-foreground aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
 				day_disabled: "text-muted-foreground opacity-50",
@@ -58,12 +75,103 @@ function Calendar({
 				...classNames,
 			}}
 			components={{
-				IconLeft: ({ className, ...props }) => (
-					<ChevronLeft className={cn("h-4 w-4", className)} {...props} />
-				),
-				IconRight: ({ className, ...props }) => (
-					<ChevronRight className={cn("h-4 w-4", className)} {...props} />
-				),
+				Dropdown: ({ value, onChange, children }: DropdownProps) => {
+					const options = React.Children.toArray(
+						children,
+					) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
+					const isMonth = React.useMemo(
+						() => options.length <= 12,
+						[options.length],
+					);
+					const selected = options.find((child) => child.props.value === value);
+					const handleChange = (value: string) => {
+						const changeEvent = {
+							target: { value },
+						} as React.ChangeEvent<HTMLSelectElement>;
+						onChange?.(changeEvent);
+					};
+
+					return (
+						// <Select
+						// 	value={value?.toString()}
+						// 	onValueChange={(value) => {
+						// 		handleChange(value);
+						// 	}}
+						// >
+						// 	<SelectTrigger className="pr-1.5 focus:ring-0">
+						// 		<SelectValue>{selected?.props?.children}</SelectValue>
+						// 	</SelectTrigger>
+						// 	<SelectContent position="popper">
+						// 		<ScrollArea className="h-80">
+						// 			{options.map((option, id: number) => (
+						// 				<SelectItem
+						// 					key={`${option.props.value}-${id}`}
+						// 					value={option.props.value?.toString() ?? ""}
+						// 				>
+						// 					{option.props.children}
+						// 				</SelectItem>
+						// 			))}
+						// 		</ScrollArea>
+						// 	</SelectContent>
+						// </Select>
+
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									className={cn(
+										"w-full justify-between pl-3 focus:ring-0 capitalize",
+										!selected?.props?.children && "text-muted-foreground",
+									)}
+								>
+									{selected?.props?.children}
+									<ChevronsUpDown className="w-4 h-4 ml-2 opacity-50 shrink-0" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								align="start"
+								side="bottom"
+								className={cn("p-0", isMonth ? "w-[175px]" : "w-[135px]")}
+							>
+								<Command>
+									<CommandInput placeholder="Search..." />
+									<CommandList>
+										<CommandEmpty>
+											{isMonth ? "No months found" : "No years found"}
+										</CommandEmpty>
+										<CommandGroup>
+											{options.map((option, id: number) => (
+												<CommandItem
+													key={`${option.props.value}-${id}`}
+													value={
+														option?.props?.children?.toString() ||
+														option?.props?.value?.toString() ||
+														""
+													}
+													onSelect={(currentValue) => {
+														handleChange(currentValue);
+													}}
+													className="capitalize"
+												>
+													<Check
+														className={cn(
+															value === option.props.value
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+													{option.props.children}
+												</CommandItem>
+											))}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
+					);
+				},
+				IconLeft: () => <ChevronLeft className="w-4 h-4" />,
+				IconRight: () => <ChevronRight className="w-4 h-4" />,
 			}}
 			{...props}
 		/>
