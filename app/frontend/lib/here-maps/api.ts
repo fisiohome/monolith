@@ -1,18 +1,15 @@
 import type { TherapistAddress } from "@/types/admin-portal/therapist";
-import { populateQueryParams } from "./utils";
+import type {
+	GeocodingResult,
+	GeocodingError,
+	GeocodingResponse,
+} from "@/types/here-maps";
+import { populateQueryParams } from "../utils";
 
 const BASE_URL = {
 	GEOCODE: "https://geocode.search.hereapi.com/v1/geocode",
 };
-
-// default constants for map coordinates
-export const MAP_DEFAULT_COORDINATE = [-6.2, 106.81]; // Default to Jakarta coordinates.
-export function isDefaultCoordinate(arrValue: number[]): boolean {
-	return (
-		arrValue.length === MAP_DEFAULT_COORDINATE.length &&
-		arrValue.every((value, index) => value === MAP_DEFAULT_COORDINATE[index])
-	);
-}
+// * for geocoding stuff
 
 export const filterGeocodeByQueryScore = (
 	bestResult: GeocodingResult,
@@ -21,69 +18,6 @@ export const filterGeocodeByQueryScore = (
 	currentResult.scoring.queryScore > bestResult.scoring.queryScore
 		? currentResult
 		: bestResult;
-
-interface Address {
-	label: string;
-	countryCode: string;
-	countryName: string;
-	countyCode: string;
-	county: string;
-	city: string;
-	district: string;
-	subdistrict?: string;
-	street: string;
-	block?: string;
-	postalCode: string;
-	houseNumber: string;
-}
-
-interface Position {
-	lat: number;
-	lng: number;
-}
-
-interface MapView {
-	west: number;
-	south: number;
-	east: number;
-	north: number;
-}
-
-interface FieldScore {
-	country: number;
-	county: number;
-	city: number;
-	district: number;
-	streets: number[];
-	houseNumber: number;
-	postalCode: number;
-	block?: number;
-}
-
-export interface GeocodingResult {
-	title: string;
-	id: string;
-	resultType: string;
-	houseNumberType: string;
-	address: Address;
-	position: Position;
-	access: Position[];
-	mapView: MapView;
-	houseNumberFallback: boolean;
-	scoring: {
-		queryScore: number;
-		fieldScore: FieldScore;
-	};
-}
-
-export interface GeocodingError {
-	status: number;
-	title: string;
-	correlationId: string;
-	requestId: string;
-}
-
-export type GeocodingResponse = { items: GeocodingResult[] };
 
 export const getGeocoding = async ({
 	country,

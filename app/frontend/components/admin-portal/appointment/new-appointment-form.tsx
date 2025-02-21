@@ -1,68 +1,21 @@
-import { useMediaQuery } from "@uidotdev/usehooks";
-import {
-	FISIOHOME_PARTNER,
-	GENDERS,
-	IS_DEKSTOP_MEDIA_QUERY,
-	PATIENT_CONDITIONS_WITH_DESCRIPTION,
-	PATIENT_REFERRAL_OPTIONS,
-	PREFERRED_THERAPIST_GENDER,
-} from "@/lib/constants";
-import { Button } from "@/components/ui/button";
+import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
+import type { HereMaphandler } from "@/components/shared/here-map";
+import HereMap from "@/components/shared/here-map";
 import { useStepper } from "@/components/shared/stepper";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-	AlertCircle,
-	CalendarIcon,
-	Check,
-	ChevronsUpDown,
-	LoaderIcon,
-	Mars,
-	Venus,
-	VenusAndMars,
-	X,
-} from "lucide-react";
-import {
-	checkIsCustomFisiohomePartner,
-	checkIsCustomReferral,
-	DEFAULT_VALUES_LOCATION,
-	DEFAULT_VALUES_PACKAGE,
-	DEFAULT_VALUES_SERVICE,
-	type AppointmentBookingSchema,
-} from "@/lib/appointments";
-import { useFormContext, useWatch } from "react-hook-form";
-import {
-	type ComponentProps,
-	Fragment,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
-import { PhoneInput } from "@/components/ui/phone-input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Calendar, type CalendarProps } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import {
-	calculateAge,
-	cn,
-	goBackHandler,
-	populateQueryParams,
-} from "@/lib/utils";
-import { boolSchema } from "@/lib/validation";
 import {
 	Command,
 	CommandEmpty,
@@ -72,17 +25,23 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
-import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
-import { Deferred, router, usePage } from "@inertiajs/react";
-import { Textarea } from "@/components/ui/textarea";
-import { groupLocationsByCountry } from "@/lib/locations";
-import type { Location } from "@/types/admin-portal/location";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { Skeleton } from "@/components/ui/skeleton";
-import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { HereMaphandler } from "@/components/shared/here-map";
-import HereMap from "@/components/shared/here-map";
+import {
+	FormControl,
+	FormDescription,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
 	Select,
 	SelectContent,
@@ -90,7 +49,63 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { usePatientRegion } from "@/hooks/admin-portal/use-appointment-utils";
+import type { MarkerData } from "@/hooks/here-maps";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import {
+	type AppointmentBookingSchema,
+	DEFAULT_VALUES_LOCATION,
+	DEFAULT_VALUES_PACKAGE,
+	DEFAULT_VALUES_SERVICE,
+	checkIsCustomFisiohomePartner,
+	checkIsCustomReferral,
+} from "@/lib/appointments";
+import {
+	FISIOHOME_PARTNER,
+	GENDERS,
+	IS_DEKSTOP_MEDIA_QUERY,
+	PATIENT_CONDITIONS_WITH_DESCRIPTION,
+	PATIENT_REFERRAL_OPTIONS,
+	PREFERRED_THERAPIST_GENDER,
+} from "@/lib/constants";
+import {
+	calculateAge,
+	cn,
+	goBackHandler,
+	populateQueryParams,
+} from "@/lib/utils";
+import { boolSchema } from "@/lib/validation";
+import type {
+	AppointmentNewGlobalPageProps,
+	AppointmentNewProps,
+} from "@/pages/AdminPortal/Appointment/New";
+import { Deferred, router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { format } from "date-fns";
+import {
+	AlertCircle,
+	CalendarIcon,
+	Check,
+	ChevronsRight,
+	ChevronsUpDown,
+	LoaderIcon,
+	Mars,
+	Venus,
+	VenusAndMars,
+	X,
+} from "lucide-react";
+import {
+	type ComponentProps,
+	Fragment,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 
 // * component form container
 export interface FormContainerProps extends ComponentProps<"div"> {}
@@ -222,6 +237,56 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 						<span>Save</span>
 					)}
 				</Button>
+			) : currentStep?.label === "Appointment Settings and Scheduling" &&
+				!form.getValues()?.appointmentScheduling?.therapist ? (
+				<AlertDialog>
+					<AlertDialogTrigger asChild>
+						<Button
+							type="button"
+							size={!isDekstop ? "default" : "sm"}
+							disabled={isLoading}
+							className="order-first md:order-last"
+						>
+							Next
+						</Button>
+					</AlertDialogTrigger>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+							<AlertDialogDescription>
+								You haven't chosen a therapist for this appointment yet, but
+								don't worry! You have the option to skip it. However, are you
+								sure you want to assign a therapist to this appointment later?
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter className="space-y-4 md:space-y-0">
+							<AlertDialogCancel>Cancel</AlertDialogCancel>
+							<AlertDialogAction asChild>
+								<Button
+									type="button"
+									size={!isDekstop ? "default" : "sm"}
+									disabled={isLoading}
+									className="order-first md:order-last"
+									onClick={(event) => {
+										event.preventDefault();
+										onSubmit();
+									}}
+								>
+									{isLoading ? (
+										<>
+											<LoaderIcon className="animate-spin" />
+											<span>Please Wait...</span>
+										</>
+									) : isOptionalStep ? (
+										<span>Skip</span>
+									) : (
+										<span>Next</span>
+									)}
+								</Button>
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 			) : (
 				<Button
 					type="button"
@@ -360,23 +425,23 @@ export function ContactInformationForm() {
 	);
 }
 
-export function AppointmentSchedulingForm() {
-	const { props: globalProps, url: pageURL } =
-		usePage<AppointmentNewGlobalPageProps>();
+export function PatientDetailsForm() {
+	const {
+		form,
+		watchPatientDetailsValue,
+		locationsOption,
+		groupedLocationsOption,
+		selectedLocation,
+		coordinate,
+		mapAddress,
+		coordinateError,
+	} = usePatientRegion();
 	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
 	const [isLoading, setIsLoading] = useState({
 		locations: false,
-		services: false,
 	});
 
-	// form management state
-	const form = useFormContext<AppointmentBookingSchema>();
-	const watchAppointmentSchedulingValue = useWatch({
-		control: form.control,
-		name: "appointmentScheduling",
-	});
-
-	// for preferred therapist field
+	// for getting the gender icon
 	const getGenderIcon = (
 		gender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"],
 	) => {
@@ -386,22 +451,29 @@ export function AppointmentSchedulingForm() {
 		return <VenusAndMars className="size-4" />;
 	};
 
-	// * watching the changes of location selected value
-	const locationsOption = useMemo(
-		() => globalProps?.locations,
-		[globalProps?.locations],
-	);
-	const groupedLocationsOption = useMemo(() => {
-		const locations = globalProps?.locations || [];
+	// * watching the date of birth and calculate the age value
+	const dateOfBirthCalendarProps = useMemo<CalendarProps>(() => {
+		return {
+			// Show 100 years range
+			fromYear: new Date().getFullYear() - 100,
+			toYear: new Date().getFullYear(),
+			// Disable future dates
+			disabled: (date) => date >= new Date(),
+		};
+	}, []);
+	useEffect(() => {
+		if (
+			watchPatientDetailsValue.dateOfBirth &&
+			watchPatientDetailsValue.dateOfBirth instanceof Date
+		) {
+			// Calculate age using your custom function
+			const age = calculateAge(watchPatientDetailsValue.dateOfBirth);
+			// Update the age field in the form
+			form.setValue("patientDetails.age", age);
+		}
+	}, [watchPatientDetailsValue.dateOfBirth, form.setValue]);
 
-		return groupLocationsByCountry(locations as Location[]);
-	}, [globalProps?.locations]);
-	const selectedLocation = useMemo(() => {
-		return locationsOption?.find(
-			(location) =>
-				String(location.id) === watchAppointmentSchedulingValue?.location?.id,
-		);
-	}, [watchAppointmentSchedulingValue?.location?.id, locationsOption]);
+	// * watching the changes of location selected value
 	const onFocusLocationField = useCallback(() => {
 		// fetch the locations options data
 		router.reload({
@@ -423,9 +495,7 @@ export function AppointmentSchedulingForm() {
 		});
 	}, []);
 	const onSelectLocation = useCallback(
-		(
-			location: AppointmentBookingSchema["appointmentScheduling"]["location"],
-		) => {
+		(location: AppointmentBookingSchema["patientDetails"]["location"]) => {
 			// set value to the location selected, and reset some value if location changed
 			form.resetField("appointmentScheduling.service", {
 				defaultValue: DEFAULT_VALUES_SERVICE,
@@ -433,11 +503,11 @@ export function AppointmentSchedulingForm() {
 			form.resetField("appointmentScheduling.package", {
 				defaultValue: DEFAULT_VALUES_PACKAGE,
 			});
-			form.resetField("appointmentScheduling.postalCode", { defaultValue: "" });
-			form.resetField("appointmentScheduling.address", { defaultValue: "" });
-			form.resetField("appointmentScheduling.latitude", { defaultValue: 0 });
-			form.resetField("appointmentScheduling.longitude", { defaultValue: 0 });
-			form.setValue("appointmentScheduling.location", location, {
+			form.resetField("patientDetails.postalCode", { defaultValue: "" });
+			form.resetField("patientDetails.address", { defaultValue: "" });
+			form.resetField("patientDetails.latitude", { defaultValue: 0 });
+			form.resetField("patientDetails.longitude", { defaultValue: 0 });
+			form.setValue("patientDetails.location", location, {
 				shouldValidate: true,
 			});
 		},
@@ -445,40 +515,10 @@ export function AppointmentSchedulingForm() {
 	);
 
 	// * latitude, longitude, and map state fields
-	const coordinateError = useMemo(() => {
-		const latError = form.formState.errors.appointmentScheduling?.latitude;
-		const lngError = form.formState.errors.appointmentScheduling?.longitude;
-
-		return latError || lngError ? "Calculate the coordinate first." : null;
-	}, [
-		form.formState.errors.appointmentScheduling?.latitude,
-		form.formState.errors.appointmentScheduling?.longitude,
-	]);
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
-	const coordinate = useMemo(
-		() => [
-			watchAppointmentSchedulingValue.latitude,
-			watchAppointmentSchedulingValue.longitude,
-		],
-		[
-			watchAppointmentSchedulingValue.latitude,
-			watchAppointmentSchedulingValue.longitude,
-		],
-	);
-	const mapAddress = useMemo(() => {
-		const { address, postalCode } = watchAppointmentSchedulingValue;
-
-		return {
-			country: selectedLocation?.country || "",
-			state: selectedLocation?.state || "",
-			city: selectedLocation?.city || "",
-			postalCode,
-			address,
-		};
-	}, [selectedLocation, watchAppointmentSchedulingValue]);
 	const isMapButtonsDisabled = useMemo(() => {
 		const { latitude, longitude, address, postalCode } =
-			watchAppointmentSchedulingValue;
+			watchPatientDetailsValue;
 		const isValidCoordinate = !!latitude && !!longitude;
 		const isValidAddress =
 			!!selectedLocation?.country &&
@@ -493,14 +533,14 @@ export function AppointmentSchedulingForm() {
 			reset: !isValidCoordinate,
 			gmaps: !isValidCoordinate,
 		};
-	}, [watchAppointmentSchedulingValue, selectedLocation]);
+	}, [watchPatientDetailsValue, selectedLocation]);
 	const onResetCoordinate = useCallback(() => {
 		// reset the lat, lng form values
-		form.resetField("appointmentScheduling.latitude", { defaultValue: 0 });
-		form.resetField("appointmentScheduling.longitude", { defaultValue: 0 });
+		form.resetField("patientDetails.latitude", { defaultValue: 0 });
+		form.resetField("patientDetails.longitude", { defaultValue: 0 });
 
 		// remove the map markers
-		mapRef.current?.removeMarkers();
+		mapRef.current?.marker.onRemove();
 	}, [form.resetField]);
 	const onClickGMaps = useCallback(() => {
 		window.open(
@@ -510,7 +550,7 @@ export function AppointmentSchedulingForm() {
 	const onCalculateCoordinate = useCallback(async () => {
 		try {
 			// Fetch geocode result
-			const geocodeResult = await mapRef.current?.geocodeAddress();
+			const geocodeResult = await mapRef.current?.geocode.onCalculate();
 			if (
 				!geocodeResult ||
 				!geocodeResult?.position?.lat ||
@@ -522,7 +562,7 @@ export function AppointmentSchedulingForm() {
 				// Set error message for the form
 				const errorMessage =
 					"The address cannot be found. Ensure the region, postal code, and address line are entered correctly.";
-				form.setError("appointmentScheduling.address", {
+				form.setError("patientDetails.address", {
 					message: errorMessage,
 					type: "custom",
 				});
@@ -531,20 +571,28 @@ export function AppointmentSchedulingForm() {
 
 			// Update form values with latitude and longitude
 			const { lat, lng } = geocodeResult.position;
-			form.setValue("appointmentScheduling.latitude", lat, {
+			form.setValue("patientDetails.latitude", lat, {
 				shouldValidate: true,
 			});
-			form.setValue("appointmentScheduling.longitude", lng, {
+			form.setValue("patientDetails.longitude", lng, {
 				shouldValidate: true,
 			});
 
 			// Add markers to the map
-			mapRef.current?.addMarkers([geocodeResult]);
+			mapRef.current?.marker.onAdd(
+				[
+					{
+						position: geocodeResult.position,
+						address: geocodeResult.address.label,
+					},
+				] satisfies MarkerData[],
+				{ changeMapView: true },
+			);
 		} catch (error) {
 			console.error("An unexpected error occurred:", error);
 
 			// Handle unexpected errors
-			form.setError("appointmentScheduling.address", {
+			form.setError("patientDetails.address", {
 				message:
 					"An unexpected error occurred while calculating the coordinates from the address.",
 				type: "custom",
@@ -552,97 +600,242 @@ export function AppointmentSchedulingForm() {
 		}
 	}, [form.setError, form.setValue]);
 
-	// * watching the changes of service selected value
-	const servicesOption = useMemo(
-		() =>
-			globalProps?.services?.filter(
-				(service) => service.name !== "PERAWAT_HOMECARE",
-			),
-		[globalProps?.services],
-	);
-	const packagesOption = useMemo(
-		() =>
-			servicesOption
-				?.filter(
-					(service) =>
-						String(service.id) === watchAppointmentSchedulingValue?.service?.id,
-				)
-				?.flatMap((service) => service.packages),
-		[servicesOption, watchAppointmentSchedulingValue?.service?.id],
-	);
-	const onFocusServiceField = useCallback(() => {
-		// fetch the services options data
-		const { queryParams } = populateQueryParams(
-			pageURL,
-			deepTransformKeysToSnakeCase({
-				locationId: watchAppointmentSchedulingValue?.location?.id,
-			}),
-		);
-		router.get(pageURL, queryParams, {
-			only: ["services"],
-			preserveScroll: true,
-			preserveState: true,
-			replace: false,
-			onStart: () => {
-				setIsLoading((prev) => ({
-					...prev,
-					services: true,
-				}));
-			},
-			onFinish: () => {
-				setTimeout(() => {
-					setIsLoading((prev) => ({
-						...prev,
-						services: false,
-					}));
-				}, 250);
-			},
-		});
-	}, [pageURL, watchAppointmentSchedulingValue?.location?.id]);
-	const onSelectService = useCallback(
-		(service: AppointmentBookingSchema["appointmentScheduling"]["service"]) => {
-			// reset the value of the package if the service changed
-			form.resetField("appointmentScheduling.package", {
-				defaultValue: DEFAULT_VALUES_PACKAGE,
-			});
-			form.setValue("appointmentScheduling.service", service, {
-				shouldValidate: true,
-			});
-		},
-		[form.setValue, form.resetField],
-	);
-
-	// * for appointment date field
-	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
-	const [appointmentTime, setAppointmentTime] = useState<string>(
-		format(watchAppointmentSchedulingValue.appointmentDate, "HH:mm"),
-	);
-	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
-		new Date(watchAppointmentSchedulingValue.appointmentDate.toString()),
-	);
-	// Memoized calendar properties for the appointment date field
-	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
-		// Define the range of years to be displayed in the calendar
-		const currentYear = new Date().getFullYear();
-		const sixMonthsFromToday = new Date();
-		sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
-
-		return {
-			// Close the calendar popover when a day is clicked
-			onDayClick: () => setIsOpenAppointmentDate(false),
-			// Set the range of years to be displayed
-			fromYear: currentYear,
-			toYear: currentYear,
-			// Disable dates that are in the past or more than 6 months in the future
-			disabled: (date) => {
-				const today = new Date();
-				return date <= today || date > sixMonthsFromToday;
-			},
-		};
-	}, []);
-
 	return (
 		<FormStepItemContainer>
+			<FormField
+				control={form.control}
+				name="patientDetails.fullName"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel>Full Name</FormLabel>
+						<FormControl>
+							<Input
+								{...field}
+								type="text"
+								autoComplete="name"
+								placeholder="Enter the full name..."
+								className="shadow-inner bg-sidebar"
+							/>
+						</FormControl>
+
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<div className="flex flex-wrap gap-3">
+				<FormField
+					control={form.control}
+					name="patientDetails.dateOfBirth"
+					render={({ field }) => (
+						<FormItem className="flex-1">
+							<FormLabel>Date of birth</FormLabel>
+							<Popover>
+								<PopoverTrigger asChild>
+									<FormControl>
+										<Button
+											variant={"outline"}
+											className={cn(
+												"relative w-full pl-3 text-left font-normal shadow-inner bg-sidebar",
+												!field.value && "text-muted-foreground",
+											)}
+										>
+											{field.value ? (
+												`${format(field.value, "PPP")}`
+											) : (
+												<span>Pick a date of birth</span>
+											)}
+											<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
+										</Button>
+									</FormControl>
+								</PopoverTrigger>
+								<PopoverContent
+									className="w-auto p-0"
+									align="start"
+									side="bottom"
+								>
+									<Calendar
+										{...dateOfBirthCalendarProps}
+										initialFocus
+										mode="single"
+										captionLayout="dropdown"
+										selected={new Date(field.value)}
+										onSelect={field.onChange}
+										defaultMonth={field.value}
+									/>
+								</PopoverContent>
+							</Popover>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
+				<FormField
+					control={form.control}
+					name="patientDetails.age"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Age</FormLabel>
+							<FormControl>
+								<Input
+									{...field}
+									readOnly
+									type="number"
+									min={0}
+									value={field?.value || ""}
+									placeholder="Enter the age..."
+									className="shadow-inner w-fit field-sizing-content bg-sidebar"
+								/>
+							</FormControl>
+
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormDescription className="flex-none">
+					Your date of birth is used to calculate your age.
+				</FormDescription>
+			</div>
+
+			<FormField
+				control={form.control}
+				name="patientDetails.gender"
+				render={({ field }) => (
+					<FormItem className="space-y-3 col-span-full">
+						<FormLabel>Gender</FormLabel>
+						<FormControl>
+							<RadioGroup
+								onValueChange={field.onChange}
+								defaultValue={field.value}
+								orientation="horizontal"
+								className="grid grid-cols-2 gap-4"
+							>
+								{GENDERS.map((gender) => (
+									<Fragment key={gender}>
+										<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
+											<FormControl>
+												<RadioGroupItem value={gender} />
+											</FormControl>
+											<FormLabel className="flex items-center gap-1 font-normal capitalize">
+												{getGenderIcon(gender)}
+												<span>{gender}</span>
+											</FormLabel>
+										</FormItem>
+									</Fragment>
+								))}
+							</RadioGroup>
+						</FormControl>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<FormField
+				control={form.control}
+				name="patientDetails.condition"
+				render={({ field }) => (
+					<FormItem className="space-y-3 col-span-full">
+						<FormLabel>Current Condition</FormLabel>
+						<FormControl>
+							<RadioGroup
+								onValueChange={field.onChange}
+								defaultValue={field.value}
+								orientation="horizontal"
+								className="flex flex-col gap-3"
+							>
+								{PATIENT_CONDITIONS_WITH_DESCRIPTION.map((condition) => (
+									<Fragment key={condition.title}>
+										<FormItem className="flex items-start p-4 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
+											<FormControl>
+												<RadioGroupItem value={condition.title} />
+											</FormControl>
+											<FormLabel className="w-full space-y-1 font-normal">
+												<span>{condition.title}</span>
+												<FormDescription>
+													{condition.description}
+												</FormDescription>
+											</FormLabel>
+										</FormItem>
+									</Fragment>
+								))}
+							</RadioGroup>
+						</FormControl>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<FormField
+				control={form.control}
+				name="patientDetails.complaintDescription"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>Complaint Description</FormLabel>
+						<FormControl>
+							<Textarea
+								{...field}
+								placeholder="Enter the complaint description..."
+								className="shadow-inner bg-sidebar"
+							/>
+						</FormControl>
+
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<FormField
+				control={form.control}
+				name="patientDetails.illnessOnsetDate"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>
+							Illness Onset Date{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
+						<FormControl>
+							<Textarea
+								{...field}
+								placeholder="Enter the illness onset date..."
+								className="shadow-inner bg-sidebar"
+							/>
+						</FormControl>
+
+						<FormDescription>
+							Enter the date when the illness first began. You can use an exact
+							date if known, or an estimate if unsure.
+						</FormDescription>
+
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<FormField
+				control={form.control}
+				name="patientDetails.medicalHistory"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>Medical History</FormLabel>
+						<FormControl>
+							<Textarea
+								{...field}
+								placeholder="Enter the medical history..."
+								className="shadow-inner bg-sidebar"
+							/>
+						</FormControl>
+
+						<FormDescription>
+							Provide an overview of the patient’s medical history including
+							allergies, chronic conditions, and any past medical events or
+							treatments relevant to the current complaint.
+						</FormDescription>
+
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
 			<Deferred
 				data={["locations"]}
 				fallback={
@@ -654,7 +847,7 @@ export function AppointmentSchedulingForm() {
 			>
 				<FormField
 					control={form.control}
-					name="appointmentScheduling.location.city"
+					name="patientDetails.location.city"
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel className="text-nowrap">Region</FormLabel>
@@ -677,10 +870,9 @@ export function AppointmentSchedulingForm() {
 													: "Select region"}
 											</p>
 											{field.value ? (
-												<Button
-													variant="ghost"
-													size="icon"
-													className="w-auto h-auto py-0"
+												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+												<div
+													className="cursor-pointer"
 													onClick={(event) => {
 														event.preventDefault();
 														event.stopPropagation();
@@ -689,7 +881,7 @@ export function AppointmentSchedulingForm() {
 													}}
 												>
 													<X className="opacity-50" />
-												</Button>
+												</div>
 											) : (
 												<ChevronsUpDown className="opacity-50" />
 											)}
@@ -768,7 +960,7 @@ export function AppointmentSchedulingForm() {
 
 			<FormField
 				control={form.control}
-				name="appointmentScheduling.postalCode"
+				name="patientDetails.postalCode"
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel>Postal Code</FormLabel>
@@ -789,7 +981,7 @@ export function AppointmentSchedulingForm() {
 
 			<FormField
 				control={form.control}
-				name="appointmentScheduling.address"
+				name="patientDetails.address"
 				render={({ field }) => (
 					<FormItem className="col-span-full">
 						<FormLabel>Address</FormLabel>
@@ -808,6 +1000,33 @@ export function AppointmentSchedulingForm() {
 				)}
 			/>
 
+			<FormField
+				control={form.control}
+				name="patientDetails.addressNotes"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>
+							Address Notes{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
+						<FormControl>
+							<Textarea
+								{...field}
+								placeholder="Enter the address notes..."
+								className="shadow-inner bg-sidebar"
+							/>
+						</FormControl>
+
+						<FormDescription>
+							Any additional notes that are relevant to the location of the
+							patient address, e.g. Google Maps link.
+						</FormDescription>
+
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
 			{coordinateError && (
 				<Alert variant="destructive" className="col-span-full">
 					<AlertCircle className="size-4" />
@@ -820,7 +1039,7 @@ export function AppointmentSchedulingForm() {
 
 			<FormField
 				control={form.control}
-				name="appointmentScheduling.latitude"
+				name="patientDetails.latitude"
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel>Latitude</FormLabel>
@@ -843,7 +1062,7 @@ export function AppointmentSchedulingForm() {
 
 			<FormField
 				control={form.control}
-				name="appointmentScheduling.longitude"
+				name="patientDetails.longitude"
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel>Longitude</FormLabel>
@@ -917,16 +1136,269 @@ export function AppointmentSchedulingForm() {
 			<HereMap
 				ref={mapRef}
 				coordinate={coordinate}
-				address={{
-					country: mapAddress.country,
-					state: mapAddress.state,
-					city: mapAddress.city,
-					postalCode: mapAddress.postalCode,
-					address: mapAddress.address,
-				}}
+				address={{ ...mapAddress }}
+				options={{ disabledEvent: true }}
 				className="col-span-full"
 			/>
+		</FormStepItemContainer>
+	);
+}
 
+export function AppointmentSchedulingForm() {
+	const { form, watchPatientDetailsValue, coordinate, mapAddress } =
+		usePatientRegion();
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentNewGlobalPageProps>();
+	const [isLoading, setIsLoading] = useState({
+		services: false,
+		therapists: false,
+	});
+	const watchAppointmentSchedulingValue = useWatch({
+		control: form.control,
+		name: "appointmentScheduling",
+	});
+
+	// for preferred therapist field
+	const getGenderIcon = (
+		gender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"],
+	) => {
+		const lower = gender.toLowerCase();
+		if (lower === "male") return <Mars className="size-4" />;
+		if (lower === "female") return <Venus className="size-4" />;
+		return <VenusAndMars className="size-4" />;
+	};
+
+	// * watching the changes of service selected value
+	const servicesOption = useMemo(
+		() =>
+			globalProps?.services?.filter(
+				(service) => service.name !== "PERAWAT_HOMECARE",
+			),
+		[globalProps?.services],
+	);
+	const packagesOption = useMemo(
+		() =>
+			servicesOption
+				?.filter(
+					(service) =>
+						String(service.id) === watchAppointmentSchedulingValue?.service?.id,
+				)
+				?.flatMap((service) => service.packages),
+		[servicesOption, watchAppointmentSchedulingValue?.service?.id],
+	);
+	const onFocusServiceField = useCallback(() => {
+		// fetch the services options data
+		const { queryParams } = populateQueryParams(
+			pageURL,
+			deepTransformKeysToSnakeCase({
+				locationId: watchPatientDetailsValue?.location?.id,
+			}),
+		);
+		router.get(pageURL, queryParams, {
+			only: ["services"],
+			preserveScroll: true,
+			preserveState: true,
+			replace: false,
+			onStart: () => {
+				setIsLoading((prev) => ({
+					...prev,
+					services: true,
+				}));
+			},
+			onFinish: () => {
+				setTimeout(() => {
+					setIsLoading((prev) => ({
+						...prev,
+						services: false,
+					}));
+				}, 250);
+			},
+		});
+	}, [pageURL, watchPatientDetailsValue?.location?.id]);
+	const onSelectService = useCallback(
+		(service: AppointmentBookingSchema["appointmentScheduling"]["service"]) => {
+			// reset the value of the package if the service changed
+			form.resetField("appointmentScheduling.package", {
+				defaultValue: DEFAULT_VALUES_PACKAGE,
+			});
+			form.setValue("appointmentScheduling.service", service, {
+				shouldValidate: true,
+			});
+		},
+		[form.setValue, form.resetField],
+	);
+
+	// * for appointment date field
+	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
+	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
+		new Date(watchAppointmentSchedulingValue.appointmentDateTime.toString()),
+	);
+	const [appointmentTime, setAppointmentTime] = useState<string>(
+		format(watchAppointmentSchedulingValue.appointmentDateTime, "HH:mm"),
+	);
+	// Memoized calendar properties for the appointment date field
+	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
+		// Define the range of years to be displayed in the calendar
+		const currentYear = new Date().getFullYear();
+		const sixMonthsFromToday = new Date();
+		sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
+
+		return {
+			// Close the calendar popover when a day is clicked
+			onDayClick: () => setIsOpenAppointmentDate(false),
+			// Set the range of years to be displayed
+			fromYear: currentYear,
+			toYear: currentYear,
+			// Disable dates that are in the past or more than 6 months in the future
+			disabled: (date) => {
+				const today = new Date();
+				return date <= today || date > sixMonthsFromToday;
+			},
+		};
+	}, []);
+
+	// * for assigning the therapist
+	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
+	const [therapistsOptions, setTherapistsOptions] = useState({
+		available: [] as AppointmentNewProps["therapists"],
+		unavailable: [] as AppointmentNewProps["therapists"],
+		feasibile: [] as AppointmentNewProps["therapists"],
+		notFeasible: [] as AppointmentNewProps["therapists"],
+	});
+	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
+	const onFindTherapists = useCallback(() => {
+		// fetch the services options data
+		const { queryParams } = populateQueryParams(
+			pageURL,
+			deepTransformKeysToSnakeCase({
+				locationId: watchPatientDetailsValue?.location?.id,
+				serviceId: watchAppointmentSchedulingValue?.service?.id,
+				preferredTherapistGender:
+					watchAppointmentSchedulingValue.preferredTherapistGender,
+				appointmentDateTime:
+					watchAppointmentSchedulingValue.appointmentDateTime,
+			}),
+		);
+		router.get(pageURL, queryParams, {
+			only: ["therapists"],
+			preserveScroll: true,
+			preserveState: true,
+			replace: false,
+			onStart: () => {
+				setIsLoading((prev) => ({
+					...prev,
+					therapists: true,
+				}));
+			},
+			onFinish: () => {
+				setTimeout(() => {
+					setIsLoading((prev) => ({
+						...prev,
+						therapists: false,
+					}));
+				}, 250);
+			},
+			onSuccess: ({ props }) => {
+				// map the available and unavailable therapists
+				const result = (props as unknown as AppointmentNewGlobalPageProps)
+					.therapists;
+				const therapistsAvailable =
+					result?.filter((t) => t.availabilityDetails?.available) || [];
+				const therapistsUnavailable =
+					result?.filter((t) => !t.availabilityDetails?.available) || [];
+
+				setTherapistsOptions((prev) => ({
+					...prev,
+					available: therapistsAvailable,
+					unavailable: therapistsUnavailable,
+				}));
+				onCalculateIsoline(therapistsAvailable);
+			},
+		});
+	}, [pageURL, watchPatientDetailsValue, watchAppointmentSchedulingValue]);
+	const onCalculateIsoline = useCallback(
+		async (therapists: AppointmentNewProps["therapists"]) => {
+			// TODO: show UI for therapists unavailable
+			if (!mapRef.current || !therapists?.length) return;
+
+			// calculate the isoline
+			const { latitude, longitude } = watchPatientDetailsValue;
+			const patientCoords = { lat: latitude, lng: longitude };
+			await mapRef.current.isoline.onCalculate.both({
+				coord: patientCoords,
+				constraints: [
+					{ type: "distance", value: 1000 * 25 }, // 25 km
+					{ type: "time", value: 60 * 50 }, // 50 minutes
+				],
+			});
+
+			// Map therapists to MarkerData
+			const therapistCoords: MarkerData[] =
+				therapists
+					.map((therapist) => {
+						// Safely handle missing activeAddress
+						if (!therapist?.activeAddress) return null;
+
+						return {
+							position: {
+								lat: therapist.activeAddress.latitude,
+								lng: therapist.activeAddress.longitude,
+							},
+							address: therapist.activeAddress.address,
+							bubbleContent: `
+            <div class="w-[180px] text-xs flex flex-col">
+              <span class="font-bold text-sm">${therapist.name}</span>
+              <span class="font-light text-[10px]">#${therapist.registrationNumber}</span>
+            </div>
+          `,
+							additional: { therapist },
+						} satisfies MarkerData;
+					})
+					.filter((coord) => coord !== null) || [];
+
+			// Get feasibility therapists result
+			const feasibleResult = mapRef.current.isLocationFeasible(therapistCoords);
+			const therapistList = {
+				feasible: [] as AppointmentNewProps["therapists"],
+				notFeasible: [] as AppointmentNewProps["therapists"],
+			};
+			for (const item of feasibleResult || []) {
+				const therapist = item?.additional?.therapist;
+				if (!therapist) continue;
+
+				if (item.isFeasible) {
+					therapistList?.feasible?.push(therapist);
+				} else {
+					therapistList?.notFeasible?.push(therapist);
+				}
+			}
+			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
+
+			// Add markers for feasible therapists
+			const markerFeasibleData: MarkerData[] =
+				therapistList.feasible
+					?.map(
+						(feasibleTherapist) =>
+							therapistCoords?.find(
+								(coord) =>
+									coord?.additional?.therapist?.id === feasibleTherapist.id,
+							) || null,
+					)
+					?.filter((coord) => coord !== null) || [];
+
+			mapRef.current.marker.onAdd(markerFeasibleData, {
+				isSecondary: true,
+				useRouting: true,
+			});
+
+			// Mark isoline as calculated
+			setIsIsolineCalculated(true);
+		},
+		[watchPatientDetailsValue],
+	);
+
+	return (
+		<FormStepItemContainer>
 			<Deferred
 				data={["services"]}
 				fallback={
@@ -962,10 +1434,9 @@ export function AppointmentSchedulingForm() {
 													: "Select service"}
 											</p>
 											{field.value ? (
-												<Button
-													variant="ghost"
-													size="icon"
-													className="w-auto h-auto py-0"
+												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+												<div
+													className="cursor-pointer"
 													onClick={(event) => {
 														event.preventDefault();
 														event.stopPropagation();
@@ -974,7 +1445,7 @@ export function AppointmentSchedulingForm() {
 													}}
 												>
 													<X className="opacity-50" />
-												</Button>
+												</div>
 											) : (
 												<ChevronsUpDown className="opacity-50" />
 											)}
@@ -1142,12 +1613,12 @@ export function AppointmentSchedulingForm() {
 								onValueChange={field.onChange}
 								defaultValue={field.value}
 								orientation="horizontal"
-								className="flex flex-col gap-5 md:flex-row md:items-center"
+								className="grid grid-cols-1 gap-4 md:grid-cols-3"
 							>
 								{PREFERRED_THERAPIST_GENDER.map((gender) => (
 									<FormItem
 										key={gender}
-										className="flex items-center space-x-3 space-y-0"
+										className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
 									>
 										<FormControl>
 											<RadioGroupItem value={gender} />
@@ -1168,7 +1639,7 @@ export function AppointmentSchedulingForm() {
 			<div className="flex w-full gap-4">
 				<FormField
 					control={form.control}
-					name="appointmentScheduling.appointmentDate"
+					name="appointmentScheduling.appointmentDateTime"
 					render={({ field }) => (
 						<FormItem className="flex-grow">
 							<FormLabel>Appointment Date</FormLabel>
@@ -1229,7 +1700,7 @@ export function AppointmentSchedulingForm() {
 
 				<FormField
 					control={form.control}
-					name="appointmentScheduling.appointmentDate"
+					name="appointmentScheduling.appointmentDateTime"
 					render={({ field }) => (
 						<FormItem className="flex-auto">
 							<FormLabel className="invisible">Time</FormLabel>
@@ -1281,286 +1752,31 @@ export function AppointmentSchedulingForm() {
 					)}
 				/>
 			</div>
-		</FormStepItemContainer>
-	);
-}
 
-export function PatientDetailsForm() {
-	const form = useFormContext<AppointmentBookingSchema>();
+			<div className="grid gap-3 col-span-full">
+				<Button
+					type="button"
+					effect="shine"
+					iconPlacement="right"
+					icon={ChevronsRight}
+					onClick={(event) => {
+						event.preventDefault();
+						onFindTherapists();
+					}}
+				>
+					Find the Available Therapists
+				</Button>
 
-	// for getting the gender icon
-	const getGenderIcon = (
-		gender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"],
-	) => {
-		const lower = gender.toLowerCase();
-		if (lower === "male") return <Mars className="size-4" />;
-		if (lower === "female") return <Venus className="size-4" />;
-		return <VenusAndMars className="size-4" />;
-	};
-
-	// * watching the date of birth and calculate the age value
-	const watchDateOfBirth = useWatch({
-		control: form.control,
-		name: "patientDetails.dateOfBirth",
-	});
-	// Memoized calendar properties for the date of birth field
-	const dateOfBirthCalendarProps = useMemo<CalendarProps>(() => {
-		return {
-			// Show 100 years range
-			fromYear: new Date().getFullYear() - 100,
-			toYear: new Date().getFullYear(),
-			// Disable future dates
-			disabled: (date) => date >= new Date(),
-		};
-	}, []);
-	useEffect(() => {
-		if (watchDateOfBirth && watchDateOfBirth instanceof Date) {
-			// Calculate age using your custom function
-			const age = calculateAge(watchDateOfBirth);
-			// Update the age field in the form
-			form.setValue("patientDetails.age", age);
-		}
-	}, [watchDateOfBirth, form.setValue]);
-
-	return (
-		<FormStepItemContainer>
-			<FormField
-				control={form.control}
-				name="patientDetails.fullName"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Full Name</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								type="text"
-								autoComplete="name"
-								placeholder="Enter the full name..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<div className="flex flex-wrap gap-3">
-				<FormField
-					control={form.control}
-					name="patientDetails.dateOfBirth"
-					render={({ field }) => (
-						<FormItem className="flex-1">
-							<FormLabel>Date of birth</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant={"outline"}
-											className={cn(
-												"relative w-full pl-3 text-left font-normal shadow-inner bg-sidebar",
-												!field.value && "text-muted-foreground",
-											)}
-										>
-											{field.value ? (
-												`${format(field.value, "PPP")}`
-											) : (
-												<span>Pick a date of birth</span>
-											)}
-											<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="w-auto p-0"
-									align="start"
-									side="bottom"
-								>
-									<Calendar
-										{...dateOfBirthCalendarProps}
-										initialFocus
-										mode="single"
-										captionLayout="dropdown"
-										selected={new Date(field.value)}
-										onSelect={field.onChange}
-										defaultMonth={field.value}
-									/>
-								</PopoverContent>
-							</Popover>
-							<FormMessage />
-						</FormItem>
-					)}
+				<HereMap
+					ref={mapRef}
+					coordinate={coordinate}
+					address={{ ...mapAddress }}
+					options={{ disabledEvent: false }}
+					className="col-span-full"
 				/>
-
-				<FormField
-					control={form.control}
-					name="patientDetails.age"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Age</FormLabel>
-							<FormControl>
-								<Input
-									{...field}
-									readOnly
-									type="number"
-									min={0}
-									value={field?.value || ""}
-									placeholder="Enter the age..."
-									className="shadow-inner w-fit field-sizing-content bg-sidebar"
-								/>
-							</FormControl>
-
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormDescription className="flex-none">
-					Your date of birth is used to calculate your age.
-				</FormDescription>
 			</div>
 
-			<FormField
-				control={form.control}
-				name="patientDetails.gender"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormLabel>Gender</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={field.onChange}
-								defaultValue={field.value}
-								orientation="horizontal"
-								className="flex flex-row items-center gap-5"
-							>
-								{GENDERS.map((gender) => (
-									<FormItem
-										key={gender}
-										className="flex items-center space-x-3 space-y-0"
-									>
-										<FormControl>
-											<RadioGroupItem value={gender} />
-										</FormControl>
-										<FormLabel className="flex items-center gap-1 font-normal capitalize">
-											{getGenderIcon(gender)}
-											<span>{gender.toLowerCase()}</span>
-										</FormLabel>
-									</FormItem>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.condition"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormLabel>Current Condition</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={field.onChange}
-								defaultValue={field.value}
-								orientation="horizontal"
-								className="flex flex-col gap-3"
-							>
-								{PATIENT_CONDITIONS_WITH_DESCRIPTION.map((condition) => (
-									<>
-										<FormItem
-											key={condition.title}
-											className="flex items-start p-4 space-x-3 space-y-0 border rounded-md shadow-inner bg-sidebar"
-										>
-											<FormControl>
-												<RadioGroupItem value={condition.title} />
-											</FormControl>
-											<FormLabel className="w-full space-y-1 font-normal">
-												<span>{condition.title}</span>
-												<FormDescription>
-													{condition.description}
-												</FormDescription>
-											</FormLabel>
-										</FormItem>
-									</>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.complaintDescription"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>Complaint Description</FormLabel>
-						<FormControl>
-							<Textarea
-								{...field}
-								placeholder="Enter the complaint description..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.illnessOnsetDate"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>
-							Illness Onset Date{" "}
-							<span className="text-sm italic font-light">- (optional)</span>
-						</FormLabel>
-						<FormControl>
-							<Textarea
-								{...field}
-								placeholder="Enter the illness onset date..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormDescription>
-							Enter the date when the illness first began. You can use an exact
-							date if known, or an estimate if unsure.
-						</FormDescription>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.medicalHistory"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>Medical History</FormLabel>
-						<FormControl>
-							<Textarea
-								{...field}
-								placeholder="Enter the medical history..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormDescription>
-							Provide an overview of the patient’s medical history including
-							allergies, chronic conditions, and any past medical events or
-							treatments relevant to the current complaint.
-						</FormDescription>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+			<p>Visit #1: assigned to therapist: </p>
 		</FormStepItemContainer>
 	);
 }
@@ -1848,7 +2064,6 @@ export function AdditionalSettings() {
 							/>
 						)}
 					</div>
-
 					<FormField
 						control={form.control}
 						name="additionalSettings.voucherCode"
@@ -1869,6 +2084,34 @@ export function AdditionalSettings() {
 										className="shadow-inner bg-sidebar"
 									/>
 								</FormControl>
+
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="additionalSettings.notes"
+						render={({ field }) => (
+							<FormItem className="col-span-full">
+								<FormLabel>
+									Notes{" "}
+									<span className="text-sm italic font-light">
+										- (optional)
+									</span>
+								</FormLabel>
+								<FormControl>
+									<Textarea
+										{...field}
+										placeholder="Enter the additional appointment notes..."
+										className="shadow-inner bg-sidebar"
+									/>
+								</FormControl>
+
+								<FormDescription>
+									Any notes that are relevant to this appointment.
+								</FormDescription>
 
 								<FormMessage />
 							</FormItem>

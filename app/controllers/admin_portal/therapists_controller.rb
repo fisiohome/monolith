@@ -41,14 +41,24 @@ module AdminPortal
       selected_therapist_lambda = lambda do
         return nil unless selected_param
 
-        serialize_therapist(Therapist.find_by(id: selected_param))
+        serialize_therapist(
+          Therapist.find_by(id: selected_param),
+          {
+            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+          }
+        )
       end
 
       render inertia: "AdminPortal/Therapist/Index", props: deep_transform_keys_to_camel_case({
         therapists: {
           metadata: pagy_metadata(@pagy),
           data: @therapists.map do |therapist|
-            serialize_therapist(therapist)
+            serialize_therapist(
+              therapist,
+              {
+                only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+              }
+            )
           end
         },
         selected_therapist: -> { selected_therapist_lambda.call }
@@ -58,7 +68,12 @@ module AdminPortal
     # GET /therapists/1
     def show
       render inertia: "Therapist/Show", props: {
-        therapist: serialize_therapist(@therapist)
+        therapist: serialize_therapist(
+          @therapist,
+          {
+            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+          }
+        )
       }
     end
 
@@ -182,7 +197,12 @@ module AdminPortal
 
       render inertia: "AdminPortal/Therapist/Upsert", props: deep_transform_keys_to_camel_case({
         current_path: (action_name === "new") ? new_admin_portal_therapist_path : edit_admin_portal_therapist_path(therapist),
-        therapist: serialize_therapist(therapist),
+        therapist: serialize_therapist(
+          therapist,
+          {
+            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+          }
+        ),
         genders: Therapist.genders.map { |key, value| value },
         employment_types: Therapist.employment_types.map { |key, value| value },
         employment_statuses: Therapist.employment_statuses.map { |key, value| value },

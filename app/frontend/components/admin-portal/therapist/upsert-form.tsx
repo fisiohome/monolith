@@ -920,7 +920,7 @@ function AddressForm({
 	const calculateCoordinate = useCallback(async () => {
 		try {
 			// Fetch geocode result
-			const geocodeResult = await mapRef.current?.geocodeAddress();
+			const geocodeResult = await mapRef.current?.geocode.onCalculate();
 
 			// Validate geocode result
 			if (
@@ -946,7 +946,15 @@ function AddressForm({
 			form.setValue(`addresses.${fieldIndex}.lng`, lng);
 
 			// Add markers to the map
-			mapRef.current?.addMarkers([geocodeResult]);
+			mapRef.current?.marker.onAdd(
+				[
+					{
+						position: geocodeResult.position,
+						address: geocodeResult.address.label,
+					},
+				],
+				{ changeMapView: true },
+			);
 
 			// revalidate the form status
 			form.trigger("addresses");
@@ -967,7 +975,7 @@ function AddressForm({
 		form.setValue(`addresses.${fieldIndex}.lng`, 0);
 
 		// remove the map markers
-		mapRef.current?.removeMarkers();
+		mapRef.current?.marker.onRemove();
 	}, [form.setValue, fieldIndex]);
 
 	return (
@@ -1398,6 +1406,7 @@ function AddressForm({
 					postalCode: address.postalCode,
 					address: address.address,
 				}}
+				options={{ disabledEvent: true }}
 				className="col-span-full"
 			/>
 

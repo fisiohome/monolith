@@ -1,397 +1,69 @@
-import {
-	type GeocodingResponse,
-	type GeocodingResult,
-	MAP_DEFAULT_COORDINATE,
-	filterGeocodeByQueryScore,
-	isDefaultCoordinate,
-} from "@/lib/here-maps";
-import { cn, debounce } from "@/lib/utils";
+import useHereMap, {
+	type MarkerData,
+	type IsolineConstraint,
+	type FeasibleResult,
+} from "@/hooks/here-maps";
+import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
+import { cn } from "@/lib/utils";
 import type { GlobalPageProps } from "@/types/globals";
-import H from "@here/maps-api-for-javascript";
+import type {
+	Coordinate,
+	IsolineRequestParams,
+	IsolineResult,
+} from "@/types/here-maps";
+import type { GeocodingResult } from "@/types/here-maps";
+import type H from "@here/maps-api-for-javascript";
 import { usePage } from "@inertiajs/react";
 import {
 	type ComponentProps,
 	forwardRef,
-	useCallback,
 	useEffect,
 	useImperativeHandle,
 	useMemo,
 	useRef,
-	useState,
 } from "react";
-
-/**
- * Alignment:
- * Represent the value of indicating the new alignment of the given control within the map view port
- *
- * The alignment within the map view port can be:
- * <pre>
- * +--------------------------------------------------------------------------------+
- * |  "top-left"  > >           &lt; &lt;  "top-center"  > >            &lt; &lt;  "top-right"  |
- * |  "left-top"                                                       "right-top"  |
- * |  v                                                                          v  |
- * |  v                                                                          v  |
- * |                                                                                |
- * |                                                                                |
- * |  ^                                                                          ^  |
- * |  ^                                                                          ^  |
- * |  "left-middle"                                                 "right-middle"  |
- * |  v                                                                          v  |
- * |  v                                                                          v  |
- * |                                                                                |
- * |                                                                                |
- * |  ^                                                                          ^  |
- * |  ^                                                                          ^  |
- * |  "left-bottom"                                                 "right-bottom"  |
- * |  "bottom-left"  > >       &lt; &lt;  "bottom-center"  > >       &lt; &lt;  "bottom-right"  |
- * +--------------------------------------------------------------------------------+
- * </pre>
- */
-type Alignment =
-	(typeof H.ui.LayoutAlignment)[keyof typeof H.ui.LayoutAlignment];
-
-/**
- * MarkerData:
- * Represents the data for a map marker, including the geographic
- * position and address information.
- */
-interface MarkerData {
-	position: { lat: number; lng: number };
-	address: string;
-}
-
-/**
- * useHereMap:
- * A custom hook that encapsulates all the logic related to the HERE Map.
- *
- * @param containerRef - A ref to the map container DOM element.
- * @param coordinate - Initial coordinates [lat, lng] for the map center.
- * @param address - The address details used for the default marker and geocoding.
- * @param apiKey - API key for accessing HERE Maps services.
- *
- * @returns An object containing methods to control the map, such as initialization,
- *          adding markers, geocoding addresses, and updating traffic layers.
- */
-const useHereMap = (
-	containerRef: React.RefObject<HTMLDivElement>,
-	coordinate: number[],
-	address: HereMapProps["address"],
-	apiKey: string,
-) => {
-	// Refs to store map instances and platform
-	const mapRef = useRef<H.Map | null>(null); // Map instance
-	const platformRef = useRef<H.service.Platform | null>(null); // Platform instance
-	const behaviorRef = useRef<H.mapevents.Behavior | null>(null); // Map behavior (e.g., zoom, pan)
-	const uiRef = useRef<H.ui.UI | null>(null); // Map UI components
-	const markerGroupRef = useRef<H.map.Group | null>(null); // Map group marker instance
-
-	// Local state to display current center (for debugging/UI purposes)
-	const [centerMap, setCenterMap] = useState<{ lat: number; lng: number }>({
-		lat: 0,
-		lng: 0,
-	});
-
-	// Memoize the SVG icon used for markers
-	const svgIcon = useMemo(() => {
-		const svg = `<svg width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path fill="#8b5cf6" d="M12 2C8.13 2 5 5.13 5 9c0 4.97 7 13 7 13s7-8.03 7-13c0-3.87-3.13-7-7-7z"/>
-      <circle cx="12" cy="9" r="4" fill="#FFFFFF"/>
-    </svg>`;
-		return new H.map.Icon(svg);
-	}, []);
-
-	/**
-	 * tapMarkersListener:
-	 * A debounced event listener for marker taps.
-	 * Centers the map on the tapped marker and logs the marker data.
-	 */
-	const tapMarkersListener = useCallback(
-		debounce((evt: any) => {
-			const marker = evt?.target;
-			const markerData = marker?.getData() as MarkerData | null;
-			// For example, log marker info (you could show a popup or similar)
-			console.debug("Marker tapped:", markerData);
-			mapRef.current?.setCenter(marker?.getGeometry(), true);
-		}, 250),
-		[],
-	);
-
-	/**
-	 * addMarkers:
-	 * Adds a set of markers to the map based on the provided locations.
-	 *
-	 * @param locations - An array of MarkerData objects containing position and address.
-	 */
-	const addMarkers = useCallback(
-		(locations: MarkerData[]) => {
-			if (!mapRef.current) return;
-
-			// If there is already a marker group, remove it first.
-			if (markerGroupRef.current) {
-				mapRef.current.removeObject(markerGroupRef.current);
-			}
-
-			// Create a new group for the markers and save it in the ref.
-			const group = new H.map.Group();
-			markerGroupRef.current = group;
-
-			for (const location of locations) {
-				if (!location.position || !location.address) {
-					console.warn("Invalid location:", location);
-					continue;
-				}
-				const marker = new H.map.Marker(location.position, {
-					icon: svgIcon,
-					data: location,
-					volatility: true,
-				});
-
-				// Add marker to the group
-				group.addObject(marker);
-			}
-
-			// Add event listener for marker tap
-			group.addEventListener("tap", tapMarkersListener);
-
-			// Add the marker group to the map
-			mapRef.current.addObject(group);
-
-			// Adjust the map view to fit the markers.
-			const bounds = group.getBoundingBox();
-			if (bounds) {
-				/* *
-				 * Update the map view with bounds (and adjust zoom if needed)
-				 *
-				 * Note:
-				 * animation just applied on the zoom level because to prevent the unnecesarry maps loaded, while "getViewModel().setLookAtData()"
-				 * this way saves Maps API for JavaScript quota
-				 * */
-				mapRef.current.getViewModel().setLookAtData({ bounds });
-				mapRef.current.setZoom(18, true);
-			}
-
-			// Update the center state based on the first marker
-			if (locations[0]) {
-				setCenterMap({
-					lat: locations[0].position.lat,
-					lng: locations[0].position.lng,
-				});
-			}
-		},
-		[svgIcon, tapMarkersListener],
-	);
-
-	/**
-	 * Removes all markers from the map by removing the marker group object.
-	 * This function uses the `useCallback` hook to memoize the callback, ensuring
-	 * that the function is not recreated on every render.
-	 */
-	const removeMarkers = useCallback(() => {
-		if (mapRef.current && markerGroupRef.current) {
-			mapRef.current.removeObject(markerGroupRef.current);
-			markerGroupRef.current = null;
-		}
-
-		// update the center state
-		setCenterMap({ lat: 0, lng: 0 });
-	}, []);
-
-	/**
-	 * removeCopyrights:
-	 * Removes the default HERE Map copyrights from the DOM.
-	 */
-	const removeCopyrights = useCallback(() => {
-		document?.querySelector(".H_copyright")?.remove();
-	}, []);
-
-	/**
-	 * initializeMap:
-	 * Initializes the HERE Map instance and its components.
-	 * Sets up the map layers, UI, event behavior, and adds the default marker.
-	 */
-	const initializeMap = useCallback(() => {
-		console.group();
-		console.info("=== Start process to initializing the HERE Map ===");
-
-		// Check if map is already initialized
-		if (mapRef.current || !containerRef.current) return;
-		console.info("Proceed the initialization");
-
-		const [lat, lng] = coordinate;
-		platformRef.current = new H.service.Platform({ apikey: apiKey });
-		const defaultLayers = platformRef.current.createDefaultLayers({
-			pois: true,
-		});
-
-		// Create the map instance
-		const map = new H.Map(
-			containerRef.current,
-			(defaultLayers as any).vector.normal.map,
-			{
-				zoom: 14,
-				center: { lat, lng },
-				pixelRatio: window.devicePixelRatio || 1,
-				padding: { top: 16, right: 16, bottom: 16, left: 16 },
-			},
-		);
-
-		// Add the traffic layer
-		map.addLayer((defaultLayers as any).vector.traffic.map);
-
-		// Set up map events and behavior for map interactions (disable panning/zooming if needed)
-		const mapEvents = new H.mapevents.MapEvents(map);
-		behaviorRef.current = new H.mapevents.Behavior(mapEvents);
-		behaviorRef.current.disable();
-
-		// Add default UI components (UI zooming control, and another UI map settings)
-		uiRef.current = H.ui.UI.createDefault(map, defaultLayers);
-		uiRef.current.getControl("mapsettings")?.setVisibility(false);
-		uiRef.current.getControl("zoom")?.setAlignment("bottom-left" as Alignment);
-
-		// Save the map instance and remove copyrights
-		mapRef.current = map;
-		removeCopyrights();
-
-		// Add a default marker based on the initial coordinate
-		if (lat && lng && !isDefaultCoordinate(coordinate)) {
-			console.info("Add the default markers");
-			addMarkers([{ position: { lat, lng }, address: address.address }]);
-			setCenterMap({ lat, lng });
-		}
-
-		console.info("=== Process to initializing the HERE Map Finished ===");
-		console.groupEnd();
-	}, [
-		containerRef,
-		coordinate,
-		apiKey,
-		address.address,
-		addMarkers,
-		removeCopyrights,
-	]);
-
-	/**
-	 * geocodeAddress:
-	 * Geocodes the provided address using the HERE Maps search service.
-	 *
-	 * @returns A Promise resolving to the best GeocodingResult or null.
-	 */
-	const geocodeAddress =
-		useCallback(async (): Promise<GeocodingResult | null> => {
-			if (!platformRef.current) return null;
-
-			// Construct the query parameters
-			const params: H.service.ServiceParameters = {
-				// q: address.address,
-				qq: `country=${address.country};state=${address.state};city=${address.city};street=${address.address};postalCode=${address.postalCode}`,
-			};
-
-			const searchService = platformRef.current.getSearchService();
-			if (!searchService) {
-				console.error("Geocoder service is not available.");
-				return null;
-			}
-
-			return new Promise((resolve, reject) => {
-				searchService.geocode(
-					params,
-					(result: any) => {
-						const locations = (result as GeocodingResponse).items;
-						if (!locations?.length) {
-							console.warn(
-								"No geocoding results found for the provided address.",
-							);
-							resolve(null);
-							return;
-						}
-
-						// Filter and pick the best location based on custom logic
-						const filteredData = locations.reduce(filterGeocodeByQueryScore);
-						resolve(filteredData);
-					},
-					(error: Error) => {
-						console.error("Error during geocoding:", error.message);
-						reject(error);
-					},
-				);
-			});
-		}, [address]);
-
-	/**
-	 * setCenterFn:
-	 * Centers the map at the specified latitude and longitude.
-	 */
-	const setCenter = useCallback((lat: number, lng: number) => {
-		mapRef.current?.setCenter({ lat, lng }, true);
-	}, []);
-
-	/**
-	 * setZoomFn:
-	 * Sets the map's zoom level.
-	 */
-	const setZoom = useCallback((zoom: number) => {
-		mapRef.current?.setZoom(zoom, true);
-	}, []);
-
-	/**
-	 * getMapCenterPosition:
-	 * Retrieves the current center point of the map.
-	 *
-	 * @returns The current center as an H.geo.Point or null.
-	 */
-	const getMapCenterPosition = useCallback((): H.geo.Point | null => {
-		return mapRef.current?.getCenter() || null;
-	}, []);
-
-	/**
-	 * getMapZoom:
-	 * Retrieves the current zoom level of the map.
-	 *
-	 * @returns The current zoom level or null.
-	 */
-	const getMapZoom = useCallback((): number | null => {
-		return mapRef.current?.getZoom() || null;
-	}, []);
-
-	// Refreshes the traffic layer to update its data.
-	const updateTrafficLayer = useCallback(() => {
-		if (!platformRef.current || !mapRef.current) return;
-
-		console.log("traffic update");
-		const provider = platformRef.current
-			.createDefaultLayers()
-			// @ts-ignore
-			.vector.traffic.map.getProvider();
-		provider?.reload(true);
-	}, []);
-
-	// Return all the functions and state that the HereMap component will use.
-	return {
-		initializeMap,
-		addMarkers,
-		removeMarkers,
-		geocodeAddress,
-		setCenter,
-		setZoom,
-		getMapCenterPosition,
-		getMapZoom,
-		updateTrafficLayer,
-		center: centerMap,
-	};
-};
 
 /**
  * HereMaphandler:
  * Defines the methods that the HereMap component will expose via ref.
  */
 interface HereMaphandler {
-	setCenter: (lat: number, lng: number) => void;
-	setZoom: (zoomLevel: number) => void;
-	addMarkers: (locations: GeocodingResponse["items"]) => void;
-	removeMarkers: () => void;
-	geocodeAddress: () => Promise<GeocodingResult | null>;
-	getMapCenterPosition: () => H.geo.Point | null;
-	getMapZoom: () => number | null;
+	mapControl: {
+		setCenter: (lat: number, lng: number) => void;
+		setZoom: (zoom: number) => void;
+		getCenterPosition: () => H.geo.Point | null;
+		getZoom: () => number | null;
+	};
+	marker: {
+		onAdd: (
+			locations: MarkerData[],
+			options?: {
+				isSecondary?: boolean;
+				changeMapView?: boolean;
+				useRouting?: boolean;
+			},
+		) => void;
+		onRemove: (isSecondary?: boolean) => void;
+	};
+	geocode: {
+		onCalculate: () => Promise<GeocodingResult | null>;
+	};
+	isoline: {
+		onCalculate: {
+			single: (
+				params: IsolineRequestParams,
+				shouldZoom?: boolean,
+			) => Promise<IsolineResult["isolines"][number] | null>;
+			both: ({
+				coord,
+				constraints,
+			}: {
+				coord: Coordinate;
+				constraints: IsolineConstraint[];
+			}) => Promise<IsolineResult["isolines"] | null>;
+		};
+	};
+	isLocationFeasible: (markers: MarkerData[]) => FeasibleResult[];
 }
 
 /**
@@ -409,6 +81,7 @@ interface HereMapProps extends ComponentProps<"div"> {
 	coordinate: number[];
 	width?: string;
 	height?: string;
+	options?: { disabledEvent?: boolean; showCenterMap?: boolean };
 }
 
 /**
@@ -425,12 +98,13 @@ interface HereMapProps extends ComponentProps<"div"> {
 const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 	(
 		{
+			children: _children,
 			address,
 			coordinate = MAP_DEFAULT_COORDINATE,
 			width = "100%",
 			height = "375px",
 			className,
-			children: _children,
+			options,
 		},
 		ref,
 	) => {
@@ -451,45 +125,51 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 
 		// Use the custom hook to encapsulate all map-related logic.
 		const {
-			initializeMap,
-			addMarkers,
-			removeMarkers,
-			geocodeAddress,
-			setCenter,
-			setZoom,
-			getMapCenterPosition,
-			getMapZoom,
-			updateTrafficLayer,
-			center,
+			initialize,
+			geocode,
+			isoline,
+			marker,
+			mapControl,
+			isLocationFeasible,
 		} = useHereMap(mapContainerRef, coordinateMemo, address, apiKey);
 
 		// Expose map methods to parent components via ref.
 		useImperativeHandle(ref, () => ({
-			setCenter,
-			setZoom,
-			addMarkers: (locations: GeocodingResponse["items"]) => {
-				const formattedLocations = locations.map(({ position, address }) => ({
-					position: { lat: position.lat, lng: position.lng },
-					address: address.label,
-				}));
-				addMarkers(formattedLocations);
+			mapControl: {
+				setZoom: mapControl.setZoom,
+				setCenter: mapControl.setCenter,
+				getCenterPosition: mapControl.getCenterPosition,
+				getZoom: mapControl.getZoom,
 			},
-			removeMarkers,
-			geocodeAddress,
-			getMapCenterPosition,
-			getMapZoom,
+			marker: {
+				onAdd: marker.onAdd,
+				onRemove: marker.onRemove,
+			},
+			geocode: {
+				onCalculate: geocode.onCalculate,
+			},
+			isoline: {
+				onCalculate: {
+					single: isoline.onCalculate.single,
+					both: isoline.onCalculate.both,
+				},
+			},
+			isLocationFeasible,
 		}));
 
 		// Initialize the map and set up the traffic update interval.
 		useEffect(() => {
-			initializeMap();
+			initialize(options);
 
 			// for update traffic map layer every one-minute
-			const trafficInterval = setInterval(updateTrafficLayer, 60000);
+			const trafficInterval = setInterval(
+				mapControl.updateLayer.traffic,
+				60000,
+			);
 			return () => {
 				clearInterval(trafficInterval);
 			};
-		}, [initializeMap, updateTrafficLayer]);
+		}, [initialize, mapControl.updateLayer.traffic, options]);
 
 		return (
 			<div
@@ -500,9 +180,11 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 					className,
 				)}
 			>
-				<div className="absolute top-0 left-0 z-10 text-white rounded-md bg-emerald-600 py-0.5 px-1.5 text-xs">
-					{`lat: ${center.lat.toFixed(2)}, lng: ${center.lng.toFixed(2)}`}
-				</div>
+				{options?.showCenterMap && (
+					<div className="absolute top-0 left-0 z-10 text-white rounded-md bg-emerald-600 py-0.5 px-1.5 text-xs">
+						{`lat: ${mapControl.centerMap.lat.toFixed(2)}, lng: ${mapControl.centerMap.lng.toFixed(2)}`}
+					</div>
+				)}
 			</div>
 		);
 	},

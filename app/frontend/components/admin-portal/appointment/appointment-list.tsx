@@ -1,8 +1,3 @@
-import { cn, generateInitials } from "@/lib/utils";
-import type { Appointment } from "@/pages/AdminPortal/Appointment/Index";
-import { format, formatDistance, isToday, parse } from "date-fns";
-import { useMemo, type ComponentProps } from "react";
-import { Separator } from "@/components/ui/separator";
 import {
 	Expandable,
 	ExpandableCard,
@@ -12,14 +7,20 @@ import {
 	ExpandableContent,
 	ExpandableTrigger,
 } from "@/components/shared/expandable";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { getBrandBadgeVariant } from "@/lib/services";
+import { cn, generateInitials } from "@/lib/utils";
+import type { Appointment } from "@/pages/AdminPortal/Appointment/Index";
+import { format, formatDistance, isToday, parse } from "date-fns";
 import {
 	Ban,
 	BriefcaseMedical,
@@ -35,8 +36,7 @@ import {
 	ShieldCheck,
 	Venus,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { getBrandBadgeVariant } from "@/lib/services";
+import { type ComponentProps, useMemo } from "react";
 
 // * appointment schedule component
 interface ScheduleListProps {

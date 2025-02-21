@@ -10,8 +10,16 @@ module AdminPortal
         therapists = Therapist
           .includes([:user])
           .where(search_param.present? ? ["name ILIKE ?", "%#{search_param}%"] : nil)
+          .where(employment_status: "ACTIVE")
         therapists.map do |therapist|
-          deep_transform_keys_to_camel_case(serialize_therapist(therapist))
+          deep_transform_keys_to_camel_case(
+            serialize_therapist(
+              therapist,
+              {
+                only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+              }
+            )
+          )
         end
       end
 
@@ -23,7 +31,15 @@ module AdminPortal
           :therapist_adjusted_availabilities
         ]]).find_by(id: selected_therapist_param)
 
-        deep_transform_keys_to_camel_case(serialize_therapist(therapist, {include_availability: true}))
+        deep_transform_keys_to_camel_case(
+          serialize_therapist(
+            therapist,
+            {
+              only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender],
+              include_availability: true
+            }
+          )
+        )
       end
 
       day_names = Date::DAYNAMES

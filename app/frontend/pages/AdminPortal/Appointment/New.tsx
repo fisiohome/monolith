@@ -17,17 +17,19 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
 	APPOINTMENT_BOOKING_SCHEMA,
 	type AppointmentBookingSchema,
-	checkIsCustomReferral,
 	checkIsCustomFisiohomePartner,
+	checkIsCustomReferral,
 } from "@/lib/appointments";
 import { calculateAge } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
 import type { Package } from "@/types/admin-portal/package";
 import type { Service } from "@/types/admin-portal/service";
+import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, router, usePage } from "@inertiajs/react";
 import { useSessionStorage } from "@uidotdev/usehooks";
+import { add } from "date-fns";
 import { type ReactElement, useCallback, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
@@ -41,6 +43,23 @@ type LocationOption = Pick<
 	"id" | "city" | "country" | "countryCode" | "state"
 >;
 
+type TherapistOption = Pick<
+	Therapist,
+	| "id"
+	| "name"
+	| "batch"
+	| "gender"
+	| "phoneNumber"
+	| "registrationNumber"
+	| "modalities"
+	| "specializations"
+	| "employmentStatus"
+	| "employmentType"
+	| "availability"
+	| "availabilityDetails"
+	| "activeAddress"
+>;
+
 interface StepperProps extends StepItem {
 	component: ReactElement;
 }
@@ -48,6 +67,7 @@ interface StepperProps extends StepItem {
 export interface AppointmentNewProps {
 	services?: ServiceOption[];
 	locations?: LocationOption[];
+	therapists?: TherapistOption[];
 }
 
 export interface AppointmentNewGlobalPageProps
@@ -60,7 +80,6 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	const { url: pageURL, props: globalProps } =
 		usePage<AppointmentNewGlobalPageProps>();
 	const isMobile = useIsMobile();
-	console.log(globalProps);
 
 	// stepper management state
 	const steps = useMemo(
@@ -114,7 +133,11 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			: undefined;
 
 		// for appointment date
-		const appointmentDate = new Date(2025, 6, 1, 11, 0);
+		const appointmentDateTime = add(new Date(), {
+			days: 13,
+			hours: 5,
+			minutes: 15 - (new Date().getMinutes() % 15),
+		});
 
 		return {
 			contactInformation: {
@@ -130,8 +153,8 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 				medicalHistory: "Hipertensi",
 				complaintDescription: "Sakit pinggang",
 				illnessOnsetDate: "2 minggu lalu",
-			},
-			appointmentScheduling: {
+				addressNotes:
+					"masuk gang bidan solikah rumah jejer 4 google link: https://maps.app.goo.gl/EzniW78FrYkBVF1w8",
 				address:
 					"jl jati baru 1 nomor 9 gerbang hitam, kelurahan kampung bali kec tanah abang kota  jakarta pusat",
 				postalCode: "10250",
@@ -141,10 +164,21 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 					id: "5",
 					city: "KOTA ADM. JAKARTA PUSAT",
 				},
+				// address:
+				// 	"Wang Plaza, Jl. Panjang No.kav 17, RT.14/RW.7, Kedoya Utara, Kec. Kb. Jeruk, jakarta, Daerah Khusus Ibukota Jakarta 11520",
+				// postalCode: "11520",
+				// latitude: -6.17381,
+				// longitude: 106.76558,
+				// location: {
+				// 	id: "2",
+				// 	city: "KOTA ADM. JAKARTA BARAT",
+				// },
+			},
+			appointmentScheduling: {
 				service: { id: "7", name: "FISIOHOME_SPECIAL_TIER" },
 				package: { id: "1", name: "Order Visit", numberOfVisit: 1 },
 				preferredTherapistGender: "NO PREFERENCE",
-				appointmentDate,
+				appointmentDateTime,
 			},
 			additionalSettings: {
 				referralSource,
@@ -152,6 +186,8 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 				fisiohomePartnerBooking: true,
 				fisiohomePartnerName,
 				customFisiohomePartnerName,
+				voucherCode: "TEBUSMURAH",
+				notes: "This is the patient notes",
 			},
 		} satisfies AppointmentBookingSchema;
 	}, []);

@@ -29,3 +29,8 @@ export interface AdjustedAvailability {
 	reason?: string;
 	isUnavailable: boolean;
 }
+
+export interface AvailabilityDetail {
+	available: boolean;
+	reasons: string[];
+}

@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { type VariantProps, cva } from "class-variance-authority";
 import { CheckIcon, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 import * as RPNInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
-import { cva, type VariantProps } from "class-variance-authority";
 
 const inputVariants = cva(
 	"flex rounded-e-lg rounded-s-none transition-colors",

@@ -1,7 +1,9 @@
+import AppointmentList from "@/components/admin-portal/appointment/appointment-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { APPOINTMENTS } from "@/lib/appointments";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { GlobalPageProps } from "@/types/globals";
 import { Head, Link, router, usePage } from "@inertiajs/react";
@@ -9,8 +11,6 @@ import { useMediaQuery } from "@uidotdev/usehooks";
 import { Plus } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Fragment } from "react";
-import AppointmentList from "@/components/admin-portal/appointment/appointment-list";
-import { APPOINTMENTS } from "@/lib/appointments";
 
 export type Appointment = typeof APPOINTMENTS;
 

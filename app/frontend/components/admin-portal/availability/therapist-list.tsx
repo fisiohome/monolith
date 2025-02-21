@@ -1,6 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { IS_DEKSTOP_MEDIA_QUERY, IS_TABLET_MEDIA_QUERY } from "@/lib/constants";
 import {
@@ -14,7 +20,7 @@ import type { GlobalPageProps } from "@/types/globals";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { motion } from "framer-motion";
-import { Search, X } from "lucide-react";
+import { Info, Search, X } from "lucide-react";
 import { type ComponentProps, useCallback, useMemo, useState } from "react";
 
 interface TherapistListCardProps {
@@ -150,9 +156,21 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 
 	return (
 		<div className={cn("space-y-2", className)}>
-			<h2 className="text-xs font-semibold tracking-wider uppercase">
-				Therapists
-			</h2>
+			<div className="flex gap-1.5">
+				<h2 className="text-xs font-semibold tracking-wider uppercase">
+					Therapists
+				</h2>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Info className="align-top cursor-pointer size-3" />
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>Only displays active therapists</p>
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			</div>
 
 			<Input
 				type="text"

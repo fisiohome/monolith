@@ -46,6 +46,20 @@ class Therapist < ApplicationRecord
 
   self.implicit_order_column = "created_at"
 
+  # Main availability check
+  def available_at?(appointment_date_time_server_time)
+    AdminPortal::GetTherapistAvailableService.new(self, appointment_date_time_server_time).available?
+  end
+
+  # Get detailed availability info
+  def availability_details(appointment_date_time_server_time)
+    service = AdminPortal::GetTherapistAvailableService.new(self, appointment_date_time_server_time)
+    {
+      available: service.available?,
+      reasons: service.reasons
+    }
+  end
+
   private
 
   def destroy_associated_user

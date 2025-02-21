@@ -6,8 +6,8 @@ import { cva } from "class-variance-authority";
 import type { LucideIcon } from "lucide-react";
 import { CheckIcon, Loader2, X } from "lucide-react";
 import * as React from "react";
-import { Collapsible, CollapsibleContent } from "../ui/collapsible";
 import { Button } from "../ui/button";
+import { Collapsible, CollapsibleContent } from "../ui/collapsible";
 
 // <---------- CONTEXT ---------->
 

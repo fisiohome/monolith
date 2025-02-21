@@ -1,7 +1,6 @@
 import { add, format } from "date-fns";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import { z } from "zod";
-import { boolSchema, idSchema } from "./validation";
 import {
 	FISIOHOME_PARTNER,
 	GENDERS,
@@ -9,6 +8,7 @@ import {
 	PATIENT_REFERRAL_OPTIONS,
 	PREFERRED_THERAPIST_GENDER,
 } from "./constants";
+import { boolSchema, idSchema } from "./validation";
 
 export const DEFAULT_VALUES_LOCATION = { id: "", city: "" };
 export const DEFAULT_VALUES_SERVICE = { id: "", name: "" };
@@ -325,11 +325,6 @@ export const PATIENT_DETAILS_SCHEMA = z.object({
 		required_error: "Need to select a patient condition",
 	}),
 	medicalHistory: z.string().min(1, "Medical history is required"),
-});
-export type PatientDetailsSchema = z.infer<typeof PATIENT_DETAILS_SCHEMA>;
-
-// appointment scheduling schema
-export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 	location: z
 		.object({
 			id: idSchema,
@@ -351,6 +346,12 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 			message: "Longitude is required",
 		}),
 	address: z.string().min(1, "Address is required"),
+	addressNotes: z.string().optional(),
+});
+export type PatientDetailsSchema = z.infer<typeof PATIENT_DETAILS_SCHEMA>;
+
+// appointment scheduling schema
+export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 	service: z
 		.object({
 			id: idSchema,
@@ -373,9 +374,15 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 	preferredTherapistGender: z.enum(PREFERRED_THERAPIST_GENDER, {
 		required_error: "Please select a preferred therapist gender",
 	}),
-	appointmentDate: z.coerce.date().refine((date) => date > new Date(), {
+	appointmentDateTime: z.coerce.date().refine((date) => date > new Date(), {
 		message: "Appointment date must be in the future",
 	}),
+	therapist: z
+		.object({
+			id: idSchema,
+			name: z.string(),
+		})
+		.optional(),
 });
 export type AppointmentSchedulingSchema = z.infer<
 	typeof APPOINTMENT_SCHEDULING_SCHEMA
@@ -415,6 +422,8 @@ export const ADDITIONAL_SETTINGS_SCHEMA = z
 		fisiohomePartnerName: z.string().optional(),
 		customFisiohomePartnerName: z.string().optional(),
 		voucherCode: z.string().optional(),
+		notes: z.string().optional(),
+		admins: z.array(z.object({ id: idSchema, name: z.string() })).optional(),
 	})
 	.superRefine((data, ctx) => {
 		// Only perform the check if booking from partner is selected.

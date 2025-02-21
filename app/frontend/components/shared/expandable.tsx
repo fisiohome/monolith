@@ -1,3 +1,13 @@
+import { cn } from "@/lib/utils";
+import { useMeasure } from "@uidotdev/usehooks";
+import {
+	AnimatePresence,
+	type HTMLMotionProps,
+	type TargetAndTransition,
+	motion,
+	useMotionValue,
+	useSpring,
+} from "framer-motion";
 /**
  * * Docs: https://www.cult-ui.com/docs/components/expandable
  */
@@ -8,16 +18,6 @@ import React, {
 	useEffect,
 	useState,
 } from "react";
-import {
-	AnimatePresence,
-	type HTMLMotionProps,
-	type TargetAndTransition,
-	motion,
-	useMotionValue,
-	useSpring,
-} from "framer-motion";
-import { cn } from "@/lib/utils";
-import { useMeasure } from "@uidotdev/usehooks";
 
 const springConfig = { stiffness: 200, damping: 20, bounce: 0.2 };
 
