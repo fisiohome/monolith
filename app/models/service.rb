@@ -11,6 +11,8 @@ class Service < ApplicationRecord
   has_many :packages, dependent: :destroy
   has_many :active_packages, -> { where(active: true) }, class_name: "Package"
 
+  has_many :appointments, dependent: :destroy
+
   # * define the validation
   validates :code, presence: true
   validates :name, presence: true, uniqueness: true

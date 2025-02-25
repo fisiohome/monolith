@@ -1,6 +1,7 @@
 import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import HereMap from "@/components/shared/here-map";
+import { RetroGridPattern } from "@/components/shared/retro-grid-pattern";
 import { useStepper } from "@/components/shared/stepper";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -14,6 +15,7 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import {
@@ -50,6 +52,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { usePatientRegion } from "@/hooks/admin-portal/use-appointment-utils";
 import type { MarkerData } from "@/hooks/here-maps";
@@ -62,14 +65,7 @@ import {
 	checkIsCustomFisiohomePartner,
 	checkIsCustomReferral,
 } from "@/lib/appointments";
-import {
-	FISIOHOME_PARTNER,
-	GENDERS,
-	IS_DEKSTOP_MEDIA_QUERY,
-	PATIENT_CONDITIONS_WITH_DESCRIPTION,
-	PATIENT_REFERRAL_OPTIONS,
-	PREFERRED_THERAPIST_GENDER,
-} from "@/lib/constants";
+import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import {
 	calculateAge,
 	cn,
@@ -81,7 +77,7 @@ import type {
 	AppointmentNewGlobalPageProps,
 	AppointmentNewProps,
 } from "@/pages/AdminPortal/Appointment/New";
-import { Deferred, router, usePage } from "@inertiajs/react";
+import { Deferred, Link, router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { format } from "date-fns";
 import {
@@ -90,8 +86,11 @@ import {
 	Check,
 	ChevronsRight,
 	ChevronsUpDown,
+	CircleCheckBig,
 	LoaderIcon,
+	MapPin,
 	Mars,
+	Pencil,
 	Venus,
 	VenusAndMars,
 	X,
@@ -135,12 +134,19 @@ export function FormStepItemContainer({
 
 // * component step button for next step, prev step, and submit
 export interface StepButtonsProps extends ComponentProps<"div"> {
+	isFormLoading: boolean;
+	isCreated: boolean;
 	setFormStorage: React.Dispatch<
 		React.SetStateAction<AppointmentBookingSchema | null>
 	>;
 }
 
-export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
+export function StepButtons({
+	className,
+	isFormLoading,
+	isCreated,
+	setFormStorage,
+}: StepButtonsProps) {
 	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
 	const form = useFormContext<AppointmentBookingSchema>();
 	const {
@@ -151,10 +157,12 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 		currentStep,
 		isLoading,
 		nextStep,
+		setStep,
+		steps,
 	} = useStepper();
 	const isFirstStep = useMemo(
-		() => currentStep.label === "Contact Information",
-		[currentStep.label],
+		() => currentStep?.label === "Contact Information",
+		[currentStep?.label],
 	);
 	const onPrevStep = useCallback(() => {
 		prevStep();
@@ -201,6 +209,13 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 		}
 	};
 
+	// * redirect to the final step components
+	useEffect(() => {
+		if (isCreated) {
+			setStep(steps?.length);
+		}
+	}, [isCreated, steps, setStep]);
+
 	return (
 		<div
 			className={cn(
@@ -212,7 +227,9 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 				type="button"
 				size={!isDekstop ? "default" : "sm"}
 				variant="accent-outline"
-				disabled={(isDisabledStep && !isFirstStep) || isLoading}
+				disabled={
+					(isDisabledStep && !isFirstStep) || isLoading || isFormLoading
+				}
 				onClick={(event) => {
 					event.preventDefault();
 					isFirstStep ? goBackHandler() : onPrevStep();
@@ -225,10 +242,10 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 				<Button
 					type="submit"
 					size={!isDekstop ? "default" : "sm"}
-					disabled={isLoading}
+					disabled={isLoading || isFormLoading}
 					className="order-first md:order-last"
 				>
-					{isLoading ? (
+					{isLoading || isFormLoading ? (
 						<>
 							<LoaderIcon className="animate-spin" />
 							<span>Saving...</span>
@@ -244,7 +261,7 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 						<Button
 							type="button"
 							size={!isDekstop ? "default" : "sm"}
-							disabled={isLoading}
+							disabled={isLoading || isFormLoading}
 							className="order-first md:order-last"
 						>
 							Next
@@ -265,14 +282,14 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 								<Button
 									type="button"
 									size={!isDekstop ? "default" : "sm"}
-									disabled={isLoading}
+									disabled={isLoading || isFormLoading}
 									className="order-first md:order-last"
 									onClick={(event) => {
 										event.preventDefault();
 										onSubmit();
 									}}
 								>
-									{isLoading ? (
+									{isLoading || isFormLoading ? (
 										<>
 											<LoaderIcon className="animate-spin" />
 											<span>Please Wait...</span>
@@ -291,14 +308,14 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 				<Button
 					type="button"
 					size={!isDekstop ? "default" : "sm"}
-					disabled={isLoading}
+					disabled={isLoading || isFormLoading}
 					className="order-first md:order-last"
 					onClick={(event) => {
 						event.preventDefault();
 						onSubmit();
 					}}
 				>
-					{isLoading ? (
+					{isLoading || isFormLoading ? (
 						<>
 							<LoaderIcon className="animate-spin" />
 							<span>Please Wait...</span>
@@ -315,21 +332,60 @@ export function StepButtons({ className, setFormStorage }: StepButtonsProps) {
 }
 
 export function FinalStep() {
-	const { hasCompletedAllSteps, resetSteps } = useStepper();
+	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
+	const { hasCompletedAllSteps } = useStepper();
+	const [count, setCount] = useState(3);
+	useEffect(() => {
+		if (count > 0) {
+			const timer = setTimeout(() => {
+				setCount((prev) => prev - 1);
+			}, 1000);
+			return () => clearTimeout(timer);
+		}
+
+		if (count === 0) {
+			setTimeout(() => {
+				router.get(
+					globalProps.adminPortal.router.adminPortal.appointment.index,
+				);
+			}, 1000);
+		}
+	}, [count, globalProps.adminPortal.router.adminPortal.appointment.index]);
 
 	if (!hasCompletedAllSteps) return null;
 
 	return (
-		<>
-			<div className="flex items-center justify-center h-40 border rounded-md">
-				<h1 className="text-xl">Woohoo! All steps completed! 🎉</h1>
-			</div>
-			<div className="flex justify-end w-full gap-2">
-				<Button size="sm" onClick={resetSteps}>
-					Reset
+		<FormStepItemContainer
+			className={cn(
+				"!grid-cols-1 !gap-2 mt-0 text-center md:mt-4 relative",
+				count === 0 && "motion-preset-confetti",
+			)}
+		>
+			<div className="flex flex-col gap-3">
+				<CircleCheckBig className="mx-auto size-8 text-primary" />
+				<h1 className="mx-auto space-x-3 text-sm font-bold text-primary">
+					<span>Appointments are Booked!</span>
+				</h1>
+
+				<p className="text-xs text-pretty w-full md:w-[75%] mx-auto text-primary">
+					The appointment has been successfully created. You can start to inform
+					the therapist and patient concerned. And you will be redirected in a
+					few seconds.
+				</p>
+
+				<span className="my-2 text-3xl font-bold text-primary">{count}</span>
+
+				<Button effect="shine" size="lg" asChild>
+					<Link
+						href={globalProps.adminPortal.router.adminPortal.appointment.index}
+					>
+						Redirect now
+					</Link>
 				</Button>
 			</div>
-		</>
+
+			<RetroGridPattern />
+		</FormStepItemContainer>
 	);
 }
 
@@ -372,7 +428,7 @@ export function ContactInformationForm() {
 								placeholder="Enter the contact phone number..."
 								defaultCountry="ID"
 								autoComplete="tel"
-								variant="secondary"
+								className="shadow-inner bg-sidebar"
 							/>
 						</FormControl>
 
@@ -428,6 +484,7 @@ export function ContactInformationForm() {
 export function PatientDetailsForm() {
 	const {
 		form,
+		globalProps,
 		watchPatientDetailsValue,
 		locationsOption,
 		groupedLocationsOption,
@@ -440,8 +497,17 @@ export function PatientDetailsForm() {
 	const [isLoading, setIsLoading] = useState({
 		locations: false,
 	});
+	const patientFormOptions = useMemo(() => {
+		const genders = globalProps.optionsData?.patientGenders || [];
+		const patientConditions = globalProps.optionsData?.patientConditions || [];
 
-	// for getting the gender icon
+		return { genders, patientConditions };
+	}, [
+		globalProps.optionsData?.patientGenders,
+		globalProps.optionsData?.patientConditions,
+	]);
+
+	// * patient gender state
 	const getGenderIcon = (
 		gender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"],
 	) => {
@@ -462,16 +528,20 @@ export function PatientDetailsForm() {
 		};
 	}, []);
 	useEffect(() => {
-		if (
-			watchPatientDetailsValue.dateOfBirth &&
-			watchPatientDetailsValue.dateOfBirth instanceof Date
-		) {
+		const value =
+			typeof watchPatientDetailsValue.dateOfBirth === "string"
+				? new Date(watchPatientDetailsValue.dateOfBirth)
+				: watchPatientDetailsValue.dateOfBirth;
+		if (value !== null && value instanceof Date) {
 			// Calculate age using your custom function
-			const age = calculateAge(watchPatientDetailsValue.dateOfBirth);
+			const age = calculateAge(value);
 			// Update the age field in the form
 			form.setValue("patientDetails.age", age);
+			form.trigger("patientDetails.age");
+		} else {
+			form.setValue("patientDetails.age", 0);
 		}
-	}, [watchPatientDetailsValue.dateOfBirth, form.setValue]);
+	}, [watchPatientDetailsValue.dateOfBirth, form.setValue, form.trigger]);
 
 	// * watching the changes of location selected value
 	const onFocusLocationField = useCallback(() => {
@@ -636,16 +706,35 @@ export function PatientDetailsForm() {
 										<Button
 											variant={"outline"}
 											className={cn(
-												"relative w-full pl-3 text-left font-normal shadow-inner bg-sidebar",
+												"relative w-full flex justify-between font-normal shadow-inner bg-sidebar",
 												!field.value && "text-muted-foreground",
 											)}
 										>
+											<p>
+												{field.value
+													? `${format(field.value, "PPP")}`
+													: "Pick a date of birth"}
+											</p>
+
 											{field.value ? (
-												`${format(field.value, "PPP")}`
+												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+												<div
+													className="cursor-pointer"
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
+
+														form.setValue(
+															"patientDetails.dateOfBirth",
+															null as unknown as Date,
+														);
+													}}
+												>
+													<X className="opacity-50" />
+												</div>
 											) : (
-												<span>Pick a date of birth</span>
+												<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
 											)}
-											<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
 										</Button>
 									</FormControl>
 								</PopoverTrigger>
@@ -697,73 +786,100 @@ export function PatientDetailsForm() {
 				</FormDescription>
 			</div>
 
-			<FormField
-				control={form.control}
-				name="patientDetails.gender"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormLabel>Gender</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={field.onChange}
-								defaultValue={field.value}
-								orientation="horizontal"
-								className="grid grid-cols-2 gap-4"
-							>
-								{GENDERS.map((gender) => (
-									<Fragment key={gender}>
-										<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
-											<FormControl>
-												<RadioGroupItem value={gender} />
-											</FormControl>
-											<FormLabel className="flex items-center gap-1 font-normal capitalize">
-												{getGenderIcon(gender)}
-												<span>{gender}</span>
-											</FormLabel>
-										</FormItem>
-									</Fragment>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+			<Deferred
+				data={["optionsData"]}
+				fallback={
+					<div className="flex flex-col self-end gap-3 col-span-full">
+						<Skeleton className="w-10 h-4 rounded-md" />
+						<div className="grid grid-cols-2 gap-4">
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+						</div>
+					</div>
+				}
+			>
+				<FormField
+					control={form.control}
+					name="patientDetails.gender"
+					render={({ field }) => (
+						<FormItem className="space-y-3 col-span-full">
+							<FormLabel>Gender</FormLabel>
+							<FormControl>
+								<RadioGroup
+									onValueChange={field.onChange}
+									defaultValue={field.value}
+									orientation="horizontal"
+									className="grid grid-cols-2 gap-4"
+								>
+									{patientFormOptions.genders.map((gender) => (
+										<Fragment key={gender}>
+											<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
+												<FormControl>
+													<RadioGroupItem value={gender} />
+												</FormControl>
+												<FormLabel className="flex items-center gap-1 font-normal capitalize">
+													{getGenderIcon(gender)}
+													<span>{gender.toLowerCase()}</span>
+												</FormLabel>
+											</FormItem>
+										</Fragment>
+									))}
+								</RadioGroup>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			</Deferred>
 
-			<FormField
-				control={form.control}
-				name="patientDetails.condition"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormLabel>Current Condition</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={field.onChange}
-								defaultValue={field.value}
-								orientation="horizontal"
-								className="flex flex-col gap-3"
-							>
-								{PATIENT_CONDITIONS_WITH_DESCRIPTION.map((condition) => (
-									<Fragment key={condition.title}>
-										<FormItem className="flex items-start p-4 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
-											<FormControl>
-												<RadioGroupItem value={condition.title} />
-											</FormControl>
-											<FormLabel className="w-full space-y-1 font-normal">
-												<span>{condition.title}</span>
-												<FormDescription>
-													{condition.description}
-												</FormDescription>
-											</FormLabel>
-										</FormItem>
-									</Fragment>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+			<Deferred
+				data={["optionsData"]}
+				fallback={
+					<div className="flex flex-col self-end gap-3 col-span-full">
+						<Skeleton className="w-10 h-4 rounded-md" />
+						<div className="grid grid-cols-1 gap-4">
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+						</div>
+					</div>
+				}
+			>
+				<FormField
+					control={form.control}
+					name="patientDetails.condition"
+					render={({ field }) => (
+						<FormItem className="space-y-3 col-span-full">
+							<FormLabel>Current Condition</FormLabel>
+							<FormControl>
+								<RadioGroup
+									onValueChange={field.onChange}
+									defaultValue={field.value}
+									orientation="horizontal"
+									className="flex flex-col gap-3"
+								>
+									{patientFormOptions.patientConditions.map((condition) => (
+										<Fragment key={condition.title}>
+											<FormItem className="flex items-start p-4 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
+												<FormControl>
+													<RadioGroupItem value={condition.title} />
+												</FormControl>
+												<FormLabel className="w-full space-y-1 font-normal capitalize">
+													<span>{condition.title.toLowerCase()}</span>
+													<FormDescription>
+														{condition.description}
+													</FormDescription>
+												</FormLabel>
+											</FormItem>
+										</Fragment>
+									))}
+								</RadioGroup>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			</Deferred>
 
 			<FormField
 				control={form.control}
@@ -816,7 +932,10 @@ export function PatientDetailsForm() {
 				name="patientDetails.medicalHistory"
 				render={({ field }) => (
 					<FormItem className="col-span-full">
-						<FormLabel>Medical History</FormLabel>
+						<FormLabel>
+							Medical History{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
 						<FormControl>
 							<Textarea
 								{...field}
@@ -1157,8 +1276,14 @@ export function AppointmentSchedulingForm() {
 		control: form.control,
 		name: "appointmentScheduling",
 	});
+	const appointmentFormOptions = useMemo(() => {
+		const preferredTherapistGender =
+			globalProps.optionsData?.preferredTherapistGender || [];
 
-	// for preferred therapist field
+		return { preferredTherapistGender };
+	}, [globalProps.optionsData?.preferredTherapistGender]);
+
+	// * for preferred therapist field
 	const getGenderIcon = (
 		gender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"],
 	) => {
@@ -1231,10 +1356,14 @@ export function AppointmentSchedulingForm() {
 	// * for appointment date field
 	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
 	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
-		new Date(watchAppointmentSchedulingValue.appointmentDateTime.toString()),
+		watchAppointmentSchedulingValue?.appointmentDateTime
+			? new Date(watchAppointmentSchedulingValue.appointmentDateTime.toString())
+			: null,
 	);
 	const [appointmentTime, setAppointmentTime] = useState<string>(
-		format(watchAppointmentSchedulingValue.appointmentDateTime, "HH:mm"),
+		watchAppointmentSchedulingValue?.appointmentDateTime
+			? format(watchAppointmentSchedulingValue.appointmentDateTime, "HH:mm")
+			: "",
 	);
 	// Memoized calendar properties for the appointment date field
 	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
@@ -1602,39 +1731,55 @@ export function AppointmentSchedulingForm() {
 				}}
 			/>
 
-			<FormField
-				control={form.control}
-				name="appointmentScheduling.preferredTherapistGender"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormLabel>Preferred Therapist Gender</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={field.onChange}
-								defaultValue={field.value}
-								orientation="horizontal"
-								className="grid grid-cols-1 gap-4 md:grid-cols-3"
-							>
-								{PREFERRED_THERAPIST_GENDER.map((gender) => (
-									<FormItem
-										key={gender}
-										className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-									>
-										<FormControl>
-											<RadioGroupItem value={gender} />
-										</FormControl>
-										<FormLabel className="flex items-center gap-1 font-normal capitalize">
-											{getGenderIcon(gender)}
-											<span>{gender.toLowerCase()}</span>
-										</FormLabel>
-									</FormItem>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+			<Deferred
+				data={["optionsData"]}
+				fallback={
+					<div className="flex flex-col self-end gap-3 col-span-full">
+						<Skeleton className="w-10 h-4 rounded-md" />
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+						</div>
+					</div>
+				}
+			>
+				<FormField
+					control={form.control}
+					name="appointmentScheduling.preferredTherapistGender"
+					render={({ field }) => (
+						<FormItem className="space-y-3 col-span-full">
+							<FormLabel>Preferred Therapist Gender</FormLabel>
+							<FormControl>
+								<RadioGroup
+									onValueChange={field.onChange}
+									defaultValue={field.value}
+									orientation="horizontal"
+									className="grid grid-cols-1 gap-4 md:grid-cols-3"
+								>
+									{appointmentFormOptions.preferredTherapistGender.map(
+										(gender) => (
+											<FormItem
+												key={gender}
+												className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+											>
+												<FormControl>
+													<RadioGroupItem value={gender} />
+												</FormControl>
+												<FormLabel className="flex items-center gap-1 font-normal capitalize">
+													{getGenderIcon(gender)}
+													<span>{gender.toLowerCase()}</span>
+												</FormLabel>
+											</FormItem>
+										),
+									)}
+								</RadioGroup>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			</Deferred>
 
 			<div className="flex w-full gap-4">
 				<FormField
@@ -1657,7 +1802,7 @@ export function AppointmentSchedulingForm() {
 											)}
 										>
 											{field.value ? (
-												format(field.value, "PPP")
+												format(field.value, "PPPP")
 											) : (
 												<span>Pick a appointment date</span>
 											)}
@@ -1721,8 +1866,13 @@ export function AppointmentSchedulingForm() {
 										}
 									}}
 								>
-									<SelectTrigger className="font-normal shadow-inner bg-sidebar focus:ring-0 w-[100px] focus:ring-offset-0">
-										<SelectValue />
+									<SelectTrigger
+										className={cn(
+											"shadow-inner bg-sidebar focus:ring-0 w-[100px] focus:ring-offset-0",
+											!appointmentDate && "text-muted-foreground",
+										)}
+									>
+										<SelectValue placeholder="Time" />
 									</SelectTrigger>
 									<SelectContent>
 										<ScrollArea className="h-[15rem]">
@@ -1781,8 +1931,19 @@ export function AppointmentSchedulingForm() {
 	);
 }
 
-export function AdditionalSettings() {
+export function AdditionalSettingsForm() {
+	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const form = useFormContext<AppointmentBookingSchema>();
+	const additionalFormOptions = useMemo(() => {
+		const referralSources = globalProps.optionsData?.referralSources || [];
+		const fisiohomePartnerNames =
+			globalProps.optionsData?.fisiohomePartnerNames || [];
+
+		return { referralSources, fisiohomePartnerNames };
+	}, [
+		globalProps.optionsData?.referralSources,
+		globalProps.optionsData?.fisiohomePartnerNames,
+	]);
 
 	// * Watching changes to the partner booking value
 	const watchPartnerBookingValue = useWatch({
@@ -1803,10 +1964,6 @@ export function AdditionalSettings() {
 	}, [isPartnerBooking, form.setValue]);
 
 	// * Watching changes to the fisiohome partner name and handling custom partner names
-	const fisiohomePartnerOptions = useMemo(
-		() => [...FISIOHOME_PARTNER, "Other"] as const,
-		[],
-	);
 	const watchFisiohomePartnerName = useWatch({
 		control: form.control,
 		name: "additionalSettings.fisiohomePartnerName",
@@ -1838,10 +1995,6 @@ export function AdditionalSettings() {
 	]);
 
 	// * Watching changes to the patient referral source and handling custom referral sources
-	const patientReferralOptions = useMemo(
-		() => [...PATIENT_REFERRAL_OPTIONS, "Other"] as const,
-		[],
-	);
 	const watchReferralSource = useWatch({
 		control: form.control,
 		name: "additionalSettings.referralSource",
@@ -1870,60 +2023,84 @@ export function AdditionalSettings() {
 
 	return (
 		<FormStepItemContainer>
-			<FormField
-				control={form.control}
-				name="additionalSettings.referralSource"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormLabel>
-							Referral Source{" "}
-							<span className="text-sm italic font-light">- (optional)</span>
-						</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={field.onChange}
-								value={field.value}
-								className="flex flex-col gap-5 md:items-center md:flex-row"
-							>
-								{patientReferralOptions.map((option) => (
-									<FormItem
-										key={option}
-										className="flex items-center space-x-3 space-y-0"
-									>
-										<FormControl>
-											<RadioGroupItem value={option} />
-										</FormControl>
-										<FormLabel className="flex items-center gap-1 font-normal capitalize">
-											<span>{option.toLowerCase()}</span>
-										</FormLabel>
-									</FormItem>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			{isCustomReferral && (
+			<Deferred
+				data={["optionsData"]}
+				fallback={
+					<div className="flex flex-col self-end gap-3 col-span-full">
+						<Skeleton className="w-10 h-4 rounded-md" />
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+							<Skeleton className="relative w-full rounded-md h-9" />
+						</div>
+					</div>
+				}
+			>
 				<FormField
 					control={form.control}
-					name="additionalSettings.customReferralSource"
+					name="additionalSettings.referralSource"
 					render={({ field }) => (
-						<FormItem className="col-span-full motion-preset-rebound-down">
+						<FormItem className="space-y-3 col-span-full">
+							<FormLabel>
+								Referral Source{" "}
+								<span className="text-sm italic font-light">- (optional)</span>
+							</FormLabel>
 							<FormControl>
-								<Input
-									{...field}
-									type="text"
-									placeholder="Please specify the referral source"
-									className="shadow-inner bg-sidebar"
-								/>
+								<RadioGroup
+									onValueChange={field.onChange}
+									value={field.value}
+									className="flex flex-col gap-5 md:items-center md:flex-row"
+								>
+									{additionalFormOptions.referralSources.map((option) => (
+										<FormItem
+											key={option}
+											className="flex items-center space-x-3 space-y-0"
+										>
+											<FormControl>
+												<RadioGroupItem value={option} />
+											</FormControl>
+											<FormLabel className="flex items-center gap-1 font-normal capitalize">
+												<span>{option.toLowerCase()}</span>
+											</FormLabel>
+										</FormItem>
+									))}
+								</RadioGroup>
 							</FormControl>
-
 							<FormMessage />
 						</FormItem>
 					)}
 				/>
+			</Deferred>
+
+			{isCustomReferral && (
+				<Deferred
+					data={["optionsData"]}
+					fallback={
+						<div className="grid grid-cols-1 gap-4 col-span-full">
+							<Skeleton className="relative w-full rounded-md h-9" />
+						</div>
+					}
+				>
+					<FormField
+						control={form.control}
+						name="additionalSettings.customReferralSource"
+						render={({ field }) => (
+							<FormItem className="col-span-full motion-preset-rebound-down">
+								<FormControl>
+									<Input
+										{...field}
+										type="text"
+										placeholder="Please specify the referral source"
+										className="shadow-inner bg-sidebar"
+									/>
+								</FormControl>
+
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</Deferred>
 			)}
 
 			<FormField
@@ -1961,163 +2138,447 @@ export function AdditionalSettings() {
 
 			{isPartnerBooking && (
 				<>
-					<div
-						className={cn(
-							isCustomFisiohomePartner ? "flex gap-3 col-span-full" : "",
-						)}
+					<Deferred
+						data={["optionsData"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<div className="grid grid-cols-2 gap-4">
+									<Skeleton className="relative w-full rounded-md h-9" />
+									<Skeleton className="relative w-full rounded-md h-9" />
+								</div>
+							</div>
+						}
 					>
-						<FormField
-							control={form.control}
-							name="additionalSettings.fisiohomePartnerName"
-							render={({ field }) => (
-								<FormItem className="motion-preset-rebound-down">
-									<FormLabel className="text-nowrap">
-										Fisiohome Partner
-									</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button
-													variant="outline"
-													className={cn(
-														"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-														!field.value && "text-muted-foreground",
-													)}
-												>
-													{field.value
-														? fisiohomePartnerOptions.find(
-																(partner) => partner === field.value,
-															)
-														: "Select fisiohome partner"}
-													<ChevronsUpDown className="opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent
-											className="p-0 w-[300px]"
-											align="start"
-											side="bottom"
-										>
-											<Command>
-												<CommandInput
-													placeholder="Search fisiohome partner..."
-													className="h-9"
-												/>
-												<CommandList>
-													<CommandEmpty>
-														No fisiohome partner found.
-													</CommandEmpty>
-													<CommandGroup>
-														{fisiohomePartnerOptions.map((partner) => (
-															<CommandItem
-																value={partner}
-																key={partner}
-																onSelect={() => {
-																	form.setValue(
-																		"additionalSettings.fisiohomePartnerName",
-																		partner,
-																		{ shouldValidate: true },
-																	);
-																}}
-															>
-																{partner}
-																<Check
-																	className={cn(
-																		"ml-auto",
-																		partner === field.value
-																			? "opacity-100"
-																			: "opacity-0",
-																	)}
-																/>
-															</CommandItem>
-														))}
-													</CommandGroup>
-												</CommandList>
-											</Command>
-										</PopoverContent>
-									</Popover>
-
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						{isCustomFisiohomePartner && (
+						<div className={cn(isCustomFisiohomePartner ? "flex gap-3 " : "")}>
 							<FormField
 								control={form.control}
-								name="additionalSettings.customFisiohomePartnerName"
+								name="additionalSettings.fisiohomePartnerName"
 								render={({ field }) => (
-									<FormItem className="w-full motion-preset-rebound-down">
-										<FormLabel className="invisible">Other Partner</FormLabel>
-										<FormControl>
-											<Input
-												{...field}
-												type="text"
-												placeholder="Please specify the fisiohome partner name"
-												className="relative shadow-inner bg-sidebar"
-											/>
-										</FormControl>
+									<FormItem className="motion-preset-rebound-down">
+										<FormLabel className="text-nowrap">
+											Fisiohome Partner
+										</FormLabel>
+										<Popover>
+											<PopoverTrigger asChild>
+												<FormControl>
+													<Button
+														variant="outline"
+														className={cn(
+															"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+															!field.value && "text-muted-foreground",
+														)}
+													>
+														{field.value
+															? additionalFormOptions.fisiohomePartnerNames.find(
+																	(partner) => partner === field.value,
+																)
+															: "Select fisiohome partner"}
+														<ChevronsUpDown className="opacity-50" />
+													</Button>
+												</FormControl>
+											</PopoverTrigger>
+											<PopoverContent
+												className="p-0 w-[300px]"
+												align="start"
+												side="bottom"
+											>
+												<Command>
+													<CommandInput
+														placeholder="Search fisiohome partner..."
+														className="h-9"
+													/>
+													<CommandList>
+														<CommandEmpty>
+															No fisiohome partner found.
+														</CommandEmpty>
+														<CommandGroup>
+															{additionalFormOptions.fisiohomePartnerNames.map(
+																(partner) => (
+																	<CommandItem
+																		value={partner}
+																		key={partner}
+																		onSelect={() => {
+																			form.setValue(
+																				"additionalSettings.fisiohomePartnerName",
+																				partner,
+																				{ shouldValidate: true },
+																			);
+																		}}
+																	>
+																		{partner}
+																		<Check
+																			className={cn(
+																				"ml-auto",
+																				partner === field.value
+																					? "opacity-100"
+																					: "opacity-0",
+																			)}
+																		/>
+																	</CommandItem>
+																),
+															)}
+														</CommandGroup>
+													</CommandList>
+												</Command>
+											</PopoverContent>
+										</Popover>
 
 										<FormMessage />
 									</FormItem>
 								)}
 							/>
-						)}
-					</div>
-					<FormField
-						control={form.control}
-						name="additionalSettings.voucherCode"
-						render={({ field }) => (
-							<FormItem className="motion-preset-rebound-down">
-								<FormLabel>
-									Voucher Code{" "}
-									<span className="text-sm italic font-light">
-										- (optional)
-									</span>
-								</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										type="text"
-										autoComplete="name"
-										placeholder="Enter the voucher code..."
-										className="shadow-inner bg-sidebar"
-									/>
-								</FormControl>
 
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+							{isCustomFisiohomePartner && (
+								<FormField
+									control={form.control}
+									name="additionalSettings.customFisiohomePartnerName"
+									render={({ field }) => (
+										<FormItem className="w-full motion-preset-rebound-down">
+											<FormLabel className="invisible">Other Partner</FormLabel>
+											<FormControl>
+												<Input
+													{...field}
+													type="text"
+													placeholder="Please specify the fisiohome partner name"
+													className="relative shadow-inner bg-sidebar"
+												/>
+											</FormControl>
 
-					<FormField
-						control={form.control}
-						name="additionalSettings.notes"
-						render={({ field }) => (
-							<FormItem className="col-span-full">
-								<FormLabel>
-									Notes{" "}
-									<span className="text-sm italic font-light">
-										- (optional)
-									</span>
-								</FormLabel>
-								<FormControl>
-									<Textarea
-										{...field}
-										placeholder="Enter the additional appointment notes..."
-										className="shadow-inner bg-sidebar"
-									/>
-								</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							)}
+						</div>
+					</Deferred>
 
-								<FormDescription>
-									Any notes that are relevant to this appointment.
-								</FormDescription>
+					<Deferred
+						data={["optionsData"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<div className="grid grid-cols-1 gap-4">
+									<Skeleton className="relative w-full rounded-md h-9" />
+								</div>
+							</div>
+						}
+					>
+						<FormField
+							control={form.control}
+							name="additionalSettings.voucherCode"
+							render={({ field }) => (
+								<FormItem className="motion-preset-rebound-down">
+									<FormLabel>
+										Voucher Code{" "}
+										<span className="text-sm italic font-light">
+											- (optional)
+										</span>
+									</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											type="text"
+											autoComplete="name"
+											placeholder="Enter the voucher code..."
+											className="shadow-inner bg-sidebar"
+										/>
+									</FormControl>
 
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</Deferred>
 				</>
+			)}
+
+			<FormField
+				control={form.control}
+				name="additionalSettings.notes"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>
+							Notes{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
+						<FormControl>
+							<Textarea
+								{...field}
+								placeholder="Enter the additional appointment notes..."
+								className="shadow-inner bg-sidebar"
+							/>
+						</FormControl>
+
+						<FormDescription>
+							Any notes that are relevant to this appointment.
+						</FormDescription>
+
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+		</FormStepItemContainer>
+	);
+}
+
+export function ReviewForm() {
+	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
+	const errorsServerValidation = useMemo(
+		() => (globalProps?.errors?.fullMessages as unknown as string[]) || null,
+		[globalProps?.errors?.fullMessages],
+	);
+	const form = useFormContext<AppointmentBookingSchema>();
+	const { setStep } = useStepper();
+	const review = useMemo(() => form.getValues(), [form.getValues]);
+	const sections = useMemo(() => {
+		const {
+			contactInformation,
+			patientDetails,
+			appointmentScheduling,
+			additionalSettings,
+		} = review;
+		const getGenderIcon = (gender: string) => {
+			const lower = gender.toLowerCase();
+			if (lower === "male") return <Mars className="size-4" />;
+			if (lower === "female") return <Venus className="size-4" />;
+			return <VenusAndMars className="size-4" />;
+		};
+		const onClickGMaps = (coordinate: number[]) => {
+			window.open(
+				`https://www.google.com/maps/search/?api=1&query=${coordinate.join(",")}`,
+			);
+		};
+
+		return [
+			{
+				title: "Contact" as const,
+				stepValue: 0,
+				subs: [
+					{
+						title: "Name",
+						value: contactInformation.contactName,
+					},
+					{
+						title: "Phone Number",
+						value: contactInformation.contactPhone,
+					},
+					{
+						title: "Email",
+						value: contactInformation?.email || "-",
+					},
+					{
+						title: "MiiTel Link",
+						value: contactInformation?.miitelLink || "-",
+					},
+				],
+			},
+			{
+				title: "Patient Profile" as const,
+				stepValue: 1,
+				subs: [
+					{
+						title: "Full Name",
+						value: patientDetails.fullName,
+					},
+					{
+						title: "Date of Birth",
+						value: format(patientDetails.dateOfBirth, "PPP", {}),
+					},
+					{
+						title: "Age",
+						value: `${patientDetails.age} years`,
+					},
+					{
+						title: "Gender",
+						value: patientDetails.gender ? (
+							<Badge variant="secondary">
+								<span className="flex items-center justify-end gap-1">
+									{getGenderIcon(patientDetails.gender.toLowerCase())}
+									{patientDetails.gender}
+								</span>
+							</Badge>
+						) : (
+							"-"
+						),
+					},
+					{
+						title: "Current Condition",
+						value: <Badge variant="outline">{patientDetails?.condition}</Badge>,
+					},
+					{
+						title: "Illness Onset Date",
+						value: patientDetails?.illnessOnsetDate || "-",
+					},
+					{
+						title: "Medical History",
+						value: patientDetails?.medicalHistory || "-",
+					},
+					{
+						title: "Region",
+						value: patientDetails.location.city,
+					},
+					{
+						title: "Postal Code",
+						value: patientDetails.postalCode,
+					},
+					{
+						title: "Address",
+						value: (
+							<div className="space-y-2">
+								<p>{patientDetails.address}</p>
+								<Button
+									type="button"
+									variant="link"
+									effect="hoverUnderline"
+									iconPlacement="left"
+									icon={MapPin}
+									onClick={(event) => {
+										event.preventDefault();
+										onClickGMaps([
+											patientDetails.latitude,
+											patientDetails.longitude,
+										]);
+									}}
+								>
+									View on map
+								</Button>
+							</div>
+						),
+					},
+					{
+						title: "Address Note",
+						value: patientDetails?.addressNotes || "-",
+					},
+				],
+			},
+			{
+				title: "Schedule and Settings" as const,
+				stepValue: 2,
+				subs: [
+					{
+						title: "Service",
+						value: appointmentScheduling.service.name,
+					},
+					{
+						title: "Package",
+						value: `${appointmentScheduling.package.name} (${appointmentScheduling.package.numberOfVisit} visit(s))`,
+					},
+					{
+						title: "Preferred Therapist Gender",
+						value: (
+							<Badge variant="secondary">
+								<span className="flex items-center justify-end gap-1">
+									{getGenderIcon(
+										appointmentScheduling.preferredTherapistGender.toLowerCase(),
+									)}
+									{appointmentScheduling.preferredTherapistGender}
+								</span>
+							</Badge>
+						),
+					},
+					{
+						title: "Appointment Date & Time",
+						value: format(
+							appointmentScheduling.appointmentDateTime,
+							"PPP, hh:mm a",
+						),
+					},
+					{
+						title: "Assigned Therapist",
+						value: appointmentScheduling.therapist?.name || "-",
+					},
+				],
+			},
+			{
+				title: "Additionals" as const,
+				stepValue: 3,
+				subs: [
+					{
+						title: "Referral Source",
+						value: additionalSettings?.referralSource
+							? `${additionalSettings?.referralSource} - ${additionalSettings?.customReferralSource}`
+							: "-",
+					},
+					{
+						title: "Fisiohome Partner Booking",
+						value: additionalSettings?.fisiohomePartnerName
+							? `${additionalSettings?.fisiohomePartnerName} - ${additionalSettings?.customFisiohomePartnerName}`
+							: "-",
+					},
+					{
+						title: "Voucher Code",
+						value: additionalSettings?.voucherCode || "-",
+					},
+					{
+						title: "Notes",
+						value: additionalSettings?.notes || "-",
+					},
+				],
+			},
+		];
+	}, [review]);
+	const onEdit = useCallback(
+		(value: (typeof sections)[number]["stepValue"]) => {
+			setStep(value);
+		},
+		[setStep],
+	);
+
+	return (
+		<FormStepItemContainer className="!grid-cols-1 gap-6">
+			{sections.map((section) => (
+				<div key={section.title} className="grid gap-2 text-sm">
+					<div className="flex items-center justify-between">
+						<p className="text-sm font-medium tracking-tight">
+							{section.title}
+						</p>
+						<Button
+							type="button"
+							variant="link"
+							effect="expandIcon"
+							iconPlacement="left"
+							className="p-0"
+							icon={Pencil}
+							onClick={(event) => {
+								event.preventDefault();
+								onEdit(section.stepValue);
+							}}
+						>
+							Edit
+						</Button>
+					</div>
+
+					<Table className="border rounded-lg border-border">
+						<TableBody>
+							{section.subs.map((sub) => (
+								<TableRow key={sub.title}>
+									<TableCell className="p-2 font-light tracking-tight md:p-4">
+										{sub.title}
+									</TableCell>
+									<TableCell className="p-2 font-medium text-right break-all md:p-4 text-clip text-pretty">
+										{sub.value}
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</div>
+			))}
+
+			{/* for showing the alert error if there's any server validation error */}
+			{errorsServerValidation?.length && (
+				<Alert variant="destructive">
+					<AlertCircle className="size-4" />
+					<AlertTitle className="text-xs">Error</AlertTitle>
+					<AlertDescription className="text-xs">
+						<ul className="list-disc">
+							{errorsServerValidation?.map((error) => (
+								<li key={error}>{error}</li>
+							))}
+						</ul>
+					</AlertDescription>
+				</Alert>
 			)}
 		</FormStepItemContainer>
 	);

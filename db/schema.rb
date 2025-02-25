@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_13_094326) do
+ActiveRecord::Schema[8.0].define(version: 2025_02_23_172545) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -30,6 +30,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_13_094326) do
     t.float "coordinates", default: [], array: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "notes"
     t.index ["location_id"], name: "index_addresses_on_location_id"
   end
 
@@ -40,6 +41,46 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_13_094326) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_admins_on_user_id"
+  end
+
+  create_table "appointment_admins", force: :cascade do |t|
+    t.uuid "admin_id", null: false
+    t.uuid "appointment_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_id"], name: "index_appointment_admins_on_admin_id"
+    t.index ["appointment_id"], name: "index_appointment_admins_on_appointment_id"
+  end
+
+  create_table "appointments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "therapist_id"
+    t.uuid "patient_id", null: false
+    t.bigint "service_id", null: false
+    t.bigint "package_id", null: false
+    t.bigint "location_id", null: false
+    t.string "registration_number", null: false
+    t.string "status", null: false
+    t.datetime "appointment_date_time", null: false
+    t.string "preferred_therapist_gender", null: false
+    t.text "patient_illness_onset_date"
+    t.text "patient_complaint_description", null: false
+    t.text "patient_condition", null: false
+    t.text "patient_medical_history"
+    t.string "referral_source"
+    t.string "other_referral_source"
+    t.boolean "fisiohome_partner_booking", default: false, null: false
+    t.string "fisiohome_partner_name"
+    t.string "other_fisiohome_partner_name"
+    t.string "voucher_code"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_appointments_on_location_id"
+    t.index ["package_id"], name: "index_appointments_on_package_id"
+    t.index ["patient_id"], name: "index_appointments_on_patient_id"
+    t.index ["registration_number"], name: "index_appointments_on_registration_number", unique: true
+    t.index ["service_id"], name: "index_appointments_on_service_id"
+    t.index ["therapist_id"], name: "index_appointments_on_therapist_id"
   end
 
   create_table "bank_details", force: :cascade do |t|
@@ -86,6 +127,40 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_13_094326) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["service_id"], name: "index_packages_on_service_id"
+  end
+
+  create_table "patient_addresses", force: :cascade do |t|
+    t.uuid "patient_id", null: false
+    t.bigint "address_id", null: false
+    t.boolean "active", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["address_id"], name: "index_patient_addresses_on_address_id"
+    t.index ["patient_id", "active"], name: "index_patient_addresses_on_patient_id_and_active", unique: true, where: "(active = true)"
+    t.index ["patient_id"], name: "index_patient_addresses_on_patient_id"
+  end
+
+  create_table "patient_contacts", force: :cascade do |t|
+    t.string "contact_name", null: false
+    t.string "contact_phone", null: false
+    t.string "email"
+    t.string "miitel_link"
+    t.uuid "patient_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["contact_phone"], name: "index_patient_contacts_on_contact_phone", unique: true
+    t.index ["email"], name: "index_patient_contacts_on_email", unique: true
+    t.index ["patient_id"], name: "index_patient_contacts_on_patient_id"
+  end
+
+  create_table "patients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.date "date_of_birth", null: false
+    t.integer "age", null: false
+    t.enum "gender", null: false, enum_type: "gender_enum"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name", "date_of_birth", "age", "gender"], name: "index_unique_patients", unique: true
   end
 
   create_table "services", force: :cascade do |t|
@@ -224,9 +299,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_13_094326) do
 
   add_foreign_key "addresses", "locations"
   add_foreign_key "admins", "users"
+  add_foreign_key "appointment_admins", "admins"
+  add_foreign_key "appointment_admins", "appointments"
+  add_foreign_key "appointments", "locations"
+  add_foreign_key "appointments", "packages"
+  add_foreign_key "appointments", "patients"
+  add_foreign_key "appointments", "services"
+  add_foreign_key "appointments", "therapists"
   add_foreign_key "location_services", "locations"
   add_foreign_key "location_services", "services"
   add_foreign_key "packages", "services"
+  add_foreign_key "patient_addresses", "addresses"
+  add_foreign_key "patient_addresses", "patients"
+  add_foreign_key "patient_contacts", "patients"
   add_foreign_key "therapist_addresses", "addresses"
   add_foreign_key "therapist_addresses", "therapists"
   add_foreign_key "therapist_adjusted_availabilities", "therapist_appointment_schedules"

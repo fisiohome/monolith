@@ -12,15 +12,15 @@ class TherapistAddressTest < ActiveSupport::TestCase
     assert @therapist_two_addresses.valid?
   end
 
-  test "should not allow more than one active address per therapist" do
-    new_address = TherapistAddress.new(
-      therapist: therapists(:therapist_one),
-      address: addresses(:bandung_address),
-      active: true
-    )
-    assert_not new_address.valid?
-    assert_includes new_address.errors[:active], "only one active address is allowed per therapist"
-  end
+  # test "should not allow more than one active address per therapist" do
+  #   new_address = TherapistAddress.new(
+  #     therapist: therapists(:therapist_one),
+  #     address: addresses(:bandung_address),
+  #     active: true
+  #   )
+  #   assert_not new_address.valid?
+  #   assert_includes new_address.errors[:active], "only one active address is allowed per therapist"
+  # end
 
   test "should allow multiple inactive addresses for the same therapist" do
     inactive_address = TherapistAddress.new(

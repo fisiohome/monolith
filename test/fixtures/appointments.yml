@@ -1,0 +1,31 @@
+# # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# one:
+#   patient_illness_onset_date: 2025-02-21
+#   patient_complaint_description: MyText
+#   patient_condition: MyText
+#   patient_medical_history: MyText
+#   appointment_date_time: 2025-02-21 11:48:09
+#   preferred_therapist_gender: MyString
+#   referral_source: MyString
+#   other_referral_source: MyString
+#   fisiohome_partner_booking: false
+#   fisiohome_partner_name: MyString
+#   other_fisiohome_partner_name: MyString
+#   voucher_code: MyString
+#   notes: MyText
+
+# two:
+#   patient_illness_onset_date: 2025-02-21
+#   patient_complaint_description: MyText
+#   patient_condition: MyText
+#   patient_medical_history: MyText
+#   appointment_date_time: 2025-02-21 11:48:09
+#   preferred_therapist_gender: MyString
+#   referral_source: MyString
+#   other_referral_source: MyString
+#   fisiohome_partner_booking: false
+#   fisiohome_partner_name: MyString
+#   other_fisiohome_partner_name: MyString
+#   voucher_code: MyString
+#   notes: MyText

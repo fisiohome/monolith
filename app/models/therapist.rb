@@ -1,5 +1,5 @@
 class Therapist < ApplicationRecord
-  # define the associations
+  # * define the associations
   belongs_to :user
 
   belongs_to :service
@@ -23,13 +23,15 @@ class Therapist < ApplicationRecord
   has_one :therapist_appointment_schedule, dependent: :destroy
   # or has_many :therapist_appointment_schedules if you plan to support multiple
 
-  # cycle callbacks
+  has_many :appointments, dependent: :nullify
+
+  # * cycle callbacks
   before_create :assign_registration_number
   before_destroy :destroy_associated_bank_details, :destroy_associated_addresses, :destroy_associated_appointment_schedule
   after_destroy :destroy_associated_user
   after_save :update_user_suspend_status
 
-  # define the validations
+  # * define the validations
   enum :gender, {MALE: "MALE", FEMALE: "FEMALE"}, prefix: true
   validates :gender, presence: true, inclusion: {in: ["MALE", "FEMALE"], message: "%{value} is not a valid gender"}
 

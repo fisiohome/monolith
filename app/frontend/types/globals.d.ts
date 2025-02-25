@@ -77,6 +77,7 @@ export interface AdminPortal {
 			appointment: {
 				index: string;
 				new: string;
+				book: string;
 			};
 			availability: {
 				index: string;

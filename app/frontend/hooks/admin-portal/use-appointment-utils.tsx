@@ -58,6 +58,7 @@ export const usePatientRegion = () => {
 
 	return {
 		form,
+		globalProps,
 		watchPatientDetailsValue,
 		locationsOption,
 		groupedLocationsOption,

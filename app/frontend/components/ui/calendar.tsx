@@ -163,6 +163,7 @@ function Calendar({
 															)?.props?.value;
 
 															handleChange(String(selectedValue));
+															setIsOpen(false);
 															return;
 														}
 

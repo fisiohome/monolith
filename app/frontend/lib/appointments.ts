@@ -9,6 +9,9 @@ import {
 	PREFERRED_THERAPIST_GENDER,
 } from "./constants";
 import { boolSchema, idSchema } from "./validation";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import type { AppointmentPayload } from "@/types/admin-portal/appointment";
+import type { Auth } from "@/types/globals";
 
 export const DEFAULT_VALUES_LOCATION = { id: "", city: "" };
 export const DEFAULT_VALUES_SERVICE = { id: "", name: "" };
@@ -324,7 +327,7 @@ export const PATIENT_DETAILS_SCHEMA = z.object({
 	condition: z.enum(PATIENT_CONDITIONS, {
 		required_error: "Need to select a patient condition",
 	}),
-	medicalHistory: z.string().min(1, "Medical history is required"),
+	medicalHistory: z.string().optional(),
 	location: z
 		.object({
 			id: idSchema,
@@ -399,9 +402,11 @@ export type AppointmentSchedulingSchema = z.infer<
  * @returns `true` if the value is a custom referral, `false` otherwise.
  */
 export const checkIsCustomReferral = (value: string) => {
-	return (
-		value && !(PATIENT_REFERRAL_OPTIONS as unknown as string[]).includes(value)
-	);
+	const options = PATIENT_REFERRAL_OPTIONS.filter(
+		(i) => i.toLowerCase() !== "Other".toLowerCase(),
+	) as unknown as string[];
+
+	return !!value && !options.includes(value);
 };
 /**
  * Checks if the given value is not included in the PATIENT_REFERRAL_OPTIONS array.
@@ -410,7 +415,11 @@ export const checkIsCustomReferral = (value: string) => {
  * @returns A boolean indicating whether the value is not a custom Fisiohome partner.
  */
 export const checkIsCustomFisiohomePartner = (value: string) => {
-	return value && !(FISIOHOME_PARTNER as unknown as string[]).includes(value);
+	const options = FISIOHOME_PARTNER.filter(
+		(i) => i.toLowerCase() !== "Other".toLowerCase(),
+	) as unknown as string[];
+
+	return value && !options.includes(value);
 };
 
 // additional settings schema
@@ -423,7 +432,9 @@ export const ADDITIONAL_SETTINGS_SCHEMA = z
 		customFisiohomePartnerName: z.string().optional(),
 		voucherCode: z.string().optional(),
 		notes: z.string().optional(),
-		admins: z.array(z.object({ id: idSchema, name: z.string() })).optional(),
+		admins: z
+			.array(z.object({ id: idSchema, name: z.string(), email: z.string() }))
+			.optional(),
 	})
 	.superRefine((data, ctx) => {
 		// Only perform the check if booking from partner is selected.
@@ -478,3 +489,193 @@ export const APPOINTMENT_BOOKING_SCHEMA = z.object({
 export type AppointmentBookingSchema = z.infer<
 	typeof APPOINTMENT_BOOKING_SCHEMA
 >;
+
+// for prepare the payload appointment form
+export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
+	const {
+		contactInformation,
+		additionalSettings,
+		appointmentScheduling,
+		patientDetails,
+	} = values;
+	const {
+		admins,
+		customFisiohomePartnerName,
+		customReferralSource,
+		...restAdditionalSettings
+	} = additionalSettings;
+	const {
+		package: appointmentPackage,
+		service,
+		therapist,
+		...restAppointmentScheduling
+	} = appointmentScheduling;
+	const {
+		location,
+		illnessOnsetDate,
+		complaintDescription,
+		condition,
+		medicalHistory,
+		fullName,
+		age,
+		dateOfBirth,
+		gender,
+		addressNotes,
+		...restPatientDetails
+	} = patientDetails;
+
+	const payload = deepTransformKeysToSnakeCase({
+		serviceId: String(service.id),
+		packageId: String(appointmentPackage.id),
+		locationId: String(location.id),
+		therapistId: String(therapist?.id || "") || null,
+		adminIds: admins?.map((admin) => String(admin.id)).join(",") || "",
+		patientContact: { ...contactInformation },
+		patientAddress: {
+			...restPatientDetails,
+			locationId: String(location.id),
+			notes: addressNotes,
+		},
+		patient: { name: fullName, age, dateOfBirth, gender },
+		appointment: {
+			...restAdditionalSettings,
+			...restAppointmentScheduling,
+			otherReferralSource: customReferralSource,
+			otherFisiohomePartnerName: customFisiohomePartnerName,
+			patientIllnessOnsetDate: illnessOnsetDate,
+			patientComplaintDescription: complaintDescription,
+			patientCondition: condition,
+			patientMedicalHistory: medicalHistory,
+		},
+	} satisfies AppointmentPayload);
+
+	return payload;
+};
+
+// define the form default values
+export const defineAppointmentFormDefaultValues = ({
+	user,
+}: {
+	user: Auth["currentUser"];
+}) => {
+	// for date of birth
+	// const dateOfBirth = new Date(1952, 5, 21);
+	// const age = calculateAge(dateOfBirth);
+
+	// for referral
+	// const referralSource = "Other";
+	// const isCustomReferral = checkIsCustomReferral(referralSource);
+	// const customReferralSource = isCustomReferral ? "Linkedin" : undefined;
+
+	// for fisiohome partner name
+	// const fisiohomePartnerName = "Other";
+	// const isCustomFisiohomePartner =
+	// 	checkIsCustomFisiohomePartner(fisiohomePartnerName);
+	// const customFisiohomePartnerName = isCustomFisiohomePartner
+	// 	? "Tokopedia"
+	// 	: undefined;
+
+	// for appointment date
+	// const appointmentDateTime = add(new Date(), {
+	// 	days: 13,
+	// 	hours: 5,
+	// 	minutes: 15 - (new Date().getMinutes() % 15),
+	// });
+
+	// for admin pics
+	const admins = [
+		{
+			id: user?.id || "",
+			name: user?.name || "",
+			email: user?.user?.email || "",
+		},
+	];
+
+	return {
+		contactInformation: {
+			contactName: "",
+			contactPhone: "",
+			// contactName: "Farida Sagala",
+			// contactPhone: "+62 821 6714 6343",
+		},
+		patientDetails: {
+			// fullName: "Farida Sagala",
+			// dateOfBirth,
+			// age,
+			// gender: "FEMALE",
+			// condition: "NORMAL",
+			// medicalHistory: "Hipertensi",
+			// complaintDescription: "Sakit pinggang",
+			// illnessOnsetDate: "2 minggu lalu",
+			// addressNotes:
+			// 	"masuk gang bidan solikah rumah jejer 4 google link: https://maps.app.goo.gl/EzniW78FrYkBVF1w8",
+			// address:
+			// 	"jl jati baru 1 nomor 9 gerbang hitam, kelurahan kampung bali kec tanah abang kota  jakarta pusat",
+			// postalCode: "10250",
+			// latitude: -6.18655,
+			// longitude: 106.81299,
+			// location: {
+			// 	id: "5",
+			// 	city: "KOTA ADM. JAKARTA PUSAT",
+			// },
+			// address:
+			// 	"Wang Plaza, Jl. Panjang No.kav 17, RT.14/RW.7, Kedoya Utara, Kec. Kb. Jeruk, jakarta, Daerah Khusus Ibukota Jakarta 11520",
+			// postalCode: "11520",
+			// latitude: -6.17381,
+			// longitude: 106.76558,
+			// location: {
+			// 	id: "2",
+			// 	city: "KOTA ADM. JAKARTA BARAT",
+			// },
+
+			fullName: "",
+			dateOfBirth: null,
+			age: null,
+			gender: "MALE",
+			condition: "NORMAL",
+			medicalHistory: "",
+			complaintDescription: "",
+			illnessOnsetDate: "",
+			addressNotes: "",
+			address: "",
+			postalCode: "",
+			latitude: 0,
+			longitude: 0,
+			location: {
+				id: "",
+				city: "",
+			},
+		},
+		appointmentScheduling: {
+			// service: { id: "7", name: "FISIOHOME_SPECIAL_TIER" },
+			// package: { id: "1", name: "Order Visit", numberOfVisit: 1 },
+			// preferredTherapistGender: "NO PREFERENCE",
+			// appointmentDateTime,
+
+			service: { id: "", name: "" },
+			package: { id: "", name: "", numberOfVisit: 0 },
+			preferredTherapistGender: "NO PREFERENCE",
+			appointmentDateTime: null,
+		},
+		additionalSettings: {
+			// referralSource,
+			// customReferralSource,
+			// fisiohomePartnerBooking: true,
+			// fisiohomePartnerName,
+			// customFisiohomePartnerName,
+			// voucherCode: "TEBUSMURAH",
+			// notes: "This is the patient notes",
+			// admins,
+			referralSource: "",
+			customReferralSource: "",
+			fisiohomePartnerBooking: false,
+			fisiohomePartnerName: "",
+			customFisiohomePartnerName: "",
+			voucherCode: "",
+			notes: "",
+			admins,
+		},
+	} as unknown as AppointmentBookingSchema;
+
+	// return {} as AppointmentBookingSchema;
+};

@@ -5,6 +5,8 @@ class Package < ApplicationRecord
   # * define the associations
   belongs_to :service
 
+  has_many :appointments, dependent: :destroy
+
   # * define the validation
   validates :name, presence: true
   validates :currency, presence: true

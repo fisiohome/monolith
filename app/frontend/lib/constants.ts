@@ -46,6 +46,7 @@ export const PATIENT_REFERRAL_OPTIONS = [
 	"Instagram",
 	"Facebook",
 	"Family or Close Related Person",
+	"Other",
 ] as const;
 
 export const FISIOHOME_PARTNER = [
@@ -61,13 +62,14 @@ export const FISIOHOME_PARTNER = [
 	"Medlife",
 	"Medikids",
 	"Bumi Health",
+	"Other",
 ] as const;
 
 // * patient condition enums
 export const PATIENT_CONDITIONS = [
-	"Normal",
-	"Only able to sit",
-	"Bedridden",
+	"NORMAL",
+	"ONLY ABLE TO SIT",
+	"BEDRIDDEN",
 ] as const;
 
 export const PATIENT_CONDITIONS_WITH_DESCRIPTION = PATIENT_CONDITIONS.map(
@@ -75,14 +77,14 @@ export const PATIENT_CONDITIONS_WITH_DESCRIPTION = PATIENT_CONDITIONS.map(
 		let description = "";
 
 		switch (condition) {
-			case "Normal":
+			case "NORMAL":
 				description = "Fully mobile with no restrictions.";
 				break;
-			case "Only able to sit":
+			case "ONLY ABLE TO SIT":
 				description =
 					"Limited mobility, the patient can sit but not stand or walk.";
 				break;
-			case "Bedridden":
+			case "BEDRIDDEN":
 				description = "The patient is confined to bed.";
 				break;
 		}

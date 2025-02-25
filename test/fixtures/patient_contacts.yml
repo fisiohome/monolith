@@ -1,0 +1,15 @@
+# # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# one:
+#   contact_name: MyString
+#   contact_phone: MyString
+#   email: MyString
+#   miitel_link: MyString
+#   patients: one
+
+# two:
+#   contact_name: MyString
+#   contact_phone: MyString
+#   email: MyString
+#   miitel_link: MyString
+#   patients: two

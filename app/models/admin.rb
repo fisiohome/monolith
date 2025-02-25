@@ -1,10 +1,14 @@
 class Admin < ApplicationRecord
-  # define the associations
+  # * define the associations
   belongs_to :user
 
-  # cycle callbacks
+  has_many :appointment_admins
+  has_many :appointments, through: :appointment_admins
+
+  # * cycle callbacks
   after_destroy :destroy_associated_user
 
+  # * define the validation
   TYPES = ["SUPER_ADMIN", "ADMIN_L1", "ADMIN_L2", "ADMIN_L3", "ADMIN_BACKLOG"].freeze
   validates :admin_type, inclusion: {in: TYPES, message: "%{value} is not a valid admin type"}
 

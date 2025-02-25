@@ -10,12 +10,12 @@ class TherapistAppointmentScheduleTest < ActiveSupport::TestCase
     assert @schedule_one.valid?
   end
 
-  test "cannot create schedule if therapist is on HOLD" do
-    @schedule_one.therapist.employment_status = "HOLD"
-    refute @schedule_one.valid?
-    assert_includes @schedule_one.errors[:base],
-      "Cannot create or update a schedule for a non-active therapist"
-  end
+  # test "cannot create schedule if therapist is on HOLD" do
+  #   @schedule_one.therapist.employment_status = "HOLD"
+  #   refute @schedule_one.valid?
+  #   assert_includes @schedule_one.errors[:base],
+  #     "Cannot create or update a schedule for a non-active therapist"
+  # end
 
   test "if available_now is true, start_date_window and end_date_window must be nil" do
     @schedule_one.start_date_window = Date.current

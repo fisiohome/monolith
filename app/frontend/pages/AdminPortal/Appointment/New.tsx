@@ -1,10 +1,11 @@
 import {
-	AdditionalSettings,
+	AdditionalSettingsForm,
 	AppointmentSchedulingForm,
 	ContactInformationForm,
 	FinalStep,
 	FormContainer,
 	PatientDetailsForm,
+	ReviewForm,
 	StepButtons,
 } from "@/components/admin-portal/appointment/new-appointment-form";
 import {
@@ -17,10 +18,17 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
 	APPOINTMENT_BOOKING_SCHEMA,
 	type AppointmentBookingSchema,
-	checkIsCustomFisiohomePartner,
-	checkIsCustomReferral,
+	defineAppointmentFormDefaultValues,
 } from "@/lib/appointments";
-import { calculateAge } from "@/lib/utils";
+import type {
+	FISIOHOME_PARTNER,
+	GENDERS,
+	PATIENT_CONDITIONS_WITH_DESCRIPTION,
+	PATIENT_REFERRAL_OPTIONS,
+	PREFERRED_THERAPIST_GENDER,
+} from "@/lib/constants";
+import { populateQueryParams } from "@/lib/utils";
+import { buildAppointmentPayload } from "@/lib/appointments";
 import type { Location } from "@/types/admin-portal/location";
 import type { Package } from "@/types/admin-portal/package";
 import type { Service } from "@/types/admin-portal/service";
@@ -29,9 +37,15 @@ import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, router, usePage } from "@inertiajs/react";
 import { useSessionStorage } from "@uidotdev/usehooks";
-import { add } from "date-fns";
-import { type ReactElement, useCallback, useEffect, useMemo } from "react";
+import {
+	type ReactElement,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import { useForm } from "react-hook-form";
+import type { Appointment } from "@/types/admin-portal/appointment";
 
 type ServiceOption = Pick<
 	Service,
@@ -68,6 +82,14 @@ export interface AppointmentNewProps {
 	services?: ServiceOption[];
 	locations?: LocationOption[];
 	therapists?: TherapistOption[];
+	optionsData?: {
+		patientGenders: typeof GENDERS;
+		preferredTherapistGender: typeof PREFERRED_THERAPIST_GENDER;
+		referralSources: typeof PATIENT_REFERRAL_OPTIONS;
+		patientConditions: typeof PATIENT_CONDITIONS_WITH_DESCRIPTION;
+		fisiohomePartnerNames: typeof FISIOHOME_PARTNER;
+	};
+	appointment: Appointment;
 }
 
 export interface AppointmentNewGlobalPageProps
@@ -80,6 +102,13 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	const { url: pageURL, props: globalProps } =
 		usePage<AppointmentNewGlobalPageProps>();
 	const isMobile = useIsMobile();
+	const [isLoading, setIsLoading] = useState(false);
+	const isCreated = useMemo(() => {
+		const appointmentId = globalProps?.appointment?.id;
+		const { queryParams } = populateQueryParams(pageURL);
+
+		return !!queryParams?.created && !!appointmentId;
+	}, [globalProps?.appointment?.id, pageURL]);
 
 	// stepper management state
 	const steps = useMemo(
@@ -107,90 +136,26 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 					label: "Additional Settings",
 					description:
 						"Specify any additional preferences or details for the appointment.",
-					component: <AdditionalSettings />,
+					component: <AdditionalSettingsForm />,
+				},
+				{
+					label: "Review",
+					description:
+						"Review the appointment details before initiating the booking.",
+					component: <ReviewForm />,
 				},
 			] satisfies StepperProps[],
 		[],
 	);
 
 	// form management state
-	const formDefaultvalues = useMemo(() => {
-		// for date of birth
-		const dateOfBirth = new Date(1952, 5, 21);
-		const age = calculateAge(dateOfBirth);
-
-		// for referral
-		const referralSource = "Other";
-		const isCustomReferral = checkIsCustomReferral(referralSource);
-		const customReferralSource = isCustomReferral ? "Linkedin" : undefined;
-
-		// for fisiohome partner name
-		const fisiohomePartnerName = "Other";
-		const isCustomFisiohomePartner =
-			checkIsCustomFisiohomePartner(fisiohomePartnerName);
-		const customFisiohomePartnerName = isCustomFisiohomePartner
-			? "Tokopedia"
-			: undefined;
-
-		// for appointment date
-		const appointmentDateTime = add(new Date(), {
-			days: 13,
-			hours: 5,
-			minutes: 15 - (new Date().getMinutes() % 15),
-		});
-
-		return {
-			contactInformation: {
-				contactName: "Farida Sagala",
-				contactPhone: "+62 821 6714 6343",
-			},
-			patientDetails: {
-				fullName: "Farida Sagala",
-				dateOfBirth,
-				age,
-				gender: "FEMALE",
-				condition: "Normal",
-				medicalHistory: "Hipertensi",
-				complaintDescription: "Sakit pinggang",
-				illnessOnsetDate: "2 minggu lalu",
-				addressNotes:
-					"masuk gang bidan solikah rumah jejer 4 google link: https://maps.app.goo.gl/EzniW78FrYkBVF1w8",
-				address:
-					"jl jati baru 1 nomor 9 gerbang hitam, kelurahan kampung bali kec tanah abang kota  jakarta pusat",
-				postalCode: "10250",
-				latitude: -6.18655,
-				longitude: 106.81299,
-				location: {
-					id: "5",
-					city: "KOTA ADM. JAKARTA PUSAT",
-				},
-				// address:
-				// 	"Wang Plaza, Jl. Panjang No.kav 17, RT.14/RW.7, Kedoya Utara, Kec. Kb. Jeruk, jakarta, Daerah Khusus Ibukota Jakarta 11520",
-				// postalCode: "11520",
-				// latitude: -6.17381,
-				// longitude: 106.76558,
-				// location: {
-				// 	id: "2",
-				// 	city: "KOTA ADM. JAKARTA BARAT",
-				// },
-			},
-			appointmentScheduling: {
-				service: { id: "7", name: "FISIOHOME_SPECIAL_TIER" },
-				package: { id: "1", name: "Order Visit", numberOfVisit: 1 },
-				preferredTherapistGender: "NO PREFERENCE",
-				appointmentDateTime,
-			},
-			additionalSettings: {
-				referralSource,
-				customReferralSource,
-				fisiohomePartnerBooking: true,
-				fisiohomePartnerName,
-				customFisiohomePartnerName,
-				voucherCode: "TEBUSMURAH",
-				notes: "This is the patient notes",
-			},
-		} satisfies AppointmentBookingSchema;
-	}, []);
+	const formDefaultvalues = useMemo(
+		() =>
+			defineAppointmentFormDefaultValues({
+				user: globalProps.auth.currentUser,
+			}),
+		[globalProps.auth.currentUser],
+	);
 	const [formStorage, setFormStorage] =
 		useSessionStorage<null | AppointmentBookingSchema>("appointment-form", {
 			...formDefaultvalues,
@@ -203,10 +168,34 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			appointmentScheduling: { ...formStorage?.appointmentScheduling },
 			additionalSettings: { ...formStorage?.additionalSettings },
 		},
+		mode: "onChange",
 	});
-	const onSubmit = useCallback((values: AppointmentBookingSchema) => {
-		console.log(values);
-	}, []);
+	const onSubmit = useCallback(
+		(values: AppointmentBookingSchema) => {
+			console.group();
+			console.log("Starting process to saving the appointment booking...");
+
+			// prepare the payload
+			const submitURL =
+				globalProps.adminPortal.router.adminPortal.appointment.book;
+			const submitConfig = {
+				preserveScroll: true,
+				preserveState: true,
+				only: ["adminPortal", "flash", "errors", "appointment"],
+				onStart: () => setIsLoading(true),
+				onFinish: () => setTimeout(() => setIsLoading(false), 250),
+			} satisfies Parameters<typeof router.put>["2"];
+			const payload = buildAppointmentPayload(values);
+
+			router.post(submitURL, { appointment: payload }, submitConfig);
+
+			console.log("Appointment booking successfully saved...");
+			console.groupEnd();
+		},
+		[globalProps.adminPortal.router.adminPortal.appointment.book],
+	);
+
+	// * for showing the dialog confirmation if user want to navigate away from the page
 	useEffect(() => {
 		// Add a listener for route changes
 		return router.on("before", (event) => {
@@ -220,9 +209,15 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 					path,
 				);
 			const isCurrentRoot = pageURL.includes(path);
+			const isBookPath = path.includes("book");
 
-			// If the path is not root, parent root, or current root, do nothing
-			if (!isRoot && !isParentRoot && isCurrentRoot) return;
+			// If the path is not root, parent root, or current root, is book path (POST to save the appointment) do nothing
+			if (
+				!isRoot &&
+				(!isParentRoot || isCreated) &&
+				(isCurrentRoot || isBookPath)
+			)
+				return;
 
 			// Log the URL being visited
 			console.log(`Starting a visit to ${url}`);
@@ -236,7 +231,11 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 
 			return isNavigateAway;
 		});
-	}, [globalProps.adminPortal.router.adminPortal.appointment.index, pageURL]);
+	}, [
+		globalProps.adminPortal.router.adminPortal.appointment.index,
+		pageURL,
+		isCreated,
+	]);
 
 	return (
 		<>
@@ -258,11 +257,11 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 					<Form {...form}>
 						<form onSubmit={form.handleSubmit(onSubmit)}>
 							<Stepper
-								scrollTracking
+								// scrollTracking
 								variant={isMobile ? "line" : "circle-alt"}
 								size="sm"
 								orientation="vertical"
-								initialStep={2}
+								initialStep={0}
 								steps={steps}
 							>
 								{steps.map((stepProps) => (
@@ -270,12 +269,16 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 										<FormContainer>
 											{stepProps.component}
 
-											<StepButtons setFormStorage={setFormStorage} />
+											<StepButtons
+												setFormStorage={setFormStorage}
+												isFormLoading={isLoading}
+												isCreated={isCreated}
+											/>
 										</FormContainer>
 									</Step>
 								))}
 
-								<FinalStep />
+								{isCreated && <FinalStep />}
 							</Stepper>
 						</form>
 					</Form>

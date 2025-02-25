@@ -10,7 +10,7 @@ class TherapistBankDetail < ApplicationRecord
   before_save :ensure_single_active_bank_detail, if: :active
 
   # define the validation
-  validates :active, uniqueness: {scope: :therapist_id, message: "only one active bank detail is allowed per therapist"}, if: -> { active }
+  # validates :active, uniqueness: {scope: :therapist_id, message: "only one active bank detail is allowed per therapist"}, if: -> { active }
 
   private
 

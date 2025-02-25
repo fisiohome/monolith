@@ -94,6 +94,22 @@ module AdminPortal
       end
     end
 
+    def fetch_options_data
+      patient_genders = Patient.genders.map { |key, value| value }
+      patient_conditions = Appointment::PATIENT_CONDITION
+      preferred_therapist_gender = Appointment::PREFERRED_THERAPIST_GENDER
+      referral_sources = Appointment::REFERRAL_SOURCES
+      fisiohome_partner_names = Appointment::FISIOHOME_PARTNER_NAMES
+
+      deep_transform_keys_to_camel_case({
+        patient_genders:,
+        patient_conditions:,
+        preferred_therapist_gender:,
+        referral_sources:,
+        fisiohome_partner_names:
+      })
+    end
+
     private
 
     def selected_location_id
