@@ -389,17 +389,28 @@ export default function useHereMap(
 		 * This function uses the `useCallback` hook to memoize the callback, ensuring
 		 * that the function is not recreated on every render.
 		 */
-		onRemove: useCallback((isSecondary = false) => {
+		onRemove: useCallback((options?: { isSecondary?: boolean }) => {
 			if (!mapRef.current) return;
+
+			// remove mark bubble ui
+			const bubbles = uiRef.current?.getBubbles();
+			if (bubbles) {
+				for (const bubble of bubbles) {
+					uiRef.current?.removeBubble(bubble);
+				}
+			}
+
+			// remove the marker
+			const { isSecondary = false } = options || {};
 			const groupRef = isSecondary
 				? secondaryMarkerGroupRef
 				: primaryMarkerGroupRef;
-
 			if (groupRef.current) {
 				mapRef.current.removeObject(groupRef.current);
 				groupRef.current = null;
 			}
 
+			// reset the center of map data
 			setCenterMap({ lat: 0, lng: 0 });
 		}, []),
 	};
@@ -555,6 +566,25 @@ export default function useHereMap(
 		},
 		[],
 	);
+	const removeIsolines = useCallback(() => {
+		if (!mapRef.current) return;
+
+		// Remove time isoline
+		if (timeIsolineGroupRef.current) {
+			mapRef.current.removeObject(timeIsolineGroupRef.current);
+			timeIsolineGroupRef.current = null;
+		}
+
+		// Remove distance isoline
+		if (distanceIsolineGroupRef.current) {
+			mapRef.current.removeObject(distanceIsolineGroupRef.current);
+			distanceIsolineGroupRef.current = null;
+		}
+
+		// Clear stored coordinates
+		isolineCoordinatesRef.current.time = [];
+		isolineCoordinatesRef.current.distance = [];
+	}, []);
 	/**
 	 * @function calculateIsolineSingleContrainst
 	 * @description single constraint isoline
@@ -735,6 +765,8 @@ export default function useHereMap(
 			single: calculateIsolineSingleContrainst,
 			both: calculateIsolineBothConstraints,
 		},
+		onRemove: removeIsolines,
+		onAdd: addIsolineToMap,
 	};
 
 	// * routing
@@ -815,29 +847,31 @@ export default function useHereMap(
 				});
 
 				// Create tooltip
-				const therapist = origin?.additional?.therapist;
-				const tooltipContent = document.createElement("div");
-				tooltipContent.innerHTML = `
-					<div class="w-[180px] text-xs flex flex-col">
-						<div class="flex flex-col">
-							<span class="font-bold">${therapist.name}</span>
-							<span class="font-light text-[10px]">#${therapist.registrationNumber} &#x2022; ${therapist.gender} &#x2022; ${therapist.employmentType} </span>
+				const therapistAdditionalData = origin?.additional?.therapist;
+				if (therapistAdditionalData) {
+					const tooltipContent = document.createElement("div");
+					tooltipContent.innerHTML = `
+						<div class="w-[180px] text-xs flex flex-col">
+							<div class="flex flex-col">
+								<span class="font-bold">${therapistAdditionalData.name}</span>
+								<span class="font-light text-[10px]">#${therapistAdditionalData.registrationNumber} &#x2022; ${therapistAdditionalData.gender} &#x2022; ${therapistAdditionalData.employmentType} </span>
+							</div>
+	
+							<div class="mt-2 flex flex-col">
+								<span class="flex gap-1 items-center">
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+									<span>${distance} km in ${time} mins</span>
+								</span>
+							</div>
 						</div>
-
-						<div class="mt-2 flex flex-col">
-							<span class="flex gap-1 items-center">
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
-								<span>${distance} km in ${time} mins</span>
-							</span>
-						</div>
-					</div>
-				`;
-				const tooltip = new H.ui.InfoBubble(origin.position, {
-					content: tooltipContent,
-				});
-				uiRef.current?.addBubble(tooltip);
-				UIConfig.customizeBubbleUI();
-				routeTooltipRef.current = tooltip;
+					`;
+					const tooltip = new H.ui.InfoBubble(origin.position, {
+						content: tooltipContent,
+					});
+					uiRef.current?.addBubble(tooltip);
+					UIConfig.customizeBubbleUI();
+					routeTooltipRef.current = tooltip;
+				}
 
 				return { routeLine };
 			} catch (error) {

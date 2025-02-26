@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { usePage } from "@inertiajs/react";
 
 type PhoneInputProps = Omit<
 	React.ComponentProps<"input">,
@@ -32,20 +33,31 @@ type PhoneInputProps = Omit<
 		onChange?: (value: RPNInput.Value) => void;
 	};
 
+const InputComponent = React.forwardRef<
+	HTMLInputElement,
+	React.ComponentProps<"input">
+>(({ className, ...props }, ref) => {
+	const { url: pageURL } = usePage();
+	const variant = React.useMemo(() => {
+		if (pageURL.includes("/appointments/new")) {
+			return "bg-sidebar shadow-inner";
+		}
+
+		return "";
+	}, [pageURL]);
+
+	return (
+		<Input
+			{...props}
+			ref={ref}
+			className={cn("rounded-e-lg rounded-s-none", className, variant)}
+		/>
+	);
+});
+
 const PhoneInput: React.ForwardRefExoticComponent<PhoneInputProps> =
 	React.forwardRef<React.ElementRef<typeof RPNInput.default>, PhoneInputProps>(
 		({ className, onChange, ...props }, ref) => {
-			const InputComponent = React.forwardRef<
-				HTMLInputElement,
-				React.ComponentProps<"input">
-			>(({ ...props }, ref) => (
-				<Input
-					{...props}
-					ref={ref}
-					className={cn("rounded-e-lg rounded-s-none", className)}
-				/>
-			));
-
 			return (
 				<RPNInput.default
 					ref={ref}
@@ -92,7 +104,7 @@ const CountrySelect = ({
 				<Button
 					type="button"
 					variant="outline"
-					className="flex gap-1 px-3 border-r-0 rounded-e-none rounded-s-lg focus:z-10"
+					className="flex gap-2.5 px-3 border-r-0 rounded-e-none rounded-s-lg focus:z-10"
 					disabled={disabled}
 				>
 					<FlagComponent
@@ -107,7 +119,7 @@ const CountrySelect = ({
 					/>
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-[300px] p-0">
+			<PopoverContent className="p-0 w-fit" side="bottom" align="start">
 				<Command>
 					<CommandInput placeholder="Search country..." />
 					<CommandList>

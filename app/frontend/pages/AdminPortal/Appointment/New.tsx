@@ -47,17 +47,17 @@ import {
 import { useForm } from "react-hook-form";
 import type { Appointment } from "@/types/admin-portal/appointment";
 
-type ServiceOption = Pick<
+export type ServiceOption = Pick<
 	Service,
 	"id" | "name" | "code" | "active" | "description"
 > & { packages: Pick<Package, "id" | "name" | "active" | "numberOfVisit"> };
 
-type LocationOption = Pick<
+export type LocationOption = Pick<
 	Location,
 	"id" | "city" | "country" | "countryCode" | "state"
 >;
 
-type TherapistOption = Pick<
+export type TherapistOption = Pick<
 	Therapist,
 	| "id"
 	| "name"

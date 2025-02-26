@@ -1,8 +1,6 @@
 import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
-import type { HereMaphandler } from "@/components/shared/here-map";
 import HereMap from "@/components/shared/here-map";
 import { RetroGridPattern } from "@/components/shared/retro-grid-pattern";
-import { useStepper } from "@/components/shared/stepper";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -13,11 +11,9 @@ import {
 	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
-	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, type CalendarProps } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Command,
 	CommandEmpty,
@@ -54,31 +50,31 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { usePatientRegion } from "@/hooks/admin-portal/use-appointment-utils";
-import type { MarkerData } from "@/hooks/here-maps";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import {
+	useAdditionalSettingsForm,
+	useAppointmentSchedulingForm,
+	useFinalStep,
+	usePatientDetailsForm,
+	useReviewForm,
+	useStepButtons,
+} from "@/hooks/admin-portal/appointment/use-appointment-form";
+import {
+	useMapRegion,
+	usePartnerBookingSelection,
+	usePartnerNameSelection,
+	usePatientDateOfBirth,
+	usePatientReferralSource,
+	usePatientRegion,
+} from "@/hooks/admin-portal/appointment/use-appointment-utils";
+import { getGenderIcon } from "@/hooks/use-gender";
 import {
 	type AppointmentBookingSchema,
 	DEFAULT_VALUES_LOCATION,
-	DEFAULT_VALUES_PACKAGE,
 	DEFAULT_VALUES_SERVICE,
-	checkIsCustomFisiohomePartner,
-	checkIsCustomReferral,
+	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments";
-import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
-import {
-	calculateAge,
-	cn,
-	goBackHandler,
-	populateQueryParams,
-} from "@/lib/utils";
-import { boolSchema } from "@/lib/validation";
-import type {
-	AppointmentNewGlobalPageProps,
-	AppointmentNewProps,
-} from "@/pages/AdminPortal/Appointment/New";
-import { Deferred, Link, router, usePage } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
+import { cn, goBackHandler } from "@/lib/utils";
+import { Deferred, Link } from "@inertiajs/react";
 import { format } from "date-fns";
 import {
 	AlertCircle,
@@ -88,22 +84,10 @@ import {
 	ChevronsUpDown,
 	CircleCheckBig,
 	LoaderIcon,
-	MapPin,
-	Mars,
 	Pencil,
-	Venus,
-	VenusAndMars,
 	X,
 } from "lucide-react";
-import {
-	type ComponentProps,
-	Fragment,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { type ComponentProps, Fragment } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
 // * component form container
@@ -147,74 +131,21 @@ export function StepButtons({
 	isCreated,
 	setFormStorage,
 }: StepButtonsProps) {
-	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
-	const form = useFormContext<AppointmentBookingSchema>();
 	const {
-		prevStep,
-		isLastStep,
-		isOptionalStep,
+		isDekstop,
+		onSubmit,
 		isDisabledStep,
-		currentStep,
 		isLoading,
-		nextStep,
-		setStep,
-		steps,
-	} = useStepper();
-	const isFirstStep = useMemo(
-		() => currentStep?.label === "Contact Information",
-		[currentStep?.label],
-	);
-	const onPrevStep = useCallback(() => {
-		prevStep();
-	}, [prevStep]);
-	const onSubmit = async () => {
-		if (currentStep.label === "Contact Information") {
-			const isValid = await form.trigger("contactInformation");
-
-			if (!isValid) return;
-
-			const values = form.getValues();
-			setFormStorage({ ...values });
-			nextStep();
-		}
-
-		if (currentStep.label === "Patient Profile") {
-			const isValid = await form.trigger("patientDetails");
-
-			if (!isValid) return;
-
-			const values = form.getValues();
-			setFormStorage({ ...values });
-			nextStep();
-		}
-
-		if (currentStep.label === "Appointment Settings and Scheduling") {
-			const isValid = await form.trigger("appointmentScheduling");
-
-			if (!isValid) return;
-
-			const values = form.getValues();
-			setFormStorage({ ...values });
-			nextStep();
-		}
-
-		if (currentStep.label === "Additional Settings") {
-			const isValid = await form.trigger("additionalSettings");
-
-			if (!isValid) return;
-
-			const values = form.getValues();
-			setFormStorage({ ...values });
-			nextStep();
-		}
-	};
-
-	// * redirect to the final step components
-	useEffect(() => {
-		if (isCreated) {
-			setStep(steps?.length);
-		}
-	}, [isCreated, steps, setStep]);
+		isFirstStep,
+		isLastStep,
+		onPrevStep,
+		isOpenTherapistAlert,
+		setIsOpenTherapistAlert,
+		isOptionalStep,
+	} = useStepButtons({
+		isCreated,
+		setFormStorage,
+	});
 
 	return (
 		<div
@@ -254,56 +185,6 @@ export function StepButtons({
 						<span>Save</span>
 					)}
 				</Button>
-			) : currentStep?.label === "Appointment Settings and Scheduling" &&
-				!form.getValues()?.appointmentScheduling?.therapist ? (
-				<AlertDialog>
-					<AlertDialogTrigger asChild>
-						<Button
-							type="button"
-							size={!isDekstop ? "default" : "sm"}
-							disabled={isLoading || isFormLoading}
-							className="order-first md:order-last"
-						>
-							Next
-						</Button>
-					</AlertDialogTrigger>
-					<AlertDialogContent>
-						<AlertDialogHeader>
-							<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-							<AlertDialogDescription>
-								You haven't chosen a therapist for this appointment yet, but
-								don't worry! You have the option to skip it. However, are you
-								sure you want to assign a therapist to this appointment later?
-							</AlertDialogDescription>
-						</AlertDialogHeader>
-						<AlertDialogFooter className="space-y-4 md:space-y-0">
-							<AlertDialogCancel>Cancel</AlertDialogCancel>
-							<AlertDialogAction asChild>
-								<Button
-									type="button"
-									size={!isDekstop ? "default" : "sm"}
-									disabled={isLoading || isFormLoading}
-									className="order-first md:order-last"
-									onClick={(event) => {
-										event.preventDefault();
-										onSubmit();
-									}}
-								>
-									{isLoading || isFormLoading ? (
-										<>
-											<LoaderIcon className="animate-spin" />
-											<span>Please Wait...</span>
-										</>
-									) : isOptionalStep ? (
-										<span>Skip</span>
-									) : (
-										<span>Next</span>
-									)}
-								</Button>
-							</AlertDialogAction>
-						</AlertDialogFooter>
-					</AlertDialogContent>
-				</AlertDialog>
 			) : (
 				<Button
 					type="button"
@@ -327,30 +208,54 @@ export function StepButtons({
 					)}
 				</Button>
 			)}
+
+			<AlertDialog
+				open={isOpenTherapistAlert}
+				onOpenChange={setIsOpenTherapistAlert}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+						<AlertDialogDescription>
+							You haven't chosen a therapist for this appointment yet, but don't
+							worry! You have the option to skip it. However, are you sure you
+							want to assign a therapist to this appointment later?
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter className="space-y-4 md:space-y-0">
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction asChild>
+							<Button
+								type="button"
+								size={!isDekstop ? "default" : "sm"}
+								disabled={isLoading || isFormLoading}
+								className="order-first md:order-last"
+								onClick={(event) => {
+									event.preventDefault();
+									onSubmit({ skipTherapist: true });
+								}}
+							>
+								{isLoading || isFormLoading ? (
+									<>
+										<LoaderIcon className="animate-spin" />
+										<span>Please Wait...</span>
+									</>
+								) : isOptionalStep ? (
+									<span>Skip</span>
+								) : (
+									<span>Next</span>
+								)}
+							</Button>
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }
 
 export function FinalStep() {
-	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
-	const { hasCompletedAllSteps } = useStepper();
-	const [count, setCount] = useState(3);
-	useEffect(() => {
-		if (count > 0) {
-			const timer = setTimeout(() => {
-				setCount((prev) => prev - 1);
-			}, 1000);
-			return () => clearTimeout(timer);
-		}
-
-		if (count === 0) {
-			setTimeout(() => {
-				router.get(
-					globalProps.adminPortal.router.adminPortal.appointment.index,
-				);
-			}, 1000);
-		}
-	}, [count, globalProps.adminPortal.router.adminPortal.appointment.index]);
+	const { count, hasCompletedAllSteps, redirectURL } = useFinalStep();
 
 	if (!hasCompletedAllSteps) return null;
 
@@ -376,11 +281,7 @@ export function FinalStep() {
 				<span className="my-2 text-3xl font-bold text-primary">{count}</span>
 
 				<Button effect="shine" size="lg" asChild>
-					<Link
-						href={globalProps.adminPortal.router.adminPortal.appointment.index}
-					>
-						Redirect now
-					</Link>
+					<Link href={redirectURL}>Redirect now</Link>
 				</Button>
 			</div>
 
@@ -483,192 +384,25 @@ export function ContactInformationForm() {
 
 export function PatientDetailsForm() {
 	const {
-		form,
-		globalProps,
-		watchPatientDetailsValue,
 		locationsOption,
 		groupedLocationsOption,
 		selectedLocation,
 		coordinate,
 		mapAddress,
 		coordinateError,
+		isLoading,
+		onFocusLocationField,
+		onSelectLocation,
 	} = usePatientRegion();
-	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
-	const [isLoading, setIsLoading] = useState({
-		locations: false,
-	});
-	const patientFormOptions = useMemo(() => {
-		const genders = globalProps.optionsData?.patientGenders || [];
-		const patientConditions = globalProps.optionsData?.patientConditions || [];
-
-		return { genders, patientConditions };
-	}, [
-		globalProps.optionsData?.patientGenders,
-		globalProps.optionsData?.patientConditions,
-	]);
-
-	// * patient gender state
-	const getGenderIcon = (
-		gender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"],
-	) => {
-		const lower = gender.toLowerCase();
-		if (lower === "male") return <Mars className="size-4" />;
-		if (lower === "female") return <Venus className="size-4" />;
-		return <VenusAndMars className="size-4" />;
-	};
-
-	// * watching the date of birth and calculate the age value
-	const dateOfBirthCalendarProps = useMemo<CalendarProps>(() => {
-		return {
-			// Show 100 years range
-			fromYear: new Date().getFullYear() - 100,
-			toYear: new Date().getFullYear(),
-			// Disable future dates
-			disabled: (date) => date >= new Date(),
-		};
-	}, []);
-	useEffect(() => {
-		const value =
-			typeof watchPatientDetailsValue.dateOfBirth === "string"
-				? new Date(watchPatientDetailsValue.dateOfBirth)
-				: watchPatientDetailsValue.dateOfBirth;
-		if (value !== null && value instanceof Date) {
-			// Calculate age using your custom function
-			const age = calculateAge(value);
-			// Update the age field in the form
-			form.setValue("patientDetails.age", age);
-			form.trigger("patientDetails.age");
-		} else {
-			form.setValue("patientDetails.age", 0);
-		}
-	}, [watchPatientDetailsValue.dateOfBirth, form.setValue, form.trigger]);
-
-	// * watching the changes of location selected value
-	const onFocusLocationField = useCallback(() => {
-		// fetch the locations options data
-		router.reload({
-			only: ["locations"],
-			onStart: () => {
-				setIsLoading((prev) => ({
-					...prev,
-					locations: true,
-				}));
-			},
-			onFinish: () => {
-				setTimeout(() => {
-					setIsLoading((prev) => ({
-						...prev,
-						locations: false,
-					}));
-				}, 250);
-			},
-		});
-	}, []);
-	const onSelectLocation = useCallback(
-		(location: AppointmentBookingSchema["patientDetails"]["location"]) => {
-			// set value to the location selected, and reset some value if location changed
-			form.resetField("appointmentScheduling.service", {
-				defaultValue: DEFAULT_VALUES_SERVICE,
-			});
-			form.resetField("appointmentScheduling.package", {
-				defaultValue: DEFAULT_VALUES_PACKAGE,
-			});
-			form.resetField("patientDetails.postalCode", { defaultValue: "" });
-			form.resetField("patientDetails.address", { defaultValue: "" });
-			form.resetField("patientDetails.latitude", { defaultValue: 0 });
-			form.resetField("patientDetails.longitude", { defaultValue: 0 });
-			form.setValue("patientDetails.location", location, {
-				shouldValidate: true,
-			});
-		},
-		[form.setValue, form.resetField],
-	);
-
-	// * latitude, longitude, and map state fields
-	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
-	const isMapButtonsDisabled = useMemo(() => {
-		const { latitude, longitude, address, postalCode } =
-			watchPatientDetailsValue;
-		const isValidCoordinate = !!latitude && !!longitude;
-		const isValidAddress =
-			!!selectedLocation?.country &&
-			!!selectedLocation?.state &&
-			!!selectedLocation?.city &&
-			!!address &&
-			!!postalCode &&
-			!isValidCoordinate;
-
-		return {
-			calculate: !isValidAddress,
-			reset: !isValidCoordinate,
-			gmaps: !isValidCoordinate,
-		};
-	}, [watchPatientDetailsValue, selectedLocation]);
-	const onResetCoordinate = useCallback(() => {
-		// reset the lat, lng form values
-		form.resetField("patientDetails.latitude", { defaultValue: 0 });
-		form.resetField("patientDetails.longitude", { defaultValue: 0 });
-
-		// remove the map markers
-		mapRef.current?.marker.onRemove();
-	}, [form.resetField]);
-	const onClickGMaps = useCallback(() => {
-		window.open(
-			`https://www.google.com/maps/search/?api=1&query=${coordinate.join(",")}`,
-		);
-	}, [coordinate]);
-	const onCalculateCoordinate = useCallback(async () => {
-		try {
-			// Fetch geocode result
-			const geocodeResult = await mapRef.current?.geocode.onCalculate();
-			if (
-				!geocodeResult ||
-				!geocodeResult?.position?.lat ||
-				!geocodeResult?.position?.lng
-			) {
-				// Validate geocode result
-				console.error("Address cannot be found!");
-
-				// Set error message for the form
-				const errorMessage =
-					"The address cannot be found. Ensure the region, postal code, and address line are entered correctly.";
-				form.setError("patientDetails.address", {
-					message: errorMessage,
-					type: "custom",
-				});
-				return;
-			}
-
-			// Update form values with latitude and longitude
-			const { lat, lng } = geocodeResult.position;
-			form.setValue("patientDetails.latitude", lat, {
-				shouldValidate: true,
-			});
-			form.setValue("patientDetails.longitude", lng, {
-				shouldValidate: true,
-			});
-
-			// Add markers to the map
-			mapRef.current?.marker.onAdd(
-				[
-					{
-						position: geocodeResult.position,
-						address: geocodeResult.address.label,
-					},
-				] satisfies MarkerData[],
-				{ changeMapView: true },
-			);
-		} catch (error) {
-			console.error("An unexpected error occurred:", error);
-
-			// Handle unexpected errors
-			form.setError("patientDetails.address", {
-				message:
-					"An unexpected error occurred while calculating the coordinates from the address.",
-				type: "custom",
-			});
-		}
-	}, [form.setError, form.setValue]);
+	const { dateOfBirthCalendarProps } = usePatientDateOfBirth();
+	const {
+		mapRef,
+		isMapButtonsDisabled,
+		onCalculateCoordinate,
+		onClickGMaps,
+		onResetCoordinate,
+	} = useMapRegion({ selectedLocation, coordinate });
+	const { form, isDekstop, patientFormOptions } = usePatientDetailsForm();
 
 	return (
 		<FormStepItemContainer>
@@ -1264,267 +998,34 @@ export function PatientDetailsForm() {
 }
 
 export function AppointmentSchedulingForm() {
-	const { form, watchPatientDetailsValue, coordinate, mapAddress } =
-		usePatientRegion();
-	const { props: globalProps, url: pageURL } =
-		usePage<AppointmentNewGlobalPageProps>();
-	const [isLoading, setIsLoading] = useState({
-		services: false,
-		therapists: false,
-	});
+	const { coordinate, mapAddress } = usePatientRegion();
+	const {
+		form,
+		appointmentDate,
+		appointmentDateCalendarProps,
+		appointmentFormOptions,
+		appointmentTime,
+		isIsolineCalculated: _isIsolineCalculated,
+		isLoading,
+		isOpenAppointmentDate,
+		isTherapistFound,
+		packagesOption,
+		mapRef,
+		therapistsOptions,
+		servicesOption,
+		onFindTherapists,
+		onFocusServiceField,
+		onSelectService,
+		onSelectPackage,
+		onSelectTherapist,
+		setAppointmentDate,
+		setAppointmentTime,
+		setIsOpenAppointmentDate,
+	} = useAppointmentSchedulingForm();
 	const watchAppointmentSchedulingValue = useWatch({
 		control: form.control,
 		name: "appointmentScheduling",
 	});
-	const appointmentFormOptions = useMemo(() => {
-		const preferredTherapistGender =
-			globalProps.optionsData?.preferredTherapistGender || [];
-
-		return { preferredTherapistGender };
-	}, [globalProps.optionsData?.preferredTherapistGender]);
-
-	// * for preferred therapist field
-	const getGenderIcon = (
-		gender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"],
-	) => {
-		const lower = gender.toLowerCase();
-		if (lower === "male") return <Mars className="size-4" />;
-		if (lower === "female") return <Venus className="size-4" />;
-		return <VenusAndMars className="size-4" />;
-	};
-
-	// * watching the changes of service selected value
-	const servicesOption = useMemo(
-		() =>
-			globalProps?.services?.filter(
-				(service) => service.name !== "PERAWAT_HOMECARE",
-			),
-		[globalProps?.services],
-	);
-	const packagesOption = useMemo(
-		() =>
-			servicesOption
-				?.filter(
-					(service) =>
-						String(service.id) === watchAppointmentSchedulingValue?.service?.id,
-				)
-				?.flatMap((service) => service.packages),
-		[servicesOption, watchAppointmentSchedulingValue?.service?.id],
-	);
-	const onFocusServiceField = useCallback(() => {
-		// fetch the services options data
-		const { queryParams } = populateQueryParams(
-			pageURL,
-			deepTransformKeysToSnakeCase({
-				locationId: watchPatientDetailsValue?.location?.id,
-			}),
-		);
-		router.get(pageURL, queryParams, {
-			only: ["services"],
-			preserveScroll: true,
-			preserveState: true,
-			replace: false,
-			onStart: () => {
-				setIsLoading((prev) => ({
-					...prev,
-					services: true,
-				}));
-			},
-			onFinish: () => {
-				setTimeout(() => {
-					setIsLoading((prev) => ({
-						...prev,
-						services: false,
-					}));
-				}, 250);
-			},
-		});
-	}, [pageURL, watchPatientDetailsValue?.location?.id]);
-	const onSelectService = useCallback(
-		(service: AppointmentBookingSchema["appointmentScheduling"]["service"]) => {
-			// reset the value of the package if the service changed
-			form.resetField("appointmentScheduling.package", {
-				defaultValue: DEFAULT_VALUES_PACKAGE,
-			});
-			form.setValue("appointmentScheduling.service", service, {
-				shouldValidate: true,
-			});
-		},
-		[form.setValue, form.resetField],
-	);
-
-	// * for appointment date field
-	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
-	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
-		watchAppointmentSchedulingValue?.appointmentDateTime
-			? new Date(watchAppointmentSchedulingValue.appointmentDateTime.toString())
-			: null,
-	);
-	const [appointmentTime, setAppointmentTime] = useState<string>(
-		watchAppointmentSchedulingValue?.appointmentDateTime
-			? format(watchAppointmentSchedulingValue.appointmentDateTime, "HH:mm")
-			: "",
-	);
-	// Memoized calendar properties for the appointment date field
-	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
-		// Define the range of years to be displayed in the calendar
-		const currentYear = new Date().getFullYear();
-		const sixMonthsFromToday = new Date();
-		sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
-
-		return {
-			// Close the calendar popover when a day is clicked
-			onDayClick: () => setIsOpenAppointmentDate(false),
-			// Set the range of years to be displayed
-			fromYear: currentYear,
-			toYear: currentYear,
-			// Disable dates that are in the past or more than 6 months in the future
-			disabled: (date) => {
-				const today = new Date();
-				return date <= today || date > sixMonthsFromToday;
-			},
-		};
-	}, []);
-
-	// * for assigning the therapist
-	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
-	const [therapistsOptions, setTherapistsOptions] = useState({
-		available: [] as AppointmentNewProps["therapists"],
-		unavailable: [] as AppointmentNewProps["therapists"],
-		feasibile: [] as AppointmentNewProps["therapists"],
-		notFeasible: [] as AppointmentNewProps["therapists"],
-	});
-	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
-	const onFindTherapists = useCallback(() => {
-		// fetch the services options data
-		const { queryParams } = populateQueryParams(
-			pageURL,
-			deepTransformKeysToSnakeCase({
-				locationId: watchPatientDetailsValue?.location?.id,
-				serviceId: watchAppointmentSchedulingValue?.service?.id,
-				preferredTherapistGender:
-					watchAppointmentSchedulingValue.preferredTherapistGender,
-				appointmentDateTime:
-					watchAppointmentSchedulingValue.appointmentDateTime,
-			}),
-		);
-		router.get(pageURL, queryParams, {
-			only: ["therapists"],
-			preserveScroll: true,
-			preserveState: true,
-			replace: false,
-			onStart: () => {
-				setIsLoading((prev) => ({
-					...prev,
-					therapists: true,
-				}));
-			},
-			onFinish: () => {
-				setTimeout(() => {
-					setIsLoading((prev) => ({
-						...prev,
-						therapists: false,
-					}));
-				}, 250);
-			},
-			onSuccess: ({ props }) => {
-				// map the available and unavailable therapists
-				const result = (props as unknown as AppointmentNewGlobalPageProps)
-					.therapists;
-				const therapistsAvailable =
-					result?.filter((t) => t.availabilityDetails?.available) || [];
-				const therapistsUnavailable =
-					result?.filter((t) => !t.availabilityDetails?.available) || [];
-
-				setTherapistsOptions((prev) => ({
-					...prev,
-					available: therapistsAvailable,
-					unavailable: therapistsUnavailable,
-				}));
-				onCalculateIsoline(therapistsAvailable);
-			},
-		});
-	}, [pageURL, watchPatientDetailsValue, watchAppointmentSchedulingValue]);
-	const onCalculateIsoline = useCallback(
-		async (therapists: AppointmentNewProps["therapists"]) => {
-			// TODO: show UI for therapists unavailable
-			if (!mapRef.current || !therapists?.length) return;
-
-			// calculate the isoline
-			const { latitude, longitude } = watchPatientDetailsValue;
-			const patientCoords = { lat: latitude, lng: longitude };
-			await mapRef.current.isoline.onCalculate.both({
-				coord: patientCoords,
-				constraints: [
-					{ type: "distance", value: 1000 * 25 }, // 25 km
-					{ type: "time", value: 60 * 50 }, // 50 minutes
-				],
-			});
-
-			// Map therapists to MarkerData
-			const therapistCoords: MarkerData[] =
-				therapists
-					.map((therapist) => {
-						// Safely handle missing activeAddress
-						if (!therapist?.activeAddress) return null;
-
-						return {
-							position: {
-								lat: therapist.activeAddress.latitude,
-								lng: therapist.activeAddress.longitude,
-							},
-							address: therapist.activeAddress.address,
-							bubbleContent: `
-            <div class="w-[180px] text-xs flex flex-col">
-              <span class="font-bold text-sm">${therapist.name}</span>
-              <span class="font-light text-[10px]">#${therapist.registrationNumber}</span>
-            </div>
-          `,
-							additional: { therapist },
-						} satisfies MarkerData;
-					})
-					.filter((coord) => coord !== null) || [];
-
-			// Get feasibility therapists result
-			const feasibleResult = mapRef.current.isLocationFeasible(therapistCoords);
-			const therapistList = {
-				feasible: [] as AppointmentNewProps["therapists"],
-				notFeasible: [] as AppointmentNewProps["therapists"],
-			};
-			for (const item of feasibleResult || []) {
-				const therapist = item?.additional?.therapist;
-				if (!therapist) continue;
-
-				if (item.isFeasible) {
-					therapistList?.feasible?.push(therapist);
-				} else {
-					therapistList?.notFeasible?.push(therapist);
-				}
-			}
-			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
-
-			// Add markers for feasible therapists
-			const markerFeasibleData: MarkerData[] =
-				therapistList.feasible
-					?.map(
-						(feasibleTherapist) =>
-							therapistCoords?.find(
-								(coord) =>
-									coord?.additional?.therapist?.id === feasibleTherapist.id,
-							) || null,
-					)
-					?.filter((coord) => coord !== null) || [];
-
-			mapRef.current.marker.onAdd(markerFeasibleData, {
-				isSecondary: true,
-				useRouting: true,
-			});
-
-			// Mark isoline as calculated
-			setIsIsolineCalculated(true);
-		},
-		[watchPatientDetailsValue],
-	);
 
 	return (
 		<FormStepItemContainer>
@@ -1692,17 +1193,13 @@ export function AppointmentSchedulingForm() {
 													<CommandItem
 														key={packageItem.id}
 														value={packageItem.name}
-														onSelect={() => {
-															form.setValue(
-																"appointmentScheduling.package",
-																{
-																	id: packageItem.id,
-																	name: packageItem.name,
-																	numberOfVisit: packageItem.numberOfVisit,
-																},
-																{ shouldValidate: true },
-															);
-														}}
+														onSelect={() =>
+															onSelectPackage({
+																id: packageItem.id,
+																name: packageItem.name,
+																numberOfVisit: packageItem.numberOfVisit,
+															})
+														}
 													>
 														<p>
 															<span>{packageItem.name}</span>{" "}
@@ -1781,12 +1278,26 @@ export function AppointmentSchedulingForm() {
 				/>
 			</Deferred>
 
-			<div className="flex w-full gap-4">
+			{!therapistsOptions?.feasible?.length && isTherapistFound && (
+				<Alert
+					variant="destructive"
+					className="col-span-full motion-preset-rebound-down"
+				>
+					<AlertCircle className="w-4 h-4" />
+					<AlertTitle>Therapist not found</AlertTitle>
+					<AlertDescription>
+						There are no therapists available for the selected appointment date
+						and time. Please choose a different date or time.
+					</AlertDescription>
+				</Alert>
+			)}
+
+			<div className="grid w-full grid-cols-3 gap-4">
 				<FormField
 					control={form.control}
 					name="appointmentScheduling.appointmentDateTime"
 					render={({ field }) => (
-						<FormItem className="flex-grow">
+						<FormItem className="col-span-2">
 							<FormLabel>Appointment Date</FormLabel>
 							<Popover
 								open={isOpenAppointmentDate}
@@ -1801,12 +1312,33 @@ export function AppointmentSchedulingForm() {
 												!field.value && "text-muted-foreground",
 											)}
 										>
+											<p className="truncate">
+												{field?.value
+													? format(field.value, "PPPP")
+													: "Pick a appointment date"}
+											</p>
+
 											{field.value ? (
-												format(field.value, "PPPP")
+												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+												<div
+													className="cursor-pointer"
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
+
+														form.setValue(
+															"appointmentScheduling.appointmentDateTime",
+															null as unknown as Date,
+														);
+														setAppointmentDate(null);
+														setAppointmentTime("");
+													}}
+												>
+													<X className="opacity-50" />
+												</div>
 											) : (
-												<span>Pick a appointment date</span>
+												<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
 											)}
-											<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
 										</Button>
 									</FormControl>
 								</PopoverTrigger>
@@ -1822,16 +1354,25 @@ export function AppointmentSchedulingForm() {
 										captionLayout="dropdown"
 										selected={new Date(appointmentDate || field.value)}
 										onSelect={(selectedDate) => {
-											// Set the selected time to the selected date
-											const [hours, minutes] = appointmentTime.split(":");
-											selectedDate?.setHours(
-												Number.parseInt(hours),
-												Number.parseInt(minutes),
-											);
+											if (appointmentTime) {
+												// Set the selected time to the selected date
+												const [hours, minutes] = appointmentTime.split(":");
+												selectedDate?.setHours(
+													Number.parseInt(hours),
+													Number.parseInt(minutes),
+												);
+											}
 
 											// update state reference and form field value data
 											setAppointmentDate(selectedDate || null);
-											field.onChange(selectedDate);
+											field.onChange(selectedDate || null);
+
+											// update state for appointment time
+											const time = selectedDate
+												? format(selectedDate.toString(), "HH:mm")
+												: "";
+											console.log(time);
+											setAppointmentTime(time);
 										}}
 										defaultMonth={field.value}
 									/>
@@ -1847,11 +1388,11 @@ export function AppointmentSchedulingForm() {
 					control={form.control}
 					name="appointmentScheduling.appointmentDateTime"
 					render={({ field }) => (
-						<FormItem className="flex-auto">
+						<FormItem className="col-span-1">
 							<FormLabel className="invisible">Time</FormLabel>
 							<FormControl>
 								<Select
-									defaultValue={appointmentTime}
+									value={appointmentTime}
 									onValueChange={(e) => {
 										setAppointmentTime(e);
 										if (appointmentDate) {
@@ -1909,6 +1450,7 @@ export function AppointmentSchedulingForm() {
 					effect="shine"
 					iconPlacement="right"
 					icon={ChevronsRight}
+					disabled={!watchAppointmentSchedulingValue.appointmentDateTime}
 					onClick={(event) => {
 						event.preventDefault();
 						onFindTherapists();
@@ -1926,100 +1468,120 @@ export function AppointmentSchedulingForm() {
 				/>
 			</div>
 
-			<p>Visit #1: assigned to therapist: </p>
+			<FormField
+				control={form.control}
+				name="appointmentScheduling.therapist.name"
+				render={({ field }) => {
+					const selectedTherapist = therapistsOptions?.feasible?.find(
+						(t) => t.name === field.value,
+					);
+
+					return (
+						<FormItem>
+							<FormLabel className="text-nowrap">Therapist</FormLabel>
+							<Popover>
+								<PopoverTrigger asChild>
+									<FormControl>
+										<Button
+											variant="outline"
+											className={cn(
+												"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+												!field.value && "text-muted-foreground",
+											)}
+										>
+											<p>
+												{field.value
+													? selectedTherapist?.name || field.value
+													: "Select therapist"}
+											</p>
+											{field.value ? (
+												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+												<div
+													className="cursor-pointer"
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
+
+														onSelectTherapist(DEFAULT_VALUES_THERAPIST);
+													}}
+												>
+													<X className="opacity-50" />
+												</div>
+											) : (
+												<ChevronsUpDown className="opacity-50" />
+											)}
+										</Button>
+									</FormControl>
+								</PopoverTrigger>
+								<PopoverContent
+									className="p-0 w-[300px]"
+									align="start"
+									side="bottom"
+								>
+									<Command>
+										<CommandInput
+											placeholder="Search therapist..."
+											className="h-9"
+											disabled={isLoading.therapists}
+										/>
+										<CommandList>
+											<CommandEmpty>No therapist found.</CommandEmpty>
+											<CommandGroup>
+												{isLoading.therapists ? (
+													<CommandItem value={undefined} disabled>
+														<LoaderIcon className="animate-spin" />
+														<span>Please wait...</span>
+													</CommandItem>
+												) : (
+													therapistsOptions?.feasible?.map((therapist) => (
+														<CommandItem
+															key={therapist.id}
+															value={therapist.name}
+															onSelect={() =>
+																onSelectTherapist({
+																	id: therapist.id,
+																	name: therapist.name,
+																})
+															}
+														>
+															<span className="flex flex-col items-start">
+																<span>{therapist.name}</span>
+																{/* <span className="text-xs font-light text-pretty">
+																{service.description}
+															</span> */}
+															</span>
+
+															<Check
+																className={cn(
+																	"ml-auto",
+																	therapist.name === field.value
+																		? "opacity-100"
+																		: "opacity-0",
+																)}
+															/>
+														</CommandItem>
+													))
+												)}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
+
+							<FormMessage />
+						</FormItem>
+					);
+				}}
+			/>
 		</FormStepItemContainer>
 	);
 }
 
 export function AdditionalSettingsForm() {
-	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
-	const form = useFormContext<AppointmentBookingSchema>();
-	const additionalFormOptions = useMemo(() => {
-		const referralSources = globalProps.optionsData?.referralSources || [];
-		const fisiohomePartnerNames =
-			globalProps.optionsData?.fisiohomePartnerNames || [];
-
-		return { referralSources, fisiohomePartnerNames };
-	}, [
-		globalProps.optionsData?.referralSources,
-		globalProps.optionsData?.fisiohomePartnerNames,
-	]);
-
-	// * Watching changes to the partner booking value
-	const watchPartnerBookingValue = useWatch({
-		control: form.control,
-		name: "additionalSettings.fisiohomePartnerBooking",
-	});
-	const isPartnerBooking = useMemo(
-		() => boolSchema.parse(watchPartnerBookingValue),
-		[watchPartnerBookingValue],
-	);
-	useEffect(() => {
-		// if partner booking is change to false value reset the other form value below
-		if (!isPartnerBooking) {
-			form.setValue("additionalSettings.fisiohomePartnerName", "");
-			form.setValue("additionalSettings.customFisiohomePartnerName", "");
-			form.setValue("additionalSettings.voucherCode", "");
-		}
-	}, [isPartnerBooking, form.setValue]);
-
-	// * Watching changes to the fisiohome partner name and handling custom partner names
-	const watchFisiohomePartnerName = useWatch({
-		control: form.control,
-		name: "additionalSettings.fisiohomePartnerName",
-	});
-	const watchCustomFisiohomePartnerName = useWatch({
-		control: form.control,
-		name: "additionalSettings.customFisiohomePartnerName",
-	});
-	const isCustomFisiohomePartner = useMemo(
-		() => checkIsCustomFisiohomePartner(watchFisiohomePartnerName || ""),
-		[watchFisiohomePartnerName],
-	);
-	useEffect(() => {
-		// If the fisiohome partner is custom, set the custom fisiohome partner name value
-		if (isCustomFisiohomePartner) {
-			form.setValue(
-				"additionalSettings.customFisiohomePartnerName",
-				watchCustomFisiohomePartnerName,
-			);
-			return;
-		}
-
-		// If the fisiohome partner is not custom, clear the custom fisiohome partner name value
-		form.setValue("additionalSettings.customFisiohomePartnerName", "");
-	}, [
-		isCustomFisiohomePartner,
-		watchCustomFisiohomePartnerName,
-		form.setValue,
-	]);
-
-	// * Watching changes to the patient referral source and handling custom referral sources
-	const watchReferralSource = useWatch({
-		control: form.control,
-		name: "additionalSettings.referralSource",
-	});
-	const watchCustomReferralSource = useWatch({
-		control: form.control,
-		name: "additionalSettings.customReferralSource",
-	});
-	const isCustomReferral = useMemo(
-		() => checkIsCustomReferral(watchReferralSource || ""),
-		[watchReferralSource],
-	);
-	useEffect(() => {
-		// If the referral source is custom, set the custom referral source value
-		if (isCustomReferral) {
-			form.setValue(
-				"additionalSettings.customReferralSource",
-				watchCustomReferralSource,
-			);
-			return;
-		}
-
-		// If the referral source is not custom, clear the custom referral source value
-		form.setValue("additionalSettings.customReferralSource", "");
-	}, [isCustomReferral, watchCustomReferralSource, form.setValue]);
+	const { isPartnerBooking } = usePartnerBookingSelection();
+	const { isCustomFisiohomePartner } = usePartnerNameSelection();
+	const { isCustomReferral } = usePatientReferralSource();
+	const { form, additionalFormOptions } = useAdditionalSettingsForm();
 
 	return (
 		<FormStepItemContainer>
@@ -2323,207 +1885,7 @@ export function AdditionalSettingsForm() {
 }
 
 export function ReviewForm() {
-	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
-	const errorsServerValidation = useMemo(
-		() => (globalProps?.errors?.fullMessages as unknown as string[]) || null,
-		[globalProps?.errors?.fullMessages],
-	);
-	const form = useFormContext<AppointmentBookingSchema>();
-	const { setStep } = useStepper();
-	const review = useMemo(() => form.getValues(), [form.getValues]);
-	const sections = useMemo(() => {
-		const {
-			contactInformation,
-			patientDetails,
-			appointmentScheduling,
-			additionalSettings,
-		} = review;
-		const getGenderIcon = (gender: string) => {
-			const lower = gender.toLowerCase();
-			if (lower === "male") return <Mars className="size-4" />;
-			if (lower === "female") return <Venus className="size-4" />;
-			return <VenusAndMars className="size-4" />;
-		};
-		const onClickGMaps = (coordinate: number[]) => {
-			window.open(
-				`https://www.google.com/maps/search/?api=1&query=${coordinate.join(",")}`,
-			);
-		};
-
-		return [
-			{
-				title: "Contact" as const,
-				stepValue: 0,
-				subs: [
-					{
-						title: "Name",
-						value: contactInformation.contactName,
-					},
-					{
-						title: "Phone Number",
-						value: contactInformation.contactPhone,
-					},
-					{
-						title: "Email",
-						value: contactInformation?.email || "-",
-					},
-					{
-						title: "MiiTel Link",
-						value: contactInformation?.miitelLink || "-",
-					},
-				],
-			},
-			{
-				title: "Patient Profile" as const,
-				stepValue: 1,
-				subs: [
-					{
-						title: "Full Name",
-						value: patientDetails.fullName,
-					},
-					{
-						title: "Date of Birth",
-						value: format(patientDetails.dateOfBirth, "PPP", {}),
-					},
-					{
-						title: "Age",
-						value: `${patientDetails.age} years`,
-					},
-					{
-						title: "Gender",
-						value: patientDetails.gender ? (
-							<Badge variant="secondary">
-								<span className="flex items-center justify-end gap-1">
-									{getGenderIcon(patientDetails.gender.toLowerCase())}
-									{patientDetails.gender}
-								</span>
-							</Badge>
-						) : (
-							"-"
-						),
-					},
-					{
-						title: "Current Condition",
-						value: <Badge variant="outline">{patientDetails?.condition}</Badge>,
-					},
-					{
-						title: "Illness Onset Date",
-						value: patientDetails?.illnessOnsetDate || "-",
-					},
-					{
-						title: "Medical History",
-						value: patientDetails?.medicalHistory || "-",
-					},
-					{
-						title: "Region",
-						value: patientDetails.location.city,
-					},
-					{
-						title: "Postal Code",
-						value: patientDetails.postalCode,
-					},
-					{
-						title: "Address",
-						value: (
-							<div className="space-y-2">
-								<p>{patientDetails.address}</p>
-								<Button
-									type="button"
-									variant="link"
-									effect="hoverUnderline"
-									iconPlacement="left"
-									icon={MapPin}
-									onClick={(event) => {
-										event.preventDefault();
-										onClickGMaps([
-											patientDetails.latitude,
-											patientDetails.longitude,
-										]);
-									}}
-								>
-									View on map
-								</Button>
-							</div>
-						),
-					},
-					{
-						title: "Address Note",
-						value: patientDetails?.addressNotes || "-",
-					},
-				],
-			},
-			{
-				title: "Schedule and Settings" as const,
-				stepValue: 2,
-				subs: [
-					{
-						title: "Service",
-						value: appointmentScheduling.service.name,
-					},
-					{
-						title: "Package",
-						value: `${appointmentScheduling.package.name} (${appointmentScheduling.package.numberOfVisit} visit(s))`,
-					},
-					{
-						title: "Preferred Therapist Gender",
-						value: (
-							<Badge variant="secondary">
-								<span className="flex items-center justify-end gap-1">
-									{getGenderIcon(
-										appointmentScheduling.preferredTherapistGender.toLowerCase(),
-									)}
-									{appointmentScheduling.preferredTherapistGender}
-								</span>
-							</Badge>
-						),
-					},
-					{
-						title: "Appointment Date & Time",
-						value: format(
-							appointmentScheduling.appointmentDateTime,
-							"PPP, hh:mm a",
-						),
-					},
-					{
-						title: "Assigned Therapist",
-						value: appointmentScheduling.therapist?.name || "-",
-					},
-				],
-			},
-			{
-				title: "Additionals" as const,
-				stepValue: 3,
-				subs: [
-					{
-						title: "Referral Source",
-						value: additionalSettings?.referralSource
-							? `${additionalSettings?.referralSource} - ${additionalSettings?.customReferralSource}`
-							: "-",
-					},
-					{
-						title: "Fisiohome Partner Booking",
-						value: additionalSettings?.fisiohomePartnerName
-							? `${additionalSettings?.fisiohomePartnerName} - ${additionalSettings?.customFisiohomePartnerName}`
-							: "-",
-					},
-					{
-						title: "Voucher Code",
-						value: additionalSettings?.voucherCode || "-",
-					},
-					{
-						title: "Notes",
-						value: additionalSettings?.notes || "-",
-					},
-				],
-			},
-		];
-	}, [review]);
-	const onEdit = useCallback(
-		(value: (typeof sections)[number]["stepValue"]) => {
-			setStep(value);
-		},
-		[setStep],
-	);
+	const { sections, errorsServerValidation, onEdit } = useReviewForm();
 
 	return (
 		<FormStepItemContainer className="!grid-cols-1 gap-6">

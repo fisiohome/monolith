@@ -13,9 +13,25 @@ import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type { AppointmentPayload } from "@/types/admin-portal/appointment";
 import type { Auth } from "@/types/globals";
 
-export const DEFAULT_VALUES_LOCATION = { id: "", city: "" };
-export const DEFAULT_VALUES_SERVICE = { id: "", name: "" };
-export const DEFAULT_VALUES_PACKAGE = { id: "", name: "", numberOfVisit: 0 };
+export const DEFAULT_VALUES_LOCATION = {
+	id: "",
+	city: "",
+} satisfies AppointmentBookingSchema["patientDetails"]["location"];
+export const DEFAULT_VALUES_SERVICE = {
+	id: "",
+	name: "",
+} satisfies AppointmentBookingSchema["appointmentScheduling"]["service"];
+export const DEFAULT_VALUES_PACKAGE = {
+	id: "",
+	name: "",
+	numberOfVisit: 0,
+} satisfies AppointmentBookingSchema["appointmentScheduling"]["package"];
+export const DEFAULT_VALUES_THERAPIST = {
+	id: "",
+	name: "",
+} satisfies NonNullable<
+	AppointmentBookingSchema["appointmentScheduling"]["therapist"]
+>;
 export const APPOINTMENTS = [
 	{
 		date: add(new Date(), {}),
@@ -382,8 +398,8 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 	}),
 	therapist: z
 		.object({
-			id: idSchema,
-			name: z.string(),
+			id: idSchema.optional(),
+			name: z.string().optional(),
 		})
 		.optional(),
 });
@@ -558,16 +574,16 @@ export const defineAppointmentFormDefaultValues = ({
 }: {
 	user: Auth["currentUser"];
 }) => {
-	// for date of birth
+	// // for date of birth
 	// const dateOfBirth = new Date(1952, 5, 21);
 	// const age = calculateAge(dateOfBirth);
 
-	// for referral
+	// // for referral
 	// const referralSource = "Other";
 	// const isCustomReferral = checkIsCustomReferral(referralSource);
 	// const customReferralSource = isCustomReferral ? "Linkedin" : undefined;
 
-	// for fisiohome partner name
+	// // for fisiohome partner name
 	// const fisiohomePartnerName = "Other";
 	// const isCustomFisiohomePartner =
 	// 	checkIsCustomFisiohomePartner(fisiohomePartnerName);
@@ -575,7 +591,7 @@ export const defineAppointmentFormDefaultValues = ({
 	// 	? "Tokopedia"
 	// 	: undefined;
 
-	// for appointment date
+	// // for appointment date
 	// const appointmentDateTime = add(new Date(), {
 	// 	days: 13,
 	// 	hours: 5,
@@ -666,6 +682,7 @@ export const defineAppointmentFormDefaultValues = ({
 			// voucherCode: "TEBUSMURAH",
 			// notes: "This is the patient notes",
 			// admins,
+
 			referralSource: "",
 			customReferralSource: "",
 			fisiohomePartnerBooking: false,
@@ -676,6 +693,4 @@ export const defineAppointmentFormDefaultValues = ({
 			admins,
 		},
 	} as unknown as AppointmentBookingSchema;
-
-	// return {} as AppointmentBookingSchema;
 };

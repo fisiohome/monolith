@@ -43,7 +43,7 @@ interface HereMaphandler {
 				useRouting?: boolean;
 			},
 		) => void;
-		onRemove: (isSecondary?: boolean) => void;
+		onRemove: (options?: { isSecondary?: boolean }) => void;
 	};
 	geocode: {
 		onCalculate: () => Promise<GeocodingResult | null>;
@@ -62,6 +62,12 @@ interface HereMaphandler {
 				constraints: IsolineConstraint[];
 			}) => Promise<IsolineResult["isolines"] | null>;
 		};
+		onRemove: () => void;
+		onAdd: (
+			isoline: IsolineResult["isolines"][number],
+			constraint: IsolineConstraint,
+			autoZoom?: boolean,
+		) => H.map.Group | undefined;
 	};
 	isLocationFeasible: (markers: MarkerData[]) => FeasibleResult[];
 }
@@ -153,6 +159,8 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 					single: isoline.onCalculate.single,
 					both: isoline.onCalculate.both,
 				},
+				onRemove: isoline.onRemove,
+				onAdd: isoline.onAdd,
 			},
 			isLocationFeasible,
 		}));
