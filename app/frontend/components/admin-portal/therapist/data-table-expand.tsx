@@ -15,6 +15,12 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useActionPermissions } from "@/hooks/admin-portal/use-therapist-utils";
 import { useAuth } from "@/hooks/use-auth";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
@@ -27,6 +33,7 @@ import {
 	Activity,
 	BriefcaseMedical,
 	CreditCard,
+	Dot,
 	Fingerprint,
 	Group,
 	Hospital,
@@ -89,7 +96,10 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 				label: "Status",
 				value: (
 					<Badge
-						className={getEmpStatusBadgeVariant(row.original.employmentStatus)}
+						className={cn(
+							"text-xs",
+							getEmpStatusBadgeVariant(row.original.employmentStatus),
+						)}
 					>
 						{row.original.employmentStatus}
 					</Badge>
@@ -98,7 +108,7 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 			{
 				icon: Hospital,
 				label: "Therapist at",
-				value: `${row.original.service.code} - ${row.original.service.name}`,
+				value: `${row.original.service.code} - ${row.original.service.name.replaceAll("_", " ")}`,
 			},
 			{
 				icon: BriefcaseMedical,
@@ -368,17 +378,17 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 								{row.original.bankDetails.map((detail, index) => (
 									<Fragment key={detail.id}>
 										<div className="grid gap-2">
-											<div className="flex items-start justify-between gap-2">
-												<p className="font-medium">
-													{detail.bankName.toUpperCase()}
-												</p>
-
+											<p className="flex items-center gap-2 font-medium">
+												<span>{detail.bankName.toUpperCase()}</span>
 												{detail.active && (
-													<Badge className="text-[10px] bg-emerald-500">
-														{detail.active ? "ACTIVE" : "INACTIVE"}
-													</Badge>
+													<Dot
+														className="text-emerald-600"
+														width={10}
+														height={10}
+														strokeWidth={20}
+													/>
 												)}
-											</div>
+											</p>
 
 											<div className="grid font-light">
 												<span>{detail.accountHolderName}</span>
@@ -412,52 +422,57 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 					<CardContent>
 						{row.original.addresses?.length ? (
 							<div className="grid gap-4">
-								{row.original.addresses.map((item, index) => (
-									<Fragment key={item.id}>
-										<div className="grid gap-2">
-											<div className="flex items-start justify-between gap-2">
-												<p className="font-medium">
-													{item.location.country} - {item.location.state}
-												</p>
+								<Accordion type="multiple" className="w-full">
+									{row.original.addresses.map((item) => (
+										<AccordionItem key={item.id} value={String(item.id)}>
+											<AccordionTrigger>
+												<div className="flex items-center">
+													<p className="flex-1 font-medium">
+														{item.location.state} - {item.location.city}
+													</p>
+													{item.active && (
+														<Dot
+															className="flex-none mr-3 text-emerald-600"
+															width={10}
+															height={10}
+															strokeWidth={20}
+														/>
+													)}
+												</div>
+											</AccordionTrigger>
+											<AccordionContent>
+												<div className="grid gap-2">
+													<div className="flex flex-col font-light text-pretty">
+														<span>Country:</span>
+														<span className="font-medium">
+															{item.location.countryCode} -{" "}
+															{item.location.country}
+														</span>
+													</div>
 
-												{item.active && (
-													<Badge className="text-[10px] bg-emerald-500">
-														{item.active ? "ACTIVE" : "INACTIVE"}
-													</Badge>
-												)}
-											</div>
+													<div className="flex flex-col font-light text-pretty">
+														<span>State - City:</span>
+														<span className="font-medium">
+															{item.location.state} - {item.location.city}
+														</span>
+													</div>
 
-											<div className="flex flex-col font-light text-pretty">
-												<span>Country:</span>
-												<span className="font-medium">
-													{item.location.countryCode} - {item.location.country}
-												</span>
-											</div>
+													<div className="flex flex-col font-light text-pretty">
+														<span>Postal Code:</span>
+														<span className="font-medium">
+															{item.postalCode}
+														</span>
+													</div>
 
-											<div className="flex flex-col font-light text-pretty">
-												<span>State - City:</span>
-												<span className="font-medium">
-													{item.location.state} - {item.location.city}
-												</span>
-											</div>
-
-											<div className="flex flex-col font-light text-pretty">
-												<span>Postal Code:</span>
-												<span className="font-medium">{item.postalCode}</span>
-											</div>
-
-											<div className="flex flex-col font-light text-pretty">
-												<span>Address:</span>
-												<span className="font-medium">{item.address}</span>
-											</div>
-										</div>
-
-										{row.original.addresses.length > 1 &&
-											index + 1 !== row.original.addresses.length && (
-												<Separator />
-											)}
-									</Fragment>
-								))}
+													<div className="flex flex-col font-light text-pretty">
+														<span>Address:</span>
+														<span className="font-medium">{item.address}</span>
+													</div>
+												</div>
+											</AccordionContent>
+										</AccordionItem>
+									))}
+								</Accordion>
 							</div>
 						) : (
 							<p>

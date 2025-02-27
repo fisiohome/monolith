@@ -10,11 +10,20 @@ module AdminPortal
       limit = params.fetch(:limit, 10)
       filter_by_name = params[:name]
       filter_by_account_status = params[:account_status]
+      filter_by_employment_type = params[:employment_type]
+      filter_by_employment_status = params[:employment_status]
+      filter_by_city = params[:city]
       selected_param = params[:change_password] || params[:delete]
 
       therapist_collections = Therapist
         .joins(:user)
+        .joins("LEFT JOIN therapist_addresses ON therapist_addresses.therapist_id = therapists.id AND therapist_addresses.active = true")
+        .joins("LEFT JOIN addresses ON addresses.id = therapist_addresses.address_id")
+        .joins("LEFT JOIN locations ON locations.id = addresses.location_id")
         .where(filter_by_name.present? ? ["name ILIKE ?", "%#{filter_by_name}%"] : nil)
+        .where(filter_by_employment_type.present? ? {employment_type: filter_by_employment_type} : nil)
+        .where(filter_by_employment_status.present? ? {employment_status: filter_by_employment_status} : nil)
+        .where(filter_by_city.present? ? ["locations.city ILIKE ?", "%#{filter_by_city}%"] : nil)
         .where(
           if filter_by_account_status == "ACTIVE"
             ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
@@ -49,6 +58,15 @@ module AdminPortal
         )
       end
 
+      # get the filter options data
+      filter_options_lambda = lambda do
+        employment_types = Therapist.employment_types.map { |key, value| value }.as_json
+        employment_statuses = Therapist.employment_statuses.map { |key, value| value }.as_json
+        locations = Location.all.as_json
+
+        deep_transform_keys_to_camel_case({employment_types:, employment_statuses:, locations:})
+      end
+
       render inertia: "AdminPortal/Therapist/Index", props: deep_transform_keys_to_camel_case({
         therapists: {
           metadata: pagy_metadata(@pagy),
@@ -61,7 +79,8 @@ module AdminPortal
             )
           end
         },
-        selected_therapist: -> { selected_therapist_lambda.call }
+        selected_therapist: -> { selected_therapist_lambda.call },
+        filter_options: InertiaRails.defer { filter_options_lambda.call }
       })
     end
 

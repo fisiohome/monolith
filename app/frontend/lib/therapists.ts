@@ -13,11 +13,11 @@ import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, GENDERS } from "./constants";
 export const getEmpStatusBadgeVariant = (
 	data: Therapist["employmentStatus"][number],
 ) => {
-	if (data === "HOLD") return "bg-amber-500";
+	if (data === "HOLD") return "bg-amber-500 hover:bg-amber-500/75";
 
-	if (data === "INACTIVE") return "bg-rose-500";
+	if (data === "INACTIVE") return "bg-rose-500 hover:bg-rose-500/75";
 
-	return "bg-emerald-500";
+	return "bg-emerald-500 hover:bg-emerald-500/75";
 };
 
 /**
