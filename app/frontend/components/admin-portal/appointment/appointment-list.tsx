@@ -491,6 +491,23 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												</div>
 
 												<div className="col-span-full md:col-span-1">
+													<p className="font-light">Visit service:</p>
+													<p className="font-semibold">
+														<span>
+															{schedule?.service?.name?.replaceAll("_", " ") ||
+																"N/A"}{" "}
+														</span>
+														<span className="mx-2">&#x2022;</span>
+														<span>{schedule?.package?.name}</span>
+														<span className="mx-1">-</span>
+														<span className="italic font-light">
+															{schedule?.package?.numberOfVisit || "N/A"}{" "}
+															visit(s)
+														</span>
+													</p>
+												</div>
+
+												<div>
 													<p className="font-light">Visit region:</p>
 													<p className="font-semibold uppercase">
 														{[
@@ -501,7 +518,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													</p>
 												</div>
 
-												<div className="col-span-full md:col-span-1">
+												<div className="col-span-full">
 													<p className="font-light">Visit address:</p>
 													<p className="font-semibold capitalize">
 														{schedule.patient?.activeAddress?.address || "N/A"}
@@ -720,7 +737,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 															<Separator className="my-2" />
 
-															<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+															<div className="grid gap-4 md:grid-cols-2">
 																<div>
 																	<p className="font-light">Emp. type:</p>
 																	<p className="font-semibold uppercase">
