@@ -20,6 +20,7 @@ import {
 	type AppointmentBookingSchema,
 	defineAppointmentFormDefaultValues,
 } from "@/lib/appointments";
+import { buildAppointmentPayload } from "@/lib/appointments";
 import type {
 	FISIOHOME_PARTNER,
 	GENDERS,
@@ -28,7 +29,7 @@ import type {
 	PREFERRED_THERAPIST_GENDER,
 } from "@/lib/constants";
 import { populateQueryParams } from "@/lib/utils";
-import { buildAppointmentPayload } from "@/lib/appointments";
+import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Location } from "@/types/admin-portal/location";
 import type { Package } from "@/types/admin-portal/package";
 import type { Service } from "@/types/admin-portal/service";
@@ -45,7 +46,6 @@ import {
 	useState,
 } from "react";
 import { useForm } from "react-hook-form";
-import type { Appointment } from "@/types/admin-portal/appointment";
 
 export type ServiceOption = Pick<
 	Service,

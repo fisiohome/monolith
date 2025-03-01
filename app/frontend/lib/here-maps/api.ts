@@ -1,8 +1,8 @@
 import type { TherapistAddress } from "@/types/admin-portal/therapist";
 import type {
-	GeocodingResult,
 	GeocodingError,
 	GeocodingResponse,
+	GeocodingResult,
 } from "@/types/here-maps";
 import { populateQueryParams } from "../utils";
 

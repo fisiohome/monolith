@@ -57,7 +57,6 @@ interface ScheduleListProps {
 }
 
 function ScheduleList({ schedule }: ScheduleListProps) {
-	console.log(schedule);
 	const distanceBadgeVariant = useMemo(() => {
 		const pending =
 			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100";

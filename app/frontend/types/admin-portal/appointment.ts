@@ -1,14 +1,14 @@
 import type {
-	PREFERRED_THERAPIST_GENDER,
-	PATIENT_CONDITIONS,
 	GENDERS,
+	PATIENT_CONDITIONS,
+	PREFERRED_THERAPIST_GENDER,
 } from "@/lib/constants";
 import type { Admin } from "./admin";
-import type { Therapist } from "./therapist";
-import type { Service } from "./service";
-import type { Package } from "./package";
 import type { Location } from "./location";
+import type { Package } from "./package";
 import type { Patient } from "./patient";
+import type { Service } from "./service";
+import type { Therapist } from "./therapist";
 
 type AppointmentStatus =
 	| "PENDING THERAPIST ASSIGNMENT"

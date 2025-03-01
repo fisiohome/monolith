@@ -7,9 +7,9 @@ import type { MarkerData } from "@/hooks/here-maps";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { getGenderIcon } from "@/hooks/use-gender";
 import {
+	type AppointmentBookingSchema,
 	DEFAULT_VALUES_PACKAGE,
 	DEFAULT_VALUES_THERAPIST,
-	type AppointmentBookingSchema,
 } from "@/lib/appointments";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { populateQueryParams } from "@/lib/utils";

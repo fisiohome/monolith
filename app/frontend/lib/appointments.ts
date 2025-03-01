@@ -1,3 +1,6 @@
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import type { AppointmentPayload } from "@/types/admin-portal/appointment";
+import type { Auth } from "@/types/globals";
 import { add, format } from "date-fns";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import { z } from "zod";
@@ -9,9 +12,6 @@ import {
 	PREFERRED_THERAPIST_GENDER,
 } from "./constants";
 import { boolSchema, idSchema } from "./validation";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import type { AppointmentPayload } from "@/types/admin-portal/appointment";
-import type { Auth } from "@/types/globals";
 
 export const DEFAULT_VALUES_LOCATION = {
 	id: "",

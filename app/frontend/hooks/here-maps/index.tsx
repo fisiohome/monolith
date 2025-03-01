@@ -1,7 +1,6 @@
 import { isDefaultCoordinate } from "@/lib/here-maps";
 import { filterGeocodeByQueryScore } from "@/lib/here-maps/api";
-import isolineLib from "../../lib/here-maps/isoline";
-import { UIConfig } from "../../lib/here-maps/ui";
+import routingLib from "@/lib/here-maps/routing";
 import { debounce } from "@/lib/utils";
 import type {
 	Coordinate,
@@ -12,7 +11,8 @@ import type {
 } from "@/types/here-maps";
 import H from "@here/maps-api-for-javascript";
 import { useCallback, useMemo, useRef, useState } from "react";
-import routingLib from "@/lib/here-maps/routing";
+import isolineLib from "../../lib/here-maps/isoline";
+import { UIConfig } from "../../lib/here-maps/ui";
 
 /**
  * @interface Alignment

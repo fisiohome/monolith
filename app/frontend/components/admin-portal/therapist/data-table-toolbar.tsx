@@ -1,13 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectSeparator,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import {
 	Command,
 	CommandEmpty,
@@ -17,11 +8,21 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { groupLocationsByCountry } from "@/lib/locations";
 import { cn, debounce, populateQueryParams } from "@/lib/utils";
@@ -32,7 +33,6 @@ import type {
 import { Deferred, router, usePage } from "@inertiajs/react";
 import { Check, ChevronsUpDown, Dot, Search } from "lucide-react";
 import { Fragment, useCallback, useMemo, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export interface ToolbarTableProps {
 	table: TableToolbarDataProps;

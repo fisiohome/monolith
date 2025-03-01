@@ -2,12 +2,12 @@ import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
 import type { MarkerData } from "@/hooks/here-maps";
 import {
-	checkIsCustomFisiohomePartner,
-	checkIsCustomReferral,
+	type AppointmentBookingSchema,
 	DEFAULT_VALUES_PACKAGE,
 	DEFAULT_VALUES_SERVICE,
 	DEFAULT_VALUES_THERAPIST,
-	type AppointmentBookingSchema,
+	checkIsCustomFisiohomePartner,
+	checkIsCustomReferral,
 } from "@/lib/appointments";
 import { groupLocationsByCountry } from "@/lib/locations";
 import { calculateAge } from "@/lib/utils";
