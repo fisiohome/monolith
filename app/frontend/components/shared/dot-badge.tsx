@@ -35,9 +35,11 @@ const dotBadgeVariants = cva(
 	},
 );
 
+export type VariantDotBadge = VariantProps<typeof dotBadgeVariants>;
+
 export interface DotBadgeWithLabelProps
 	extends React.HTMLAttributes<HTMLDivElement>,
-		VariantProps<typeof dotBadgeVariants> {}
+		VariantDotBadge {}
 
 export default function DotBadgeWithLabel({
 	className,

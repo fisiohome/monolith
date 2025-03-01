@@ -3,9 +3,9 @@ import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import {
-	BriefcaseMedical,
 	Calendar1,
 	CalendarRange,
+	Hospital,
 	LayoutDashboard,
 	Users,
 } from "lucide-react";
@@ -105,7 +105,7 @@ export function NavigationProvider({
 		const serviceManagementMenu = {
 			title: "Brands & Locations",
 			url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
-			icon: BriefcaseMedical,
+			icon: Hospital,
 			isActive: false,
 			subItems: [
 				{

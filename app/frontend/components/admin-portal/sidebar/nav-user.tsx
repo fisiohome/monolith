@@ -88,7 +88,7 @@ export function NavUser() {
 									{user.type.replaceAll("_", " ")}
 								</span>
 								<div className="flex flex-col">
-									<span className="font-semibold capitalize truncate">
+									<span className="font-semibold uppercase truncate">
 										{user.name}
 									</span>
 									<span className="text-xs truncate">{user.email}</span>

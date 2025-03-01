@@ -165,7 +165,10 @@ export default function Index({ services, selectedService }: PageProps) {
 				return (
 					<div className="flex items-center space-x-2">
 						<p className="font-medium uppercase text-nowrap">{brandName}</p>
-						<Badge className={cn("text-[10px]", brandBadgeVariant)}>
+						<Badge
+							variant="outline"
+							className={cn("text-[10px]", brandBadgeVariant)}
+						>
 							{brandCode}
 						</Badge>
 					</div>

@@ -41,6 +41,14 @@ class Package < ApplicationRecord
     discount ? number_to_currency(discount, unit: currency, precision: 2, format: "%u %n") : nil
   end
 
+  def total_price_without_discount
+    number_of_visit * price_per_visit
+  end
+
+  def formatted_total_price_without_discount
+    number_to_currency(total_price_without_discount, unit: currency, precision: 2, format: "%u %n")
+  end
+
   private
 
   def calculate_total_price_and_fee

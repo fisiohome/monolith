@@ -636,7 +636,6 @@ export const useAppointmentSchedulingForm = () => {
 		},
 		[form.setValue],
 	);
-	console.log(therapistsOptions);
 
 	// * state group for isolane therapist
 	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);

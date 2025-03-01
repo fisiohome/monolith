@@ -982,7 +982,7 @@ export function PatientDetailsForm() {
 						onClickGMaps();
 					}}
 				>
-					See on Google Maps
+					View on Google Maps
 				</Button>
 			</div>
 
@@ -1371,7 +1371,6 @@ export function AppointmentSchedulingForm() {
 											const time = selectedDate
 												? format(selectedDate.toString(), "HH:mm")
 												: "";
-											console.log(time);
 											setAppointmentTime(time);
 										}}
 										defaultMonth={field.value}

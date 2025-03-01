@@ -3,6 +3,20 @@ import type {
 	PATIENT_CONDITIONS,
 	GENDERS,
 } from "@/lib/constants";
+import type { Admin } from "./admin";
+import type { Therapist } from "./therapist";
+import type { Service } from "./service";
+import type { Package } from "./package";
+import type { Location } from "./location";
+import type { Patient } from "./patient";
+
+type AppointmentStatus =
+	| "PENDING THERAPIST ASSIGNMENT"
+	| "BOOKED"
+	| "PENDING PATIENT APPROVAL"
+	| "PENDING PAYMENT"
+	| "CANCELLED"
+	| "PAID";
 
 export interface AppointmentPayload {
 	serviceId: string;
@@ -58,20 +72,31 @@ export interface Appointment {
 	serviceId: number;
 	packageId: number;
 	locationId: number;
+	admins?: Admin[];
+	therapist?: Therapist;
+	patient?: Patient;
+	service?: Service;
+	package?: Package;
+	location?: Location;
 	registrationNumber: string;
+	status: AppointmentStatus;
 	appointmentDateTime: string;
-	preferredTherapistGender: string;
-	patientIllnessOnsetDate: string;
+	preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
+	patientIllnessOnsetDate: string | null;
 	patientComplaintDescription: string;
-	patientCondition: string;
-	patientMedicalHistory: string;
-	referralSource: string;
-	otherReferralSource: string;
+	patientCondition: (typeof PATIENT_CONDITIONS)[number];
+	patientMedicalHistory: string | null;
+	referralSource: string | null;
+	otherReferralSource: string | null;
 	fisiohomePartnerBooking: boolean;
-	fisiohomePartnerName: string;
-	otherFisiohomePartnerName: string;
-	voucherCode: string;
-	notes: string;
+	fisiohomePartnerName: string | null;
+	otherFisiohomePartnerName: string | null;
+	voucherCode: string | null;
+	notes: string | null;
+	voucherDiscount: string;
+	formattedDiscount: string;
+	totalPrice: string;
+	formattedTotalPrice: string;
 	createdAt: string;
 	updatedAt: string;
 }

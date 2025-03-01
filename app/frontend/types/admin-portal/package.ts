@@ -17,6 +17,7 @@ export type Package = {
 	formattedPricePerVisit?: string;
 	formattedTotalFee?: string;
 	formattedTotalPrice?: string;
+	formattedTotalPriceWithoutDiscount?: string;
 } & Timestamp;
 
 export type PackageTotalPrice = {

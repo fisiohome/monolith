@@ -1,24 +1,34 @@
 import AppointmentList from "@/components/admin-portal/appointment/appointment-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { APPOINTMENTS } from "@/lib/appointments";
 import { cn, populateQueryParams } from "@/lib/utils";
-import type { GlobalPageProps } from "@/types/globals";
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { Plus } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Fragment } from "react";
 
-export type Appointment = typeof APPOINTMENTS;
+export interface AppointmentIndexProps {
+	appointments?: { date: string; schedules: Appointment[] }[];
+}
+
+export interface AppointmentIndexGlobalPageProps
+	extends BaseGlobalPageProps,
+		AppointmentIndexProps {
+	[key: string]: any;
+}
 
 export default function AppointmentIndex() {
-	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentIndexGlobalPageProps>();
 	const isDekstop = useMediaQuery("(min-width: 768px)");
 
-	// tabs management
+	// * tabs management
 	const [isTabChange, setIsTabChange] = useState(false);
 	const tabList = useMemo(() => {
 		return [
@@ -77,13 +87,12 @@ export default function AppointmentIndex() {
 		},
 		[pageURL],
 	);
-	const appointments = useMemo(
-		() =>
-			APPOINTMENTS.filter((appointment) =>
-				appointment.status.includes(tabActive),
-			),
-		[tabActive],
-	);
+	const appointments = useMemo(() => {
+		if (!globalProps?.appointments || !globalProps?.appointments?.length)
+			return [];
+
+		return globalProps.appointments;
+	}, [globalProps?.appointments]);
 	const noAppointmentsLabel = useMemo(() => {
 		let label = "";
 
@@ -164,23 +173,33 @@ export default function AppointmentIndex() {
 					{tabList.map((tab) => (
 						<Fragment key={tab.value}>
 							<TabsContent value={tab.value}>
-								<div className="grid gap-6 mt-6">
-									{isAppointmentExist ? (
-										appointments.map((appointment, index) => (
-											<AppointmentList
-												key={String(appointment.date)}
-												appointment={appointment}
-												index={index}
-											/>
-										))
-									) : (
-										<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background">
-											<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">
-												{noAppointmentsLabel}
-											</h2>
+								<Deferred
+									data={["appointments"]}
+									fallback={
+										<div className="flex flex-col self-end gap-6 mt-6">
+											<Skeleton className="w-2/12 h-4 rounded-sm" />
+											<Skeleton className="relative w-full h-32 rounded-xl" />
 										</div>
-									)}
-								</div>
+									}
+								>
+									<div className="grid gap-6 mt-6">
+										{isAppointmentExist ? (
+											appointments.map((appointment, index) => (
+												<AppointmentList
+													key={String(appointment.date)}
+													appointment={appointment}
+													index={index}
+												/>
+											))
+										) : (
+											<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background">
+												<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">
+													{noAppointmentsLabel}
+												</h2>
+											</div>
+										)}
+									</div>
+								</Deferred>
 							</TabsContent>
 						</Fragment>
 					))}

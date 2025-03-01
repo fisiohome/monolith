@@ -1,4 +1,6 @@
 class Appointment < ApplicationRecord
+  include ActionView::Helpers::NumberHelper
+
   # * define the associations
   belongs_to :therapist, optional: true
   belongs_to :patient
@@ -38,6 +40,24 @@ class Appointment < ApplicationRecord
   REFERRAL_SOURCES = ["Instagram", "Facebook", "Family or Close Related Person", "Other"].freeze
 
   FISIOHOME_PARTNER_NAMES = ["Cosmart", "KlinikGo", "The Asian Parent", "Orami Circle", "Ibu2canggih", "Ibu Bayi Canggih", "Kompas myValue", "Blibli", "LoveCare", "Medlife", "Medikids", "Bumi Health", "Other"].freeze
+
+  STATUSES = ["PENDING THERAPIST ASSIGNMENT", "BOOKED", "PENDING PATIENT APPROVAL", "PENDING PAYMENT", "CANCELLED", "PAID"]
+
+  def voucher_discount
+    0
+  end
+
+  def formatted_discount
+    number_to_currency(voucher_discount, unit: package.currency, precision: 2, format: "%u %n")
+  end
+
+  def total_price
+    package.total_price - voucher_discount
+  end
+
+  def formatted_total_price
+    number_to_currency(total_price, unit: package.currency, precision: 2, format: "%u %n")
+  end
 
   private
 
