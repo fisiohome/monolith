@@ -235,41 +235,6 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													</div> */}
 												</div>
 											</div>
-
-											<div className="flex items-center gap-2">
-												<div className="flex -space-x-3">
-													{schedule?.admins?.map((admin, index) => (
-														<TooltipProvider key={admin.name}>
-															<Tooltip>
-																<TooltipTrigger asChild>
-																	<Avatar
-																		className={cn(
-																			"border rounded-lg border-border bg-muted size-6 text-[10px]",
-																			index !== 0
-																				? "border-l-muted-foreground/25 border-l-2"
-																				: "",
-																		)}
-																	>
-																		<AvatarImage src="#" alt={admin.name} />
-																		<AvatarFallback>
-																			<Cctv className="flex-shrink-0 size-4 text-muted-foreground/75" />
-																			{/* {generateInitials(admin.name)} */}
-																		</AvatarFallback>
-																	</Avatar>
-																</TooltipTrigger>
-																<TooltipContent>
-																	<p className="uppercase">{admin.name}</p>
-																</TooltipContent>
-															</Tooltip>
-														</TooltipProvider>
-													))}
-												</div>
-												<div>
-													<p className="line-clamp-1">
-														{schedule?.admins?.length || 0} Person in charge(s)
-													</p>
-												</div>
-											</div>
 										</div>
 
 										<div className="grid order-first gap-4 xl:order-last xl:col-span-8">
@@ -767,6 +732,42 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 											</h3>
 
 											<div className="flex flex-col h-full gap-4 p-4 border rounded-lg shadow-inner border-border bg-sidebar">
+												<div className="flex items-center gap-2">
+													<div className="flex -space-x-3">
+														{schedule?.admins?.map((admin, index) => (
+															<TooltipProvider key={admin.name}>
+																<Tooltip>
+																	<TooltipTrigger asChild>
+																		<Avatar
+																			className={cn(
+																				"border rounded-lg border-border bg-background size-6 text-[10px]",
+																				index !== 0
+																					? "border-l-muted-foreground/25 border-l-2"
+																					: "",
+																			)}
+																		>
+																			<AvatarImage src="#" alt={admin.name} />
+																			<AvatarFallback className="bg-background">
+																				<Cctv className="flex-shrink-0 size-4 text-muted-foreground/75" />
+																				{/* {generateInitials(admin.name)} */}
+																			</AvatarFallback>
+																		</Avatar>
+																	</TooltipTrigger>
+																	<TooltipContent>
+																		<p className="uppercase">{admin.name}</p>
+																	</TooltipContent>
+																</Tooltip>
+															</TooltipProvider>
+														))}
+													</div>
+													<div>
+														<p className="line-clamp-1">
+															{schedule?.admins?.length || 0} Person in
+															charge(s)
+														</p>
+													</div>
+												</div>
+
 												{schedule?.admins?.map((admin, index) => (
 													<div key={admin.name} className="grid gap-6">
 														<div className="flex items-center gap-2">
@@ -803,11 +804,11 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																	{admin.adminType.replaceAll("_", " ")}
 																</p>
 															</div>
-														</div>
 
-														{index + 1 !== schedule?.admins?.length && (
-															<Separator className="my-1" />
-														)}
+															{index + 1 !== schedule?.admins?.length && (
+																<Separator className="my-2" />
+															)}
+														</div>
 													</div>
 												))}
 											</div>
