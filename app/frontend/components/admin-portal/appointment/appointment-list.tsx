@@ -617,41 +617,41 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													</span>
 												</div>
 
-												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-2">
-														<TicketPercent className="size-4 text-muted-foreground/75" />
-														<span className="font-light">Discount</span>
-														{schedule.voucherCode && (
+												{schedule?.service?.code && (
+													<div className="flex items-center justify-between">
+														<div className="flex items-center gap-2">
+															<TicketPercent className="size-4 text-muted-foreground/75" />
+															<span className="font-light">Discount</span>
 															<Badge
 																variant="outline"
 																className="ml-2 text-xs border-2"
 															>
-																SERVICE{schedule.service?.code}
+																SERVICE{schedule?.service?.code}
 															</Badge>
-														)}
+														</div>
+														<span className="font-semibold text-primary">
+															- {schedule?.package?.formattedDiscount || "N/A"}
+														</span>
 													</div>
-													<span className="font-semibold text-primary">
-														- {schedule.package?.formattedDiscount}
-													</span>
-												</div>
+												)}
 
-												<div className="flex items-center justify-between">
-													<div className="flex items-center gap-2">
-														<TicketPercent className="size-4 text-muted-foreground/75" />
-														<span className="font-light">Discount</span>
-														{schedule.voucherCode && (
+												{schedule.voucherCode && (
+													<div className="flex items-center justify-between">
+														<div className="flex items-center gap-2">
+															<TicketPercent className="size-4 text-muted-foreground/75" />
+															<span className="font-light">Discount</span>
 															<Badge
 																variant="outline"
 																className="ml-2 text-xs border-2"
 															>
 																{schedule.voucherCode}
 															</Badge>
-														)}
+														</div>
+														<span className="font-semibold text-primary">
+															- {schedule.formattedDiscount || "N/A"}
+														</span>
 													</div>
-													<span className="font-semibold text-primary">
-														- {schedule.formattedDiscount}
-													</span>
-												</div>
+												)}
 
 												<Separator />
 
@@ -685,77 +685,79 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 											</h3>
 
 											<div className="flex flex-col h-full gap-4 p-4 border rounded-lg shadow-inner border-border bg-sidebar">
-												{schedule?.therapist && (
-													<div className="grid gap-6">
-														<div className="flex items-center gap-2">
-															<Avatar className="text-[10px] border rounded-lg border-border bg-background size-6">
-																<AvatarImage
-																	src="#"
-																	alt={schedule.therapist.name}
-																/>
-																<AvatarFallback className="bg-background">
-																	{generateInitials(schedule.therapist.name)}
-																</AvatarFallback>
-															</Avatar>
-															<div>
-																<p className="font-semibold line-clamp-1">
-																	{schedule.therapist.name}
-																</p>
+												<div className="grid gap-6">
+													<div className="flex items-center gap-2">
+														<Avatar className="text-[10px] border rounded-lg border-border bg-background size-6">
+															<AvatarImage
+																src="#"
+																alt={schedule?.therapist?.name || "N/A"}
+															/>
+															<AvatarFallback className="bg-background">
+																{schedule?.therapist?.name
+																	? generateInitials(schedule.therapist.name)
+																	: "N/A"}
+															</AvatarFallback>
+														</Avatar>
+														<div>
+															<p className="font-semibold line-clamp-1">
+																{schedule?.therapist?.name || "N/A"}
+															</p>
+														</div>
+													</div>
+
+													<div className="grid gap-3">
+														<div className="flex justify-between gap-2">
+															<div className="flex items-center gap-2">
+																<Hash className="size-4 text-muted-foreground/75" />
+																<p className="font-light">Reg. Number:</p>
 															</div>
+															<p className="font-semibold uppercase">
+																{schedule?.therapist?.registrationNumber ||
+																	"N/A"}
+															</p>
 														</div>
 
-														<div className="grid gap-3">
-															<div className="flex justify-between gap-2">
-																<div className="flex items-center gap-2">
-																	<Hash className="size-4 text-muted-foreground/75" />
-																	<p className="font-light">Reg. Number:</p>
-																</div>
+														<div className="flex justify-between gap-2">
+															<div className="flex items-center gap-2">
+																<Phone className="size-4 text-muted-foreground/75" />
+																<p className="font-light">Phone:</p>
+															</div>
+															<p className="font-semibold">
+																{schedule?.therapist?.phoneNumber || "N/A"}
+															</p>
+														</div>
+
+														<div className="flex justify-between gap-2">
+															<div className="flex items-center gap-2">
+																<Mail className="size-4 text-muted-foreground/75" />
+																<p className="font-light">Email:</p>
+															</div>
+															<p className="font-semibold">
+																{schedule?.therapist?.user?.email || "N/A"}
+															</p>
+														</div>
+
+														<Separator className="my-2" />
+
+														<div className="grid gap-4 md:grid-cols-2">
+															<div>
+																<p className="font-light">Emp. type:</p>
 																<p className="font-semibold uppercase">
-																	{schedule.therapist.registrationNumber}
+																	{schedule?.therapist?.employmentType || "N/A"}
 																</p>
 															</div>
 
-															<div className="flex justify-between gap-2">
-																<div className="flex items-center gap-2">
-																	<Phone className="size-4 text-muted-foreground/75" />
-																	<p className="font-light">Phone:</p>
-																</div>
-																<p className="font-semibold">
-																	{schedule.therapist.phoneNumber}
+															<div>
+																<p className="font-light">Gender:</p>
+																<p className="flex items-center gap-1 font-semibold uppercase">
+																	{schedule?.therapist?.gender &&
+																		getGenderIcon(schedule.therapist.gender)}
+																	{schedule?.therapist?.gender || "N/A"}
 																</p>
-															</div>
-
-															<div className="flex justify-between gap-2">
-																<div className="flex items-center gap-2">
-																	<Mail className="size-4 text-muted-foreground/75" />
-																	<p className="font-light">Email:</p>
-																</div>
-																<p className="font-semibold">
-																	{schedule.therapist.user.email}
-																</p>
-															</div>
-
-															<Separator className="my-2" />
-
-															<div className="grid gap-4 md:grid-cols-2">
-																<div>
-																	<p className="font-light">Emp. type:</p>
-																	<p className="font-semibold uppercase">
-																		{schedule.therapist.employmentType}
-																	</p>
-																</div>
-
-																<div>
-																	<p className="font-light">Gender:</p>
-																	<p className="flex items-center gap-1 font-semibold uppercase">
-																		{getGenderIcon(schedule.therapist.gender)}
-																		{schedule.therapist.gender}
-																	</p>
-																</div>
 															</div>
 														</div>
 													</div>
-												)}
+												</div>
 											</div>
 										</div>
 
