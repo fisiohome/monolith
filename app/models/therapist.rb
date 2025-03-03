@@ -58,7 +58,11 @@ class Therapist < ApplicationRecord
     service = AdminPortal::GetTherapistAvailableService.new(self, appointment_date_time_server_time)
     {
       available: service.available?,
-      reasons: service.reasons
+      reasons: service.reasons,
+      locations: {
+        prev_appointment: service.previous_appointment_location,
+        next_appointment: service.next_appointment_location
+      }
     }
   end
 

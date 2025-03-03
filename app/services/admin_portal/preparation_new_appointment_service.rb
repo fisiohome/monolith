@@ -65,9 +65,12 @@ module AdminPortal
       therapists = Therapist
         .joins(:service, active_therapist_address: {address: :location})
         .includes(
-          therapist_appointment_schedule: [
-            :therapist_weekly_availabilities,
-            :therapist_adjusted_availabilities
+          [
+            :appointments,
+            therapist_appointment_schedule: [
+              :therapist_weekly_availabilities,
+              :therapist_adjusted_availabilities
+            ]
           ]
         )
         .where(service: service)
@@ -131,17 +134,14 @@ module AdminPortal
         serialize_therapist(
           therapist,
           {
-            only: %i[
-              id name batch phone_number registration_number
-              modalities specializations employment_status
-              employment_type gender
-            ],
+            only: %i[id name registration_number employment_status employment_type gender],
             include_user: false,
             include_service: false,
             include_bank_details: false,
             include_addresses: false,
             include_active_address: true,
-            include_availability: true
+            include_availability: true,
+            include_appointments: true
           }
         ).merge(availability_details:)
       )

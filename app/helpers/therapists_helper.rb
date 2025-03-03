@@ -66,6 +66,11 @@ module TherapistsHelper
           end
         )
       end
+
+      # serialize the therapist appointments
+      if options[:include_appointments]
+        therapist_serialize["appointments"] = therapist.appointments.as_json
+      end
     end
   end
 end

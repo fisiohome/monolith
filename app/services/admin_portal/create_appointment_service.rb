@@ -31,10 +31,8 @@ module AdminPortal
     def create_patient_contact
       contact_params = @params[:patient_contact]
       @patient_contact = PatientContact.find_by(
-        patient: @patient,
         contact_name: contact_params[:contact_name],
-        contact_phone: contact_params[:contact_phone],
-        email: contact_params[:email]
+        contact_phone: contact_params[:contact_phone]
       ) || PatientContact.create!(contact_params.merge(patient: @patient))
     end
 

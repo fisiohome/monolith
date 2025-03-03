@@ -3,6 +3,7 @@
 	"type": "module",
 	"dependencies": {
 		"@date-fns/tz": "^1.2.0",
+		"@faker-js/faker": "^9.5.1",
 		"@here/maps-api-for-javascript": "^1.61.1",
 		"@hookform/error-message": "^2.0.1",
 		"@hookform/resolvers": "^3.9.1",

@@ -923,13 +923,45 @@ export default function useHereMap(
 			const { time, distance } = isolineCoordinatesRef.current;
 
 			return markers.map(({ position, address, additional }) => {
-				const isFeasible =
+				// to check the previous of the appointment location feasibility
+				const prevLocation =
+					additional?.therapist?.availabilityDetails?.locations
+						?.prevAppointment;
+				const prevLocationPosition = {
+					lat: prevLocation?.latitude,
+					lng: prevLocation?.longitude,
+				};
+				const isFeasiblePrevAddress =
+					prevLocation === null
+						? true
+						: isInPolygon(prevLocationPosition, time.flat()) &&
+							isInPolygon(prevLocationPosition, distance.flat());
+
+				// to check the next of the appointment location feasibility
+				const nextLocation =
+					additional?.therapist?.availabilityDetails?.locations
+						?.nextAppointment;
+				const nextLocationPosition = {
+					lat: nextLocation?.latitude,
+					lng: nextLocation?.longitude,
+				};
+				const isFeasibleNextAddress =
+					nextLocation === null
+						? true
+						: isInPolygon(nextLocationPosition, time.flat()) &&
+							isInPolygon(nextLocationPosition, distance.flat());
+
+				// to check current appointment location feasibility
+				const isFeasibleCurrentAddress =
 					isInPolygon(position, time.flat()) &&
 					isInPolygon(position, distance.flat());
 
 				return {
 					address,
-					isFeasible,
+					isFeasible:
+						isFeasibleCurrentAddress &&
+						isFeasiblePrevAddress &&
+						isFeasibleNextAddress,
 					additional,
 					position,
 				};

@@ -1,6 +1,6 @@
 module AdminPortal
   class GetTherapistAvailableService
-    attr_reader :reasons
+    attr_reader :reasons, :previous_appointment_location, :next_appointment_location
 
     # Service to check therapist availability for a specific datetime
     # Handles complex logic including time zones, adjusted schedules, and booking constraints
@@ -9,6 +9,8 @@ module AdminPortal
       @appointment_date_time_server_time = appointment_date_time_server_time
       @schedule = therapist.therapist_appointment_schedule
       @reasons = []
+      @previous_appointment_location = nil
+      @next_appointment_location = nil
       @logger = Rails.logger
     end
 
@@ -23,6 +25,7 @@ module AdminPortal
       # Reset reasons for each check
       @reasons.clear
 
+      fetch_adjacent_appointment_addresses
       perform_checks(appointment_date_time_in_tz, current_date_time_in_tz)
     end
 
@@ -35,7 +38,8 @@ module AdminPortal
         -> { basic_time_checks(appointment_date_time_in_tz, current_date_time_in_tz) },
         -> { advance_booking_check(appointment_date_time_in_tz, current_date_time_in_tz) },
         -> { date_window_check(appointment_date_time_in_tz) },
-        -> { availability_check(appointment_date_time_in_tz) }
+        -> { availability_check(appointment_date_time_in_tz) },
+        -> { no_overlapping_appointments_check }
       ].each do |check|
         result = check.call
         return result if result == false # Stop on first failure
@@ -51,17 +55,18 @@ module AdminPortal
       if appointment_date_time_in_tz <= current_date_time_in_tz
         message = "Not available for past dates"
         @logger.debug message
-        return add_reason_and_return(false, message)
+        add_reason_and_return(false, message)
       end
 
-      min_booking_time = current_date_time_in_tz + @schedule.min_booking_before_in_hours.hours
-      if appointment_date_time_in_tz < min_booking_time
-        message = "Requires booking at least #{@schedule.min_booking_before_in_hours} hours in advance"
-        @logger.debug message
-        add_reason_and_return(false, message)
-      else
-        true
-      end
+      # ? turn off this feature, so the minimal booking time was handled manually
+      # min_booking_time = current_date_time_in_tz + @schedule.min_booking_before_in_hours.hours
+      # if appointment_date_time_in_tz < min_booking_time
+      #   message = "Requires booking at least #{@schedule.min_booking_before_in_hours} hours in advance"
+      #   @logger.debug message
+      #   add_reason_and_return(false, message)
+      # else
+      #   true
+      # end
     end
 
     # Check maximum advance booking window
@@ -174,26 +179,76 @@ module AdminPortal
       result
     end
 
+    def no_overlapping_appointments_check
+      return true unless @schedule # Guard clause if schedule is missing
+
+      duration = @schedule.appointment_duration_in_minutes
+      buffer = @schedule.buffer_time_in_minutes
+
+      new_start_server = @appointment_date_time_server_time
+      new_end_plus_buffer_server = new_start_server + (duration + buffer).minutes
+
+      # Check for overlapping appointments, excluding cancelled ones
+      conflicting_appointments = @therapist.appointments
+        .where.not(status: "cancelled") # Adjust statuses as needed
+        .where("appointment_date_time < ?", new_end_plus_buffer_server)
+        .where("appointment_date_time + (? * INTERVAL '1 minute') > ?", duration + buffer, new_start_server)
+
+      if conflicting_appointments.exists?
+        conflicting_times = conflicting_appointments.pluck(:appointment_date_time).map { |t| t.strftime("%H:%M") }.join(", ")
+        message = "Therapist is not available because they have another appointment at: #{conflicting_times}, conflicting with the requested time."
+        @logger.debug message
+        add_reason_and_return(false, message)
+      else
+        true
+      end
+    end
+
+    # Extract address, latitude, longitude from appointment's location
+    def extract_location_details(appointment)
+      return nil unless appointment&.location
+
+      # Get the first address associated with the location
+      address = appointment.location.addresses.first
+      return nil unless address
+
+      {
+        address: address.address,
+        latitude: address.latitude,
+        longitude: address.longitude,
+        coordinates: address.coordinates
+      }
+    end
+
+    # Fetch addresses of the closest previous/next appointments
+    def fetch_adjacent_appointment_addresses
+      return unless @schedule
+
+      # Eager load location and addresses to avoid N+1 queries
+      appointments_scope = @therapist.appointments
+        .where.not(status: "cancelled")
+        .includes(location: :addresses)
+
+      # Find the previous appointment (last one before the new appointment)
+      previous_appointment = appointments_scope
+        .where("appointment_date_time < ?", @appointment_date_time_server_time)
+        .order(appointment_date_time: :desc)
+        .first
+
+      # Find the next appointment (first one after the new appointment)
+      next_appointment = appointments_scope
+        .where("appointment_date_time > ?", @appointment_date_time_server_time)
+        .order(appointment_date_time: :asc)
+        .first
+
+      # Extract location details
+      @previous_appointment_location = extract_location_details(previous_appointment)
+      @next_appointment_location = extract_location_details(next_appointment)
+    end
+
     def log_and_return(result, message)
       @logger.debug "Availability check failed for therapist #{@therapist.name}: #{message}"
       result
     end
-
-    # TODO: add logic for existing previous or next therapist appointment
-    # ?  eliminate the appointment_duration_in_minutes & buffer_time_in_minutes for now,
-    # ? because current availability feature haven't handling this value yet
-    # Verify time fits in slot considering duration and buffer
-    # def time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
-    #   appointment_end = appointment_date_time_in_tz + @schedule.appointment_duration_in_minutes.minutes
-    #   buffer_end = appointment_end + @schedule.buffer_time_in_minutes.minutes
-
-    #   fits = appointment_date_time_in_tz >= slot_start && buffer_end <= slot_end
-
-    #   unless fits
-    #     @logger.debug "Time doesn't fit in slot: #{appointment_date_time_in_tz} (needs until #{buffer_end}) in #{slot_start}-#{slot_end}"
-    #   end
-
-    #   fits
-    # end
   end
 end
