@@ -1,0 +1,1 @@
+console.log("Vite ⚡️ Rails");console.log("Visit the guide for more information: ","https://vite-ruby.netlify.app/guide/rails");"serviceWorker"in navigator&&navigator.serviceWorker.register("/service-worker.js").then(e=>{console.log("Service Worker registered with scope:",e.scope)}).catch(e=>{console.log("Service Worker registration failed:",e)});

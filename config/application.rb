@@ -26,6 +26,8 @@ module Monolith
     config.active_record.default_timezone = :local
     # config.eager_load_paths << Rails.root.join("extras")
 
-    config.logger = Logger.new($stdout)
+    # config.logger = Logger.new($stdout)
+
+    config.active_job.queue_adapter = :solid_queue
   end
 end

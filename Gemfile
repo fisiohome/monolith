@@ -75,3 +75,5 @@ gem "standard", "~> 1.43", group: [:development, :test]
 gem "standard-rails", "~> 1.2", group: [:development, :test]
 
 gem "activerecord-import", "~> 2.0"
+
+gem "mission_control-jobs", "~> 1.0"

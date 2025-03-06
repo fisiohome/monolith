@@ -9,6 +9,10 @@ Rails.application.routes.draw do
   get "manifest" => "rails/pwa#manifest", :as => :pwa_manifest
   get "service-worker" => "rails/pwa#service_worker", :as => :pwa_service_worker
 
+  # route for the dashboard jobs controller
+  # docs: https://github.com/rails/mission_control-jobs
+  mount MissionControl::Jobs::Engine, at: "/jobs"
+
   # Defines the root path route ("/")
   # root to: "inertia_example#index"
 
