@@ -2,6 +2,10 @@ development:
   clean_up_past_availabilities:
     class: "CleanUpPastAvailabilitiesJob"
     schedule: "0 0 * * *" # Every day at midnight
+staging:
+  clean_up_past_availabilities:
+    class: "CleanUpPastAvailabilitiesJob"
+    schedule: "0 0 * * *" # Every day at midnight
 production:
   #   periodic_cleanup:
   #     class: CleanSoftDeletedRecordsJob
