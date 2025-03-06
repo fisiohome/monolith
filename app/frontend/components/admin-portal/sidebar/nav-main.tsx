@@ -17,9 +17,11 @@ import {
 	SidebarMenuSub,
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
+	useSidebar,
 } from "@/components/ui/sidebar";
 import { Link } from "@inertiajs/react";
 import { useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface NavMainProps {
 	items: {
@@ -37,6 +39,9 @@ export interface NavMainProps {
 }
 
 export function NavMain() {
+	const { toggleSidebar } = useSidebar();
+	const isMobile = useIsMobile();
+
 	// navigation context
 	const { navigation } = useNavigation();
 	const label = useMemo(() => navigation.main?.label, [navigation.main?.label]);
@@ -83,6 +88,11 @@ export function NavMain() {
 													<SidebarMenuSubButton
 														asChild
 														isActive={subItem.isActive}
+														onClick={() => {
+															if (!isMobile) return;
+
+															toggleSidebar();
+														}}
 													>
 														<Link href={subItem.url}>{subItem.title}</Link>
 													</SidebarMenuSubButton>

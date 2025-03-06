@@ -30,8 +30,12 @@ export default function AppSidebar({
 									<HousePlus className="size-4" />
 								</div>
 								<div className="grid flex-1 text-sm leading-tight text-left">
-									<span className="font-semibold truncate">Fisiohome</span>
-									<span className="text-xs truncate">Admin Portal</span>
+									<span className="font-bold uppercase truncate">
+										Fisiohome
+									</span>
+									<span className="text-xs uppercase truncate">
+										Admin Portal
+									</span>
 								</div>
 							</Link>
 						</SidebarMenuButton>

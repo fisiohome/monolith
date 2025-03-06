@@ -75,47 +75,49 @@ export function NavUser() {
 					<DropdownMenuTrigger asChild>
 						<SidebarMenuButton
 							size="lg"
-							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+							className="data-[state=open]:bg-muted data-[state=open]:text-sidebar-accent-foreground data-[state=open]:border data-[state=open]:border-border h-full"
 						>
-							<Avatar className="rounded-lg size-10">
+							<Avatar className="self-start rounded-lg size-8">
 								<AvatarImage src={user.avatar} alt={user.name} />
-								<AvatarFallback className="rounded-lg">
+								<AvatarFallback className="self-start text-xs font-semibold border rounded-lg bg-background border-border">
 									{generateInitials(user.name)}
 								</AvatarFallback>
 							</Avatar>
-							<div className="grid my-1 text-sm leading-tight text-left">
-								<span className="text-[8px] uppercase bg-primary px-1 rounded text-primary-foreground justify-self-start">
-									{user.type.replaceAll("_", " ")}
-								</span>
+							<div className="grid gap-1 text-sm leading-tight text-left">
 								<div className="flex flex-col">
 									<span className="font-semibold uppercase truncate">
 										{user.name}
 									</span>
-									<span className="text-xs truncate">{user.email}</span>
 								</div>
 							</div>
-							<ChevronsUpDown className="ml-auto size-4" />
+							<ChevronsUpDown className="ml-auto opacity-50 !size-3" />
 						</SidebarMenuButton>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
 						side={isMobile ? "bottom" : "right"}
 						align="end"
-						sideOffset={4}
+						sideOffset={16}
 					>
 						<DropdownMenuLabel className="p-0 font-normal">
 							<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-								<Avatar className="w-8 h-8 rounded-lg">
+								<Avatar className="rounded-lg size-12">
 									<AvatarImage src={user.avatar} alt={user.name} />
 									<AvatarFallback className="rounded-lg">
 										{generateInitials(user.name)}
 									</AvatarFallback>
 								</Avatar>
+
 								<div className="grid flex-1 text-sm leading-tight text-left">
-									<span className="font-semibold capitalize truncate">
+									<span className="text-[8px] mb-0.5 uppercase bg-primary px-1.5 py-0.5 rounded text-primary-foreground w-fit">
+										{user.type.replaceAll("_", " ")}
+									</span>
+									<span className="font-semibold uppercase truncate">
 										{user.name}
 									</span>
-									<span className="text-xs truncate">{user.email}</span>
+									<span className="text-xs font-light leading-none truncate">
+										{user.email}
+									</span>
 								</div>
 							</div>
 						</DropdownMenuLabel>
