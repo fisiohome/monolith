@@ -83,6 +83,10 @@ export interface AdminPortal {
 				index: string;
 				upsert: string;
 			};
+			settings: {
+				accountSecurity: string;
+				appearance: string;
+			};
 		};
 	};
 	protect: {

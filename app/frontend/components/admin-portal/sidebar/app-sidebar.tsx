@@ -20,7 +20,7 @@ export default function AppSidebar({
 	const { props: globalProps } = usePage<GlobalPageProps>();
 
 	return (
-		<Sidebar variant="inset" {...props}>
+		<Sidebar variant="inset" collapsible="icon" {...props}>
 			<SidebarHeader className="motion-preset-bounce">
 				<SidebarMenu>
 					<SidebarMenuItem>

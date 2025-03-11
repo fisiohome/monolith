@@ -50,7 +50,8 @@ export function NavigationProvider({
 		};
 		const url = {
 			logout: globalProps.adminPortal.router.logout,
-			account: globalProps.adminPortal.router.auth.registration.edit,
+			account:
+				globalProps.adminPortal.router.adminPortal.settings.accountSecurity,
 		};
 
 		return { userData, url };
@@ -59,7 +60,7 @@ export function NavigationProvider({
 		globalProps.auth.currentUser?.user.email,
 		globalProps.auth.currentUser?.name,
 		globalProps.adminPortal.router.logout,
-		globalProps.adminPortal.router.auth.registration.edit,
+		globalProps.adminPortal.router.adminPortal.settings.accountSecurity,
 	]);
 	const navMainProps = useMemo<NavMainProps>(() => {
 		const dashboardMenu = {

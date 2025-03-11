@@ -69,19 +69,33 @@ export function FormPageHeader({
 export interface FormPageHeaderGridPatternProps extends ComponentProps<"div"> {
 	title: string;
 	description: string;
+	titleClass?: string;
+	descriptionClass?: string;
 }
 
 export function FormPageHeaderGridPattern({
 	title,
 	description,
+	titleClass,
+	descriptionClass,
 }: FormPageHeaderGridPatternProps) {
 	return (
 		<div className="relative flex p-4 overflow-hidden border shadow-inner rounded-xl md:p-6 size-full bg-background border-border">
 			<div>
-				<h1 className="z-10 text-lg font-bold tracking-tighter whitespace-pre-wrap">
+				<h1
+					className={cn(
+						"z-10 text-base font-bold tracking-tighter whitespace-pre-wrap",
+						titleClass,
+					)}
+				>
 					{title}
 				</h1>
-				<p className="text-sm text-muted-foreground text-pretty">
+				<p
+					className={cn(
+						"text-sm text-muted-foreground text-pretty tracking-tight",
+						descriptionClass,
+					)}
+				>
 					{description}
 				</p>
 			</div>

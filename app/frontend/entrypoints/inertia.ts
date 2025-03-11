@@ -3,6 +3,7 @@ import GuestLayout from "@/layouts/Guest";
 import { createInertiaApp } from "@inertiajs/react";
 import { type ReactNode, createElement } from "react";
 import { createRoot } from "react-dom/client";
+import "@/lib/i18n";
 
 // Temporary type definition, until @inertiajs/react provides one
 type ResolvedComponent = {

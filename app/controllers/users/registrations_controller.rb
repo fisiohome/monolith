@@ -18,9 +18,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   def edit
     # super
 
-    render inertia: "Auth/EditPassword", props: {
-      user: resource
-    }
+    redirect_to admin_portal_settings_account_security_path
   end
 
   # PUT /resource

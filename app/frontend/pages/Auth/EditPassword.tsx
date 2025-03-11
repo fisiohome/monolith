@@ -1,4 +1,7 @@
-import SettingsLayout from "@/components/admin-portal/settings/layout";
+import {
+	SettingSectionLayout,
+	SettingLayout,
+} from "@/components/admin-portal/settings/layout";
 import { Button } from "@/components/ui/button";
 import {
 	Form,
@@ -9,32 +12,35 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type { User } from "@/types/auth";
 import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, router, usePage } from "@inertiajs/react";
-import { Eye, EyeClosed } from "lucide-react";
+import { Eye, EyeClosed, Info } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
+import { useTranslation } from "react-i18next";
 
 export interface EditPasswordPageProps {
-	user: Pick<
-		User,
-		| "id"
-		| "email"
-		| "lastOnlineAt"
-		| "suspendAt"
-		| "suspendEnd"
-		| "createdAt"
-		| "updatedAt"
-	>;
+	user: Pick<User, "id" | "email">;
 }
 
 export default function EditPassword({ user }: EditPasswordPageProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
+	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
+	const { t } = useTranslation("translation", {
+		keyPrefix: "settings.account_security",
+	});
+	const { t: tcpf } = useTranslation("translation", {
+		keyPrefix: "settings.account_security.change_password.form",
+	});
 
+	// form state group
 	const [passwordVisibility, setPasswordVisibility] = useState({
 		new: false,
 		confirmation: false,
@@ -108,174 +114,199 @@ export default function EditPassword({ user }: EditPasswordPageProps) {
 
 	return (
 		<>
-			<Head title="Change Password" />
+			<Head title={t("title")} />
 
-			<SettingsLayout
-				featureTitle="Change Password"
-				featureDescription="Update your account password settings."
-			>
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="grid space-y-4 lg:w-8/12"
-					>
-						<FormField
-							control={form.control}
-							name="email"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Email</FormLabel>
-									<FormControl>
-										<Input
-											{...field}
-											type="email"
-											placeholder="Enter the email..."
-											readOnly
-										/>
-									</FormControl>
+			<SettingLayout>
+				<SettingSectionLayout
+					title={t("change_password.title")}
+					description={t("change_password.description")}
+				>
+					<Alert variant="warning">
+						<Info className="w-4 h-4" />
+						<AlertTitle>Info</AlertTitle>
+						<AlertDescription className="text-pretty">
+							{t("change_password.alert")}
+						</AlertDescription>
+					</Alert>
 
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					<Form {...form}>
+						<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-8">
+							<div className="grid w-full gap-4 lg:w-6/12">
+								<FormField
+									control={form.control}
+									name="email"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>{tcpf("email.label")}</FormLabel>
+											<FormControl>
+												<Input
+													{...field}
+													readOnly
+													type="email"
+													placeholder={`${tcpf("email.placeholder")}...`}
+													className="shadow-inner bg-sidebar"
+												/>
+											</FormControl>
 
-						<FormField
-							control={form.control}
-							name="password"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>New Password</FormLabel>
-									<FormControl>
-										<div className="relative">
-											<Input
-												{...field}
-												type={passwordVisibility.new ? "text" : "password"}
-												placeholder="Enter the new password..."
-												autoComplete="new-password"
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
-												onClick={() => {
-													setPasswordVisibility({
-														...passwordVisibility,
-														new: !passwordVisibility.new,
-													});
-												}}
-											>
-												{!passwordVisibility.new ? (
-													<Eye className="size-4" />
-												) : (
-													<EyeClosed className="size-4" />
-												)}
-												<span className="sr-only">
-													Toggle Password Visibility
-												</span>
-											</Button>
-										</div>
-									</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="password"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>{tcpf("new_password.label")}</FormLabel>
+											<FormControl>
+												<div className="relative">
+													<Input
+														{...field}
+														type={passwordVisibility.new ? "text" : "password"}
+														placeholder={`${tcpf("new_password.placeholder")}...`}
+														autoComplete="new-password"
+														className="shadow-inner bg-sidebar"
+													/>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
+														onClick={() => {
+															setPasswordVisibility({
+																...passwordVisibility,
+																new: !passwordVisibility.new,
+															});
+														}}
+													>
+														{!passwordVisibility.new ? (
+															<Eye className="size-4" />
+														) : (
+															<EyeClosed className="size-4" />
+														)}
+														<span className="sr-only">
+															Toggle Password Visibility
+														</span>
+													</Button>
+												</div>
+											</FormControl>
 
-						<FormField
-							control={form.control}
-							name="passwordConfirmation"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Password Confirmation</FormLabel>
-									<FormControl>
-										<div className="relative">
-											<Input
-												{...field}
-												type={
-													passwordVisibility.confirmation ? "text" : "password"
-												}
-												placeholder="Enter the password confirmation..."
-												autoComplete="new-password"
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
-												onClick={() => {
-													setPasswordVisibility({
-														...passwordVisibility,
-														confirmation: !passwordVisibility.confirmation,
-													});
-												}}
-											>
-												{!passwordVisibility.confirmation ? (
-													<Eye className="size-4" />
-												) : (
-													<EyeClosed className="size-4" />
-												)}
-												<span className="sr-only">
-													Toggle Password Visibility
-												</span>
-											</Button>
-										</div>
-									</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="passwordConfirmation"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>
+												{tcpf("password_confirmation.label")}
+											</FormLabel>
+											<FormControl>
+												<div className="relative">
+													<Input
+														{...field}
+														type={
+															passwordVisibility.confirmation
+																? "text"
+																: "password"
+														}
+														placeholder={`${tcpf("password_confirmation.placeholder")}...`}
+														autoComplete="new-password"
+														className="shadow-inner bg-sidebar"
+													/>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
+														onClick={() => {
+															setPasswordVisibility({
+																...passwordVisibility,
+																confirmation: !passwordVisibility.confirmation,
+															});
+														}}
+													>
+														{!passwordVisibility.confirmation ? (
+															<Eye className="size-4" />
+														) : (
+															<EyeClosed className="size-4" />
+														)}
+														<span className="sr-only">
+															Toggle Password Visibility
+														</span>
+													</Button>
+												</div>
+											</FormControl>
 
-						<FormField
-							control={form.control}
-							name="currentPassword"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Current Password</FormLabel>
-									<FormControl>
-										<div className="relative">
-											<Input
-												{...field}
-												type={passwordVisibility.current ? "text" : "password"}
-												placeholder="Enter the current password..."
-												autoComplete="current-password"
-											/>
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon"
-												className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
-												onClick={() => {
-													setPasswordVisibility({
-														...passwordVisibility,
-														current: !passwordVisibility.current,
-													});
-												}}
-											>
-												{!passwordVisibility.current ? (
-													<Eye className="size-4" />
-												) : (
-													<EyeClosed className="size-4" />
-												)}
-												<span className="sr-only">
-													Toggle Password Visibility
-												</span>
-											</Button>
-										</div>
-									</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+								<FormField
+									control={form.control}
+									name="currentPassword"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>{tcpf("current_password.label")}</FormLabel>
+											<FormControl>
+												<div className="relative">
+													<Input
+														{...field}
+														type={
+															passwordVisibility.current ? "text" : "password"
+														}
+														placeholder={`${tcpf("current_password.placeholder")}...`}
+														autoComplete="current-password"
+														className="shadow-inner bg-sidebar"
+													/>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														className="absolute -translate-y-1/2 right-1 top-1/2 h-7 w-7 text-muted-foreground"
+														onClick={() => {
+															setPasswordVisibility({
+																...passwordVisibility,
+																current: !passwordVisibility.current,
+															});
+														}}
+													>
+														{!passwordVisibility.current ? (
+															<Eye className="size-4" />
+														) : (
+															<EyeClosed className="size-4" />
+														)}
+														<span className="sr-only">
+															Toggle Password Visibility
+														</span>
+													</Button>
+												</div>
+											</FormControl>
 
-						<div className="flex !mt-6">
-							<Button type="submit">Update</Button>
-						</div>
-					</form>
-				</Form>
-			</SettingsLayout>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
+
+							<div className="flex justify-end">
+								<Button
+									size={!isDekstop ? "default" : "sm"}
+									type="submit"
+									className="w-full md:w-auto"
+								>
+									Update
+								</Button>
+							</div>
+						</form>
+					</Form>
+				</SettingSectionLayout>
+			</SettingLayout>
 		</>
 	);
 }

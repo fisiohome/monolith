@@ -27,6 +27,7 @@ import type { AdminTypes } from "@/types/admin-portal/admin";
 import { Link } from "@inertiajs/react";
 import {
 	ChevronsUpDown,
+	Languages,
 	LogOut,
 	Moon,
 	Settings,
@@ -34,6 +35,7 @@ import {
 	SunMoon,
 } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface NavUserProps {
 	userData: {
@@ -49,16 +51,22 @@ export interface NavUserProps {
 }
 
 export function NavUser() {
-	const { isMobile } = useSidebar();
+	const { isMobile, toggleSidebar } = useSidebar();
+	const { t, i18n } = useTranslation("translation", {
+		keyPrefix: "settings.appearance",
+	});
 
-	// theme context
+	// * theme context
 	const { theme, setTheme } = useTheme();
 	const handleToggleTheme = (value: string) => {
 		const themeValue = value as Theme;
 		setTheme(themeValue);
 	};
 
-	// navigation context
+	// * language context
+	const selectedLang = useMemo(() => i18n.language, [i18n.language]);
+
+	// * navigation context
 	const { navigation } = useNavigation();
 	const user = useMemo(
 		() => navigation.user?.userData,
@@ -157,14 +165,51 @@ export function NavUser() {
 											value="system"
 											onSelect={(event) => event.preventDefault()}
 										>
-											System
+											System Device
+										</DropdownMenuRadioItem>
+									</DropdownMenuRadioGroup>
+								</DropdownMenuSubContent>
+							</DropdownMenuPortal>
+						</DropdownMenuSub>
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								<Languages className="h-[1.2rem] w-[1.2rem]" />
+								Language
+							</DropdownMenuSubTrigger>
+							<DropdownMenuPortal>
+								<DropdownMenuSubContent>
+									<DropdownMenuRadioGroup
+										value={selectedLang}
+										onValueChange={(value) => {
+											i18n.changeLanguage(value);
+										}}
+									>
+										<DropdownMenuRadioItem
+											value="en"
+											onSelect={(event) => event.preventDefault()}
+										>
+											{t("language.choice.english")}
+										</DropdownMenuRadioItem>
+										<DropdownMenuRadioItem
+											value="id"
+											onSelect={(event) => event.preventDefault()}
+										>
+											{t("language.choice.indonesian")}
 										</DropdownMenuRadioItem>
 									</DropdownMenuRadioGroup>
 								</DropdownMenuSubContent>
 							</DropdownMenuPortal>
 						</DropdownMenuSub>
 						<DropdownMenuGroup>
-							<DropdownMenuItem asChild className="hover:cursor-pointer">
+							<DropdownMenuItem
+								asChild
+								className="hover:cursor-pointer"
+								onClick={() => {
+									if (!isMobile) return;
+
+									toggleSidebar();
+								}}
+							>
 								<Link href={url.account}>
 									<Settings />
 									Settings

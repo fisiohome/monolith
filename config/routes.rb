@@ -36,8 +36,14 @@ Rails.application.routes.draw do
         put "activate" => "users#activate_account"
 
         resources :dashboards, only: [:index]
+
         resources :appointments, only: [:index, :new]
         post "book" => "appointments#create", :as => "appointment_book"
+
+        namespace :settings do
+          get "account_security"
+          get "appearance"
+        end
 
         resources :availabilities, only: [:index] do
           collection do

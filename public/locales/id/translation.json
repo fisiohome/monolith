@@ -1,0 +1,60 @@
+{
+	"settings": {
+		"title": "Pengaturan",
+		"description": "Kelola pengaturan dan preferensi akun Anda.",
+		"account_security": {
+			"title": "Pengaturan Akun dan Keamanan",
+			"tab": {
+				"title": "Keamanan",
+				"description": "Mengenai pengaturan keamanan Anda."
+			},
+			"change_password": {
+				"title": "Ubah Kata Sandi",
+				"description": "Perbarui kata sandi Anda untuk menjaga keamanan akun Anda.",
+				"alert": "Pastikan panjangnya minimal 8 karakter dan mencakup campuran huruf, angka, dan simbol atau karakter khusus.",
+				"form": {
+					"email": {
+						"label": "Email",
+						"placeholder": "Masukkan email"
+					},
+					"new_password": {
+						"label": "Kata Sandi Baru",
+						"placeholder": "Masukkan kata sandi yang baru"
+					},
+					"password_confirmation": {
+						"label": "Konfirmasi Kata Sandi",
+						"placeholder": "Masukkan konfirmasi kata sandi"
+					},
+					"current_password": {
+						"label": "Kata Sandi Saat Ini",
+						"placeholder": "Masukkan kata sandi saat ini"
+					}
+				}
+			}
+		},
+		"appearance": {
+			"title": "Pengaturan Tampilan",
+			"tab": {
+				"title": "Penampilan",
+				"description": "Sesuaikan tampilan antarmuka pada akun Anda."
+			},
+			"language": {
+				"title": "Bahasa",
+				"description": "Pilih bahasa yang paling nyaman bagi Anda untuk meningkatkan pengalaman pengguna.",
+				"choice": {
+					"english": "Inggris",
+					"indonesian": "Indonesia"
+				}
+			},
+			"theme": {
+				"title": "Tema",
+				"description": "Memilih tema untuk antarmuka.",
+				"choice": {
+					"system": "Perangkat Sistem",
+					"light": "Terang",
+					"dark": "Gelap"
+				}
+			}
+		}
+	}
+}

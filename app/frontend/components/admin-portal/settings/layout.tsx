@@ -1,79 +1,140 @@
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { type ComponentProps, useCallback, useMemo } from "react";
+import {
+	FormPageContainer,
+	FormPageHeaderGridPattern,
+} from "../shared/page-layout";
+import { router, usePage } from "@inertiajs/react";
 import type { GlobalPageProps } from "@/types/globals";
-import { usePage } from "@inertiajs/react";
-import { ChevronLeft } from "lucide-react";
-import { type ComponentProps, useMemo } from "react";
-import { SidebarNav } from "./sidebar-nav";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
-export interface SettingsLayoutProps extends ComponentProps<"article"> {
-	featureTitle: string;
-	featureDescription: string;
-}
+export interface SettingLayoutProps extends ComponentProps<"div"> {}
 
-export default function SettingsLayout({
-	children,
-	featureTitle,
-	featureDescription,
-}: SettingsLayoutProps) {
-	const { props: globalProps, url: pageUrl } = usePage<GlobalPageProps>();
+export function SettingLayout({ children }: SettingLayoutProps) {
+	const { props: globalProps } = usePage<GlobalPageProps>();
+	const { t } = useTranslation("translation", { keyPrefix: "settings" });
 
-	const sidebarNavItems = useMemo(() => {
-		const items = [
+	// * tab management state
+	const tabs = useMemo(() => {
+		return [
 			{
-				title: "Change Password",
-				href: globalProps.adminPortal.router.auth.registration.edit,
-				isActive: false,
+				title: t("account_security.tab.title"),
+				value: "security" as const,
+				path: globalProps.adminPortal.router.adminPortal.settings
+					.accountSecurity,
+				description: t("account_security.tab.description"),
+			},
+			{
+				title: t("appearance.tab.title"),
+				value: "appearance" as const,
+				path: globalProps.adminPortal.router.adminPortal.settings.appearance,
+				description: t("appearance.tab.description"),
 			},
 		];
+	}, [globalProps.adminPortal.router, t]);
+	const tabSelected = useMemo(
+		() => tabs.find((tab) => window.location.pathname.includes(tab.path)),
+		[tabs],
+	);
+	const onValueChangeTab = useCallback(
+		(value: (typeof tabs)[number]["value"]) => {
+			const selectedTab = tabs.find((tab) => tab.value === value);
+			const path = selectedTab?.path;
 
-		return items.map((item) => {
-			return {
-				...item,
-				isActive: item.href === pageUrl,
-			};
-		});
-	}, [globalProps.adminPortal.router.auth.registration.edit, pageUrl]);
+			if (!path) {
+				console.error("path cannot be found in the requested settings section");
+				return;
+			}
+
+			router.visit(path);
+		},
+		[tabs],
+	);
 
 	return (
-		<article className="min-h-[100vh] flex-1 rounded-xl bg-sidebar shadow-inner md:min-h-min p-6 space-y-6 md:block">
-			<div className="-space-y-0.5">
-				<Button
-					onClick={() => window.history.back()}
-					variant="link"
-					className="p-0"
-				>
-					<ChevronLeft className="size-4" />
-					<span>Back</span>
-				</Button>
+		<FormPageContainer>
+			<section className="flex flex-col">
+				<FormPageHeaderGridPattern
+					title={t("title")}
+					description={t("description")}
+					titleClass="text-lg"
+					descriptionClass="text-base tracking-tight"
+				/>
+			</section>
 
-				<div className="space-y-0.5">
-					<h1 className="text-xl font-bold tracking-tight">
-						<span>Settings</span>
-					</h1>
-					<p className="text-muted-foreground">
-						Manage your account settings and preferences.
-					</p>
-				</div>
-			</div>
-			<Separator className="my-6 bg-muted-foreground/50" />
-			<div className="flex flex-col space-y-8 lg:flex-row lg:space-x-6 lg:space-y-0">
-				<aside className="lg:w-1/5">
-					<SidebarNav items={sidebarNavItems} />
-				</aside>
-				<div className="flex-1 lg:max-w-2xl">
-					<div className="space-y-6">
-						<div>
-							<h3 className="text-lg font-medium">{featureTitle}</h3>
-							<p className="text-sm text-muted-foreground">
-								{featureDescription}
-							</p>
+			<Tabs
+				defaultValue={tabSelected?.value}
+				onValueChange={(value) => {
+					onValueChangeTab(value as (typeof tabs)[number]["value"]);
+				}}
+				className="w-full"
+			>
+				<TabsList className="border border-border">
+					{tabs?.map((tab) => (
+						<TabsTrigger
+							key={tab.value}
+							value={tab.value}
+							className="data-[state=active]:shadow-inner"
+						>
+							{tab.title}
+						</TabsTrigger>
+					))}
+				</TabsList>
+
+				{tabs?.map((tab) => (
+					<TabsContent
+						key={tab.value}
+						value={tab.value}
+						className="p-4 border shadow-inner bg-background md:p-6 border-border rounded-xl"
+					>
+						<div className="grid gap-4">
+							<div>
+								<h2 className="z-10 text-base font-bold tracking-tighter whitespace-pre-wrap">
+									{tab.title}
+								</h2>
+								<p className="text-sm text-muted-foreground text-pretty">
+									{tab.description}
+								</p>
+							</div>
+
+							<Separator />
+
+							{children}
 						</div>
-						<Separator className="bg-muted-foreground/50" />
-						{children}
-					</div>
-				</div>
-			</div>
+					</TabsContent>
+				))}
+			</Tabs>
+		</FormPageContainer>
+	);
+}
+
+interface SettingSectionLayoutProps extends ComponentProps<"article"> {
+	title: string;
+	description: string;
+}
+
+export function SettingSectionLayout({
+	children,
+	className,
+	title,
+	description,
+}: SettingSectionLayoutProps) {
+	return (
+		<article className={cn("grid grid-cols-12 gap-4 md:gap-6", className)}>
+			<section className="col-span-full md:col-span-4">
+				<h2 className="z-10 text-sm font-semibold tracking-tighter whitespace-pre-wrap">
+					{title}
+				</h2>
+				<p className="text-sm text-muted-foreground text-pretty">
+					{description}
+				</p>
+			</section>
+
+			<article className="grid gap-4 col-span-full md:col-span-8">
+				{children}
+			</article>
 		</article>
 	);
 }
