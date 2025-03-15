@@ -16,7 +16,7 @@ Rails.logger.info("=== Starting to create the services and locations... ===")
 Rails.logger.info("Creating the locations...")
 
 # country name and country code based on https://api.countrystatecity.in/play as uppercase value
-# FOR INDONESIAN COUNTRY BASED ON https://api.cahyadsn.com/
+# FOR INDONESIAN COUNTRY BASED ON https://api.cahyadsn.com/ or https://github.com/alifbint/indonesia-38-provinsi/tree/main
 begin
   locations = LOCATIONS_DATA
 
@@ -31,6 +31,18 @@ rescue => e
 end
 
 Rails.logger.info("Locations seeding completed")
+
+# seeding the indonesian areas
+Rails.logger.info ""
+Rails.logger.info("Creating the indonesian areas...")
+
+INDONESIAN_AREAS.each do |area_data, index|
+  area = IndonesianArea.find_or_initialize_by(code: area_data[:code])
+  area.assign_attributes(area_data)
+  area.save!
+end
+
+Rails.logger.info("Indonesian area seeding completed")
 
 # seeding the services
 Rails.logger.info ""

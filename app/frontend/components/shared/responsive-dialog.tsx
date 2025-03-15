@@ -22,6 +22,7 @@ import {
 	DrawerTitle,
 } from "../ui/drawer";
 import { ScrollArea } from "../ui/scroll-area";
+import i18n from "@/lib/i18n";
 
 const DIALOG_MODE: ResponsiveDialogMode = "dialog";
 
@@ -79,7 +80,9 @@ export const ResponsiveDialog = ({
 					{children}
 					<DrawerFooter className="px-0 pt-4">
 						<DrawerClose asChild className="p-0">
-							<Button variant="outline">Cancel</Button>
+							<Button variant="outline">
+								{i18n.t("components.modal.cancel")}
+							</Button>
 						</DrawerClose>
 					</DrawerFooter>
 				</div>
@@ -105,9 +108,9 @@ export const ResponsiveDialogButton = ({
 	forceMode = DIALOG_MODE,
 	isLoading,
 	cancelButton = true,
-	cancelText = "Cancel",
-	loaderText = "Please wait...",
-	submitText = "Save",
+	cancelText = i18n.t("components.modal.cancel"),
+	loaderText = `${i18n.t("components.modal.wait")}...`,
+	submitText = i18n.t("components.modal.save"),
 }: ResponsiveDialogButton) => {
 	const isDekstop = useMediaQuery("(min-width: 768px)");
 

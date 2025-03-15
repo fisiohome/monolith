@@ -55,6 +55,7 @@ export function NavUser() {
 	const { t, i18n } = useTranslation("translation", {
 		keyPrefix: "settings.appearance",
 	});
+	const { t: tsm } = useTranslation("side-menu");
 
 	// * theme context
 	const { theme, setTheme } = useTheme();
@@ -140,7 +141,7 @@ export function NavUser() {
 										<Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
 									</>
 								)}
-								Toggle Theme
+								{tsm("toggle_theme")}
 							</DropdownMenuSubTrigger>
 							<DropdownMenuPortal>
 								<DropdownMenuSubContent>
@@ -152,20 +153,20 @@ export function NavUser() {
 											value="dark"
 											onSelect={(event) => event.preventDefault()}
 										>
-											Dark
+											{t("theme.choice.dark")}
 										</DropdownMenuRadioItem>
 										<DropdownMenuRadioItem
 											value="light"
 											onSelect={(event) => event.preventDefault()}
 										>
-											Light
+											{t("theme.choice.light")}
 										</DropdownMenuRadioItem>
 										<DropdownMenuSeparator />
 										<DropdownMenuRadioItem
 											value="system"
 											onSelect={(event) => event.preventDefault()}
 										>
-											System Device
+											{t("theme.choice.system")}
 										</DropdownMenuRadioItem>
 									</DropdownMenuRadioGroup>
 								</DropdownMenuSubContent>
@@ -174,7 +175,7 @@ export function NavUser() {
 						<DropdownMenuSub>
 							<DropdownMenuSubTrigger>
 								<Languages className="h-[1.2rem] w-[1.2rem]" />
-								Language
+								{t("language.title")}
 							</DropdownMenuSubTrigger>
 							<DropdownMenuPortal>
 								<DropdownMenuSubContent>
@@ -212,7 +213,7 @@ export function NavUser() {
 							>
 								<Link href={url.account}>
 									<Settings />
-									Settings
+									{tsm("settings")}
 								</Link>
 							</DropdownMenuItem>
 						</DropdownMenuGroup>
@@ -220,7 +221,7 @@ export function NavUser() {
 						<DropdownMenuItem asChild className="hover:cursor-pointer">
 							<a href={url.logout}>
 								<LogOut />
-								Log out
+								{tsm("logout")}
 							</a>
 						</DropdownMenuItem>
 					</DropdownMenuContent>

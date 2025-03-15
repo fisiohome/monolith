@@ -5,11 +5,13 @@ import type { GlobalPageProps } from "@/types/globals";
 import { router, usePage } from "@inertiajs/react";
 import { Search } from "lucide-react";
 import { type ChangeEvent, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function ToolbarTable({
 	table: _,
 }: { table: TableToolbarDataProps }) {
 	const { url: pageURL, props: globalProps } = usePage<GlobalPageProps>();
+	const { t: tl } = useTranslation("translation", { keyPrefix: "locations" });
 
 	const [filterBy, setFilterBy] = useState({
 		country: globalProps?.adminPortal?.currentQuery?.country || "",
@@ -65,7 +67,7 @@ export default function ToolbarTable({
 					value={filterBy.country}
 					StartIcon={{ icon: Search }}
 					type="text"
-					placeholder="Filter by country..."
+					placeholder={`${tl("filter.country")}...`}
 					onChange={(event) => handleFilterBy({ event, type: "country" })}
 				/>
 			</div>
@@ -75,7 +77,7 @@ export default function ToolbarTable({
 					value={filterBy.state}
 					StartIcon={{ icon: Search }}
 					type="text"
-					placeholder="Filter by state..."
+					placeholder={`${tl("filter.state")}...`}
 					onChange={(event) => handleFilterBy({ event, type: "state" })}
 				/>
 			</div>
@@ -85,7 +87,7 @@ export default function ToolbarTable({
 					value={filterBy.city}
 					StartIcon={{ icon: Search }}
 					type="text"
-					placeholder="Filter by city..."
+					placeholder={`${tl("filter.city")}...`}
 					onChange={(event) => handleFilterBy({ event, type: "city" })}
 				/>
 			</div>

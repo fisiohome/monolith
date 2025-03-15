@@ -1,0 +1,13 @@
+{
+	"appointment": "Janji temu",
+	"availability": "Waktu Ketersediaan",
+	"user_management": "Manajemen Pengguna",
+	"admins": "Admin",
+	"therapists": "Terapis",
+	"brand_and_location": "Merek & Lokasi",
+	"brands": "Merek",
+	"locations": "Lokasi",
+	"toggle_theme": "Beralih Tema",
+	"settings": "Pengaturan",
+	"logout": "Keluar"
+}

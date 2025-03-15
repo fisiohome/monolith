@@ -12,6 +12,7 @@ import {
 import { createContext, useContext, useMemo } from "react";
 import type { NavMainProps } from "../admin-portal/sidebar/nav-main";
 import type { NavUserProps } from "../admin-portal/sidebar/nav-user";
+import { useTranslation } from "react-i18next";
 
 type NavigationProviderProps = {
 	children: React.ReactNode;
@@ -39,6 +40,7 @@ export function NavigationProvider({
 	...props
 }: NavigationProviderProps) {
 	const { props: globalProps, url: currentUrl } = usePage<GlobalPageProps>();
+	const { t } = useTranslation("side-menu");
 	const navUserProps = useMemo<NavUserProps>(() => {
 		const userData = {
 			name: humanize(globalProps.auth.currentUser?.name || "Admin"),
@@ -71,32 +73,32 @@ export function NavigationProvider({
 			subItems: [],
 		};
 		const appointmentMenu = {
-			title: "Appointment",
+			title: t("appointment"),
 			url: globalProps.adminPortal.router.adminPortal.appointment.index,
 			icon: Calendar1,
 			isActive: true,
 			subItems: [],
 		};
 		const availabilityMenu = {
-			title: "Availability Time",
+			title: t("availability"),
 			url: globalProps.adminPortal.router.adminPortal.availability.index,
 			icon: CalendarRange,
 			isActive: true,
 			subItems: [],
 		};
 		let userManagementMenu = {
-			title: "User Management",
+			title: t("user_management"),
 			url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
 			icon: Users,
 			isActive: false,
 			subItems: [
 				{
-					title: "Admins",
+					title: t("admins"),
 					url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
 					isActive: false,
 				},
 				{
-					title: "Therapists",
+					title: t("therapists"),
 					url: globalProps.adminPortal.router.adminPortal.therapistManagement
 						.index,
 					isActive: false,
@@ -104,19 +106,19 @@ export function NavigationProvider({
 			],
 		};
 		const serviceManagementMenu = {
-			title: "Brands & Locations",
+			title: t("brand_and_location"),
 			url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
 			icon: Hospital,
 			isActive: false,
 			subItems: [
 				{
-					title: "Brands",
+					title: t("brands"),
 					url: globalProps.adminPortal.router.adminPortal.serviceManagement
 						.index,
 					isActive: false,
 				},
 				{
-					title: "Locations",
+					title: t("locations"),
 					url: globalProps.adminPortal.router.adminPortal.locationManagement
 						.index,
 					isActive: false,
@@ -182,6 +184,7 @@ export function NavigationProvider({
 		globalProps.adminPortal.router.adminPortal,
 		globalProps.adminPortal.router.authenticatedRootPath,
 		globalProps.auth.currentUserType,
+		t,
 	]);
 
 	return (

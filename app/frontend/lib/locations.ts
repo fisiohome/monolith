@@ -1,9 +1,4 @@
-import type {
-	CityID,
-	GroupByLocation,
-	Location,
-	StateID,
-} from "@/types/admin-portal/location";
+import type { GroupByLocation, Location } from "@/types/admin-portal/location";
 
 export function groupLocationsByCountry(
 	locations: Location[],
@@ -65,7 +60,10 @@ export const getStatesID = async () => {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
-		const data = (await response.json()) as { data: StateID[] };
+		const data = (await response.json()) as {
+			data: { kode: string; nama: string }[];
+		};
+
 		return data.data || [];
 	} catch (error) {
 		console.error("Error fetching states:", error);
@@ -83,7 +81,9 @@ export const getCitiesID = async ({ stateId }: { stateId: string }) => {
 			throw new Error(`HTTP error! status: ${response.status}`);
 		}
 
-		const data = (await response.json()) as { data: CityID[] };
+		const data = (await response.json()) as {
+			data: { kode: string; nama: string }[];
+		};
 		return data.data || [];
 	} catch (error) {
 		console.error("Error fetching states:", error);

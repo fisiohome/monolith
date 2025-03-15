@@ -30,6 +30,7 @@ import {
 	ChevronsLeft,
 	ChevronsRight,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface DataTablePaginationProps<TData> {
 	table: Table<TData>;
@@ -40,23 +41,29 @@ export default function PaginationTable<TData>({
 	table,
 	metadata,
 }: DataTablePaginationProps<TData>) {
+	const { t } = useTranslation("translation", {
+		keyPrefix: "components.pagination",
+	});
+
 	return (
 		<div className="grid items-center grid-cols-2 gap-6 lg:grid-cols-12 text-muted-foreground">
 			<div className="text-nowrap">
 				{table.getFilteredSelectedRowModel().rows.length ? (
 					<div className="flex-1 text-sm">
-						{table.getFilteredSelectedRowModel().rows.length} of{" "}
-						{metadata.count} row(s) selected.
+						{table.getFilteredSelectedRowModel().rows.length} {t("of")}{" "}
+						{metadata.count} {t("row_selected")}
 					</div>
 				) : (
 					<div className="flex-1 text-sm">
-						<div>{metadata.count} records found</div>
+						<div>
+							{metadata.count} {t("records_found")}
+						</div>
 					</div>
 				)}
 			</div>
 
 			<div className="flex items-center justify-end space-x-2 lg:col-end-9 2xl:col-end-10">
-				<p className="text-sm text-nowrap">Rows per page</p>
+				<p className="text-sm text-nowrap">{t("rows_per_page")}</p>
 				<Select
 					value={`${metadata.limit}`}
 					onValueChange={(value) => {
@@ -81,7 +88,7 @@ export default function PaginationTable<TData>({
 
 			<div className="flex items-center justify-center col-span-2 gap-2 lg:col-end-13 lg:justify-end">
 				<div className="lg:flex w-[100px] items-center text-sm hidden whitespace-nowrap">
-					Page {metadata.page} of {metadata.pages}
+					{t("page")} {metadata.page} {t("of")} {metadata.pages}
 				</div>
 
 				<div className="flex items-center space-x-2">
@@ -97,7 +104,7 @@ export default function PaginationTable<TData>({
 									}
 									disabled={!metadata.prev}
 								>
-									<span className="sr-only">Go to first page</span>
+									<span className="sr-only">{t("go_to_first")}</span>
 									<ChevronsLeft />
 								</Button>
 								<Button
@@ -108,7 +115,7 @@ export default function PaginationTable<TData>({
 									}
 									disabled={!metadata.prev}
 								>
-									<span className="sr-only">Go to previous page</span>
+									<span className="sr-only">{t("go_to_previous")}</span>
 									<ChevronLeft />
 								</Button>
 							</PaginationItem>
@@ -131,7 +138,7 @@ export default function PaginationTable<TData>({
 											<div className="grid gap-2">
 												<div className="flex items-center w-[180px] gap-4">
 													<Label htmlFor="goto" className="text-nowrap">
-														Go to page
+														{t("go_to_page")}
 													</Label>
 													<Input
 														id="goto"
@@ -170,7 +177,7 @@ export default function PaginationTable<TData>({
 									}
 									disabled={!metadata.next}
 								>
-									<span className="sr-only">Go to next page</span>
+									<span className="sr-only">{t("go_to_next")}</span>
 									<ChevronRight />
 								</Button>
 								<Button
@@ -181,7 +188,7 @@ export default function PaginationTable<TData>({
 									}
 									disabled={!metadata.next}
 								>
-									<span className="sr-only">Go to last page</span>
+									<span className="sr-only">{t("go_to_last")}</span>
 									<ChevronsRight />
 								</Button>
 							</PaginationItem>

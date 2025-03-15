@@ -22,14 +22,16 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { populateQueryParams } from "@/lib/utils";
-import type { Location } from "@/types/admin-portal/location";
+import type { Location, StateID } from "@/types/admin-portal/location";
 import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
 import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, Table as TableTanstack } from "@tanstack/react-table";
 import { Ellipsis, Plus } from "lucide-react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface PageProps {
 	locations: {
@@ -37,13 +39,29 @@ export interface PageProps {
 		metadata: Metadata;
 	};
 	selectedLocations: Location[] | null;
+	optionsData?: {
+		provinces: StateID[];
+		cities: StateID[];
+	};
 }
+export type LocationGlobalPageProps = GlobalPageProps &
+	PageProps & {
+		[key: string]: unknown;
+		errors: {
+			locations: Array<{
+				index: number;
+				messages: Partial<Record<keyof Location, string[]>>;
+			}>;
+		};
+	};
 export type TableToolbarDataProps = TableTanstack<
 	PageProps["locations"]["data"][number]
 >;
 
 export default function Index({ locations, selectedLocations }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
+	const isMobile = useIsMobile();
+	const { t: tl } = useTranslation("translation", { keyPrefix: "locations" });
 
 	// table management
 	const routeTo = {
@@ -78,51 +96,68 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 			);
 		},
 	};
-	const columns: ColumnDef<PageProps["locations"]["data"][number]>[] = [
-		{
-			accessorKey: "country",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Country" />
-			),
-			enableSorting: false,
-			enableHiding: false,
-			cell: ({ row }) => {
-				return (
-					<div className="flex items-center space-x-3">
-						<img
-							src={`https://flagcdn.com/h20/${row.original.countryCode.toLowerCase()}.webp`}
-							alt={row.original.country}
-							className="h-4 border"
-						/>
-
-						<div className="flex flex-row items-center space-x-1.5">
-							<span className="text-xs font-light">
-								{row.original.countryCode}
-							</span>
-							<Separator orientation="vertical" className="h-4" />
-							<p className="font-semibold">{row.original.country}</p>
-						</div>
-					</div>
-				);
+	const columns = useMemo<
+		ColumnDef<PageProps["locations"]["data"][number]>[]
+	>(() => {
+		const items: ColumnDef<PageProps["locations"]["data"][number]>[] = [
+			{
+				accessorKey: "state",
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title={tl("table.header.state")}
+					/>
+				),
+				enableSorting: false,
+				enableHiding: false,
 			},
-		},
-		{
-			accessorKey: "state",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="State/Province" />
-			),
-			enableSorting: false,
-			enableHiding: false,
-		},
-		{
-			accessorKey: "city",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="City" />
-			),
-			enableSorting: false,
-			enableHiding: false,
-		},
-		{
+			{
+				accessorKey: "city",
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title={tl("table.header.city")}
+					/>
+				),
+				enableSorting: false,
+				enableHiding: false,
+			},
+		];
+
+		if (!isMobile) {
+			items.unshift({
+				accessorKey: "country",
+				header: ({ column }) => (
+					<DataTableColumnHeader
+						column={column}
+						title={tl("table.header.country")}
+					/>
+				),
+				enableSorting: false,
+				enableHiding: false,
+				cell: ({ row }) => {
+					return (
+						<div className="flex items-center space-x-3">
+							<img
+								src={`https://flagcdn.com/h20/${row.original.countryCode.toLowerCase()}.webp`}
+								alt={row.original.country}
+								className="h-4 border"
+							/>
+
+							<div className="flex flex-row items-center space-x-1.5">
+								<span className="text-xs font-light">
+									{row.original.countryCode}
+								</span>
+								<Separator orientation="vertical" className="h-4" />
+								<p className="font-semibold">{row.original.country}</p>
+							</div>
+						</div>
+					);
+				},
+			});
+		}
+
+		items.push({
 			id: "actions",
 			cell: ({ row }) => {
 				if (globalProps.auth.currentUserType === "THERAPIST") return;
@@ -137,14 +172,14 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 							</DropdownMenuTrigger>
 
 							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>Actions</DropdownMenuLabel>
+								<DropdownMenuLabel>{tl("button.actions")}</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 
 								<DropdownMenuGroup>
 									<DropdownMenuItem
 										onSelect={() => routeTo.editLocation([row.original.id])}
 									>
-										Edit
+										{tl("button.edit")}
 									</DropdownMenuItem>
 								</DropdownMenuGroup>
 
@@ -152,15 +187,23 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 								<DropdownMenuItem
 									onSelect={() => routeTo.deleteLocation([row.original.id])}
 								>
-									Delete
+									{tl("button.delete")}
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
 					</div>
 				);
 			},
-		},
-	];
+		});
+
+		return items;
+	}, [
+		globalProps.auth.currentUserType,
+		isMobile,
+		routeTo.editLocation,
+		routeTo.deleteLocation,
+		tl,
+	]);
 
 	// for add location
 	const formDialogMode = useMemo(() => {
@@ -173,12 +216,12 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 	}, [globalProps.adminPortal?.currentQuery]);
 	const formDialog = useMemo<ResponsiveDialogProps>(() => {
 		const isOpen = formDialogMode.isCreateMode || formDialogMode.isEditMode;
-		let title = "New Location";
-		let description = "Add new locations available for service.";
+		let title = tl("modal.add.title");
+		let description = tl("modal.add.description");
 
 		if (formDialogMode.isEditMode) {
-			title = "Update Location";
-			description = "Update the details of available location data.";
+			title = tl("modal.update.title");
+			description = tl("modal.update.title");
 		}
 
 		return {
@@ -205,7 +248,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 				);
 			},
 		};
-	}, [pageURL, formDialogMode]);
+	}, [pageURL, formDialogMode, tl]);
 	const alertFormDialog = useMemo(() => {
 		const isOpen = formDialogMode.isDeleteMode;
 
@@ -230,10 +273,12 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 
 	return (
 		<>
-			<Head title="Location Availability" />
+			<Head title={tl("head_title")} />
 
 			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">Our Locations</h1>
+				<h1 className="text-2xl font-bold tracking-tight">
+					{tl("page_title")}
+				</h1>
 				{globalProps.auth.currentUserType === "ADMIN" && (
 					<Button
 						onClick={(event) => {
@@ -242,7 +287,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 						}}
 					>
 						<Plus />
-						Add Location
+						{tl("button.add")}
 					</Button>
 				)}
 			</PageContainer>

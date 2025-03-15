@@ -20,6 +20,10 @@ export type GroupByLocation = {
 	}[];
 };
 
-// from get indonesian province external API: https://api.cahyadsn.com/
-export type StateID = { kode: string; nama: string };
-export type CityID = { kode: string; nama: string };
+// from get indonesian province external API: https://api.cahyadsn.com/ or https://github.com/alifbint/indonesia-38-provinsi/tree/main
+export type StateID = {
+	id: number;
+	code: string;
+	name: string;
+	areaType: string;
+} & Timestamp;

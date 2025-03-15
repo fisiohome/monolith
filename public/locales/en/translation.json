@@ -1,4 +1,81 @@
 {
+	"components": {
+		"modal": {
+			"cancel": "Cancel",
+			"wait": "Please wait",
+			"save": "Save"
+		},
+		"pagination": {
+			"of": "of",
+			"page": "Page",
+			"row_selected": "row(s) selected",
+			"records_found": "records found",
+			"rows_per_page": "Rows per page",
+			"go_to_page": "Go to page",
+			"go_to_first": "Go to first page",
+			"go_to_previous": "Go to previous page",
+			"go_to_next": "Go to next page",
+			"go_to_last": "Go to last page"
+		}
+	},
+	"locations": {
+		"head_title": "Location Availability",
+		"page_title": "Our Locations",
+		"button": {
+			"actions": "Actions",
+			"add": "Add Location",
+			"edit": "Edit",
+			"delete": "Delete"
+		},
+		"filter": {
+			"country": "Filter by country",
+			"state": "Filter by state",
+			"city": "Filter by city"
+		},
+		"table": {
+			"header": {
+				"city": "City",
+				"state": "State/Province",
+				"country": "Country"
+			}
+		},
+		"modal": {
+			"add": {
+				"title": "New Location",
+				"description": "Add new locations available for service."
+			},
+			"update": {
+				"title": "Update Location",
+				"description": "Update the details of available location data."
+			},
+			"delete": {
+				"title": "Are you absolutely sure?",
+				"description": "This action is irreversible. Deleting actions will permanently remove data from our servers and cannot be recovered.",
+				"loading": "Deleting"
+			},
+			"fields": {
+				"country": {
+					"label": "Country Name",
+					"placeholder": "Enter the country name"
+				},
+				"state": {
+					"label": "State/Province",
+					"placeholder": "Select state/province",
+					"search": "Search state/province",
+					"empty_search": "No state or province found."
+				},
+				"city": {
+					"label": "City",
+					"placeholder": "Select city",
+					"search": "Search city",
+					"empty_search": "No city found."
+				}
+			},
+			"buttons": {
+				"add_more": "Add more location"
+			}
+		}
+	},
 	"settings": {
 		"title": "Settings",
 		"description": "Manage your account settings and preferences.",

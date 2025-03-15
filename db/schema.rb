@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_02_23_172545) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_14_213943) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -90,6 +90,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_23_172545) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["bank_name", "account_number"], name: "index_bank_details_on_bank_name_and_account_number", unique: true
+  end
+
+  create_table "indonesian_areas", force: :cascade do |t|
+    t.string "code"
+    t.string "name"
+    t.string "area_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "location_services", force: :cascade do |t|
@@ -295,6 +303,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_02_23_172545) do
     t.datetime "suspend_end"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+  end
+
+  create_table "wilayah", primary_key: "kode", id: { type: :string, limit: 13 }, force: :cascade do |t|
+    t.string "nama", limit: 100
+    t.index ["nama"], name: "wilayah_name_idx"
   end
 
   add_foreign_key "addresses", "locations"

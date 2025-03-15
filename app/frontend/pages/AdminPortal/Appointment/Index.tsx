@@ -151,14 +151,7 @@ export default function AppointmentIndex() {
 							))}
 						</TabsList>
 
-						<Button
-							asChild
-							disabled={isTabChange}
-							className={cn(
-								"w-full md:w-fit",
-								!isAppointmentExist && "animate-pulse",
-							)}
-						>
+						<Button asChild disabled={isTabChange} className="w-full md:w-fit">
 							<Link
 								href={
 									globalProps.adminPortal.router.adminPortal.appointment.new
