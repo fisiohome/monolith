@@ -27,6 +27,14 @@ module AdminPortal
         selected_locations.map { |location| deep_transform_keys_to_camel_case(serialize_location(location)) }
       end
 
+      # get the indonesian provinces
+      get_indonesian_areas_lambda = lambda do
+        provinces = IndonesianArea.provinces.map { |province| deep_transform_keys_to_camel_case(province.as_json) }
+        cities = IndonesianArea.cities.map { |city| deep_transform_keys_to_camel_case(city.as_json) }
+
+        {provinces:, cities:}
+      end
+
       render inertia: "AdminPortal/Location/Index", props: deep_transform_keys_to_camel_case({
         locations: {
           metadata: pagy_metadata(@pagy),
@@ -34,7 +42,8 @@ module AdminPortal
             serialize_location(location)
           end
         },
-        selected_locations: -> { selected_locations_lambda.call }
+        selected_locations: -> { selected_locations_lambda.call },
+        options_data: InertiaRails.defer { get_indonesian_areas_lambda.call }
       })
     end
 

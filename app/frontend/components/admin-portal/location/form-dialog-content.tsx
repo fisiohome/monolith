@@ -31,16 +31,18 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { getCitiesID, getStatesID } from "@/lib/locations";
 import { cn } from "@/lib/utils";
-import type { CityID, Location, StateID } from "@/types/admin-portal/location";
+import type { LocationGlobalPageProps } from "@/pages/AdminPortal/Location/Index";
+import type { Location, StateID } from "@/types/admin-portal/location";
 import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router, usePage } from "@inertiajs/react";
+import { Deferred, router, usePage } from "@inertiajs/react";
 import { Check, ChevronsUpDown, LoaderIcon, Plus, X } from "lucide-react";
 import { type ComponentProps, useEffect, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
 const FORM_SCHEMA = z.object({
@@ -80,16 +82,10 @@ export function FormUpsertLocation({
 	selectedLocations,
 	forceMode,
 }: FormUpsertLocationProps) {
-	const { props: globalProps } = usePage<
-		GlobalPageProps & {
-			errors: {
-				locations: {
-					index: number;
-					messages: Record<keyof Location, string[]>;
-				}[];
-			};
-		}
-	>();
+	const { props: globalProps } = usePage<LocationGlobalPageProps>();
+	const { t: tl } = useTranslation("translation", {
+		keyPrefix: "locations.modal",
+	});
 	const mode = useMemo(
 		() => (selectedLocations?.length ? "edit" : "add"),
 		[selectedLocations],
@@ -97,19 +93,16 @@ export function FormUpsertLocation({
 	const [isLoading, setIsLoading] = useState(false);
 
 	// get states and cities data
-	const [states, setStates] = useState<StateID[]>([]);
-	useEffect(() => {
-		const getStatesIDData = async () => {
-			const data = await getStatesID();
-			setStates(data);
-		};
-
-		getStatesIDData();
-	}, []);
+	const states = useMemo<StateID[]>(
+		() => globalProps.optionsData?.provinces || [],
+		[globalProps.optionsData?.provinces],
+	);
 	// ? when we get the cities data?
 	// for edit mode, will be fetch while click select city button
 	// for add mode, will be fetch while state/province data selected
-	const [cities, setCities] = useState<CityID[]>([]);
+	const [cities, setCities] = useState<StateID[]>(
+		globalProps.optionsData?.cities || [],
+	);
 
 	// form states data
 	const buttonProps = useMemo<ResponsiveDialogButton>(() => {
@@ -237,13 +230,13 @@ export function FormUpsertLocation({
 									name={`locations.${fieldIndex}.country`}
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Country Name</FormLabel>
+											<FormLabel>{tl("fields.country.label")}</FormLabel>
 											<FormControl>
 												<InputExtended
 													{...field}
 													readOnly
 													type="text"
-													placeholder="Enter the country name..."
+													placeholder={`${tl("fields.country.placeholder")}...`}
 												>
 													<InputExtended.Group>
 														<InputExtended.RightIcon>
@@ -258,168 +251,214 @@ export function FormUpsertLocation({
 									)}
 								/>
 
-								<FormField
-									control={form.control}
-									name={`locations.${fieldIndex}.state`}
-									render={({ field }) => (
-										<FormItem className="grid !my-1">
-											<FormLabel className="h-6">State/Province</FormLabel>
-											<Popover modal>
-												<PopoverTrigger asChild>
-													<FormControl>
-														<Button
-															variant="outline"
-															className={cn(
-																"w-[200px] justify-between text-muted-foreground font-normal !mt-0 px-3",
-																!field.value && "text-muted-foreground",
-															)}
-														>
-															{field.value
-																? states.find(
-																		(state) => state.nama === field.value,
-																	)?.nama || field.value
-																: "Select state/province"}
-															<ChevronsUpDown className="opacity-50" />
-														</Button>
-													</FormControl>
-												</PopoverTrigger>
-												<PopoverContent className="w-[200px] p-0">
-													<Command>
-														<CommandInput placeholder="Search state/province..." />
-														<CommandList>
-															<CommandEmpty>
-																No state or province found.
-															</CommandEmpty>
-															<CommandGroup>
-																{states.map((state) => (
-																	<CommandItem
-																		value={state.nama}
-																		key={state.nama}
-																		onSelect={async () => {
-																			// set the state data selected
-																			form.setValue(
-																				`locations.${fieldIndex}.state`,
-																				state.nama,
-																			);
+								<Deferred
+									data={["optionsData"]}
+									fallback={
+										<div className="flex flex-col self-end gap-3">
+											<Skeleton className="w-10 h-4 rounded-md" />
+											<Skeleton className="relative w-full rounded-md h-9" />
+										</div>
+									}
+								>
+									<FormField
+										control={form.control}
+										name={`locations.${fieldIndex}.state`}
+										render={({ field }) => (
+											<FormItem className="grid !my-1">
+												<FormLabel className="h-6">
+													{tl("fields.state.label")}
+												</FormLabel>
+												<Popover modal>
+													<PopoverTrigger asChild>
+														<FormControl>
+															<Button
+																variant="outline"
+																className={cn(
+																	"w-fit justify-between text-muted-foreground font-normal !mt-0 px-3",
+																	!field.value && "text-muted-foreground",
+																)}
+															>
+																{field.value
+																	? states.find(
+																			(state) => state.name === field.value,
+																		)?.name || field.value
+																	: `${tl("fields.state.placeholder")}...`}
+																<ChevronsUpDown className="opacity-50" />
+															</Button>
+														</FormControl>
+													</PopoverTrigger>
+													<PopoverContent
+														side="bottom"
+														align="start"
+														className="w-[200px] p-0"
+													>
+														<Command>
+															<CommandInput
+																placeholder={`${tl("fields.state.search")}...`}
+															/>
+															<CommandList>
+																<CommandEmpty>
+																	{tl("fields.state.empty_search")}
+																</CommandEmpty>
+																<CommandGroup>
+																	{states.map((state) => (
+																		<CommandItem
+																			value={state.name}
+																			key={state.name}
+																			onSelect={async () => {
+																				// set the state data selected
+																				form.setValue(
+																					`locations.${fieldIndex}.state`,
+																					state.name,
+																				);
 
-																			if (mode === "add") {
 																				// get the cities data
-																				const cities = await getCitiesID({
-																					stateId: state.kode,
-																				});
+																				const cities =
+																					globalProps.optionsData?.cities.filter(
+																						(city) =>
+																							city.code.includes(state.code),
+																					) || [];
 																				setCities(cities || []);
-																			}
-																		}}
-																	>
-																		{state.nama}
-																		<Check
-																			className={cn(
-																				"ml-auto",
-																				state.nama === field.value
-																					? "opacity-100"
-																					: "opacity-0",
-																			)}
-																		/>
-																	</CommandItem>
-																))}
-															</CommandGroup>
-														</CommandList>
-													</Command>
-												</PopoverContent>
-											</Popover>
 
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
+																				// reset the selected city
+																				form.setValue(
+																					`locations.${fieldIndex}.city`,
+																					"",
+																				);
+																			}}
+																		>
+																			{state.name}
+																			<Check
+																				className={cn(
+																					"ml-auto",
+																					state.name === field.value
+																						? "opacity-100"
+																						: "opacity-0",
+																				)}
+																			/>
+																		</CommandItem>
+																	))}
+																</CommandGroup>
+															</CommandList>
+														</Command>
+													</PopoverContent>
+												</Popover>
 
-								<FormField
-									control={form.control}
-									name={`locations.${fieldIndex}.city`}
-									render={({ field }) => (
-										<FormItem className="grid !my-1">
-											<FormLabel className="h-6">City</FormLabel>
-											<Popover modal>
-												<PopoverTrigger asChild>
-													<FormControl>
-														<Button
-															disabled={
-																!form?.getValues(
-																	`locations.${fieldIndex}.state`,
-																)
-															}
-															variant="outline"
-															className={cn(
-																"w-[200px] justify-between text-muted-foreground font-normal !mt-0 px-3",
-																!field.value && "text-muted-foreground",
-															)}
-															onClick={async () => {
-																if (mode === "edit") {
-																	const stateName = form?.getValues(
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</Deferred>
+
+								<Deferred
+									data={["optionsData"]}
+									fallback={
+										<div className="flex flex-col self-end gap-3">
+											<Skeleton className="w-10 h-4 rounded-md" />
+											<Skeleton className="relative w-full rounded-md h-9" />
+										</div>
+									}
+								>
+									<FormField
+										control={form.control}
+										name={`locations.${fieldIndex}.city`}
+										render={({ field }) => (
+											<FormItem className="grid !my-1">
+												<FormLabel className="h-6">
+													{tl("fields.city.label")}
+												</FormLabel>
+												<Popover modal>
+													<PopoverTrigger asChild>
+														<FormControl>
+															<Button
+																disabled={
+																	!form?.getValues(
 																		`locations.${fieldIndex}.state`,
-																	);
-																	const stateCode = states.find(
-																		(state) => state.nama === stateName,
-																	)?.kode;
-
-																	if (stateCode) {
-																		// get the cities data
-																		const cities = await getCitiesID({
-																			stateId: stateCode,
-																		});
-																		setCities(cities || []);
-																	}
+																	)
 																}
-															}}
-														>
-															{field.value
-																? cities.find(
-																		(city) => city.nama === field.value,
-																	)?.nama || field.value
-																: "Select city"}
-															<ChevronsUpDown className="opacity-50" />
-														</Button>
-													</FormControl>
-												</PopoverTrigger>
-												<PopoverContent className="w-[200px] p-0">
-													<Command>
-														<CommandInput placeholder="Search city..." />
-														<CommandList>
-															<CommandEmpty>No city found.</CommandEmpty>
-															<CommandGroup>
-																{cities.map((city) => (
-																	<CommandItem
-																		value={city.nama}
-																		key={city.nama}
-																		onSelect={() => {
-																			form.setValue(
-																				`locations.${fieldIndex}.city`,
-																				city.nama,
-																			);
-																			form.trigger();
-																		}}
-																	>
-																		{city.nama}
-																		<Check
-																			className={cn(
-																				"ml-auto",
-																				city.nama === field.value
-																					? "opacity-100"
-																					: "opacity-0",
-																			)}
-																		/>
-																	</CommandItem>
-																))}
-															</CommandGroup>
-														</CommandList>
-													</Command>
-												</PopoverContent>
-											</Popover>
+																variant="outline"
+																className={cn(
+																	"w-fit justify-between text-muted-foreground font-normal !mt-0 px-3",
+																	!field.value && "text-muted-foreground",
+																)}
+																onClick={async () => {
+																	if (mode === "edit") {
+																		const stateName = form?.getValues(
+																			`locations.${fieldIndex}.state`,
+																		);
+																		const stateCode = states.find(
+																			(state) => state.name === stateName,
+																		)?.code;
 
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
+																		if (stateCode) {
+																			// get the cities data
+																			const cities =
+																				globalProps.optionsData?.cities.filter(
+																					(city) =>
+																						city.code.includes(stateCode),
+																				) || [];
+																			setCities(cities || []);
+																		}
+																	}
+																}}
+															>
+																{field.value
+																	? globalProps.optionsData?.cities.find(
+																			(city) => city.name === field.value,
+																		)?.name || field.value
+																	: `${tl("fields.city.placeholder")}...`}
+																<ChevronsUpDown className="opacity-50" />
+															</Button>
+														</FormControl>
+													</PopoverTrigger>
+													<PopoverContent
+														side="bottom"
+														align="start"
+														className="w-[200px] p-0"
+													>
+														<Command>
+															<CommandInput
+																placeholder={`${tl("fields.city.search")}...`}
+															/>
+															<CommandList>
+																<CommandEmpty>
+																	{tl("fields.city.empty_search")}
+																</CommandEmpty>
+																<CommandGroup>
+																	{cities.map((city) => (
+																		<CommandItem
+																			value={city.name}
+																			key={city.name}
+																			onSelect={() => {
+																				form.setValue(
+																					`locations.${fieldIndex}.city`,
+																					city.name,
+																				);
+																				form.trigger();
+																			}}
+																		>
+																			{city.name}
+																			<Check
+																				className={cn(
+																					"ml-auto",
+																					city.name === field.value
+																						? "opacity-100"
+																						: "opacity-0",
+																				)}
+																			/>
+																		</CommandItem>
+																	))}
+																</CommandGroup>
+															</CommandList>
+														</Command>
+													</PopoverContent>
+												</Popover>
+
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+								</Deferred>
 							</div>
 						);
 					})}
@@ -435,7 +474,7 @@ export function FormUpsertLocation({
 						}}
 					>
 						<Plus />
-						Add more location
+						{tl("buttons.add_more")}
 					</Button>
 				)}
 
@@ -458,6 +497,7 @@ export function DeleteLocationAlert({
 	selectedLocations,
 }: DeleteLocationAlertProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
+	const { t: tl } = useTranslation("translation", { keyPrefix: "locations" });
 	const [isLoading, setIsLoading] = useState(false);
 	const form = useForm<z.infer<typeof FORM_SCHEMA>>({
 		resolver: zodResolver(FORM_SCHEMA),
@@ -492,10 +532,9 @@ export function DeleteLocationAlert({
 		<AlertDialog open={isOpen} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+					<AlertDialogTitle>{tl("modal.delete.title")}</AlertDialogTitle>
 					<AlertDialogDescription>
-						This action is irreversible. Deleting actions will permanently
-						remove data from our servers and cannot be recovered.
+						{tl("modal.delete.description")}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<Form {...form}>
@@ -506,10 +545,10 @@ export function DeleteLocationAlert({
 								{isLoading ? (
 									<>
 										<LoaderIcon className="animate-spin" />
-										<span>Deleting...</span>
+										<span>{`${tl("modal.delete.loading")}...`}</span>
 									</>
 								) : (
-									<span>Delete</span>
+									<span>{tl("button.delete")}</span>
 								)}
 							</Button>
 						</AlertDialogFooter>
