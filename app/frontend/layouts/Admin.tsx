@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import AppSidebar from "@/components/admin-portal/sidebar/app-sidebar";
 import AppTopBar from "@/components/admin-portal/topbar/app-topbar";
 import { NavigationProvider } from "@/components/providers/navigation-provider";
@@ -6,8 +7,10 @@ import { ToastProvider } from "@/components/providers/toast-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_MOBILE } from "@/lib/constants";
 import { type PropsWithChildren, useMemo } from "react";
+import { DateProvider } from "@/components/providers/date-provider";
 
-export default function AdminLayout({ children }: PropsWithChildren) {
+function LayoutProviders({ children }: PropsWithChildren) {
+	const defaultOpen = Cookies.get("sidebar:state") === "true";
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	const sidebarStyle = useMemo(
 		() =>
@@ -20,28 +23,36 @@ export default function AdminLayout({ children }: PropsWithChildren) {
 
 	return (
 		<ThemeProvider>
-			<ToastProvider>
-				<SidebarProvider style={sidebarStyle}>
-					<NavigationProvider>
-						<AppSidebar />
+			<DateProvider>
+				<ToastProvider>
+					<SidebarProvider style={sidebarStyle} defaultOpen={defaultOpen}>
+						<NavigationProvider>{children}</NavigationProvider>
+					</SidebarProvider>
+				</ToastProvider>
+			</DateProvider>
+		</ThemeProvider>
+	);
+}
 
-						<SidebarInset>
-							<AppTopBar />
+export default function AdminLayout({ children }: PropsWithChildren) {
+	return (
+		<LayoutProviders>
+			<AppSidebar />
 
-							<div className="flex flex-col flex-1 gap-4 pt-0 md:p-4 motion-preset-focus motion-delay-200">
-								{children}
-							</div>
+			<SidebarInset>
+				<AppTopBar />
 
-							{/* NOTE: if needed the bottom nav (good for mobile device) */}
-							{/* <nav className="sticky bottom-0 z-20 flex items-center justify-center w-full p-4 rounded-xl bg-background">
+				<div className="flex flex-col flex-1 gap-4 pt-0 md:p-4 motion-preset-focus motion-delay-200">
+					{children}
+				</div>
+
+				{/* NOTE: if needed the bottom nav (good for mobile device) */}
+				{/* <nav className="sticky bottom-0 z-20 flex items-center justify-center w-full p-4 rounded-xl bg-background">
 								<Button>
 									<span>Dashboard</span>
 								</Button>
 							</nav> */}
-						</SidebarInset>
-					</NavigationProvider>
-				</SidebarProvider>
-			</ToastProvider>
-		</ThemeProvider>
+			</SidebarInset>
+		</LayoutProviders>
 	);
 }

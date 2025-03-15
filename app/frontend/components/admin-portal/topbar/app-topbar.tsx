@@ -1,14 +1,7 @@
+import { useDateContext } from "@/components/providers/date-provider";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-	CURRENT_DATE_TOPBAR,
-	INTERVAL_TOPBAR_DATE,
-	LOCALES,
-} from "@/lib/constants";
-import type { GlobalPageProps } from "@/types/globals";
-import { tz } from "@date-fns/tz";
-import { usePage } from "@inertiajs/react";
-import type { Locale } from "date-fns";
+import { CURRENT_DATE_TOPBAR, INTERVAL_TOPBAR_DATE } from "@/lib/constants";
 import {
 	Clock1,
 	Clock2,
@@ -23,7 +16,7 @@ import {
 	Clock11,
 	Clock12,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const CLOCK_ICONS = [
 	Clock1,
@@ -42,38 +35,16 @@ const CLOCK_ICONS = [
 const CURRENT_HOUR = new Date().getHours() % 12 || 12 - 1;
 
 export default function AppTopBar() {
-	const { props: globalProps } = usePage<GlobalPageProps>();
-	const currentLocale = useMemo(() => {
-		let locale = "" as unknown as Locale;
-		switch (globalProps.adminPortal.currentLocale) {
-			case "en":
-				locale = LOCALES.enUS;
-				break;
-			default:
-				locale = LOCALES.enUS;
-				break;
-		}
-
-		return locale;
-	}, [globalProps.adminPortal.currentLocale]);
-	const currentTimezone = useMemo(
-		() => globalProps.adminPortal.currentTimezone,
-		[globalProps.adminPortal.currentTimezone],
-	);
+	const { locale, tzDate } = useDateContext();
 	const [currentDate, setCurrentDate] = useState(
-		CURRENT_DATE_TOPBAR({
-			locale: currentLocale,
-			timezone: tz(currentTimezone),
-		}),
+		CURRENT_DATE_TOPBAR({ locale, timezone: tzDate }),
 	);
 	const [ClockIcon, setClockIcon] = useState(() => CLOCK_ICONS[CURRENT_HOUR]);
+	// * side effect for changing the time every one-minute
 	useEffect(() => {
 		// Update the date at the specified interval
 		const intervalId = setInterval(() => {
-			const date = CURRENT_DATE_TOPBAR({
-				locale: currentLocale,
-				timezone: tz(currentTimezone),
-			});
+			const date = CURRENT_DATE_TOPBAR({ locale, timezone: tzDate });
 			setCurrentDate(date);
 
 			// Update the clock icon based on the current hour
@@ -82,7 +53,7 @@ export default function AppTopBar() {
 
 		// Cleanup the interval on component unmount
 		return () => clearInterval(intervalId);
-	}, [currentLocale, currentTimezone]);
+	}, [locale, tzDate]);
 
 	return (
 		<header className="sticky top-0 z-30 flex flex-row items-center justify-between h-16 gap-2 bg-background rounded-xl shrink-0 motion-preset-bounce">
