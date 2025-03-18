@@ -407,6 +407,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																		? format(
 																				schedule?.patient?.dateOfBirth,
 																				"PP",
+																				{
+																					locale,
+																					in: tzDate,
+																				},
 																			)
 																		: "N/A"}
 																</span>
@@ -466,7 +470,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														{t("list.booked_appointment_date")}:
 													</p>
 													<p className="font-semibold capitalize">
-														{format(schedule.appointmentDateTime, "PPPP")}
+														{format(schedule.appointmentDateTime, "PPPP", {
+															locale,
+															in: tzDate,
+														})}
 													</p>
 												</div>
 
@@ -475,7 +482,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														{t("list.booked_appointment_time")}:
 													</p>
 													<p className="font-semibold uppercase">
-														{format(schedule.appointmentDateTime, "hh:mm a")}
+														{format(schedule.appointmentDateTime, "hh:mm a", {
+															locale,
+															in: tzDate,
+														})}
 													</p>
 												</div>
 
