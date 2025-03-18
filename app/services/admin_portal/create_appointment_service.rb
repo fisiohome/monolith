@@ -62,7 +62,7 @@ module AdminPortal
         service_id: @params[:service_id],
         package_id: @params[:package_id],
         therapist_id: @params[:therapist_id],
-        status: @params[:therapist_id].present? ? "BOOKED" : "PENDING THERAPIST ASSIGNMENT"
+        status: @params[:therapist_id].present? ? "PENDING PATIENT APPROVAL" : "PENDING THERAPIST ASSIGNMENT"
       }
       appointment_params = @params[:appointment] || {}
       appointment_attrs = base_attributes.merge(appointment_params)

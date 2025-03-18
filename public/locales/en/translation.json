@@ -18,6 +18,72 @@
 			"go_to_last": "Go to last page"
 		}
 	},
+	"appointments": {
+		"head_title": "Appointment Schedule",
+		"page_title": "Appointment Schedule",
+		"statuses": {
+			"pending_therapist_assignment": "PENDING THERAPIST ASSIGNMENT",
+			"pending_patient_approval": "PENDING PATIENT APPROVAL",
+			"pending_payment": "PENDING PAYMENT",
+			"cancelled": "CANCELLED",
+			"paid": "PAID"
+		},
+		"button": {
+			"create": "Create Appointment",
+			"cancel_booking": "Cancel Booking",
+			"reschedule": "Reschedule",
+			"update_pic": "Update PIC(s)"
+		},
+		"tab": {
+			"title": {
+				"upcoming": "Upcoming",
+				"pending": "Pending",
+				"past": "Past",
+				"cancelled": "Cancelled"
+			},
+			"no_content": {
+				"upcoming": "There are no upcoming appointments scheduled.",
+				"cancelled": "There are no cancelled appointments.",
+				"past": "There are no past appointments.",
+				"pending": "There are no appointments are pending confirmation."
+			}
+		},
+		"list": {
+			"patient_details": "Patient Details",
+			"contact_name": "Contact Name",
+			"contact_phone": "Contact Phone",
+			"gender": "Gender",
+			"age": "Age",
+			"years": "years",
+			"current_condition": "Current condition",
+			"complaint": "Complaint",
+			"illness_onset_date": "Illness onset date",
+			"medical_history": "Medical history",
+			"appointment_details": "Appointment Details",
+			"booked_appointment_date": "Booked appointment date",
+			"booked_appointment_time": "Booked appointment time",
+			"visit_service": "Visit service",
+			"visit_region": "Visit region",
+			"visit_address": "Visit address",
+			"view_on_google_maps": "View on Google Maps",
+			"preferred_therapist_gender": "Preferred therapist gender",
+			"referral_source": "Referral source",
+			"notes": "Notes",
+			"payment_details": "Payment Details",
+			"booking_partner": "Booking partner",
+			"voucher": "Voucher",
+			"price": "Price",
+			"discount": "Discount",
+			"total_price": "Total Price",
+			"therapist_details": "Therapist Details",
+			"reg_number": "Reg. Number",
+			"phone": "Phone",
+			"emp_type": "Emp. type",
+			"pic_details": "PIC Details",
+			"person_in_charge": "Person in charge(s)",
+			"type": "Type"
+		}
+	},
 	"locations": {
 		"head_title": "Location Availability",
 		"page_title": "Our Locations",

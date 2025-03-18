@@ -1,3 +1,4 @@
+import { useDateContext } from "@/components/providers/date-provider";
 import DotBadgeWithLabel, {
 	type VariantDotBadge,
 } from "@/components/shared/dot-badge";
@@ -47,6 +48,7 @@ import {
 	User,
 } from "lucide-react";
 import { type ComponentProps, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 // * appointment schedule component
 interface ScheduleListProps {
@@ -57,37 +59,40 @@ interface ScheduleListProps {
 }
 
 function ScheduleList({ schedule }: ScheduleListProps) {
+	const { locale, tzDate } = useDateContext();
+	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
 	const distanceBadgeVariant = useMemo(() => {
 		const pending =
 			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100";
-		const booked =
-			"text-blue-800 bg-blue-100 dark:bg-blue-900 dark:text-blue-100";
 		const cancel = "text-red-800 bg-red-100 dark:bg-red-900 dark:text-red-100";
 		const paid =
 			"text-emerald-800 bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-100";
 
-		return schedule.status === "PENDING THERAPIST ASSIGNMENT" ||
-			schedule.status === "PENDING PATIENT APPROVAL" ||
-			schedule.status === "PENDING PAYMENT"
+		return schedule.status === "PENDING THERAPIST ASSIGNMENT".toLowerCase() ||
+			schedule.status === "PENDING PATIENT APPROVAL".toLowerCase() ||
+			schedule.status === "PENDING PAYMENT".toLowerCase()
 			? pending
-			: schedule.status === "BOOKED"
-				? booked
-				: schedule.status === "PAID"
-					? paid
-					: schedule.status === "CANCELLED"
-						? cancel
-						: "";
+			: schedule.status === "PAID".toLowerCase()
+				? paid
+				: schedule.status === "CANCELLED".toLowerCase()
+					? cancel
+					: "";
 	}, [schedule.status]);
 	const statusDotVariant = useMemo<VariantDotBadge["variant"]>(() => {
-		return schedule.status === "PENDING THERAPIST ASSIGNMENT"
+		return schedule.status === "PENDING THERAPIST ASSIGNMENT".toLowerCase() ||
+			schedule.status === "PENDING PATIENT APPROVAL".toLowerCase() ||
+			schedule.status === "PENDING PAYMENT".toLowerCase()
 			? "warning"
-			: schedule.status === "BOOKED"
-				? "secondary"
-				: "default";
+			: schedule.status === "CANCELLED".toLowerCase()
+				? "destructive"
+				: "success";
 	}, [schedule.status]);
 	const startTimeLabel = useMemo(() => {
 		// Format it to 12-hour time with an AM/PM indicator.
-		const timePeriod = format(schedule.appointmentDateTime, "hh:mm a");
+		const timePeriod = format(schedule.appointmentDateTime, "hh:mm a", {
+			locale,
+			in: tzDate,
+		});
 		// Split the time with period based on the space
 		const startTime = timePeriod.split(" ");
 		const time = startTime[0];
@@ -95,10 +100,12 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 		// Get the time distance
 		const distance = formatDistance(schedule.appointmentDateTime, new Date(), {
 			addSuffix: true,
+			locale,
+			in: tzDate,
 		});
 
 		return { time, period, distance };
-	}, [schedule.appointmentDateTime]);
+	}, [schedule.appointmentDateTime, locale, tzDate]);
 
 	return (
 		<Expandable
@@ -159,7 +166,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																title={schedule.status}
 																className="flex-grow-0 text-xs tracking-wide text-nowrap"
 															>
-																{schedule.status}
+																{t(`statuses.${schedule.status}`)}
 															</span>
 														</DotBadgeWithLabel>
 													</div>
@@ -300,7 +307,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 								<div className="grid gap-6 xl:grid-cols-12">
 									<div className="flex flex-col h-full gap-3 xl:col-span-4">
 										<h3 className="text-xs font-light uppercase">
-											Patient Details
+											{t("list.patient_details")}
 										</h3>
 
 										<div className="flex flex-col h-full gap-4 p-4 border rounded-lg shadow-inner border-border bg-sidebar">
@@ -328,7 +335,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													<div className="flex justify-between gap-2">
 														<div className="flex items-center gap-2">
 															<Contact className="size-4 text-muted-foreground/75" />
-															<p className="font-light">Contact Name:</p>
+															<p className="font-light">
+																{t("list.contact_name")}:
+															</p>
 														</div>
 														<p className="font-semibold capitalize">
 															{schedule?.patient?.contact?.contactName || "N/A"}
@@ -338,7 +347,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													<div className="flex justify-between gap-2">
 														<div className="flex items-center gap-2">
 															<Phone className="size-4 text-muted-foreground/75" />
-															<p className="font-light">Contact Phone:</p>
+															<p className="font-light">
+																{t("list.contact_phone")}:
+															</p>
 														</div>
 														<p className="font-semibold">
 															{schedule?.patient?.contact?.contactPhone ||
@@ -375,7 +386,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 													<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
 														<div>
-															<p className="font-light">Gender:</p>
+															<p className="font-light">{t("list.gender")}:</p>
 															<p className="flex items-center gap-1 font-semibold uppercase">
 																{schedule?.patient?.gender &&
 																	getGenderIcon(schedule.patient.gender)}
@@ -384,10 +395,11 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														</div>
 
 														<div>
-															<p className="font-light">Age:</p>
+															<p className="font-light">{t("list.age")}:</p>
 															<p className="font-semibold capitalize">
 																<span>
-																	{schedule?.patient?.age || "N/A"} years
+																	{schedule?.patient?.age || "N/A"}{" "}
+																	{t("list.years")}:
 																</span>
 																<span className="mx-1">&#x2022;</span>
 																<span>
@@ -402,28 +414,36 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														</div>
 
 														<div>
-															<p className="font-light">Current condition:</p>
+															<p className="font-light">
+																{t("list.current_condition")}:
+															</p>
 															<p className="font-semibold uppercase">
 																{schedule?.patientCondition || "N/A"}
 															</p>
 														</div>
 
 														<div>
-															<p className="font-light">Complaint:</p>
+															<p className="font-light">
+																{t("list.complaint")}:
+															</p>
 															<p className="font-semibold capitalize">
 																{schedule?.patientComplaintDescription || "N/A"}
 															</p>
 														</div>
 
 														<div>
-															<p className="font-light">Illness onset date:</p>
+															<p className="font-light">
+																{t("list.illness_onset_date")}:
+															</p>
 															<p className="font-semibold capitalize">
 																{schedule?.patientIllnessOnsetDate || "N/A"}
 															</p>
 														</div>
 
 														<div>
-															<p className="font-light">Medical history:</p>
+															<p className="font-light">
+																{t("list.medical_history")}:
+															</p>
 															<p className="font-semibold capitalize">
 																{schedule?.patientMedicalHistory || "N/A"}
 															</p>
@@ -436,27 +456,33 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 									<div className="flex flex-col h-full gap-3 xl:col-span-8">
 										<h3 className="text-xs font-light uppercase xl:invisible">
-											Appointment Details
+											{t("list.appointment_details")}
 										</h3>
 
 										<div className="flex flex-col h-full gap-6 p-4 border rounded-lg shadow-inner border-border bg-sidebar">
 											<div className="grid gap-4 md:grid-cols-2">
 												<div>
-													<p className="font-light">Booked appointment date:</p>
+													<p className="font-light">
+														{t("list.booked_appointment_date")}:
+													</p>
 													<p className="font-semibold capitalize">
 														{format(schedule.appointmentDateTime, "PPPP")}
 													</p>
 												</div>
 
 												<div>
-													<p className="font-light">Booked appointment time:</p>
+													<p className="font-light">
+														{t("list.booked_appointment_time")}:
+													</p>
 													<p className="font-semibold uppercase">
 														{format(schedule.appointmentDateTime, "hh:mm a")}
 													</p>
 												</div>
 
 												<div className="col-span-full md:col-span-1">
-													<p className="font-light">Visit service:</p>
+													<p className="font-light">
+														{t("list.visit_service")}:
+													</p>
 													<p className="font-semibold">
 														<span>
 															{schedule?.service?.name?.replaceAll("_", " ") ||
@@ -473,7 +499,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												</div>
 
 												<div>
-													<p className="font-light">Visit region:</p>
+													<p className="font-light">
+														{t("list.visit_region")}:
+													</p>
 													<p className="font-semibold uppercase">
 														{[
 															schedule?.location?.city,
@@ -484,19 +512,21 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												</div>
 
 												<div className="col-span-full">
-													<p className="font-light">Visit address:</p>
+													<p className="font-light">
+														{t("list.visit_address")}:
+													</p>
 													<p className="font-semibold capitalize">
 														{schedule.patient?.activeAddress?.address || "N/A"}
 													</p>
 													<p className="italic font-normal">
-														Note:{" "}
+														{t("list.notes")}:{" "}
 														{schedule.patient?.activeAddress?.notes || "N/A"}
 													</p>
 													{schedule?.patient?.activeAddress?.coordinates
 														?.length && (
 														<Button
 															type="button"
-															variant="accent-outline"
+															variant="primary-outline"
 															size="sm"
 															className="mt-2"
 															onClick={(event) => {
@@ -508,14 +538,14 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 															}}
 														>
 															<MapPinIcon />
-															View on Google Maps
+															{t("list.view_on_google_maps")}
 														</Button>
 													)}
 												</div>
 
 												<div>
 													<p className="font-light">
-														Preferred therapist gender:
+														{t("list.preferred_therapist_gender")}:
 													</p>
 													<p className="flex gap-1 font-semibold uppercase">
 														{getGenderIcon(schedule.preferredTherapistGender)}{" "}
@@ -524,7 +554,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												</div>
 
 												<div>
-													<p className="font-light">Referral source:</p>
+													<p className="font-light">
+														{t("list.referral_source")}:
+													</p>
 													<p className="font-semibold capitalize">
 														{schedule?.otherReferralSource ||
 															schedule?.referralSource ||
@@ -533,7 +565,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												</div>
 
 												<div className="col-span-full">
-													<p className="font-light">Notes:</p>
+													<p className="font-light">{t("list.notes")}:</p>
 													<p className="italic font-semibold capitalize">
 														{schedule?.notes || "N/A"}
 													</p>
@@ -544,14 +576,16 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 											<div className="grid gap-4">
 												<h4 className="text-xs font-light uppercase">
-													Payment Details
+													{t("list.payment_details")}
 												</h4>
 
 												<div className="grid gap-4 p-3 border rounded-lg md:grid-cols-2 border-border bg-muted">
 													<div className="flex gap-2">
 														<Building className="mt-0.5 size-4 text-muted-foreground/75" />
 														<div>
-															<p className="font-light">Booking partner:</p>
+															<p className="font-light">
+																{t("list.booking_partner")}:
+															</p>
 															<p className="font-semibold capitalize">
 																{schedule?.otherFisiohomePartnerName ||
 																	schedule?.fisiohomePartnerName ||
@@ -563,7 +597,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													<div className="flex gap-2">
 														<TicketPercent className="mt-0.5 size-4 text-muted-foreground/75" />
 														<div>
-															<p className="font-light">Voucher:</p>
+															<p className="font-light">{t("list.voucher")}:</p>
 															<p className="font-semibold capitalize">
 																{schedule?.voucherCode || "N/A"}
 															</p>
@@ -574,7 +608,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												<div className="flex items-center justify-between">
 													<div className="flex items-center gap-2">
 														<CreditCard className="size-4 text-muted-foreground/75" />
-														<span className="font-light">Price</span>
+														<span className="font-light">
+															{t("list.price")}:
+														</span>
 													</div>
 													<span>
 														{schedule?.package
@@ -586,7 +622,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													<div className="flex items-center justify-between">
 														<div className="flex items-center gap-2">
 															<TicketPercent className="size-4 text-muted-foreground/75" />
-															<span className="font-light">Discount</span>
+															<span className="font-light">
+																{t("list.discount")}:
+															</span>
 															<Badge
 																variant="outline"
 																className="ml-2 text-xs border-2"
@@ -604,7 +642,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													<div className="flex items-center justify-between">
 														<div className="flex items-center gap-2">
 															<TicketPercent className="size-4 text-muted-foreground/75" />
-															<span className="font-light">Discount</span>
+															<span className="font-light">
+																{t("list.discount")}:
+															</span>
 															<Badge
 																variant="outline"
 																className="ml-2 text-xs border-2"
@@ -622,7 +662,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 												<div className="flex items-center justify-between font-medium">
 													<span className="font-bold uppercase">
-														Total Price
+														{t("list.total_price")}
 													</span>
 													<span className="text-lg font-bold">
 														{schedule.formattedTotalPrice}
@@ -646,7 +686,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 									<div className="grid grid-cols-1 gap-6 xl:grid-cols-2 col-span-full">
 										<div className="flex flex-col gap-3">
 											<h3 className="text-xs font-light uppercase">
-												Therapist Details
+												{t("list.therapist_details")}
 											</h3>
 
 											<div className="flex flex-col h-full gap-4 p-4 border rounded-lg shadow-inner border-border bg-sidebar">
@@ -674,7 +714,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														<div className="flex justify-between gap-2">
 															<div className="flex items-center gap-2">
 																<Hash className="size-4 text-muted-foreground/75" />
-																<p className="font-light">Reg. Number:</p>
+																<p className="font-light">
+																	{t("list.reg_number")}:
+																</p>
 															</div>
 															<p className="font-semibold uppercase">
 																{schedule?.therapist?.registrationNumber ||
@@ -685,7 +727,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														<div className="flex justify-between gap-2">
 															<div className="flex items-center gap-2">
 																<Phone className="size-4 text-muted-foreground/75" />
-																<p className="font-light">Phone:</p>
+																<p className="font-light">{t("list.phone")}:</p>
 															</div>
 															<p className="font-semibold">
 																{schedule?.therapist?.phoneNumber || "N/A"}
@@ -706,14 +748,18 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 														<div className="grid gap-4 md:grid-cols-2">
 															<div>
-																<p className="font-light">Emp. type:</p>
+																<p className="font-light">
+																	{t("list.emp_type")}:
+																</p>
 																<p className="font-semibold uppercase">
 																	{schedule?.therapist?.employmentType || "N/A"}
 																</p>
 															</div>
 
 															<div>
-																<p className="font-light">Gender:</p>
+																<p className="font-light">
+																	{t("list.gender")}:
+																</p>
 																<p className="flex items-center gap-1 font-semibold uppercase">
 																	{schedule?.therapist?.gender &&
 																		getGenderIcon(schedule.therapist.gender)}
@@ -728,7 +774,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 										<div className="flex flex-col gap-3">
 											<h3 className="text-xs font-light uppercase">
-												PIC Details
+												{t("list.pic_details")}
 											</h3>
 
 											<div className="flex flex-col h-full gap-4 p-4 border rounded-lg shadow-inner border-border bg-sidebar">
@@ -762,8 +808,8 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													</div>
 													<div>
 														<p className="line-clamp-1">
-															{schedule?.admins?.length || 0} Person in
-															charge(s)
+															{schedule?.admins?.length || 0}{" "}
+															{t("list.person_in_charge")}
 														</p>
 													</div>
 												</div>
@@ -798,7 +844,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 															<div className="flex justify-between gap-2">
 																<div className="flex items-center gap-2">
 																	<ShieldCheck className="size-4 text-muted-foreground/75" />
-																	<p className="font-light">Type:</p>
+																	<p className="font-light">
+																		{" "}
+																		{t("list.type")}:
+																	</p>
 																</div>
 																<p className="font-semibold uppercase">
 																	{admin.adminType.replaceAll("_", " ")}
@@ -826,18 +875,18 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 										className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
 									>
 										<Clock3 />
-										Reschedule
+										{t("button.reschedule")}
 									</Button>
 									<Button
 										variant="outline"
 										className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
 									>
 										<Cctv />
-										Update PIC(s)
+										{t("button.update_pic")}
 									</Button>
 									<Button variant="destructive" className="w-full lg:w-auto">
 										<Ban />
-										Cancel Booking
+										{t("button.cancel_booking")}
 									</Button>
 								</div>
 							</ExpandableCardFooter>
@@ -860,10 +909,13 @@ export default function AppointmentList({
 	appointment,
 	index: _index,
 }: AppointmentListProps) {
+	const { locale, tzDate } = useDateContext();
 	const label = useMemo(
 		() =>
-			isToday(appointment.date) ? "Today" : format(appointment.date, "PPPP"),
-		[appointment.date],
+			isToday(appointment.date)
+				? "Today"
+				: format(appointment.date, "PPPP", { locale, in: tzDate }),
+		[appointment.date, locale, tzDate],
 	);
 
 	return (

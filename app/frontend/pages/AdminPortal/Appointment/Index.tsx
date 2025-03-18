@@ -12,6 +12,7 @@ import { useMediaQuery } from "@uidotdev/usehooks";
 import { Plus } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { Fragment } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface AppointmentIndexProps {
 	appointments?: { date: string; schedules: Appointment[] }[];
@@ -27,29 +28,30 @@ export default function AppointmentIndex() {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const isDekstop = useMediaQuery("(min-width: 768px)");
+	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
 
 	// * tabs management
 	const [isTabChange, setIsTabChange] = useState(false);
 	const tabList = useMemo(() => {
 		return [
 			{
-				text: "Upcoming",
+				text: t("tab.title.upcoming"),
 				value: "upcoming",
 			},
 			{
-				text: "Pending",
+				text: t("tab.title.pending"),
 				value: "pending",
 			},
 			{
-				text: "Past",
+				text: t("tab.title.past"),
 				value: "past",
 			},
 			{
-				text: "Cancelled",
+				text: t("tab.title.cancelled"),
 				value: "cancel",
 			},
 		] as const;
-	}, []);
+	}, [t]);
 	const tabActive = useMemo<(typeof tabList)[number]["value"]>(
 		() =>
 			(globalProps?.adminPortal?.currentQuery
@@ -73,7 +75,7 @@ export default function AppointmentIndex() {
 					replace: true,
 					preserveScroll: true,
 					preserveState: true,
-					only: ["adminPortal", "flash", "errors"],
+					only: ["adminPortal", "flash", "errors", "appointments"],
 					onStart: () => {
 						setIsTabChange(true);
 					},
@@ -98,21 +100,21 @@ export default function AppointmentIndex() {
 
 		switch (tabActive) {
 			case "upcoming":
-				label = "There are no upcoming appointments scheduled.";
+				label = t("tab.no_content.upcoming");
 				break;
 			case "cancel":
-				label = "There are no cancelled appointments to show.";
+				label = t("tab.no_content.cancelled");
 				break;
 			case "past":
-				label = "There are no past appointments to show.";
+				label = t("tab.no_content.past");
 				break;
 			case "pending":
-				label = "There are no appointments are pending confirmation.";
+				label = t("tab.no_content.pending");
 				break;
 		}
 
 		return label;
-	}, [tabActive]);
+	}, [tabActive, t]);
 	const isAppointmentExist = useMemo(
 		() => !!appointments?.length,
 		[appointments?.length],
@@ -120,12 +122,10 @@ export default function AppointmentIndex() {
 
 	return (
 		<>
-			<Head title="Appointment Schedule" />
+			<Head title={t("head_title")} />
 
 			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">
-					Appointment Schedule
-				</h1>
+				<h1 className="text-2xl font-bold tracking-tight">{t("page_title")}</h1>
 			</PageContainer>
 
 			<PageContainer className="flex-1 gap-6 md:min-h-min">
@@ -158,7 +158,7 @@ export default function AppointmentIndex() {
 								}
 							>
 								<Plus />
-								Create Appointment
+								{t("button.create")}
 							</Link>
 						</Button>
 					</div>

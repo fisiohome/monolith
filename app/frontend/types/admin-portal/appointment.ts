@@ -12,7 +12,6 @@ import type { Therapist } from "./therapist";
 
 type AppointmentStatus =
 	| "PENDING THERAPIST ASSIGNMENT"
-	| "BOOKED"
 	| "PENDING PATIENT APPROVAL"
 	| "PENDING PAYMENT"
 	| "CANCELLED"

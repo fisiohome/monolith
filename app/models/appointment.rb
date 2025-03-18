@@ -41,7 +41,13 @@ class Appointment < ApplicationRecord
 
   FISIOHOME_PARTNER_NAMES = ["Cosmart", "KlinikGo", "The Asian Parent", "Orami Circle", "Ibu2canggih", "Ibu Bayi Canggih", "Kompas myValue", "Blibli", "LoveCare", "Medlife", "Medikids", "Bumi Health", "Other"].freeze
 
-  STATUSES = ["PENDING THERAPIST ASSIGNMENT", "BOOKED", "PENDING PATIENT APPROVAL", "PENDING PAYMENT", "CANCELLED", "PAID"]
+  enum :status, {
+    pending_therapist_assignment: "PENDING THERAPIST ASSIGNMENT",
+    pending_patient_approval: "PENDING PATIENT APPROVAL",
+    pending_payment: "PENDING PAYMENT",
+    cancelled: "CANCELLED",
+    paid: "PAID"
+  }, prefix: true
 
   def voucher_discount
     0

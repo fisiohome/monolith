@@ -18,6 +18,72 @@
 			"go_to_last": "Pergi ke halaman terakhir"
 		}
 	},
+	"appointments": {
+		"head_title": "Jadwal Janji Temu",
+		"page_title": "Jadwal Janji Temu",
+		"statuses": {
+			"pending_therapist_assignment": "PENUGASAN TERAPIS YANG TERTUNDA",
+			"pending_patient_approval": "MENUNGGU PERSETUJUAN PASIEN",
+			"pending_payment": "PEMBAYARAN TERTUNDA",
+			"cancelled": "DIBATALKAN",
+			"paid": "TERBAYAR"
+		},
+		"button": {
+			"create": "Buat Janji Temu",
+			"cancel_booking": "Batalkan Pemesanan",
+			"reschedule": "Penjadwalan Ulang",
+			"update_pic": "Perbarui Penanggung Jawab (PIC)"
+		},
+		"tab": {
+			"title": {
+				"upcoming": "Mendatang",
+				"pending": "Tertunda",
+				"past": "Masa lampau",
+				"cancelled": "Dibatalkan"
+			},
+			"no_content": {
+				"upcoming": "Tidak ada janji temu yang dijadwalkan.",
+				"cancelled": "Tidak ada janji yang dibatalkan.",
+				"past": "Tidak ada janji temu di masa lalu.",
+				"pending": "Tidak ada janji temu yang menunggu konfirmasi."
+			}
+		},
+		"list": {
+			"patient_details": "Rincian Data Pasien",
+			"contact_name": "Nama Kontak",
+			"contact_phone": "Kontak Telepon",
+			"gender": "Jenis Kelamin",
+			"age": "Usia",
+			"years": "tahun",
+			"current_condition": "Kondisi saat ini",
+			"complaint": "Keluhan",
+			"illness_onset_date": "Kapan sakit mulai dirasakan / muncul",
+			"medical_history": "Riwayat medis",
+			"appointment_details": "Rincian Janji Temu",
+			"booked_appointment_date": "Tanggal janji temu yang telah dipesan",
+			"booked_appointment_time": "Waktu janji temu yang telah dipesan",
+			"visit_service": "Layanan",
+			"visit_region": "Wilayah kunjungan",
+			"visit_address": "Alamat kunjungan",
+			"view_on_google_maps": "Lihat di Google Maps",
+			"preferred_therapist_gender": "Jenis kelamin terapis yang dipilih",
+			"referral_source": "Sumber rujukan",
+			"notes": "Catatan",
+			"payment_details": "Rincian Pembayaran",
+			"booking_partner": "Mitra pemesanan",
+			"voucher": "Kupon",
+			"price": "Harga",
+			"discount": "Diskon",
+			"total_price": "Harga Total",
+			"therapist_details": "Rincian Terapis",
+			"reg_number": "Nomor Registrasi",
+			"phone": "Telepon",
+			"emp_type": "Tipe",
+			"pic_details": "Rincian PIC",
+			"person_in_charge": "Penanggung jawab",
+			"type": "Tipe"
+		}
+	},
 	"locations": {
 		"head_title": "Ketersediaan Lokasi",
 		"page_title": "Lokasi Kami",
