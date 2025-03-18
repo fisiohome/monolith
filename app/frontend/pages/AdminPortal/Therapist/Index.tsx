@@ -295,7 +295,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 				{
 					accessorKey: "service",
 					header: ({ column }) => (
-						<DataTableColumnHeader column={column} title="Type" />
+						<DataTableColumnHeader column={column} title="Service" />
 					),
 					enableSorting: false,
 					enableHiding: false,
