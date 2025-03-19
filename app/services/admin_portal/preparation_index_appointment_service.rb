@@ -61,5 +61,13 @@ module AdminPortal
         )
       end
     end
+
+    def fetch_selected_appointment
+      selected_id = @params[:cancel]
+      return nil if selected_id.blank?
+
+      appointment = Appointment.find_by(id: selected_id)
+      deep_transform_keys_to_camel_case(serialize_appointment(appointment))
+    end
   end
 end

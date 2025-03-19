@@ -37,8 +37,12 @@ Rails.application.routes.draw do
 
         resources :dashboards, only: [:index]
 
-        resources :appointments, only: [:index, :new]
-        post "book" => "appointments#create", :as => "appointment_book"
+        resources :appointments, only: [:index, :new] do
+          collection do
+            post "book" => "appointments#create"
+            put ":id/cancel" => "appointments#cancel"
+          end
+        end
 
         namespace :settings do
           get "account_security"

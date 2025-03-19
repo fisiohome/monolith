@@ -1,12 +1,13 @@
 module AdminPortal
   class AppointmentsController < ApplicationController
-    before_action :set_appointment, only: [:update]
+    before_action :set_appointment, only: [:update, :cancel]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params)
 
       render inertia: "AdminPortal/Appointment/Index", props: deep_transform_keys_to_camel_case({
-        appointments: InertiaRails.defer { preparation.fetch_appointments }
+        appointments: InertiaRails.defer { preparation.fetch_appointments },
+        selected_appointment: InertiaRails.defer { preparation.fetch_selected_appointment }
       })
     end
 
@@ -44,6 +45,28 @@ module AdminPortal
     end
 
     def update
+    end
+
+    def cancel
+      Rails.logger.info "Starting cancellation process for appointment #{@appointment.registration_number}"
+
+      ActiveRecord::Base.transaction do
+        if @appointment.update_columns(status: "CANCELLED")
+          # if false
+          Rails.logger.info "Appointment #{@appointment.registration_number} updated to CANCELLED successfully."
+          redirect_to admin_portal_appointments_path(request.query_parameters.except("cancel")), notice: "Appointment cancelled successfully."
+        else
+          Rails.logger.error "Failed to update appointment #{@appointment.registration_number}: #{@appointment.errors.full_messages.first}"
+          # redirect_to admin_portal_appointments_path(request.query_parameters), alert: @appointment.errors.full_messages.first
+          redirect_to admin_portal_appointments_path(request.query_parameters), alert: "error"
+          raise ActiveRecord::Rollback
+        end
+      end
+    rescue => e
+      Rails.logger.error "Exception while cancelling appointment #{@appointment.registration_number}: #{e.message}"
+      redirect_to admin_portal_appointments_path(request.query_parameters), alert: e.message
+    ensure
+      Rails.logger.info "Finished cancellation process for appointment #{@appointment.registration_number}"
     end
 
     private

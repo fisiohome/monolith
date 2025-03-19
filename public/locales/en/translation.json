@@ -82,6 +82,13 @@
 			"pic_details": "PIC Details",
 			"person_in_charge": "Person in charge(s)",
 			"type": "Type"
+		},
+		"modal": {
+			"cancel": {
+				"title": "Cancel the Appointment",
+				"description": "Are you sure you want to cancel this appointment? This action cannot be undone. If you’d like to reschedule instead, you can do so from your appointment details.",
+				"button_submit": "Continue"
+			}
 		}
 	},
 	"locations": {

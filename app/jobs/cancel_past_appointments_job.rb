@@ -9,6 +9,6 @@ class CancelPastAppointmentsJob < ApplicationJob
         "PENDING PATIENT APPROVAL",
         "PENDING PAYMENT"
       ])
-      .update_all(status: "CANCELLED")
+      .update_all(status: "CANCELLED", updated_at: Time.current)
   end
 end

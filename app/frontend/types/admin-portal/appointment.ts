@@ -11,11 +11,11 @@ import type { Service } from "./service";
 import type { Therapist } from "./therapist";
 
 type AppointmentStatus =
-	| "PENDING THERAPIST ASSIGNMENT"
-	| "PENDING PATIENT APPROVAL"
-	| "PENDING PAYMENT"
-	| "CANCELLED"
-	| "PAID";
+	| "pending therapist assignment"
+	| "pending patient approval"
+	| "pending payment"
+	| "cancelled"
+	| "paid";
 
 export interface AppointmentPayload {
 	serviceId: string;

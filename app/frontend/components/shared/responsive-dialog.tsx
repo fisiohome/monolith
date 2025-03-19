@@ -57,7 +57,9 @@ export const ResponsiveDialog = ({
 				>
 					<DialogHeader>
 						<DialogTitle>{title}</DialogTitle>
-						<DialogDescription>{description}</DialogDescription>
+						<DialogDescription className="text-pretty">
+							{description}
+						</DialogDescription>
 					</DialogHeader>
 					<ScrollArea className="max-h-[75dvh]">{children}</ScrollArea>
 				</DialogContent>

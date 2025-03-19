@@ -1,5 +1,10 @@
 import AppointmentList from "@/components/admin-portal/appointment/appointment-list";
+import { CancelAppointmentForm } from "@/components/admin-portal/appointment/feature-form";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import {
+	ResponsiveDialog,
+	type ResponsiveDialogProps,
+} from "@/components/shared/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,12 +15,112 @@ import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { Plus } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import {
+	createContext,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useMemo,
+	useState,
+} from "react";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 
+// * page context provider
+interface PageProviderState {
+	dialog: ResponsiveDialogProps;
+}
+
+interface PageProviderProps {
+	children: ReactNode;
+}
+
+const PageProviderContext = createContext<PageProviderState>({
+	dialog: {
+		isOpen: false,
+		title: "",
+		description: "",
+		onOpenChange: () => {},
+	},
+});
+
+function PageProvider({ children }: PageProviderProps) {
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentIndexGlobalPageProps>();
+	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+
+	// dialog management state
+	const dialogMode = useMemo(() => {
+		const currentQuery = globalProps.adminPortal?.currentQuery;
+		const isCancelMode = !!currentQuery?.cancel;
+
+		return { cancel: isCancelMode };
+	}, [globalProps.adminPortal?.currentQuery]);
+	const dialog = useMemo<ResponsiveDialogProps>(() => {
+		const isOpen = dialogMode.cancel;
+		let title = "";
+		let description = "";
+
+		if (dialogMode.cancel) {
+			title = t("modal.cancel.title");
+			description = t("modal.cancel.description");
+		}
+
+		return {
+			isOpen,
+			title,
+			description,
+			dialogWidth: "650px",
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const objQueryParams = { cancel: null };
+					const { fullUrl } = populateQueryParams(pageURL, objQueryParams);
+
+					router.get(
+						fullUrl,
+						{},
+						{
+							only: ["adminPortal", "flash", "errors", "selectedAppointment"],
+							preserveScroll: true,
+							preserveState: true,
+							replace: false,
+						},
+					);
+				}
+			},
+		};
+	}, [dialogMode, pageURL, t]);
+
+	return (
+		<PageProviderContext.Provider value={{ dialog }}>
+			{children}
+
+			{globalProps?.selectedAppointment && dialog.isOpen && (
+				<ResponsiveDialog {...dialog}>
+					{dialogMode.cancel && (
+						<CancelAppointmentForm
+							selectedAppointment={globalProps.selectedAppointment}
+						/>
+					)}
+				</ResponsiveDialog>
+			)}
+		</PageProviderContext.Provider>
+	);
+}
+
+export const usePageContext = () => {
+	const context = useContext(PageProviderContext);
+
+	if (context === undefined)
+		throw new Error("usePageContext must be used within a PageProviderContext");
+
+	return context;
+};
+
+// * page component
 export interface AppointmentIndexProps {
 	appointments?: { date: string; schedules: Appointment[] }[];
+	selectedAppointment?: Appointment;
 }
 
 export interface AppointmentIndexGlobalPageProps
@@ -121,7 +226,7 @@ export default function AppointmentIndex() {
 	);
 
 	return (
-		<>
+		<PageProvider>
 			<Head title={t("head_title")} />
 
 			<PageContainer className="flex items-center justify-between">
@@ -198,6 +303,6 @@ export default function AppointmentIndex() {
 					))}
 				</Tabs>
 			</PageContainer>
-		</>
+		</PageProvider>
 	);
 }

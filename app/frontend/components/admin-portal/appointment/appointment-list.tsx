@@ -24,7 +24,11 @@ import {
 import { getGenderIcon } from "@/hooks/use-gender";
 import { getBrandBadgeVariant } from "@/lib/services";
 import { cn, generateInitials } from "@/lib/utils";
-import type { AppointmentIndexProps } from "@/pages/AdminPortal/Appointment/Index";
+import type {
+	AppointmentIndexGlobalPageProps,
+	AppointmentIndexProps,
+} from "@/pages/AdminPortal/Appointment/Index";
+import { router, usePage } from "@inertiajs/react";
 import { format, formatDistance, isToday } from "date-fns";
 import {
 	Ban,
@@ -60,6 +64,7 @@ interface ScheduleListProps {
 
 function ScheduleList({ schedule }: ScheduleListProps) {
 	const { locale, tzDate } = useDateContext();
+	const { url: pageURL } = usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
 	const distanceBadgeVariant = useMemo(() => {
 		const pending =
@@ -106,6 +111,22 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 		return { time, period, distance };
 	}, [schedule.appointmentDateTime, locale, tzDate]);
+	const routeTo = {
+		cancel: (id: string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ cancel: id },
+				{
+					only: ["adminPortal", "flash", "errors", "selectedAppointment"],
+					preserveScroll: true,
+					preserveState: true,
+					replace: false,
+				},
+			);
+		},
+	};
 
 	return (
 		<Expandable
@@ -880,13 +901,17 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 						<ExpandableContent preset="slide-up">
 							<ExpandableCardFooter className="p-4 md:p-6">
 								<div className="flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end">
-									<Button
-										variant="outline"
-										className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
-									>
-										<Clock3 />
-										{t("button.reschedule")}
-									</Button>
+									{schedule.status !== "cancelled" &&
+										schedule.status !== "paid" && (
+											<Button
+												variant="outline"
+												className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
+											>
+												<Clock3 />
+												{t("button.reschedule")}
+											</Button>
+										)}
+
 									<Button
 										variant="outline"
 										className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
@@ -894,10 +919,23 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 										<Cctv />
 										{t("button.update_pic")}
 									</Button>
-									<Button variant="destructive" className="w-full lg:w-auto">
-										<Ban />
-										{t("button.cancel_booking")}
-									</Button>
+
+									{schedule.status !== "cancelled" &&
+										schedule.status !== "paid" && (
+											<Button
+												variant="destructive"
+												className="w-full lg:w-auto"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+
+													routeTo.cancel(String(schedule.id));
+												}}
+											>
+												<Ban />
+												{t("button.cancel_booking")}
+											</Button>
+										)}
 								</div>
 							</ExpandableCardFooter>
 						</ExpandableContent>
