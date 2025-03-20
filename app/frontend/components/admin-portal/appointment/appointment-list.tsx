@@ -36,7 +36,6 @@ import {
 	Cctv,
 	ChevronsDown,
 	ChevronsUp,
-	Clock3,
 	Contact,
 	CreditCard,
 	Hash,
@@ -64,7 +63,8 @@ interface ScheduleListProps {
 
 function ScheduleList({ schedule }: ScheduleListProps) {
 	const { locale, tzDate } = useDateContext();
-	const { url: pageURL } = usePage<AppointmentIndexGlobalPageProps>();
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
 	const distanceBadgeVariant = useMemo(() => {
 		const pending =
@@ -147,6 +147,11 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 			);
 		},
 	};
+	const isAdminPIC = useMemo(() => {
+		const currentAccountId = globalProps.auth.currentUser?.id;
+
+		return !!schedule.admins?.some((admin) => admin.id === currentAccountId);
+	}, [globalProps.auth.currentUser?.id, schedule?.admins]);
 
 	return (
 		<Expandable
@@ -921,46 +926,46 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 						<ExpandableContent preset="slide-up">
 							<ExpandableCardFooter className="p-4 md:p-6">
 								<div className="flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end">
-									{schedule.status !== "cancelled" &&
+									{isAdminPIC &&
+										schedule.status !== "cancelled" &&
 										schedule.status !== "paid" && (
-											<Button
-												variant="outline"
-												className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
-											>
-												<Clock3 />
-												{t("button.reschedule")}
-											</Button>
-										)}
+											<>
+												{/* <Button
+													variant="outline"
+													className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
+												>
+													<Clock3 />
+													{t("button.reschedule")}
+												</Button> */}
 
-									<Button
-										variant="outline"
-										className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
+												<Button
+													variant="outline"
+													className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
 
-											routeTo.updatePic(String(schedule.id));
-										}}
-									>
-										<Cctv />
-										{t("button.update_pic")}
-									</Button>
+														routeTo.updatePic(String(schedule.id));
+													}}
+												>
+													<Cctv />
+													{t("button.update_pic")}
+												</Button>
 
-									{schedule.status !== "cancelled" &&
-										schedule.status !== "paid" && (
-											<Button
-												variant="destructive"
-												className="w-full lg:w-auto"
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
+												<Button
+													variant="destructive"
+													className="w-full lg:w-auto"
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
 
-													routeTo.cancel(String(schedule.id));
-												}}
-											>
-												<Ban />
-												{t("button.cancel_booking")}
-											</Button>
+														routeTo.cancel(String(schedule.id));
+													}}
+												>
+													<Ban />
+													{t("button.cancel_booking")}
+												</Button>
+											</>
 										)}
 								</div>
 							</ExpandableCardFooter>
