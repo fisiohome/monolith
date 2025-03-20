@@ -1,5 +1,8 @@
 import AppointmentList from "@/components/admin-portal/appointment/appointment-list";
-import { CancelAppointmentForm } from "@/components/admin-portal/appointment/feature-form";
+import {
+	CancelAppointmentForm,
+	UpdatePICForm,
+} from "@/components/admin-portal/appointment/feature-form";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
 	ResponsiveDialog,
@@ -10,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { cn, populateQueryParams } from "@/lib/utils";
+import type { Admin } from "@/types/admin-portal/admin";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
@@ -53,34 +57,48 @@ function PageProvider({ children }: PageProviderProps) {
 	const dialogMode = useMemo(() => {
 		const currentQuery = globalProps.adminPortal?.currentQuery;
 		const isCancelMode = !!currentQuery?.cancel;
+		const isUpdatePICMode = !!currentQuery?.updatePic;
 
-		return { cancel: isCancelMode };
+		return { cancel: isCancelMode, updatePIC: isUpdatePICMode };
 	}, [globalProps.adminPortal?.currentQuery]);
 	const dialog = useMemo<ResponsiveDialogProps>(() => {
-		const isOpen = dialogMode.cancel;
+		const isOpen = dialogMode.cancel || dialogMode.updatePIC;
 		let title = "";
 		let description = "";
+		let dialogWidth = "";
 
 		if (dialogMode.cancel) {
 			title = t("modal.cancel.title");
 			description = t("modal.cancel.description");
+			dialogWidth = "650px";
+		}
+
+		if (dialogMode.updatePIC) {
+			title = t("modal.update_pic.title");
+			description = t("modal.update_pic.description");
 		}
 
 		return {
 			isOpen,
 			title,
 			description,
-			dialogWidth: "650px",
+			dialogWidth,
 			onOpenChange: (value: boolean) => {
 				if (!value) {
-					const objQueryParams = { cancel: null };
+					const objQueryParams = { cancel: null, update_pic: null };
 					const { fullUrl } = populateQueryParams(pageURL, objQueryParams);
 
 					router.get(
 						fullUrl,
 						{},
 						{
-							only: ["adminPortal", "flash", "errors", "selectedAppointment"],
+							only: [
+								"adminPortal",
+								"flash",
+								"errors",
+								"selectedAppointment",
+								"optionsData",
+							],
 							preserveScroll: true,
 							preserveState: true,
 							replace: false,
@@ -99,6 +117,12 @@ function PageProvider({ children }: PageProviderProps) {
 				<ResponsiveDialog {...dialog}>
 					{dialogMode.cancel && (
 						<CancelAppointmentForm
+							selectedAppointment={globalProps.selectedAppointment}
+						/>
+					)}
+
+					{dialogMode.updatePIC && (
+						<UpdatePICForm
 							selectedAppointment={globalProps.selectedAppointment}
 						/>
 					)}
@@ -121,6 +145,9 @@ export const usePageContext = () => {
 export interface AppointmentIndexProps {
 	appointments?: { date: string; schedules: Appointment[] }[];
 	selectedAppointment?: Appointment;
+	optionsData?: {
+		admins: Admin[];
+	};
 }
 
 export interface AppointmentIndexGlobalPageProps

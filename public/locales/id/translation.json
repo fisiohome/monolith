@@ -88,6 +88,16 @@
 				"title": "Membatalkan Janji Temu",
 				"description": "Apakah Anda yakin ingin membatalkan janji temu ini? Tindakan ini tidak dapat dibatalkan. Jika Anda ingin menjadwal ulang, Anda dapat melakukannya dari detail janji temu Anda.",
 				"button_submit": "Lanjutkan"
+			},
+			"update_pic": {
+				"title": "Perbarui Admin Penanggung Jawab",
+				"description": "Tambahkan yang baru atau hapus PIC admin sebelumnya untuk penunjukan ini"
+			}
+		},
+		"fields": {
+			"admin_pic": {
+				"label": "Admin Penanggung Jawab",
+				"placeholder": "Pilih admin penanggung jawab"
 			}
 		}
 	},

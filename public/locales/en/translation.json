@@ -88,6 +88,16 @@
 				"title": "Cancel the Appointment",
 				"description": "Are you sure you want to cancel this appointment? This action cannot be undone. If you’d like to reschedule instead, you can do so from your appointment details.",
 				"button_submit": "Continue"
+			},
+			"update_pic": {
+				"title": "Update the Appointment PIC",
+				"description": "Add a new or remove the previous admin PIC for this appointment"
+			}
+		},
+		"fields": {
+			"admin_pic": {
+				"label": "Admin PIC(s)",
+				"placeholder": "Select the admin PIC(s)"
 			}
 		}
 	},

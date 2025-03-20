@@ -790,7 +790,7 @@ function ContractDetailForm({
 					}
 					size="sm"
 					type="button"
-					variant="secondary"
+					variant="primary-outline"
 					className="w-full mx-auto col-span-full lg:w-4/12"
 					onClick={() => {
 						bankDetailsForm?.append({
@@ -1551,7 +1551,7 @@ function PersonalInformationForm({
 					}
 					size="sm"
 					type="button"
-					variant="secondary"
+					variant="primary-outline"
 					className="w-full mx-auto col-span-full lg:w-4/12"
 					onClick={() => {
 						addressesForm?.append({

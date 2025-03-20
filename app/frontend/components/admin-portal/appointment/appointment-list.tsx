@@ -126,6 +126,26 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 				},
 			);
 		},
+		updatePic: (id: string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ update_pic: id },
+				{
+					only: [
+						"adminPortal",
+						"flash",
+						"errors",
+						"selectedAppointment",
+						"optionsData",
+					],
+					preserveScroll: true,
+					preserveState: true,
+					replace: false,
+				},
+			);
+		},
 	};
 
 	return (
@@ -915,6 +935,12 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 									<Button
 										variant="outline"
 										className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
+										onClick={(event) => {
+											event.preventDefault();
+											event.stopPropagation();
+
+											routeTo.updatePic(String(schedule.id));
+										}}
 									>
 										<Cctv />
 										{t("button.update_pic")}

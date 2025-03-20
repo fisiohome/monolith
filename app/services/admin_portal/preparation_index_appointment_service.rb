@@ -5,6 +5,7 @@ module AdminPortal
 
     def initialize(params)
       @params = params
+      @selected_id = @params[:cancel] || @params[:update_pic]
     end
 
     def fetch_appointments
@@ -63,11 +64,18 @@ module AdminPortal
     end
 
     def fetch_selected_appointment
-      selected_id = @params[:cancel]
-      return nil if selected_id.blank?
+      return nil if @selected_id.blank?
 
-      appointment = Appointment.find_by(id: selected_id)
+      appointment = Appointment.find_by(id: @selected_id)
       deep_transform_keys_to_camel_case(serialize_appointment(appointment))
+    end
+
+    def fetch_options_data
+      return nil if @selected_id.blank?
+
+      admins = Admin.all.map { |admin| deep_transform_keys_to_camel_case(serialize_admin(admin).as_json) }
+
+      {admins:}
     end
   end
 end
