@@ -410,38 +410,40 @@ export const useAppointmentSchedulingForm = () => {
 		control: form.control,
 		name: "patientDetails",
 	});
-	const [isLoading, setIsLoading] = useState({
-		services: false,
-		therapists: false,
-	});
 	const watchAppointmentSchedulingValue = useWatch({
 		control: form.control,
 		name: "appointmentScheduling",
 	});
-	const appointmentFormOptions = useMemo(() => {
-		const preferredTherapistGender =
-			globalProps.optionsData?.preferredTherapistGender || [];
+	const watchServiceValue = useWatch({
+		control: form.control,
+		name: "appointmentScheduling.service.id",
+	});
+	const watchAppointmentDateTimeValue = useWatch({
+		control: form.control,
+		name: "appointmentScheduling.appointmentDateTime",
+	});
+	const watchPreferredTherapistGenderValue = useWatch({
+		control: form.control,
+		name: "appointmentScheduling.preferredTherapistGender",
+	});
+	const [isLoading, setIsLoading] = useState({
+		services: false,
+		therapists: false,
+	});
 
-		return { preferredTherapistGender };
-	}, [globalProps.optionsData?.preferredTherapistGender]);
+	// * for preferred therapist gender field
+	const preferredTherapistGenderOption = useMemo(
+		() => globalProps.optionsData?.preferredTherapistGender || [],
+		[globalProps.optionsData?.preferredTherapistGender],
+	);
 
-	// * watching the changes of service selected value
+	// * for service field
 	const servicesOption = useMemo(
 		() =>
 			globalProps?.services?.filter(
 				(service) => service.name !== "PERAWAT_HOMECARE",
 			),
 		[globalProps?.services],
-	);
-	const packagesOption = useMemo(
-		() =>
-			servicesOption
-				?.filter(
-					(service) =>
-						String(service.id) === watchAppointmentSchedulingValue?.service?.id,
-				)
-				?.flatMap((service) => service.packages),
-		[servicesOption, watchAppointmentSchedulingValue?.service?.id],
 	);
 	const onFocusServiceField = useCallback(() => {
 		// fetch the services options data
@@ -493,6 +495,16 @@ export const useAppointmentSchedulingForm = () => {
 	);
 
 	// * for package field
+	const packagesOption = useMemo(
+		() =>
+			servicesOption
+				?.filter(
+					(service) =>
+						String(service.id) === watchAppointmentSchedulingValue?.service?.id,
+				)
+				?.flatMap((service) => service.packages),
+		[servicesOption, watchAppointmentSchedulingValue?.service?.id],
+	);
 	const onSelectPackage = useCallback(
 		(
 			packageValue: AppointmentBookingSchema["appointmentScheduling"]["package"],
@@ -754,17 +766,17 @@ export const useAppointmentSchedulingForm = () => {
 	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
 	useEffect(() => {
 		if (
-			watchAppointmentSchedulingValue?.service?.id ||
-			watchAppointmentSchedulingValue?.appointmentDateTime ||
-			watchAppointmentSchedulingValue?.preferredTherapistGender
+			watchServiceValue ||
+			watchAppointmentDateTimeValue ||
+			watchPreferredTherapistGenderValue
 		) {
 			onResetTherapistOptions();
 			onResetIsoline();
 		}
 	}, [
-		watchAppointmentSchedulingValue?.service?.id,
-		watchAppointmentSchedulingValue?.appointmentDateTime,
-		watchAppointmentSchedulingValue?.preferredTherapistGender,
+		watchServiceValue,
+		watchAppointmentDateTimeValue,
+		watchPreferredTherapistGenderValue,
 		onResetIsoline,
 		onResetTherapistOptions,
 	]);
@@ -772,7 +784,7 @@ export const useAppointmentSchedulingForm = () => {
 	return {
 		form,
 		isLoading,
-		appointmentFormOptions,
+		preferredTherapistGenderOption,
 		packagesOption,
 		isOpenAppointmentDate,
 		appointmentDate,

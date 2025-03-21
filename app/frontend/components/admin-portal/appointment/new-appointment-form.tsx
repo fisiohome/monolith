@@ -1003,7 +1003,7 @@ export function AppointmentSchedulingForm() {
 		form,
 		appointmentDate,
 		appointmentDateCalendarProps,
-		appointmentFormOptions,
+		preferredTherapistGenderOption,
 		appointmentTime,
 		isIsolineCalculated: _isIsolineCalculated,
 		isLoading,
@@ -1254,22 +1254,20 @@ export function AppointmentSchedulingForm() {
 									orientation="horizontal"
 									className="grid grid-cols-1 gap-4 md:grid-cols-3"
 								>
-									{appointmentFormOptions.preferredTherapistGender.map(
-										(gender) => (
-											<FormItem
-												key={gender}
-												className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-											>
-												<FormControl>
-													<RadioGroupItem value={gender} />
-												</FormControl>
-												<FormLabel className="flex items-center gap-1 font-normal capitalize">
-													{getGenderIcon(gender)}
-													<span>{gender.toLowerCase()}</span>
-												</FormLabel>
-											</FormItem>
-										),
-									)}
+									{preferredTherapistGenderOption.map((gender) => (
+										<FormItem
+											key={gender}
+											className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+										>
+											<FormControl>
+												<RadioGroupItem value={gender} />
+											</FormControl>
+											<FormLabel className="flex items-center gap-1 font-normal capitalize">
+												{getGenderIcon(gender)}
+												<span>{gender.toLowerCase()}</span>
+											</FormLabel>
+										</FormItem>
+									))}
 								</RadioGroup>
 							</FormControl>
 							<FormMessage />
