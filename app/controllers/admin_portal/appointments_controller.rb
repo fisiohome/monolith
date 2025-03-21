@@ -1,6 +1,6 @@
 module AdminPortal
   class AppointmentsController < ApplicationController
-    before_action :set_appointment, only: [:update, :cancel, :update_pic]
+    before_action :set_appointment, only: [:update, :cancel, :update_pic, :update_status]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params)
@@ -91,9 +91,27 @@ module AdminPortal
         redirect_to admin_portal_appointments_path(request.query_parameters.except("update_pic")), notice: "Admin PIC(s) updated successfully."
       rescue => e
         Rails.logger.error "Failed to update admin PIC(s) for appointment #{@appointment.registration_number}: #{e.message}"
-        redirect_to admin_portal_appointments_path(request.query_parameters), alert: "Failed to update admins: #{e.message}"
+        redirect_to admin_portal_appointments_path(request.query_parameters), alert: "Failed to update admins PIC(s): #{e.message}"
       ensure
         Rails.logger.info "Finished process to update the admin PIC(s) for appointment #{@appointment.registration_number}"
+      end
+    end
+
+    def update_status
+      Rails.logger.info "Starting process to update status the appointment #{@appointment.registration_number}"
+
+      begin
+        ActiveRecord::Base.transaction do
+          @appointment.update(status: params.dig(:form_data, :status))
+        end
+
+        Rails.logger.info "Appointment #{@appointment.registration_number} status updated successfully."
+        redirect_to admin_portal_appointments_path(request.query_parameters.except("update_status")), notice: "Status updated."
+      rescue => e
+        Rails.logger.error "Failed to update status the appointment #{@appointment.registration_number}: #{e.message}"
+        redirect_to admin_portal_appointments_path(request.query_parameters), alert: "Failed to update status the appointment: #{e.message}"
+      ensure
+        Rails.logger.info "Finished process to update status the appointment #{@appointment.registration_number}"
       end
     end
 

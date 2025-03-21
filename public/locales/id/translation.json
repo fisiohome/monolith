@@ -32,7 +32,8 @@
 			"create": "Buat Janji Temu",
 			"cancel_booking": "Batalkan Pemesanan",
 			"reschedule": "Penjadwalan Ulang",
-			"update_pic": "Perbarui Penanggung Jawab (PIC)"
+			"update_pic": "Perbarui Penanggung Jawab (PIC)",
+			"update_status": "Perbarui Status"
 		},
 		"tab": {
 			"title": {
@@ -86,18 +87,29 @@
 		"modal": {
 			"cancel": {
 				"title": "Membatalkan Janji Temu",
-				"description": "Apakah Anda yakin ingin membatalkan janji temu ini? Tindakan ini tidak dapat dibatalkan. Jika Anda ingin menjadwal ulang, Anda dapat melakukannya dari detail janji temu Anda.",
+				"description": "Apakah Anda yakin ingin membatalkan janji temu ini? Tindakan ini tidak dapat dibatalkan. Jika Anda ingin menjadwal ulang, Anda dapat melakukannya dari detail janji temu.",
 				"button_submit": "Lanjutkan"
 			},
 			"update_pic": {
 				"title": "Perbarui Admin Penanggung Jawab",
-				"description": "Tambahkan yang baru atau hapus PIC admin sebelumnya untuk penunjukan ini"
+				"description": "Tetapkan admin penanggung jawab yang baru atau hapus admin penanggung jawab saat ini untuk janji temu ini."
+			},
+			"update_status": {
+				"title": "Perbarui Status Janji Temu",
+				"description": "Ubah status janji temu saat ini agar selalu terbaru.",
+				"button_submit": "Perbarui"
 			}
 		},
 		"fields": {
 			"admin_pic": {
 				"label": "Admin Penanggung Jawab",
 				"placeholder": "Pilih admin penanggung jawab"
+			},
+			"appointment_status": {
+				"label": "Status",
+				"placeholder": "Pilih status janji temu",
+				"search": "Cari status janji temu",
+				"empty_search": "Tidak ada status janji temu yang ditemukan."
 			}
 		}
 	},

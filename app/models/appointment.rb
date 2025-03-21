@@ -27,6 +27,8 @@ class Appointment < ApplicationRecord
 
   validates :preferred_therapist_gender, :patient_complaint_description, :patient_condition, presence: true
 
+  validate :status_must_be_valid
+
   # * define the constants
   PatientCondition = Struct.new(:title, :description)
   PATIENT_CONDITION = [
@@ -84,6 +86,17 @@ class Appointment < ApplicationRecord
         self.registration_number = candidate
         break
       end
+    end
+  end
+
+  def status_must_be_valid
+    return if status.blank?
+
+    valid_keys = self.class.statuses.keys.map(&:to_s)
+    valid_values = self.class.statuses.values
+
+    unless valid_keys.include?(status.to_s) || valid_values.include?(status.to_s)
+      errors.add(:status, "#{status} is not a valid appointment status")
     end
   end
 end

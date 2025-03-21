@@ -1,6 +1,25 @@
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormMessage,
+} from "@/components/ui/form";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	MultiSelector,
 	MultiSelectorContent,
@@ -11,16 +30,21 @@ import {
 } from "@/components/ui/multi-select";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import i18n from "@/lib/i18n";
-import { populateQueryParams } from "@/lib/utils";
+import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
-import type { Appointment } from "@/types/admin-portal/appointment";
+import type {
+	AppointmentStatuses,
+	Appointment,
+} from "@/types/admin-portal/appointment";
 import type { ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export function CancelAppointmentForm({
 	selectedAppointment,
@@ -200,6 +224,157 @@ export function UpdatePICForm({
 								</FormControl>
 
 								{/* <FormMessage /> */}
+							</FormItem>
+						)}
+					/>
+
+					<ResponsiveDialogButton {...buttonProps} />
+				</form>
+			</Form>
+		</div>
+	);
+}
+
+export function UpdateStatusForm({
+	selectedAppointment,
+	forceMode,
+}: { selectedAppointment: Appointment; forceMode?: ResponsiveDialogMode }) {
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentIndexGlobalPageProps>();
+	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const [isLoading, setIsLoading] = useState(false);
+	const buttonProps = useMemo<ResponsiveDialogButton>(
+		() => ({
+			isLoading,
+			forceMode,
+			submitText: t("modal.update_status.button_submit"),
+		}),
+		[isLoading, forceMode, t],
+	);
+	const appointmentStatuses = useMemo(
+		() =>
+			globalProps.optionsData?.statuses.filter(
+				(status) =>
+					status.key !== "cancelled" &&
+					status.key !== "pending_therapist_assignment",
+			) || [],
+		[globalProps.optionsData?.statuses],
+	);
+	const formSchema = z.object({
+		id: z.string(),
+		status: z.enum(
+			appointmentStatuses.map((status) => status.key) as [
+				keyof typeof AppointmentStatuses,
+				...(keyof typeof AppointmentStatuses)[],
+			],
+		),
+	});
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			id: selectedAppointment.id,
+			status: selectedAppointment?.status,
+		},
+		mode: "onSubmit",
+	});
+	const onSubmit = (values: z.infer<typeof formSchema>) => {
+		const routeURL = `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.id}/update_status`;
+		// populate current query params
+		const { queryParams } = populateQueryParams(pageURL);
+		// generate the submit form url with the source query params
+		const { fullUrl } = populateQueryParams(routeURL, queryParams);
+		const formData = deepTransformKeysToSnakeCase({ formData: { ...values } });
+		router.put(fullUrl, formData, {
+			preserveScroll: true,
+			preserveState: true,
+			onStart: () => {
+				setIsLoading(true);
+			},
+			onFinish: () => {
+				setTimeout(() => {
+					setIsLoading(false);
+				}, 250);
+			},
+		});
+	};
+
+	return (
+		<div className="p-0.5 min-h-fit">
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+					<FormField
+						control={form.control}
+						name="status"
+						render={({ field }) => (
+							<FormItem className="flex flex-col">
+								{/* <FormLabel>{t("fields.appointment_status.label")}</FormLabel> */}
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant="outline"
+												className={cn(
+													"w-full justify-between font-normal shadow-inner bg-sidebar",
+													!field.value && "text-muted-foreground",
+												)}
+											>
+												<p>
+													{field.value
+														? appointmentStatuses.find(
+																(status) => status.key === field.value,
+															)?.value
+														: t("fields.appointment_status.placeholder")}
+												</p>
+
+												<ChevronsUpDown className="opacity-50" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent align="start" side="bottom" className="p-0 ">
+										<Command>
+											<CommandInput
+												disabled={isLoading}
+												placeholder={`${t("fields.appointment_status.search")}...`}
+												className="h-9"
+											/>
+											<CommandList>
+												<CommandEmpty>
+													{t("fields.appointment_status.empty_search")}
+												</CommandEmpty>
+												<CommandGroup>
+													{isLoading ? (
+														<CommandItem value={undefined} disabled>
+															<LoaderIcon className="animate-spin" />
+															<span>{`${i18n.t("components.modal.wait")}...`}</span>
+														</CommandItem>
+													) : (
+														appointmentStatuses.map((status) => (
+															<CommandItem
+																value={status.value}
+																key={status.key}
+																onSelect={() => {
+																	form.setValue("status", status.key);
+																}}
+															>
+																{status.value}
+																<Check
+																	className={cn(
+																		"ml-auto",
+																		status.key === field.value
+																			? "opacity-100"
+																			: "opacity-0",
+																	)}
+																/>
+															</CommandItem>
+														))
+													)}
+												</CommandGroup>
+											</CommandList>
+										</Command>
+									</PopoverContent>
+								</Popover>
+
+								<FormMessage />
 							</FormItem>
 						)}
 					/>

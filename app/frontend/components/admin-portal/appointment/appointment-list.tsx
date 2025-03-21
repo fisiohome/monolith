@@ -31,6 +31,7 @@ import type {
 import { router, usePage } from "@inertiajs/react";
 import { format, formatDistance, isToday } from "date-fns";
 import {
+	Activity,
 	Ban,
 	Building,
 	Cctv,
@@ -73,22 +74,22 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 		const paid =
 			"text-emerald-800 bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-100";
 
-		return schedule.status === "PENDING THERAPIST ASSIGNMENT".toLowerCase() ||
-			schedule.status === "PENDING PATIENT APPROVAL".toLowerCase() ||
-			schedule.status === "PENDING PAYMENT".toLowerCase()
+		return schedule.status === "pending_patient_approval" ||
+			schedule.status === "pending_payment" ||
+			schedule.status === "pending_therapist_assignment"
 			? pending
-			: schedule.status === "PAID".toLowerCase()
-				? paid
-				: schedule.status === "CANCELLED".toLowerCase()
-					? cancel
+			: schedule.status === "cancelled"
+				? cancel
+				: schedule.status === "paid"
+					? paid
 					: "";
 	}, [schedule.status]);
 	const statusDotVariant = useMemo<VariantDotBadge["variant"]>(() => {
-		return schedule.status === "PENDING THERAPIST ASSIGNMENT".toLowerCase() ||
-			schedule.status === "PENDING PATIENT APPROVAL".toLowerCase() ||
-			schedule.status === "PENDING PAYMENT".toLowerCase()
+		return schedule.status === "pending_patient_approval" ||
+			schedule.status === "pending_payment" ||
+			schedule.status === "pending_therapist_assignment"
 			? "warning"
-			: schedule.status === "CANCELLED".toLowerCase()
+			: schedule.status === "cancelled"
 				? "destructive"
 				: "success";
 	}, [schedule.status]);
@@ -132,6 +133,26 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 			router.get(
 				url,
 				{ update_pic: id },
+				{
+					only: [
+						"adminPortal",
+						"flash",
+						"errors",
+						"selectedAppointment",
+						"optionsData",
+					],
+					preserveScroll: true,
+					preserveState: true,
+					replace: false,
+				},
+			);
+		},
+		updateStatus: (id: string) => {
+			const url = pageURL;
+
+			router.get(
+				url,
+				{ update_status: id },
 				{
 					only: [
 						"adminPortal",
@@ -939,8 +960,22 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												</Button> */}
 
 												<Button
-													variant="outline"
-													className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
+													variant="primary-outline"
+													className="w-full border lg:w-auto"
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
+
+														routeTo.updateStatus(String(schedule.id));
+													}}
+												>
+													<Activity />
+													{t("button.update_status")}
+												</Button>
+
+												<Button
+													variant="primary-outline"
+													className="w-full border lg:w-auto"
 													onClick={(event) => {
 														event.preventDefault();
 														event.stopPropagation();

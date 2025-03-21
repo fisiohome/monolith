@@ -10,12 +10,13 @@ import type { Patient } from "./patient";
 import type { Service } from "./service";
 import type { Therapist } from "./therapist";
 
-type AppointmentStatus =
-	| "pending therapist assignment"
-	| "pending patient approval"
-	| "pending payment"
-	| "cancelled"
-	| "paid";
+export enum AppointmentStatuses {
+	pending_therapist_assignment = "PENDING THERAPIST ASSIGNMENT",
+	pending_patient_approval = "PENDING PATIENT APPROVAL",
+	pending_payment = "PENDING PAYMENT",
+	cancelled = "CANCELLED",
+	paid = "PAID",
+}
 
 export interface AppointmentPayload {
 	serviceId: string;
@@ -78,7 +79,7 @@ export interface Appointment {
 	package?: Package;
 	location?: Location;
 	registrationNumber: string;
-	status: AppointmentStatus;
+	status: keyof typeof AppointmentStatuses;
 	appointmentDateTime: string;
 	preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
 	patientIllnessOnsetDate: string | null;

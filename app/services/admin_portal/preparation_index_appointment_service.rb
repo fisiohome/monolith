@@ -5,7 +5,7 @@ module AdminPortal
 
     def initialize(params)
       @params = params
-      @selected_id = @params[:cancel] || @params[:update_pic]
+      @selected_id = @params[:cancel] || @params[:update_pic] || @params[:update_status]
     end
 
     def fetch_appointments
@@ -74,8 +74,9 @@ module AdminPortal
       return nil if @selected_id.blank?
 
       admins = Admin.all.map { |admin| deep_transform_keys_to_camel_case(serialize_admin(admin).as_json) }
+      statuses = Appointment.statuses.map { |key, value| {key:, value:} }.as_json
 
-      {admins:}
+      {admins:, statuses:}
     end
   end
 end

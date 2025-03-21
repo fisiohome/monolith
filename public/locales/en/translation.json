@@ -32,7 +32,8 @@
 			"create": "Create Appointment",
 			"cancel_booking": "Cancel Booking",
 			"reschedule": "Reschedule",
-			"update_pic": "Update PIC(s)"
+			"update_pic": "Update PIC(s)",
+			"update_status": "Update Status"
 		},
 		"tab": {
 			"title": {
@@ -79,7 +80,7 @@
 			"reg_number": "Reg. Number",
 			"phone": "Phone",
 			"emp_type": "Emp. type",
-			"pic_details": "PIC Details",
+			"pic_details": "PIC(s) Details",
 			"person_in_charge": "Person in charge(s)",
 			"type": "Type"
 		},
@@ -91,13 +92,24 @@
 			},
 			"update_pic": {
 				"title": "Update the Appointment PIC",
-				"description": "Add a new or remove the previous admin PIC for this appointment"
+				"description": "Assign a new admin PIC(s) or remove the current one for this appointment."
+			},
+			"update_status": {
+				"title": "Update the Appointment Status",
+				"description": "Modify the current status of this appointment to keep things up to date.",
+				"button_submit": "Update"
 			}
 		},
 		"fields": {
 			"admin_pic": {
 				"label": "Admin PIC(s)",
 				"placeholder": "Select the admin PIC(s)"
+			},
+			"appointment_status": {
+				"label": "Status",
+				"placeholder": "Select appointment status",
+				"search": "Search appointment status",
+				"empty_search": "No appointment status found."
 			}
 		}
 	},

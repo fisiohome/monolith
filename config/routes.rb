@@ -42,6 +42,7 @@ Rails.application.routes.draw do
             post "book" => "appointments#create"
             put ":id/cancel" => "appointments#cancel"
             put ":id/update_pic" => "appointments#update_pic"
+            put ":id/update_status" => "appointments#update_status"
           end
         end
 
