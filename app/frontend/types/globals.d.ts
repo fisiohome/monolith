@@ -63,6 +63,7 @@ export interface AdminPortal {
 				new: string;
 				generateResetPasswordUrl: string;
 				changePassword: string;
+				schedules: string;
 			};
 			serviceManagement: {
 				index: string;

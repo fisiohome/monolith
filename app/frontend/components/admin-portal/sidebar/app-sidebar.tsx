@@ -13,14 +13,23 @@ import { HousePlus } from "lucide-react";
 import type * as React from "react";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { IS_TABLET_MEDIA_QUERY } from "@/lib/constants";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function AppSidebar({
 	...props
 }: React.ComponentProps<typeof Sidebar>) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
+	const isMobile = useIsMobile();
+	const isTablet = useMediaQuery(IS_TABLET_MEDIA_QUERY);
 
 	return (
-		<Sidebar variant="inset" collapsible="icon" {...props}>
+		<Sidebar
+			variant="inset"
+			collapsible={isMobile || isTablet ? "offcanvas" : "icon"}
+			{...props}
+		>
 			<SidebarHeader className="motion-preset-bounce">
 				<SidebarMenu>
 					<SidebarMenuItem>

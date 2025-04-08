@@ -83,14 +83,12 @@ export default function ToolbarTable({ table: _ }: ToolbarTableProps) {
 	});
 	const updateQueryParams = useCallback(
 		debounce((value) => {
-			const { fullUrl, queryParams } = populateQueryParams(pageURL, {
-				...value,
-			});
+			const { fullUrl } = populateQueryParams(pageURL, { ...value });
 
 			router.get(
 				fullUrl,
-				{ ...queryParams },
-				{ preserveState: true, only: ["therapists"] },
+				{},
+				{ preserveState: true, only: ["therapists", "adminPortal"] },
 			);
 		}, 500),
 		[],
@@ -100,7 +98,9 @@ export default function ToolbarTable({ table: _ }: ToolbarTableProps) {
 		type,
 	}: { value: string; type: keyof typeof filterBy }) => {
 		setFilterBy({ ...filterBy, [type]: value });
-		updateQueryParams(deepTransformKeysToSnakeCase({ [type]: value }));
+		updateQueryParams(
+			deepTransformKeysToSnakeCase({ ...filterBy, [type]: value }),
+		);
 	};
 
 	return (

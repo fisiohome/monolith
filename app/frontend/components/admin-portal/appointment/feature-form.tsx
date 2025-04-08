@@ -139,7 +139,7 @@ export function UpdatePICForm({
 			return;
 		}
 
-		const routeURL = `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.id}/update_pic`;
+		const routeURL = `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.id}/update-pic`;
 		// populate current query params
 		const { queryParams } = populateQueryParams(pageURL);
 		// generate the submit form url with the source query params
@@ -278,7 +278,7 @@ export function UpdateStatusForm({
 		mode: "onSubmit",
 	});
 	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		const routeURL = `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.id}/update_status`;
+		const routeURL = `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.id}/update-status`;
 		// populate current query params
 		const { queryParams } = populateQueryParams(pageURL);
 		// generate the submit form url with the source query params

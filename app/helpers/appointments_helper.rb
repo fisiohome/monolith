@@ -55,7 +55,9 @@ module AppointmentsHelper
         voucher_discount: appointment.voucher_discount,
         formatted_discount: appointment.formatted_discount,
         total_price: appointment.total_price,
-        formatted_total_price: appointment.formatted_total_price
+        formatted_total_price: appointment.formatted_total_price,
+        start_time: appointment.start_time,
+        end_time: appointment.end_time
       )
 
       # Serialize appointment admins.

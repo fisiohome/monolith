@@ -18,6 +18,23 @@
 			"go_to_last": "Go to last page"
 		}
 	},
+	"therapist_schedules": {
+		"title": "Therapist Schedules",
+		"date_toolbar": {
+			"today_btn": "Today"
+		},
+		"pagination": {
+			"showing": "Showing",
+			"therapists": "therapists"
+		},
+		"calendar": {
+			"block": {
+				"availability": {
+					"title": "Available"
+				}
+			}
+		}
+	},
 	"appointments": {
 		"head_title": "Appointment Schedule",
 		"page_title": "Appointment Schedule",

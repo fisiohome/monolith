@@ -34,6 +34,7 @@ Rails.application.routes.draw do
         # resources :users, path: "accounts", as: "account_management"
         put "suspend" => "users#suspend_account"
         put "activate" => "users#activate_account"
+        get "therapist-schedules" => "therapists#schedules"
 
         resources :dashboards, only: [:index]
 
@@ -41,8 +42,8 @@ Rails.application.routes.draw do
           collection do
             post "book" => "appointments#create"
             put ":id/cancel" => "appointments#cancel"
-            put ":id/update_pic" => "appointments#update_pic"
-            put ":id/update_status" => "appointments#update_status"
+            put ":id/update-pic" => "appointments#update_pic"
+            put ":id/update-status" => "appointments#update_status"
           end
         end
 

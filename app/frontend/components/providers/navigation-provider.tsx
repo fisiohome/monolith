@@ -4,6 +4,7 @@ import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import {
 	Calendar1,
+	CalendarDays,
 	CalendarRange,
 	Hospital,
 	LayoutDashboard,
@@ -86,6 +87,14 @@ export function NavigationProvider({
 			isActive: true,
 			subItems: [],
 		};
+		const therapistSchedule = {
+			title: t("therapist_schedules"),
+			url: globalProps.adminPortal.router.adminPortal.therapistManagement
+				.schedules,
+			icon: CalendarDays,
+			isActive: true,
+			subItems: [],
+		};
 		let userManagementMenu = {
 			title: t("user_management"),
 			url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
@@ -140,6 +149,7 @@ export function NavigationProvider({
 			dashboardMenu,
 			appointmentMenu,
 			availabilityMenu,
+			therapistSchedule,
 			userManagementMenu,
 			serviceManagementMenu,
 		].map((menu) => {

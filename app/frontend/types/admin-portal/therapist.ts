@@ -4,6 +4,7 @@ import type {
 	GENDERS,
 } from "../../lib/constants";
 import type { UserSerialize } from "../auth";
+import type { Appointment } from "./appointment";
 import type { Availability, AvailabilityDetail } from "./availability";
 import type { Location } from "./location";
 
@@ -56,4 +57,6 @@ export interface Therapist {
 	activeAddress?: TherapistAddress;
 	availability?: Availability;
 	availabilityDetails?: AvailabilityDetail;
+	appointments?: Appointment[];
+	activeAppointments?: Appointment[];
 }

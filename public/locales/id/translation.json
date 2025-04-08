@@ -18,6 +18,23 @@
 			"go_to_last": "Pergi ke halaman terakhir"
 		}
 	},
+	"therapist_schedules": {
+		"title": "Jadwal Terapis",
+		"date_toolbar": {
+			"today_btn": "Hari ini"
+		},
+		"pagination": {
+			"showing": "Menampilkan",
+			"therapists": "terapis"
+		},
+		"calendar": {
+			"block": {
+				"availability": {
+					"title": "Tersedia"
+				}
+			}
+		}
+	},
 	"appointments": {
 		"head_title": "Jadwal Janji Temu",
 		"page_title": "Jadwal Janji Temu",

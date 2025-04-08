@@ -67,6 +67,16 @@ class Appointment < ApplicationRecord
     number_to_currency(total_price, unit: package.currency, precision: 2, format: "%u %n")
   end
 
+  def start_time
+    appointment_date_time.strftime("%H:%M")
+  end
+
+  def end_time
+    duration = therapist&.therapist_appointment_schedule&.appointment_duration_in_minutes || 0
+    buffer = therapist&.therapist_appointment_schedule&.buffer_time_in_minutes || 0
+    (appointment_date_time + (duration + buffer).minutes).strftime("%H:%M")
+  end
+
   private
 
   def appointment_date_time_in_the_future

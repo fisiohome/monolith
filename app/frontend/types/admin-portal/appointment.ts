@@ -97,6 +97,8 @@ export interface Appointment {
 	formattedDiscount: string;
 	totalPrice: string;
 	formattedTotalPrice: string;
+	startTime?: string;
+	endTime?: string;
 	createdAt: string;
 	updatedAt: string;
 }

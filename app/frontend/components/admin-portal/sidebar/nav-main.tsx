@@ -110,6 +110,11 @@ export function NavMain() {
 								tooltip={item.title}
 								isActive={item.isActive}
 								className="motion-preset-slide-down"
+								onClick={() => {
+									if (!isMobile) return;
+
+									toggleSidebar();
+								}}
 							>
 								<Link href={item.url}>
 									<item.icon />

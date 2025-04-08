@@ -1,4 +1,6 @@
 module TherapistsHelper
+  include PatientsHelper
+
   def serialize_therapist(therapist, options = {})
     therapist.as_json(only: options[:only] || nil).tap do |therapist_serialize|
       # serialize the therapist user accounts
@@ -69,7 +71,50 @@ module TherapistsHelper
 
       # serialize the therapist appointments
       if options[:include_appointments]
-        therapist_serialize["appointments"] = therapist.appointments.as_json
+        therapist_serialize["appointments"] = therapist.appointments.map do |appointment|
+          appointment.attributes.merge(
+            start_time: appointment.start_time,
+            end_time: appointment.end_time,
+            service: appointment.service,
+            package: appointment.package,
+            location: appointment.location,
+            patient: serialize_patient(appointment.patient)
+          )
+        end
+      end
+
+      # serialize for active therapist appointments only
+      if options[:include_active_appointments]
+        appointments = therapist.appointments.select do |appointment|
+          # Skip this appointment if it's cancelled
+          next false if appointment.status_cancelled?
+
+          # If a specific appointment_date is provided in options, filter by it
+          if options[:appointment_date].present?
+            begin
+              # Include only appointments that match the target date (ignoring time)
+              target_date = Date.parse(options[:appointment_date].to_s)
+              appointment.appointment_date_time.to_date == target_date
+            rescue ArgumentError, TypeError
+              # If the date is invalid or nil, exclude the appointment
+              false
+            end
+          else
+            # If no appointment_date is provided, include all non-cancelled appointments
+            true
+          end
+        end
+
+        therapist_serialize["active_appointments"] = appointments.map do |appointment|
+          appointment.attributes.merge(
+            start_time: appointment.start_time,
+            end_time: appointment.end_time,
+            service: appointment.service,
+            package: appointment.package,
+            location: appointment.location,
+            patient: serialize_patient(appointment.patient)
+          )
+        end
       end
     end
   end

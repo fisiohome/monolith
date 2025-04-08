@@ -1,6 +1,7 @@
 module AdminPortal
   class TherapistsController < ApplicationController
     include TherapistsHelper
+
     before_action :set_therapist, only: %i[show edit update destroy]
 
     # GET /therapists
@@ -181,6 +182,56 @@ module AdminPortal
       end
 
       logger.info "The proccess to change the password account finished..."
+    end
+
+    def schedules
+      page_params = params.fetch(:page, 1)
+      limit_params = is_mobile? ? 1 : 5
+      date_params = params.fetch(:date, Time.zone.today)
+      city_params = params[:city]
+
+      therapists = Therapist
+        .left_joins(therapist_addresses: {address: :location})
+        .where(therapist_addresses: {active: true})
+        .employment_status_ACTIVE
+
+      # If a city parameter is provided, join the locations (through appointments) and filter by city name.
+      therapists = therapists.where("locations.city ILIKE ?", "%#{city_params}%") if city_params.present?
+
+      pagy, paged_therapists = pagy_array(therapists, page: page_params, limit: limit_params)
+
+      # get the filter options data
+      filter_options_lambda = lambda do
+        locations = Location.all.as_json
+
+        deep_transform_keys_to_camel_case({locations:})
+      end
+
+      render inertia: "AdminPortal/Therapist/Schedules", props: deep_transform_keys_to_camel_case({
+        params: {
+          page: page_params,
+          limit: limit_params,
+          date: date_params,
+          city: city_params
+        },
+        therapists: {
+          metadata: pagy_metadata(pagy),
+          data: paged_therapists.map do |therapist|
+            serialize_therapist(
+              therapist,
+              {
+                include_user: true,
+                include_bank_details: false,
+                include_addresses: false,
+                include_availability: true,
+                include_active_appointments: true,
+                appointment_date: date_params
+              }
+            )
+          end.as_json
+        },
+        filter_options: InertiaRails.defer { filter_options_lambda.call }
+      })
     end
 
     private
