@@ -19,7 +19,6 @@ import { useCalendarSchedule } from "@/hooks/use-calendar-schedule";
 import type { Metadata } from "@/types/pagy";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import { populateQueryParams } from "@/lib/utils";
-import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Location } from "@/types/admin-portal/location";
 
 interface SchedulesPageProps {
@@ -125,9 +124,6 @@ export default function SchedulesPage({
 
 	// * for calendar management state
 	const { timeSlots, currentTimeSlot } = useCalendarSchedule();
-	const onSelectAppointment = useCallback((appointment: Appointment) => {
-		console.log(appointment);
-	}, []);
 
 	return (
 		<>
@@ -176,7 +172,6 @@ export default function SchedulesPage({
 									therapists={therapists.data}
 									timeSlots={timeSlots}
 									selectedDate={dateParam}
-									onSelectAppointment={onSelectAppointment}
 								/>
 							</>
 						</CalendarBodyContainer>

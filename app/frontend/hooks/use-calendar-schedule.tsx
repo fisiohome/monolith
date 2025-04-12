@@ -1,3 +1,4 @@
+import type { Therapist } from "@/types/admin-portal/therapist";
 import {
 	type ContextFn,
 	differenceInMinutes,
@@ -10,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 
 export const SLOT_HEIGHT = 32; // Height of each time slot row in pixels (for UI rendering)
 export const INTERVAL_MINUTES = 60; // Default interval between time slots
-export const START_HOUR = 0; // Default start hour of the calendar (midnight)
+export const START_HOUR = 6; // Default start hour of the calendar (midnight)
 export const END_HOUR = 24; // Default end hour of the calendar (end of day)
 
 /**
@@ -117,6 +118,38 @@ export const formatTimeLabel = ({
 	// Format the Date object into "h aaa" where "h" is the hour (1-12) and "aaa" is the lowercase AM/PM.
 	const timeFormat = type === "time-block" ? "h aaa" : "hh:mm aaa";
 	return format(date, timeFormat, { locale, in: tzDate });
+};
+
+// --- New: Helper to determine a therapist’s availability for a given date ---
+// This checks for an adjusted availability first (which can mark the therapist as unavailable),
+// and if none exists, falls back to the weekly availability (based on the day name).
+export const getTherapistAvailabilityForDate = (
+	therapist: Therapist,
+	date: Date,
+) => {
+	const { availability } = therapist;
+	// Check adjusted availabilities first
+	const adjusted = availability?.adjustedAvailabilities.find(
+		(a) => a.specificDate === format(date, "yyyy-MM-dd"),
+	);
+	if (adjusted) {
+		// If marked as unavailable, do not display an available block.
+		if (adjusted.isUnavailable) {
+			return null;
+		}
+		if (adjusted.startTime && adjusted.endTime) {
+			return [{ startTime: adjusted.startTime, endTime: adjusted.endTime }];
+		}
+	}
+
+	// Fallback to weekly availabilities based on day name
+	const dayName = format(date, "EEEE"); // e.g. "Tuesday"
+	const weekly =
+		availability?.weeklyAvailabilities?.filter(
+			(a) => a.dayOfWeek === dayName,
+		) || null;
+
+	return weekly;
 };
 
 /**

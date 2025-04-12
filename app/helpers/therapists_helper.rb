@@ -1,5 +1,7 @@
 module TherapistsHelper
   include PatientsHelper
+  include AdminsHelper
+  include PackagesHelper
 
   def serialize_therapist(therapist, options = {})
     therapist.as_json(only: options[:only] || nil).tap do |therapist_serialize|
@@ -110,9 +112,17 @@ module TherapistsHelper
             start_time: appointment.start_time,
             end_time: appointment.end_time,
             service: appointment.service,
-            package: appointment.package,
             location: appointment.location,
-            patient: serialize_patient(appointment.patient)
+            patient: serialize_patient(appointment.patient),
+            admins: serialize_admin(appointment.admins),
+            package: serialize_package(
+              appointment.package,
+              options.fetch(:package_options, options.slice(:include_packages_formatted))
+            ),
+            voucher_discount: appointment.voucher_discount,
+            formatted_discount: appointment.formatted_discount,
+            total_price: appointment.total_price,
+            formatted_total_price: appointment.formatted_total_price
           )
         end
       end

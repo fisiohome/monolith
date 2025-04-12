@@ -12,7 +12,7 @@ import {
 	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
-import { populateQueryParams } from "@/lib/utils";
+import { goBackHandler, populateQueryParams } from "@/lib/utils";
 import type {
 	AppointmentNewGlobalPageProps,
 	AppointmentNewProps,
@@ -81,6 +81,12 @@ export const useStepButtons = ({
 	const onPrevStep = useCallback(() => {
 		prevStep();
 	}, [prevStep]);
+	const onBack = useCallback(() => {
+		// Remove the appointment form data from session storage
+		window.sessionStorage.removeItem("appointment-form");
+
+		goBackHandler();
+	}, []);
 	const onSubmit = async (options: { skipTherapist?: boolean } = {}) => {
 		const { skipTherapist = false } = options;
 
@@ -147,14 +153,15 @@ export const useStepButtons = ({
 
 	return {
 		isDekstop,
-		onSubmit,
 		isDisabledStep,
 		isLoading,
-		onPrevStep,
 		isFirstStep,
 		isLastStep,
 		isOptionalStep,
 		isOpenTherapistAlert,
+		onSubmit,
+		onPrevStep,
+		onBack,
 		setIsOpenTherapistAlert,
 	};
 };

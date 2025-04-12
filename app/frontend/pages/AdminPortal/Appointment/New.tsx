@@ -211,7 +211,7 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			const isCurrentRoot = pageURL.includes(path);
 			const isBookPath = path.includes("book");
 
-			// If the path is not root, parent root, or current root, is book path (POST to save the appointment) do nothing
+			// If the path is not root, or parent root, or current root, or is the book path (book path mean to POST to save the appointment) do nothing
 			if (
 				!isRoot &&
 				(!isParentRoot || isCreated) &&

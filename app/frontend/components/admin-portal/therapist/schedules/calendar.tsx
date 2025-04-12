@@ -17,11 +17,22 @@ import {
 	CommandSeparator,
 } from "@/components/ui/command";
 import {
+	Sheet,
+	SheetClose,
+	SheetContent,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
+import {
 	checkPastTimeSlot,
 	checkUnder2Hours,
 	formatTimeLabel,
+	getTherapistAvailabilityForDate,
 	INTERVAL_MINUTES,
 	SLOT_HEIGHT,
+	START_HOUR,
 } from "@/hooks/use-calendar-schedule";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -56,12 +67,17 @@ import type { SchedulesPageGlobalProps } from "@/pages/AdminPortal/Therapist/Sch
 import { groupLocationsByCountry } from "@/lib/locations";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { Calendar } from "@/components/ui/calendar";
+import { useHover } from "@uidotdev/usehooks";
+import PatientDetailsSection, {
+	AppointmentDetailsSection,
+	PICDetailsSection,
+	TherapistDetailsSection,
+} from "./appointment-details";
 
 type GeneralProps = {
 	selectedDate: Date;
 	therapists: Therapist[];
 	timeSlots: string[];
-	onSelectAppointment: (a: Appointment) => void;
 };
 
 // * for calendar container
@@ -475,12 +491,15 @@ function TimeSlot({
 	return (
 		<div
 			className={cn(
-				"h-8 text-xs text-right p-2",
+				"text-xs text-right p-2",
 				className,
 				isPastTime && "bg-sidebar text-muted-foreground",
 				isCurrentTime && "bg-primary text-primary-foreground font-bold",
 				isPastTime && isCurrentTime && !isTodayDate && "bg-primary/50",
 			)}
+			style={{
+				height: `${SLOT_HEIGHT}px`,
+			}}
 		>
 			<p className="uppercase">{label}</p>
 		</div>
@@ -531,7 +550,7 @@ export function CalendarTimeSlot({
 // * for therapist slot component
 interface TherapistSlotProps
 	extends ComponentProps<"div">,
-		Pick<GeneralProps, "selectedDate" | "onSelectAppointment"> {
+		Pick<GeneralProps, "selectedDate"> {
 	time: string;
 	therapist: Therapist;
 }
@@ -541,7 +560,6 @@ function TherapistSlot({
 	therapist,
 	time,
 	selectedDate,
-	onSelectAppointment,
 }: TherapistSlotProps) {
 	const { locale, tzDate } = useDateContext();
 	const appointments = useMemo(() => {
@@ -570,17 +588,20 @@ function TherapistSlot({
 	return (
 		<div
 			className={cn(
-				"relative h-8 border-b border-l",
+				"relative border-b border-l",
 				className,
 				isPastTime && "bg-sidebar",
 			)}
+			style={{
+				height: `${SLOT_HEIGHT}px`,
+			}}
 		>
 			{appointments?.map((appointment) => (
 				<AppointmentBlock
 					key={appointment.id}
+					therapist={therapist}
 					appointment={appointment}
 					isPastTime={isPastTime}
-					onSelectAppointment={onSelectAppointment}
 				/>
 			))}
 		</div>
@@ -589,17 +610,13 @@ function TherapistSlot({
 
 export interface CalendarTherapistSlotProps
 	extends ComponentProps<"div">,
-		Pick<
-			GeneralProps,
-			"selectedDate" | "therapists" | "timeSlots" | "onSelectAppointment"
-		> {}
+		Pick<GeneralProps, "selectedDate" | "therapists" | "timeSlots"> {}
 
 export function CalendarTherapistSlot({
 	className,
 	therapists,
 	timeSlots,
 	selectedDate,
-	onSelectAppointment,
 }: CalendarTherapistSlotProps) {
 	return (
 		<div className={cn("flex-1 overflow-x-auto", className)}>
@@ -619,7 +636,6 @@ export function CalendarTherapistSlot({
 									time={time}
 									therapist={therapist}
 									selectedDate={selectedDate}
-									onSelectAppointment={onSelectAppointment}
 								/>
 							))}
 
@@ -641,23 +657,23 @@ export function CalendarTherapistSlot({
 }
 
 // * for the appointment blocks component
-export interface AppointmentBlockProps
-	extends ComponentProps<"div">,
-		Pick<GeneralProps, "onSelectAppointment"> {
+export interface AppointmentBlockProps extends ComponentProps<"div"> {
 	isPastTime: boolean;
 	appointment: Appointment;
+	therapist: Therapist;
 	slotHeight?: number;
 	intervalMinutes?: number;
 }
 
 export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 	appointment,
+	therapist,
 	isPastTime,
 	slotHeight = SLOT_HEIGHT,
 	intervalMinutes = INTERVAL_MINUTES,
 	className,
-	onSelectAppointment,
 }) => {
+	const isMobile = useIsMobile();
 	const { locale, tzDate } = useDateContext();
 	const appointmentTime = useMemo(() => {
 		if (!appointment?.startTime || !appointment?.endTime) return "";
@@ -715,58 +731,78 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 				? cancel
 				: paid;
 	}, [appointment.status]);
+	const patientDetails = useMemo(
+		() => appointment.patient,
+		[appointment.patient],
+	);
+	const therapistDetails = useMemo(() => therapist, [therapist]);
+	const picList = useMemo(() => appointment.admins, [appointment.admins]);
 
 	return (
-		<Button
-			variant="link"
-			className={cn(
-				"absolute left-1 right-1 z-10 p-2 rounded shadow cursor-pointer text-xs inset-2 flex justify-between flex-col items-start border border-border",
-				blockColor,
-				className,
-				isPastTime && "opacity-75",
-			)}
-			style={{
-				top: `${topOffset}px`, // set the offset from the top
-				height: `${heightBlock}px`,
-			}}
-			onClick={() => onSelectAppointment(appointment)}
-		>
-			<p className="flex items-center font-bold truncate">
-				<Hash className="!size-3" /> {appointment.registrationNumber}
-			</p>
+		<Sheet>
+			<SheetTrigger asChild>
+				<Button
+					variant="link"
+					className={cn(
+						"absolute left-1 right-1 z-20 p-2 rounded shadow cursor-pointer inset-2 border border-border",
+						blockColor,
+						className,
+						isPastTime && "opacity-75",
+					)}
+					style={{
+						top: `${topOffset}px`, // set the offset from the top
+						height: `${heightBlock}px`,
+					}}
+					onClick={() => {
+						console.log(appointment);
+					}}
+				>
+					<div className="flex flex-col items-start justify-between w-full h-full text-xs line-clamp-1">
+						<p className="flex items-center font-bold truncate">
+							<Hash className="!size-3" /> {appointment.registrationNumber}{" "}
+							&bull; {patientDetails?.name}
+						</p>
 
-			<p className="font-light uppercase">{appointmentTime}</p>
-		</Button>
+						<p className="font-light uppercase">{appointmentTime}</p>
+					</div>
+				</Button>
+			</SheetTrigger>
+
+			<SheetContent
+				side={isMobile ? "bottom" : "right"}
+				className="max-h-screen p-0 overflow-auto bg-sidebar"
+			>
+				<div className="flex flex-col w-full h-full px-6">
+					<SheetHeader className="flex-none py-6 bg-muted">
+						<SheetTitle className="flex items-center">
+							<Hash className="!size-3" />
+							{appointment.registrationNumber}
+						</SheetTitle>
+					</SheetHeader>
+
+					<div className="grid flex-1 gap-8 py-4 overflow-y-auto text-sm">
+						<AppointmentDetailsSection appointment={appointment} />
+
+						{patientDetails && (
+							<PatientDetailsSection patientDetails={patientDetails} />
+						)}
+
+						{therapistDetails && (
+							<TherapistDetailsSection therapistDetails={therapistDetails} />
+						)}
+
+						{!!picList?.length && <PICDetailsSection picList={picList} />}
+					</div>
+
+					<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-muted">
+						<SheetClose asChild>
+							<Button variant="primary-outline">Close</Button>
+						</SheetClose>
+					</SheetFooter>
+				</div>
+			</SheetContent>
+		</Sheet>
 	);
-};
-
-// --- New: Helper to determine a therapist’s availability for a given date ---
-// This checks for an adjusted availability first (which can mark the therapist as unavailable),
-// and if none exists, falls back to the weekly availability (based on the day name).
-const getTherapistAvailabilityForDate = (therapist: Therapist, date: Date) => {
-	const { availability } = therapist;
-	// Check adjusted availabilities first
-	const adjusted = availability?.adjustedAvailabilities.find(
-		(a) => a.specificDate === format(date, "yyyy-MM-dd"),
-	);
-	if (adjusted) {
-		// If marked as unavailable, do not display an available block.
-		if (adjusted.isUnavailable) {
-			return null;
-		}
-		if (adjusted.startTime && adjusted.endTime) {
-			return [{ startTime: adjusted.startTime, endTime: adjusted.endTime }];
-		}
-	}
-
-	// Fallback to weekly availabilities based on day name
-	const dayName = format(date, "EEEE"); // e.g. "Tuesday"
-	const weekly =
-		availability?.weeklyAvailabilities?.filter(
-			(a) => a.dayOfWeek === dayName,
-		) || null;
-
-	return weekly;
 };
 
 // Renders a translucent block representing the therapist's available time slot.
@@ -786,6 +822,7 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 	slotHeight = SLOT_HEIGHT,
 	intervalMinutes = INTERVAL_MINUTES,
 }) => {
+	const [ref, hovering] = useHover();
 	const { t } = useTranslation("translation", {
 		keyPrefix: "therapist_schedules.calendar.block.availability",
 	});
@@ -793,16 +830,21 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 	const heightBlock = useMemo(() => {
 		const [startH, startM] = startTime.split(":").map(Number);
 		const [endH, endM] = endTime.split(":").map(Number);
+
 		const startTotal = startH * 60 + startM;
 		const endTotal = endH * 60 + endM;
 
-		return ((endTotal - startTotal) / intervalMinutes) * slotHeight;
+		// Clip the start if it's before the visible calendar start.
+		const visibleDuration = endTotal - Math.max(startTotal, START_HOUR * 60);
+		return (visibleDuration / intervalMinutes) * slotHeight;
 	}, [startTime, endTime, intervalMinutes, slotHeight]);
 	const topOffset = useMemo(() => {
 		const [startH, startM] = startTime.split(":").map(Number);
 		const startTotal = startH * 60 + startM;
-
-		return (startTotal / intervalMinutes) * slotHeight;
+		// Calculate the visible start (in minutes) from the configured calendar start
+		const displayStartTotal = START_HOUR * 60;
+		// Adjust so that if startTime equals the calendar START_HOUR, topOffset becomes 0
+		return ((startTotal - displayStartTotal) / intervalMinutes) * slotHeight;
 	}, [startTime, intervalMinutes, slotHeight]);
 	const availableTime = useMemo(() => {
 		const start = formatTimeLabel({
@@ -837,10 +879,12 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 
 	return (
 		<div
+			ref={ref}
 			className={cn(
-				"absolute flex flex-col items-start justify-between p-2 text-xs rounded shadow left-1 right-1 inset-1 bg-purple-100/25 text-purple-800 border border-border",
+				"absolute flex flex-col items-start justify-between p-2 text-xs rounded shadow left-1 right-1 inset-1 bg-purple-100/25 text-purple-800 border border-border transition-all",
 				className,
 				isPastTime && "opacity-75",
+				hovering && "-translate-y-4 z-10",
 			)}
 			style={{
 				top: `${topOffset}px`,
