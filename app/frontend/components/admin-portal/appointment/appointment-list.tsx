@@ -29,7 +29,7 @@ import type {
 	AppointmentIndexProps,
 } from "@/pages/AdminPortal/Appointment/Index";
 import { router, usePage } from "@inertiajs/react";
-import { format, formatDistance, isToday } from "date-fns";
+import { format, formatDistance, isPast, isToday } from "date-fns";
 import {
 	Activity,
 	Ban,
@@ -67,6 +67,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const isPastAppointment = useMemo(
+		() => isPast(schedule.appointmentDateTime),
+		[schedule.appointmentDateTime],
+	);
 	const distanceBadgeVariant = useMemo(() => {
 		const pending =
 			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100";
@@ -173,6 +177,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 		return !!schedule.admins?.some((admin) => admin.id === currentAccountId);
 	}, [globalProps.auth.currentUser?.id, schedule?.admins]);
+	const isSuperAdmin = useMemo(
+		() => globalProps.auth.currentUser?.["isSuperAdmin?"],
+		[globalProps.auth.currentUser?.["isSuperAdmin?"]],
+	);
 
 	return (
 		<Expandable
@@ -472,7 +480,11 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																<span>
 																	{schedule?.patient?.dateOfBirth
 																		? format(
-																				schedule?.patient?.dateOfBirth,
+																				new Date(
+																					String(
+																						schedule?.patient?.dateOfBirth,
+																					),
+																				),
 																				"PP",
 																				{
 																					locale,
@@ -947,9 +959,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 						<ExpandableContent preset="slide-up">
 							<ExpandableCardFooter className="p-4 md:p-6">
 								<div className="flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end">
-									{isAdminPIC &&
-										schedule.status !== "cancelled" &&
-										schedule.status !== "paid" && (
+									{(isSuperAdmin || isAdminPIC) &&
+										!isPastAppointment &&
+										schedule.status !== "cancelled" && (
 											<>
 												{/* <Button
 													variant="outline"
@@ -959,19 +971,21 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													{t("button.reschedule")}
 												</Button> */}
 
-												<Button
-													variant="primary-outline"
-													className="w-full border lg:w-auto"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
+												{schedule.status !== "paid" && (
+													<Button
+														variant="primary-outline"
+														className="w-full border lg:w-auto"
+														onClick={(event) => {
+															event.preventDefault();
+															event.stopPropagation();
 
-														routeTo.updateStatus(String(schedule.id));
-													}}
-												>
-													<Activity />
-													{t("button.update_status")}
-												</Button>
+															routeTo.updateStatus(String(schedule.id));
+														}}
+													>
+														<Activity />
+														{t("button.update_status")}
+													</Button>
+												)}
 
 												<Button
 													variant="primary-outline"
