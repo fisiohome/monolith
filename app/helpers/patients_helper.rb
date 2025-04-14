@@ -29,6 +29,10 @@ module PatientsHelper
       if options.fetch(:include_therapists, false) && patient.therapists.present?
         patient_serialized["therapists"] = patient.therapists.as_json(only: options[:therapists_only])
       end
+
+      patient_serialized.merge!(
+        age: patient.age
+      )
     end
   end
 end
