@@ -11,6 +11,7 @@ import {
 	PREFERRED_THERAPIST_GENDER,
 } from "./constants";
 import { boolSchema, idSchema } from "./validation";
+import { add } from "date-fns";
 
 export const DEFAULT_VALUES_LOCATION = {
 	id: "",
@@ -281,7 +282,11 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 			locationId: String(location.id),
 			notes: addressNotes,
 		},
-		patient: { name: fullName, age, dateOfBirth, gender },
+		patient: {
+			name: fullName,
+			dateOfBirth: add(dateOfBirth, { hours: 7 }),
+			gender,
+		},
 		appointment: {
 			...restAdditionalSettings,
 			...restAppointmentScheduling,

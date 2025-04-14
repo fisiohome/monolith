@@ -42,11 +42,13 @@ import {
 } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import BaseAvailabilityTimeField from "./time-field";
+import { useDateContext } from "@/components/providers/date-provider";
 
 const DateSelectedField = ({
 	parentIndex,
 	isDisabled,
 }: { parentIndex: number; isDisabled: (date: Date) => boolean }) => {
+	const { locale, tzDate } = useDateContext();
 	const form = useFormContext<AvailabilityFormSchema>();
 	const isMobile = useMediaQuery(IS_MOBILE_MEDIA_QUERY);
 
@@ -70,6 +72,7 @@ const DateSelectedField = ({
 										format(
 											new Date(String(field.value)),
 											isMobile ? "PP" : "PPP",
+											{ locale, in: tzDate },
 										)
 									) : (
 										<span className="text-muted-foreground">Pick a date</span>

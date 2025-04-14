@@ -25,6 +25,15 @@ module AdminPortal
     private
 
     def create_patient
+      # Duplicate patient parameters so we can safely modify them.
+      patient_params = @params[:patient].dup
+
+      # Convert the date of birth using server's timezone, if present.
+      if patient_params[:date_of_birth].present?
+        patient_params[:date_of_birth] = patient_params[:date_of_birth]&.in_time_zone(Time.zone.name)
+      end
+
+      # Find an existing patient by the given attributes or create a new one.
       @patient = Patient.find_by(@params[:patient]) || Patient.create!(@params[:patient])
     end
 
@@ -65,7 +74,9 @@ module AdminPortal
         status: @params[:therapist_id].present? ? "PENDING PATIENT APPROVAL" : "PENDING THERAPIST ASSIGNMENT"
       }
       appointment_params = @params[:appointment] || {}
-      appointment_attrs = base_attributes.merge(appointment_params)
+      appointment_attrs = base_attributes
+        .merge(appointment_params)
+        .merge(appointment_date_time: appointment_params[:appointment_date_time]&.in_time_zone(Time.zone.name))
       @appointment = Appointment.create!(appointment_attrs)
     end
 

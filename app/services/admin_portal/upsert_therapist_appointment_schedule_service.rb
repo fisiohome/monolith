@@ -49,7 +49,12 @@ module AdminPortal
     end
 
     def schedule_attributes
-      schedule_params.except(:weekly_availabilities, :adjusted_availabilities)
+      schedule_params
+        .except(:weekly_availabilities, :adjusted_availabilities)
+        .merge(
+          start_date_window: schedule_params[:start_date_window]&.in_time_zone(Time.zone.name),
+          end_date_window: schedule_params[:end_date_window]&.in_time_zone(Time.zone.name)
+        )
     end
 
     def weekly_availability_params
