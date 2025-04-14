@@ -73,7 +73,7 @@ import {
 	DEFAULT_VALUES_SERVICE,
 	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments";
-import { cn, goBackHandler } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Deferred, Link } from "@inertiajs/react";
 import { format } from "date-fns";
 import {
@@ -133,15 +133,16 @@ export function StepButtons({
 }: StepButtonsProps) {
 	const {
 		isDekstop,
-		onSubmit,
 		isDisabledStep,
 		isLoading,
 		isFirstStep,
 		isLastStep,
-		onPrevStep,
 		isOpenTherapistAlert,
-		setIsOpenTherapistAlert,
 		isOptionalStep,
+		onSubmit,
+		onPrevStep,
+		onBack,
+		setIsOpenTherapistAlert,
 	} = useStepButtons({
 		isCreated,
 		setFormStorage,
@@ -163,7 +164,7 @@ export function StepButtons({
 				}
 				onClick={(event) => {
 					event.preventDefault();
-					isFirstStep ? goBackHandler() : onPrevStep();
+					isFirstStep ? onBack() : onPrevStep();
 				}}
 			>
 				{isFirstStep ? "Back" : "Prev"}
