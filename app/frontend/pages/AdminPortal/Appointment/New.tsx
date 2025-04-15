@@ -185,9 +185,6 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 				only: ["adminPortal", "flash", "errors", "appointment"],
 				onStart: () => setIsLoading(true),
 				onFinish: () => {
-					// Remove the appointment form data from session storage
-					window.sessionStorage.removeItem("appointment-form");
-
 					setTimeout(() => setIsLoading(false), 250);
 				},
 			} satisfies Parameters<typeof router.put>["2"];
@@ -201,7 +198,11 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 		[globalProps.adminPortal.router.adminPortal.appointment.book],
 	);
 
-	// * for showing the dialog confirmation if user want to navigate away from the page
+	/**
+	 * * watching the changed of the route
+	 * * then show the dialog for the confirmation to user if user want to navigate away from the page
+	 * * if navigated then we remove the stored form data in session storage
+	 */
 	useEffect(() => {
 		// Add a listener for route changes
 		return router.on("before", (event) => {
@@ -242,6 +243,20 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 		pageURL,
 		isCreated,
 	]);
+	/**
+	 * * watching the success of route navigation
+	 * * then we delete the form data stored in the session storage
+	 * * this side effect is useful because after we book an appointment then the form will be calculated to redirect the user
+	 * * also useful if the user clicks the redirect button now
+	 */
+	useEffect(() => {
+		return router.on("navigate", (event) => {
+			// Remove the appointment form data from session storage
+			window.sessionStorage.removeItem("appointment-form");
+
+			console.log(`Navigated to ${event.detail.page.url}`);
+		});
+	}, []);
 
 	return (
 		<>

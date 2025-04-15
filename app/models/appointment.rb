@@ -29,6 +29,9 @@ class Appointment < ApplicationRecord
 
   validate :status_must_be_valid
 
+  validate :no_duplicate_appointment_time
+  validate :no_overlapping_appointments
+
   # * define the constants
   PatientCondition = Struct.new(:title, :description)
   PATIENT_CONDITION = [
@@ -77,6 +80,13 @@ class Appointment < ApplicationRecord
     (appointment_date_time + (duration + buffer).minutes).strftime("%H:%M")
   end
 
+  def total_duration_minutes
+    return 0 unless therapist&.therapist_appointment_schedule
+
+    therapist.therapist_appointment_schedule.appointment_duration_in_minutes +
+      therapist.therapist_appointment_schedule.buffer_time_in_minutes
+  end
+
   private
 
   def appointment_date_time_in_the_future
@@ -107,6 +117,47 @@ class Appointment < ApplicationRecord
 
     unless valid_keys.include?(status.to_s) || valid_values.include?(status.to_s)
       errors.add(:status, "#{status} is not a valid appointment status")
+    end
+  end
+
+  def no_duplicate_appointment_time
+    return if appointment_date_time.blank? || patient.blank?
+
+    conflicting = Appointment
+      .where(patient: patient, appointment_date_time: appointment_date_time)
+      .where.not(id: id)
+      .exists?
+
+    return unless conflicting
+
+    formatted_date_time = appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
+    errors.add(:appointment_date_time, "Already has an appointment at #{formatted_date_time}")
+  end
+
+  def no_overlapping_appointments
+    return if appointment_date_time.blank? || patient.blank?
+
+    current_start = appointment_date_time
+    current_end = current_start + total_duration_minutes.minutes
+
+    Appointment.where(patient: patient)
+      .where.not(id: id)
+      .where.not(therapist_id: nil)
+      .find_each do |existing|
+      next unless existing.therapist&.therapist_appointment_schedule
+
+      # Calculate existing appointment time range
+      existing_start = existing.appointment_date_time
+      existing_end = existing_start + existing.total_duration_minutes.minutes
+
+      overlapping = current_start < existing_end && current_end > existing_start
+      if overlapping
+        start = appointment_date_time.strftime("%B %d, %Y %I:%M %p")
+        ending = (appointment_date_time + total_duration_minutes.minutes).strftime("%I:%M %p")
+
+        errors.add(:appointment_date_time, "overlaps with #{start} - #{ending}")
+        break # Stop checking after first overlap
+      end
     end
   end
 end
