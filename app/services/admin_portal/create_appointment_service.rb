@@ -9,6 +9,7 @@ module AdminPortal
         create_patient
         create_patient_contact
         create_patient_address
+        check_appointment_conflicts
         create_appointment
         associate_admins
 
@@ -78,6 +79,53 @@ module AdminPortal
         .merge(appointment_params)
         .merge(appointment_date_time: appointment_params[:appointment_date_time]&.in_time_zone(Time.zone.name))
       @appointment = Appointment.create!(appointment_attrs)
+    end
+
+    def check_appointment_conflicts
+      appointment_time = @params.dig(:appointment, :appointment_date_time)&.in_time_zone(Time.zone.name)
+      check_duplicate_time(appointment_time)
+      check_overlapping_appointments(appointment_time)
+    end
+
+    def check_duplicate_time(appointment_time)
+      return unless Appointment.exists?(patient: @patient, appointment_date_time: appointment_time)
+
+      dummy = Appointment.new
+      dummy.errors.add(:base, "Patient already has an appointment at this exact time")
+      raise ActiveRecord::RecordInvalid.new(dummy)
+    end
+
+    def check_overlapping_appointments(new_start_time)
+      new_therapist_id = @params[:therapist_id]
+      new_duration, new_buffer = if new_therapist_id.present?
+        therapist = Therapist.find(new_therapist_id)
+        schedule = therapist.therapist_appointment_schedule
+        [schedule.appointment_duration_in_minutes, schedule.buffer_time_in_minutes]
+      else
+        [0, 0]
+      end
+      new_end_time = new_start_time + (new_duration + new_buffer).minutes
+
+      Appointment.where(patient: @patient).find_each do |existing|
+        next if existing.therapist_id.blank?
+
+        existing_schedule = existing.therapist.therapist_appointment_schedule
+        existing_duration = existing_schedule.appointment_duration_in_minutes
+        existing_buffer = existing_schedule.buffer_time_in_minutes
+        existing_end = existing.appointment_date_time + (existing_duration + existing_buffer).minutes
+
+        if overlapping?(new_start_time, new_end_time, existing.appointment_date_time, existing_end)
+          dummy = Appointment.new
+          # Format time to "April 17, 2025 at 10:15 AM" format
+          formatted_time = existing.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
+          dummy.errors.add(:base, "Appointment overlaps with existing appointment at #{formatted_time}")
+          raise ActiveRecord::RecordInvalid.new(dummy)
+        end
+      end
+    end
+
+    def overlapping?(start1, end1, start2, end2)
+      start1 < end2 && end1 > start2
     end
 
     def permitted_params(params)

@@ -1927,7 +1927,7 @@ export function ReviewForm() {
 			))}
 
 			{/* for showing the alert error if there's any server validation error */}
-			{errorsServerValidation?.length && (
+			{!!errorsServerValidation?.length && (
 				<Alert variant="destructive">
 					<AlertCircle className="size-4" />
 					<AlertTitle className="text-xs">Error</AlertTitle>

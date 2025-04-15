@@ -181,9 +181,15 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			const submitConfig = {
 				preserveScroll: true,
 				preserveState: true,
+				replace: false,
 				only: ["adminPortal", "flash", "errors", "appointment"],
 				onStart: () => setIsLoading(true),
-				onFinish: () => setTimeout(() => setIsLoading(false), 250),
+				onFinish: () => {
+					// Remove the appointment form data from session storage
+					window.sessionStorage.removeItem("appointment-form");
+
+					setTimeout(() => setIsLoading(false), 250);
+				},
 			} satisfies Parameters<typeof router.put>["2"];
 			const payload = buildAppointmentPayload(values);
 

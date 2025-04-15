@@ -16,6 +16,7 @@ import { goBackHandler, populateQueryParams } from "@/lib/utils";
 import type {
 	AppointmentNewGlobalPageProps,
 	AppointmentNewProps,
+	TherapistOption,
 } from "@/pages/AdminPortal/Appointment/New";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
@@ -461,7 +462,7 @@ export const useAppointmentSchedulingForm = () => {
 			}),
 		);
 		router.get(pageURL, queryParams, {
-			only: ["services"],
+			only: ["adminPortal", "flash", "errors", "services"],
 			preserveScroll: true,
 			preserveState: true,
 			replace: false,
@@ -579,6 +580,26 @@ export const useAppointmentSchedulingForm = () => {
 		}));
 		setIsTherapistFound(false);
 	}, []);
+	// map the available and unavailable therapists, then also calculate the isoline
+	const mappingTherapists = useCallback(
+		(therapists: TherapistOption[] | undefined) => {
+			const therapistsAvailable =
+				therapists?.filter((t) => t.availabilityDetails?.available) || [];
+			const therapistsUnavailable =
+				therapists?.filter((t) => !t.availabilityDetails?.available) || [];
+			setTherapistsOptions((prev) => ({
+				...prev,
+				available: therapistsAvailable,
+				unavailable: therapistsUnavailable,
+			}));
+			if (therapistsAvailable?.length) {
+				onCalculateIsoline(therapistsAvailable);
+			} else {
+				setIsTherapistFound(true);
+			}
+		},
+		[],
+	);
 	const onFindTherapists = useCallback(() => {
 		// fetch the services options data
 		const { queryParams } = populateQueryParams(
@@ -593,7 +614,6 @@ export const useAppointmentSchedulingForm = () => {
 			}),
 		);
 		router.get(pageURL, queryParams, {
-			only: ["therapists"],
 			preserveScroll: true,
 			preserveState: true,
 			replace: false,
@@ -614,26 +634,17 @@ export const useAppointmentSchedulingForm = () => {
 					}));
 				}, 250);
 			},
+			/**
+			 * ? This callback will not be called if there is a server error for example on the validation server.
+			 * ? And instead of calling the onSuccess callback it will call the onError callback. but this has been solved.
+			 * ? That is by not using the only option (for example only: [“props”]),
+			 * ? And also instead of using InertiaRails.defer use `->` or lazy data evaluation (https://inertia-rails.dev/guide/partial-reloads#lazy-data-evaluation).
+			 *
+			 **/
 			onSuccess: ({ props }) => {
-				// map the available and unavailable therapists
 				const result = (props as unknown as AppointmentNewGlobalPageProps)
 					.therapists;
-				const therapistsAvailable =
-					result?.filter((t) => t.availabilityDetails?.available) || [];
-				const therapistsUnavailable =
-					result?.filter((t) => !t.availabilityDetails?.available) || [];
-
-				setTherapistsOptions((prev) => ({
-					...prev,
-					available: therapistsAvailable,
-					unavailable: therapistsUnavailable,
-				}));
-
-				if (therapistsAvailable?.length) {
-					onCalculateIsoline(therapistsAvailable);
-				} else {
-					setIsTherapistFound(true);
-				}
+				mappingTherapists(result);
 			},
 		});
 	}, [
@@ -642,6 +653,7 @@ export const useAppointmentSchedulingForm = () => {
 		watchAppointmentSchedulingValue,
 		form.resetField,
 		onResetTherapistOptions,
+		mappingTherapists,
 	]);
 	const onSelectTherapist = useCallback(
 		(
