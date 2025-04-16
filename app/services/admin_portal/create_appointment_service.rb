@@ -6,9 +6,9 @@ module AdminPortal
 
     def call
       ActiveRecord::Base.transaction do
-        create_patient
-        create_patient_contact
-        create_patient_address
+        find_or_initialize_patient
+        upsert_patient_contact
+        upsert_patient_address
         create_appointment
         associate_admins
 
@@ -24,7 +24,7 @@ module AdminPortal
 
     private
 
-    def create_patient
+    def find_or_initialize_patient
       # Duplicate patient parameters so we can safely modify them.
       patient_params = @params[:patient].dup
 
@@ -37,23 +37,55 @@ module AdminPortal
       @patient = Patient.find_by(@params[:patient]) || Patient.create!(@params[:patient])
     end
 
-    def create_patient_contact
+    def upsert_patient_contact
       contact_params = @params[:patient_contact]
-      @patient_contact = PatientContact.find_by(
+
+      # Find a patient contact based on unique identifiers such as contact name and phone.
+      existing_contact = PatientContact.find_by(
         contact_name: contact_params[:contact_name],
         contact_phone: contact_params[:contact_phone]
-      ) || PatientContact.create!(contact_params.merge(patient: @patient))
+      )
+
+      if existing_contact
+        # Merge patient association into the parameters (if applicable).
+        existing_contact.assign_attributes(contact_params.merge(patient: @patient))
+        existing_contact.save! if existing_contact.changed?
+        @patient_contact = existing_contact
+      else
+        # Create new contact with the patient association.
+        @patient_contact = PatientContact.create!(contact_params.merge(patient: @patient))
+      end
     end
 
-    def create_patient_address
+    def upsert_patient_address
       address_params = @params[:patient_address]
 
-      # Look up an existing Address record matching all address attributes
-      address = Address.find_by(address_params) || Address.create!(address_params)
+      # Look up an existing Address record matching all address attributes.
+      address = Address.find_by(
+        location_id: address_params[:location_id],
+        postal_code: address_params[:postal_code],
+        latitude: address_params[:latitude],
+        longitude: address_params[:longitude]
+      )
 
-      # Look up an existing association between this patient and the found address
-      @patient_address = @patient.patient_addresses.find_by(address: address) ||
-        @patient.patient_addresses.create!(address: address, active: true)
+      if address
+        # Update the address record if any attributes differ.
+        address.assign_attributes(address_params)
+        address.save! if address.changed?
+      else
+        address = Address.create!(address_params)
+      end
+
+      # Look up an existing association between this patient and the found address.
+      existing_patient_address = @patient.patient_addresses.find_by(address: address)
+
+      if existing_patient_address
+        # Optionally, ensure that the association is marked active.
+        existing_patient_address.update!(active: true) unless existing_patient_address.active?
+        @patient_address = existing_patient_address
+      else
+        @patient_address = @patient.patient_addresses.create!(address: address, active: true)
+      end
     end
 
     def associate_admins

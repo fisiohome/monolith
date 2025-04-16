@@ -54,6 +54,7 @@ class Appointment < ApplicationRecord
     paid: "PAID"
   }, prefix: true
 
+  # Financial calculations group
   def voucher_discount
     0
   end
@@ -69,6 +70,7 @@ class Appointment < ApplicationRecord
   def formatted_total_price
     number_to_currency(total_price, unit: package.currency, precision: 2, format: "%u %n")
   end
+  # end group
 
   def start_time
     appointment_date_time.strftime("%H:%M")
@@ -80,15 +82,18 @@ class Appointment < ApplicationRecord
     (appointment_date_time + (duration + buffer).minutes).strftime("%H:%M")
   end
 
+  # Duration calculation for external access (used in validations)
   def total_duration_minutes
     return 0 unless therapist&.therapist_appointment_schedule
 
+    # Sum of appointment duration and buffer time from therapist's schedule
     therapist.therapist_appointment_schedule.appointment_duration_in_minutes +
       therapist.therapist_appointment_schedule.buffer_time_in_minutes
   end
 
   private
 
+  # Validation: Ensure appointment time is in the future
   def appointment_date_time_in_the_future
     if appointment_date_time.present? && appointment_date_time <= Time.current
       errors.add(:appointment_date_time, "must be in the future")
@@ -109,6 +114,7 @@ class Appointment < ApplicationRecord
     end
   end
 
+  # Validation: Ensure status is valid
   def status_must_be_valid
     return if status.blank?
 
@@ -120,6 +126,7 @@ class Appointment < ApplicationRecord
     end
   end
 
+  # Validation: Prevent exact time duplicates
   def no_duplicate_appointment_time
     return if appointment_date_time.blank? || patient.blank?
 
@@ -134,6 +141,7 @@ class Appointment < ApplicationRecord
     errors.add(:appointment_date_time, "Already has an appointment at #{formatted_date_time}")
   end
 
+  # Validation: Prevent overlapping time ranges
   def no_overlapping_appointments
     return if appointment_date_time.blank? || patient.blank?
 
