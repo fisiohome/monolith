@@ -42,7 +42,7 @@ export interface AppointmentPayload {
 		name: string;
 		gender: (typeof GENDERS)[number];
 		dateOfBirth: Date;
-		age?: number;
+		age: number;
 	};
 	appointment: {
 		patientIllnessOnsetDate?: string;

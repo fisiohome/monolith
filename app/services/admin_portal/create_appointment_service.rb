@@ -121,7 +121,7 @@ module AdminPortal
         # address information
         patient_address: %i[location_id latitude longitude postal_code address notes],
         # patient details
-        patient: [:name, :date_of_birth, :gender],
+        patient: [:name, :date_of_birth, :age, :gender],
         # appointment settings
         appointment: [
           :patient_illness_onset_date, :patient_complaint_description, :patient_condition, :patient_medical_history,
