@@ -7,7 +7,10 @@ import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
 import type { Appointment } from "@/types/admin-portal/appointment";
-import type { Patient } from "@/types/admin-portal/patient";
+import type {
+	Patient,
+	PatientMedicalRecord,
+} from "@/types/admin-portal/patient";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import { format } from "date-fns";
 import {
@@ -16,10 +19,8 @@ import {
 	CreditCard,
 	Hash,
 	IdCard,
-	Link,
 	Mail,
 	MapPinIcon,
-	Phone,
 	ShieldCheck,
 	TicketPercent,
 	User,
@@ -242,11 +243,13 @@ export function AppointmentDetailsSection({
 // * for the patient details section
 export interface PatientDetailsSectionProps extends ComponentProps<"div"> {
 	patientDetails: Patient;
+	patientMedicalRecord?: PatientMedicalRecord;
 }
 
 export default function PatientDetailsSection({
 	className,
 	patientDetails,
+	patientMedicalRecord,
 }: PatientDetailsSectionProps) {
 	const { locale, tzDate } = useDateContext();
 	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
@@ -257,49 +260,7 @@ export default function PatientDetailsSection({
 				Patient Details
 			</h3>
 
-			<div className="grid w-full gap-3 p-2 border rounded-lg border-border bg-background">
-				<p className="text-[10px] tracking-wider font-light uppercase">
-					Contact
-				</p>
-
-				<div className="grid grid-cols-2 gap-2">
-					<div className="grid gap-2">
-						<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
-							<AvatarImage src="#" />
-							<AvatarFallback>
-								<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
-							</AvatarFallback>
-						</Avatar>
-
-						<p className="uppercase text-pretty">
-							{patientDetails?.contact?.contactName}
-						</p>
-					</div>
-
-					<div className="grid gap-2 text-muted-foreground">
-						<p className="flex items-center gap-2 text-xs">
-							<Phone className="size-3" />
-							{patientDetails?.contact?.contactPhone}
-						</p>
-
-						<p className="flex items-center gap-2 text-xs break-all">
-							<Mail className="size-3" />
-							{patientDetails?.contact?.email}
-						</p>
-
-						<p className="flex items-center gap-2 text-xs break-all">
-							<Link className="size-3" />
-							{patientDetails?.contact?.miitelLink || "N/A"}
-						</p>
-					</div>
-				</div>
-			</div>
-
 			<div className="grid w-full gap-3 p-2 border rounded-lg border-border bg-background text-muted-foreground">
-				<p className="text-[10px] tracking-wider font-light uppercase">
-					Details
-				</p>
-
 				<div className="grid grid-cols-2 gap-2">
 					<div className="grid gap-2">
 						<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
@@ -309,7 +270,9 @@ export default function PatientDetailsSection({
 							</AvatarFallback>
 						</Avatar>
 
-						<p className="uppercase">{patientDetails?.name}</p>
+						<p className="font-semibold uppercase text-pretty">
+							{patientDetails?.name}
+						</p>
 					</div>
 
 					<div className="grid gap-2">
@@ -333,6 +296,78 @@ export default function PatientDetailsSection({
 						</p>
 					</div>
 				</div>
+
+				<Separator />
+
+				<div className="grid gap-2">
+					<div className="flex gap-3 text-xs">
+						<p className="font-light">{t("list.contact_name")}:</p>
+
+						<p className="flex-1 text-right break-all text-pretty">
+							{patientDetails?.contact?.contactName}
+						</p>
+					</div>
+
+					<div className="flex gap-3 text-xs">
+						<p className="font-light">Email:</p>
+
+						<p className="flex-1 text-right break-all text-pretty">
+							{patientDetails?.contact?.email}
+						</p>
+					</div>
+
+					<div className="flex gap-3 text-xs">
+						<p className="font-light">{t("list.contact_phone")}:</p>
+
+						<p className="flex-1 text-right break-all text-pretty">
+							{patientDetails?.contact?.contactPhone}
+						</p>
+					</div>
+
+					<div className="flex gap-3 text-xs">
+						<p className="font-light">MiiTel Link:</p>
+
+						<p className="flex-1 text-right break-all text-pretty">
+							{patientDetails?.contact?.miitelLink || "N/A"}
+						</p>
+					</div>
+				</div>
+
+				<Separator />
+
+				<div className="grid gap-2 text-xs">
+					<div>
+						<p className="font-light">{t("list.current_condition")}:</p>
+
+						<p className="break-all text-pretty">
+							{patientMedicalRecord?.condition || "N/A"}
+						</p>
+					</div>
+
+					<div>
+						<p className="font-light">{t("list.complaint")}:</p>
+
+						<p className="break-all text-pretty">
+							{patientMedicalRecord?.complaintDescription || "N/A"}
+						</p>
+					</div>
+
+					<div>
+						<p className="font-light">{t("list.illness_onset_date")}:</p>
+
+						<p className="break-all text-pretty">
+							{patientMedicalRecord?.illnessOnsetDate || "N/A"}
+						</p>
+					</div>
+
+					<div>
+						<p className="font-light">{t("list.medical_history")}:</p>
+
+						<p className="break-all text-pretty">
+							{patientMedicalRecord?.medicalHistory || "N/A"}
+						</p>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
@@ -347,6 +382,8 @@ export function TherapistDetailsSection({
 	className,
 	therapistDetails,
 }: TherapistDetailsSectionProps) {
+	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+
 	return (
 		<div className={cn("grid gap-3 text-muted-foreground", className)}>
 			<h3 className="text-xs font-semibold tracking-wider uppercase">
@@ -363,7 +400,9 @@ export function TherapistDetailsSection({
 							</AvatarFallback>
 						</Avatar>
 
-						<p className="uppercase text-">{therapistDetails.name}</p>
+						<p className="font-semibold uppercase text-pretty">
+							{therapistDetails.name}
+						</p>
 					</div>
 
 					<div className="grid gap-2">
@@ -389,10 +428,7 @@ export function TherapistDetailsSection({
 
 				<div className="grid gap-2">
 					<div className="flex gap-3 text-xs">
-						<p className="flex items-center gap-2 ">
-							<Mail className="size-3" />
-							Email:
-						</p>
+						<p className="font-light">Email:</p>
 
 						<p className="flex-1 text-right break-all">
 							{therapistDetails.user.email}
@@ -400,10 +436,7 @@ export function TherapistDetailsSection({
 					</div>
 
 					<div className="flex gap-3 text-xs">
-						<p className="flex items-center gap-2 ">
-							<Phone className="size-3" />
-							Phone:
-						</p>
+						<p className="font-light">{t("list.contact_phone")}:</p>
 
 						<p className="flex-1 text-right break-all">
 							{therapistDetails.phoneNumber}
@@ -448,7 +481,9 @@ export function PICDetailsSection({
 									</AvatarFallback>
 								</Avatar>
 
-								<p className="uppercase text-pretty">{pic.name}</p>
+								<p className="font-semibold uppercase text-pretty">
+									{pic.name}
+								</p>
 							</div>
 
 							<div className="grid gap-2">

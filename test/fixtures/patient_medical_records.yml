@@ -1,0 +1,15 @@
+# # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+# one:
+#   appointment: one
+#   patient_illness_onset_date: MyText
+#   patient_complaint_description: MyText
+#   patient_condition: MyText
+#   patient_medical_history: MyText
+
+# two:
+#   appointment: two
+#   patient_illness_onset_date: MyText
+#   patient_complaint_description: MyText
+#   patient_condition: MyText
+#   patient_medical_history: MyText

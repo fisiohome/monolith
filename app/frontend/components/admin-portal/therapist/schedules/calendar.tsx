@@ -735,6 +735,10 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 		() => appointment.patient,
 		[appointment.patient],
 	);
+	const patientMedicalRecord = useMemo(
+		() => appointment.patientMedicalRecord,
+		[appointment.patientMedicalRecord],
+	);
 	const therapistDetails = useMemo(() => therapist, [therapist]);
 	const picList = useMemo(() => appointment.admins, [appointment.admins]);
 
@@ -784,7 +788,10 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 						<AppointmentDetailsSection appointment={appointment} />
 
 						{patientDetails && (
-							<PatientDetailsSection patientDetails={patientDetails} />
+							<PatientDetailsSection
+								patientDetails={patientDetails}
+								patientMedicalRecord={patientMedicalRecord}
+							/>
 						)}
 
 						{therapistDetails && (

@@ -3,6 +3,7 @@ class Patient < ApplicationRecord
 
   has_many :appointments, dependent: :nullify
   has_many :therapists, through: :appointments
+  has_many :patient_medical_records, through: :appointments
 
   has_one :patient_contact, dependent: :destroy
 
@@ -29,9 +30,13 @@ class Patient < ApplicationRecord
 
   # Ensure the combination of name, date_of_birth, age, and gender is unique
   validates :name, uniqueness: {
-    scope: [:date_of_birth, :age, :gender],
+    scope: [:date_of_birth, :gender],
     message: "Patient with these details already exists"
   }
+
+  def age
+    ((Time.zone.now - date_of_birth.to_time) / 1.year.seconds).floor
+  end
 
   private
 

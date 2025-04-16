@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_14_213943) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_16_105648) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -62,10 +62,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_14_213943) do
     t.string "status", null: false
     t.datetime "appointment_date_time", null: false
     t.string "preferred_therapist_gender", null: false
-    t.text "patient_illness_onset_date"
-    t.text "patient_complaint_description", null: false
-    t.text "patient_condition", null: false
-    t.text "patient_medical_history"
     t.string "referral_source"
     t.string "other_referral_source"
     t.boolean "fisiohome_partner_booking", default: false, null: false
@@ -161,14 +157,24 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_14_213943) do
     t.index ["patient_id"], name: "index_patient_contacts_on_patient_id"
   end
 
+  create_table "patient_medical_records", force: :cascade do |t|
+    t.uuid "appointment_id", null: false
+    t.text "illness_onset_date"
+    t.text "complaint_description", null: false
+    t.text "condition", null: false
+    t.text "medical_history"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["appointment_id"], name: "index_patient_medical_records_on_appointment_id"
+  end
+
   create_table "patients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.date "date_of_birth", null: false
-    t.integer "age", null: false
     t.enum "gender", null: false, enum_type: "gender_enum"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name", "date_of_birth", "age", "gender"], name: "index_unique_patients", unique: true
+    t.index ["name", "date_of_birth", "gender"], name: "index_patients_on_name_and_date_of_birth_and_gender", unique: true
   end
 
   create_table "services", force: :cascade do |t|
@@ -305,11 +311,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_14_213943) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
-  create_table "wilayah", primary_key: "kode", id: { type: :string, limit: 13 }, force: :cascade do |t|
-    t.string "nama", limit: 100
-    t.index ["nama"], name: "wilayah_name_idx"
-  end
-
   add_foreign_key "addresses", "locations"
   add_foreign_key "admins", "users"
   add_foreign_key "appointment_admins", "admins"
@@ -325,6 +326,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_14_213943) do
   add_foreign_key "patient_addresses", "addresses"
   add_foreign_key "patient_addresses", "patients"
   add_foreign_key "patient_contacts", "patients"
+  add_foreign_key "patient_medical_records", "appointments"
   add_foreign_key "therapist_addresses", "addresses"
   add_foreign_key "therapist_addresses", "therapists"
   add_foreign_key "therapist_adjusted_availabilities", "therapist_appointment_schedules"

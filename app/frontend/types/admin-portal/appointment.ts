@@ -6,7 +6,7 @@ import type {
 import type { Admin } from "./admin";
 import type { Location } from "./location";
 import type { Package } from "./package";
-import type { Patient } from "./patient";
+import type { Patient, PatientMedicalRecord } from "./patient";
 import type { Service } from "./service";
 import type { Therapist } from "./therapist";
 
@@ -42,7 +42,7 @@ export interface AppointmentPayload {
 		name: string;
 		gender: (typeof GENDERS)[number];
 		dateOfBirth: Date;
-		age: number;
+		age?: number;
 	};
 	appointment: {
 		patientIllnessOnsetDate?: string;
@@ -82,10 +82,6 @@ export interface Appointment {
 	status: keyof typeof AppointmentStatuses;
 	appointmentDateTime: string;
 	preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
-	patientIllnessOnsetDate: string | null;
-	patientComplaintDescription: string;
-	patientCondition: (typeof PATIENT_CONDITIONS)[number];
-	patientMedicalHistory: string | null;
 	referralSource: string | null;
 	otherReferralSource: string | null;
 	fisiohomePartnerBooking: boolean;
@@ -99,6 +95,7 @@ export interface Appointment {
 	formattedTotalPrice: string;
 	startTime?: string;
 	endTime?: string;
+	patientMedicalRecord?: PatientMedicalRecord;
 	createdAt: string;
 	updatedAt: string;
 }

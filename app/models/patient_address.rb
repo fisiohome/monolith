@@ -15,6 +15,6 @@ class PatientAddress < ApplicationRecord
 
   def ensure_single_active_address
     # Deactivate any other active address for the same therapist
-    PatientAddress.where(patient_id: patient_id, active: true).where.not(id: id).update_all(active: false)
+    PatientAddress.where(patient_id: patient_id, active: true)&.where&.not(id: id)&.update_all(active: false)
   end
 end

@@ -122,7 +122,8 @@ module TherapistsHelper
             voucher_discount: appointment.voucher_discount,
             formatted_discount: appointment.formatted_discount,
             total_price: appointment.total_price,
-            formatted_total_price: appointment.formatted_total_price
+            formatted_total_price: appointment.formatted_total_price,
+            patient_medical_record: appointment.patient_medical_record
           )
         end
       end

@@ -308,8 +308,8 @@ export const defineAppointmentFormDefaultValues = ({
 }: {
 	user: Auth["currentUser"];
 }) => {
-	// // for date of birth
-	// const dateOfBirth = new Date(1952, 5, 21);
+	// for date of birth
+	// const dateOfBirth = new Date(1999, 3, 3);
 	// const age = calculateAge(dateOfBirth);
 
 	// // for referral
@@ -345,25 +345,27 @@ export const defineAppointmentFormDefaultValues = ({
 		contactInformation: {
 			contactName: "",
 			contactPhone: "",
-			// contactName: "Yups Sagala",
-			// contactPhone: "+62 821 6714 6343",
+			// contactName: "Dendy",
+			// contactPhone: "+62896272346",
+			// email: "dendy@yopmail.com",
 		},
 		patientDetails: {
-			// fullName: "Farida Sagala",
-			// dateOfBirth,
-			// age,
-			// gender: "FEMALE",
+			// fullName: "Dendy Dandees",
+			// // dateOfBirth,
+			// // age,
+			// dateOfBirth: null,
+			// age: null,
+			// gender: "MALE",
 			// condition: "NORMAL",
 			// medicalHistory: "Hipertensi",
 			// complaintDescription: "Sakit pinggang",
 			// illnessOnsetDate: "2 minggu lalu",
-			// addressNotes:
-			// 	"masuk gang bidan solikah rumah jejer 4 google link: https://maps.app.goo.gl/EzniW78FrYkBVF1w8",
+			// addressNotes: "Taman suropati",
 			// address:
-			// 	"jl jati baru 1 nomor 9 gerbang hitam, kelurahan kampung bali kec tanah abang kota  jakarta pusat",
-			// postalCode: "10250",
-			// latitude: -6.18655,
-			// longitude: 106.81299,
+			// 	"Jl. Taman Suropati No.5, RT.5/RW.5, Menteng, Kec. Menteng, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10310",
+			// postalCode: "10310",
+			// latitude: -6.19841,
+			// longitude: 106.83209,
 			// location: {
 			// 	id: "5",
 			// 	city: "KOTA ADM. JAKARTA PUSAT",
@@ -397,10 +399,11 @@ export const defineAppointmentFormDefaultValues = ({
 			},
 		},
 		appointmentScheduling: {
-			// service: { id: "7", name: "FISIOHOME_SPECIAL_TIER" },
-			// package: { id: "1", name: "Order Visit", numberOfVisit: 1 },
+			// service: { id: "1", name: "FISIOHOME_SPECIAL_TIER" },
+			// package: { id: "3", name: "Paket Suite", numberOfVisit: 6 },
 			// preferredTherapistGender: "NO PREFERENCE",
-			// appointmentDateTime,
+			// // appointmentDateTime,
+			// appointmentDateTime: null,
 
 			service: { id: "", name: "" },
 			package: { id: "", name: "", numberOfVisit: 0 },

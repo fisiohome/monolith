@@ -10,6 +10,7 @@ module AdminPortal
         upsert_patient_contact
         upsert_patient_address
         create_appointment
+        create_patient_medical_record_appointment
         associate_admins
 
         {success: true, data: @appointment}
@@ -30,7 +31,8 @@ module AdminPortal
 
       # Convert the date of birth using server's timezone, if present.
       if patient_params[:date_of_birth].present?
-        patient_params[:date_of_birth] = patient_params[:date_of_birth]&.in_time_zone(Time.zone.name)
+        date_of_birth_formatted = patient_params[:date_of_birth]&.in_time_zone(Time.zone.name)
+        patient_params[:date_of_birth] = date_of_birth_formatted
       end
 
       # Find an existing patient by the given attributes or create a new one.
@@ -106,10 +108,33 @@ module AdminPortal
         status: @params[:therapist_id].present? ? "PENDING PATIENT APPROVAL" : "PENDING THERAPIST ASSIGNMENT"
       }
       appointment_params = @params[:appointment] || {}
+
+      # Create appointment without medical fields
+      appointment_date_time_formatted = appointment_params[:appointment_date_time]&.in_time_zone(Time.zone.name)
       appointment_attrs = base_attributes
-        .merge(appointment_params)
-        .merge(appointment_date_time: appointment_params[:appointment_date_time]&.in_time_zone(Time.zone.name))
+        .merge(appointment_params.except(
+          :patient_illness_onset_date,
+          :patient_complaint_description,
+          :patient_condition,
+          :patient_medical_history
+        ))
+        .merge(appointment_date_time: appointment_date_time_formatted)
+
       @appointment = Appointment.create!(appointment_attrs)
+    end
+
+    def create_patient_medical_record_appointment
+      appointment_params = @params[:appointment] || {}
+
+      # Extract medical fields from appointment params
+      medical_attrs = {
+        illness_onset_date: appointment_params[:patient_illness_onset_date],
+        complaint_description: appointment_params[:patient_complaint_description],
+        condition: appointment_params[:patient_condition],
+        medical_history: appointment_params[:patient_medical_history]
+      }
+
+      @appointment.create_patient_medical_record!(medical_attrs)
     end
 
     def permitted_params(params)
@@ -121,7 +146,7 @@ module AdminPortal
         # address information
         patient_address: %i[location_id latitude longitude postal_code address notes],
         # patient details
-        patient: [:name, :date_of_birth, :age, :gender],
+        patient: [:name, :date_of_birth, :gender],
         # appointment settings
         appointment: [
           :patient_illness_onset_date, :patient_complaint_description, :patient_condition, :patient_medical_history,

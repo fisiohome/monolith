@@ -11,6 +11,9 @@ class Appointment < ApplicationRecord
   has_many :appointment_admins
   has_many :admins, through: :appointment_admins
 
+  has_one :patient_medical_record, dependent: :destroy
+  accepts_nested_attributes_for :patient_medical_record
+
   # * cycle callbacks
   before_create :generate_registration_number
 
@@ -25,7 +28,7 @@ class Appointment < ApplicationRecord
   validates :fisiohome_partner_name, presence: true, if: :fisiohome_partner_booking?
   validates :other_fisiohome_partner_name, presence: true, if: -> { fisiohome_partner_name == "Other" }
 
-  validates :preferred_therapist_gender, :patient_complaint_description, :patient_condition, presence: true
+  validates :preferred_therapist_gender, presence: true
 
   validate :status_must_be_valid
 

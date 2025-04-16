@@ -1,4 +1,4 @@
-import type { GENDERS } from "@/lib/constants";
+import type { GENDERS, PATIENT_CONDITIONS } from "@/lib/constants";
 
 interface PatientContact {
 	id: number;
@@ -22,6 +22,13 @@ interface PatientActiveAddress {
 	createdAt: string;
 	updatedAt: string;
 	notes: string | null;
+}
+
+export interface PatientMedicalRecord {
+	illnessOnsetDate: string | null;
+	complaintDescription: string;
+	condition: (typeof PATIENT_CONDITIONS)[number];
+	medicalHistory: string | null;
 }
 
 export interface Patient {

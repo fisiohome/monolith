@@ -501,7 +501,8 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																{t("list.current_condition")}:
 															</p>
 															<p className="font-semibold uppercase">
-																{schedule?.patientCondition || "N/A"}
+																{schedule?.patientMedicalRecord?.condition ||
+																	"N/A"}
 															</p>
 														</div>
 
@@ -510,7 +511,8 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																{t("list.complaint")}:
 															</p>
 															<p className="font-semibold capitalize">
-																{schedule?.patientComplaintDescription || "N/A"}
+																{schedule?.patientMedicalRecord
+																	?.complaintDescription || "N/A"}
 															</p>
 														</div>
 
@@ -519,7 +521,8 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																{t("list.illness_onset_date")}:
 															</p>
 															<p className="font-semibold capitalize">
-																{schedule?.patientIllnessOnsetDate || "N/A"}
+																{schedule?.patientMedicalRecord
+																	?.illnessOnsetDate || "N/A"}
 															</p>
 														</div>
 
@@ -528,7 +531,8 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																{t("list.medical_history")}:
 															</p>
 															<p className="font-semibold capitalize">
-																{schedule?.patientMedicalHistory || "N/A"}
+																{schedule?.patientMedicalRecord
+																	?.medicalHistory || "N/A"}
 															</p>
 														</div>
 													</div>
