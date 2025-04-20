@@ -113,6 +113,14 @@ module AdminPortal
       })
     end
 
+    def fetch_patient_list
+      return if patient_search_param.blank?
+
+      Patient
+        .where(["name ILIKE ?", "%#{patient_search_param}%"])
+        .map { |patient| deep_transform_keys_to_camel_case(serialize_patient(patient).as_json) }
+    end
+
     private
 
     def selected_location_id
@@ -121,6 +129,10 @@ module AdminPortal
 
     def selected_service_id
       @params[:service_id]
+    end
+
+    def patient_search_param
+      @params[:patient_name]
     end
 
     def apply_gender_filter(therapists, gender_param)

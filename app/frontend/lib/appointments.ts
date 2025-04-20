@@ -32,6 +32,22 @@ export const DEFAULT_VALUES_THERAPIST = {
 } satisfies NonNullable<
 	AppointmentBookingSchema["appointmentScheduling"]["therapist"]
 >;
+export const DEFAULT_VALUES_PATIENT_ADDRESS = {
+	address: "",
+	postalCode: "",
+	latitude: 0,
+	longitude: 0,
+	addressNotes: undefined,
+} satisfies Pick<
+	AppointmentBookingSchema["patientDetails"],
+	"latitude" | "longitude" | "postalCode" | "addressNotes" | "address"
+>;
+export const DEFAULT_VALUES_PATIENT_CONTACT = {
+	contactName: "",
+	contactPhone: "",
+	email: undefined,
+	miitelLink: undefined,
+} satisfies AppointmentBookingSchema["contactInformation"];
 
 /**
  * * new appointment booking form schema
@@ -225,8 +241,15 @@ export type AdditionalSettingsSchema = z.infer<
 	typeof ADDITIONAL_SETTINGS_SCHEMA
 >;
 
+// form options schema
+export const FORM_OPTIONS_SCHEMA = z.object({
+	patientRecordSource: z.enum(["existing", "add"]),
+});
+export type FormOptionsSchema = z.infer<typeof FORM_OPTIONS_SCHEMA>;
+
 // all merge schema
 export const APPOINTMENT_BOOKING_SCHEMA = z.object({
+	formOptions: FORM_OPTIONS_SCHEMA,
 	contactInformation: CONTACT_INFORMATION_SCHEMA,
 	patientDetails: PATIENT_DETAILS_SCHEMA,
 	appointmentScheduling: APPOINTMENT_SCHEDULING_SCHEMA,
@@ -306,8 +329,8 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 export const defineAppointmentFormDefaultValues = ({
 	user,
 }: {
-	user: Auth["currentUser"];
-}) => {
+	user?: Auth["currentUser"];
+} = {}) => {
 	// for date of birth
 	// const dateOfBirth = new Date(1999, 3, 3);
 	// const age = calculateAge(dateOfBirth);
@@ -342,6 +365,9 @@ export const defineAppointmentFormDefaultValues = ({
 	];
 
 	return {
+		formOptions: {
+			patientRecordSource: "add",
+		},
 		contactInformation: {
 			contactName: "",
 			contactPhone: "",

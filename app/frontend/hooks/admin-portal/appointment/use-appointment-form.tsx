@@ -91,20 +91,12 @@ export const useStepButtons = ({
 	const onSubmit = async (options: { skipTherapist?: boolean } = {}) => {
 		const { skipTherapist = false } = options;
 
-		if (currentStep.label === "Contact Information") {
-			const isValid = await form.trigger("contactInformation");
-
-			if (!isValid) return;
-
-			const values = form.getValues();
-			setFormStorage({ ...values });
-			nextStep();
-		}
-
 		if (currentStep.label === "Patient Profile") {
-			const isValid = await form.trigger("patientDetails");
+			const isValidPatientDetails = await form.trigger("patientDetails");
+			const isValidContactInformation =
+				await form.trigger("contactInformation");
 
-			if (!isValid) return;
+			if (!isValidPatientDetails || !isValidContactInformation) return;
 
 			const values = form.getValues();
 			setFormStorage({ ...values });
@@ -150,6 +142,8 @@ export const useStepButtons = ({
 		if (isCreated) {
 			setStep(steps?.length);
 		}
+
+		return () => {};
 	}, [isCreated, steps, setStep]);
 
 	return {
@@ -214,7 +208,7 @@ export const useReviewForm = () => {
 			},
 			{
 				title: "Patient Profile" as const,
-				stepValue: 1,
+				stepValue: 0,
 				subs: [
 					{
 						title: "Full Name",
@@ -293,7 +287,7 @@ export const useReviewForm = () => {
 			},
 			{
 				title: "Schedule and Settings" as const,
-				stepValue: 2,
+				stepValue: 1,
 				subs: [
 					{
 						title: "Service",
@@ -331,7 +325,7 @@ export const useReviewForm = () => {
 			},
 			{
 				title: "Additionals" as const,
-				stepValue: 3,
+				stepValue: 2,
 				subs: [
 					{
 						title: "Referral Source",
@@ -381,8 +375,6 @@ export const useAdditionalSettingsForm = () => {
 		globalProps.optionsData?.fisiohomePartnerNames,
 	]);
 
-	// * Watching changes to the patient referral source and handling custom referral sources
-
 	return {
 		form,
 		additionalFormOptions,
@@ -390,23 +382,18 @@ export const useAdditionalSettingsForm = () => {
 };
 
 export const usePatientDetailsForm = () => {
-	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const form = useFormContext<AppointmentBookingSchema>();
-	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
-	const patientFormOptions = useMemo(() => {
-		const genders = globalProps.optionsData?.patientGenders || [];
-		const patientConditions = globalProps.optionsData?.patientConditions || [];
-
-		return { genders, patientConditions };
-	}, [
-		globalProps.optionsData?.patientGenders,
-		globalProps.optionsData?.patientConditions,
-	]);
+	const watchPatientRecordSourceValue = useWatch({
+		control: form.control,
+		name: "formOptions.patientRecordSource",
+	});
+	const isExistingPatientSource = useMemo(
+		() => watchPatientRecordSourceValue === "existing",
+		[watchPatientRecordSourceValue],
+	);
 
 	return {
-		form,
-		patientFormOptions,
-		isDekstop,
+		isExistingPatientSource,
 	};
 };
 
@@ -792,6 +779,8 @@ export const useAppointmentSchedulingForm = () => {
 			onResetTherapistOptions();
 			onResetIsoline();
 		}
+
+		return () => {};
 	}, [
 		watchServiceValue,
 		watchAppointmentDateTimeValue,

@@ -1,0 +1,595 @@
+import { Fragment, useCallback, useMemo, useState } from "react";
+import {
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import {
+	Sheet,
+	SheetClose,
+	SheetContent,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import {
+	DEFAULT_VALUES_LOCATION,
+	DEFAULT_VALUES_PATIENT_ADDRESS,
+	DEFAULT_VALUES_PATIENT_CONTACT,
+	defineAppointmentFormDefaultValues,
+	type AppointmentBookingSchema,
+} from "@/lib/appointments";
+import { useFormContext, useWatch } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn, debounce, populateQueryParams } from "@/lib/utils";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { router, usePage } from "@inertiajs/react";
+import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
+import {
+	AlertCircle,
+	Cake,
+	IdCard,
+	Link,
+	LoaderIcon,
+	Mail,
+	MapPinHouse,
+	MapPinIcon,
+	MapPinned,
+	MousePointerClick,
+	Pencil,
+	Phone,
+	Search,
+	User,
+	UserPlus,
+} from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Patient } from "@/types/admin-portal/patient";
+import { CardPatientBasicInfoForm } from "./patient-basic-info";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { format } from "date-fns";
+import { useDateContext } from "@/components/providers/date-provider";
+import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
+import { getGenderIcon } from "@/hooks/use-gender";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+function CardSelection({ patient }: { patient: Patient }) {
+	const { locale, tzDate } = useDateContext();
+	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+
+	return (
+		<div className="grid gap-4 p-3 text-sm border rounded-md shadow-inner border-input bg-sidebar text-muted-foreground">
+			<div className="flex items-center gap-3">
+				<Avatar className="border rounded-lg border-black/10 bg-muted size-8">
+					<AvatarImage src="#" />
+					<AvatarFallback>
+						<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
+					</AvatarFallback>
+				</Avatar>
+
+				<div className="grid line-clamp-1">
+					<p className="font-semibold uppercase truncate">{patient.name}</p>
+				</div>
+			</div>
+
+			<div className="grid grid-cols-2 gap-4">
+				<div className="flex gap-2">
+					<Cake className="mt-0.5 size-4 text-muted-foreground/75 flex-shrink-0" />
+
+					<div>
+						<p className="font-light">{t("list.age")}:</p>
+						<p className="font-semibold text-pretty">
+							<span>
+								{patient.age || "N/A"} {t("list.years")}
+							</span>
+							<span className="mx-1">&#x2022;</span>
+							<span>
+								{format(patient.dateOfBirth, "PP", {
+									locale,
+									in: tzDate,
+								})}
+							</span>
+						</p>
+					</div>
+				</div>
+
+				<div className="flex gap-2">
+					{getGenderIcon(
+						patient.gender,
+						"size-4 text-muted-foreground/75 mt-0.5 flex-shrink-0",
+					)}
+
+					<div>
+						<p className="font-light">{t("list.gender")}:</p>
+						<Badge
+							variant="outline"
+							className="flex items-center gap-1 text-xs bg-background text-muted-foreground"
+						>
+							{patient.gender &&
+								getGenderIcon(
+									patient.gender,
+									"size-4 text-muted-foreground flex-shrink-0",
+								)}
+							<p className="font-semibold">{patient.gender || "N/A"}</p>
+						</Badge>
+					</div>
+				</div>
+			</div>
+
+			<Separator />
+
+			<div className="grid grid-cols-2 gap-4">
+				<p className="mb-2 text-xs tracking-wider uppercase text-muted-foreground col-span-full">
+					Contact
+				</p>
+
+				<div className="flex items-center gap-3 col-span-full">
+					<Avatar className="border rounded-lg border-black/10 bg-muted size-8">
+						<AvatarImage src="#" />
+						<AvatarFallback>
+							<IdCard className="flex-shrink-0 size-4 text-muted-foreground/75" />
+						</AvatarFallback>
+					</Avatar>
+
+					<div className="grid line-clamp-1">
+						<p className="font-semibold uppercase truncate">
+							{patient.contact?.contactName || "N/A"}
+						</p>
+					</div>
+				</div>
+
+				<div className="flex gap-2">
+					<Phone className="mt-0.5 size-4 text-muted-foreground/75 flex-shrink-0" />
+
+					<div>
+						<p className="font-light">{t("list.contact_phone")}:</p>
+						<p className="font-semibold break-all text-pretty">
+							{patient?.contact?.contactPhone || "N/A"}
+						</p>
+					</div>
+				</div>
+
+				<div className="flex gap-2">
+					<Mail className="mt-0.5 size-4 text-muted-foreground/75 flex-shrink-0" />
+
+					<div>
+						<p className="font-light">Email:</p>
+						<p className="font-semibold break-all text-pretty">
+							{patient?.contact?.email || "N/A"}
+						</p>
+					</div>
+				</div>
+
+				<div className="flex gap-2">
+					<Link className="mt-0.5 size-4 text-muted-foreground/75 flex-shrink-0" />
+
+					<div>
+						<p className="font-light">MiiTel Link:</p>
+						<p className="font-semibold break-all text-pretty">
+							{patient?.contact?.miitelLink || "N/A"}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<Separator />
+
+			<div className="grid grid-cols-2 gap-4">
+				<p className="mb-2 text-xs tracking-wider uppercase text-muted-foreground col-span-full">
+					Visit Location
+				</p>
+
+				<div className="flex items-center gap-3 col-span-full">
+					<Avatar className="border rounded-lg border-black/10 bg-muted size-8">
+						<AvatarImage src="#" />
+						<AvatarFallback>
+							<MapPinned className="flex-shrink-0 size-4 text-muted-foreground/75" />
+						</AvatarFallback>
+					</Avatar>
+
+					<div className="grid line-clamp-1">
+						<p className="font-semibold uppercase text-pretty">
+							{[
+								patient?.activeAddress?.location?.city,
+								patient?.activeAddress?.location?.state,
+								patient?.activeAddress?.location?.country,
+							]?.join(", ") || "N/A"}
+						</p>
+					</div>
+				</div>
+
+				<div className="flex gap-2 col-span-full">
+					<MapPinHouse className="mt-0.5 size-4 text-muted-foreground/75 flex-shrink-0" />
+
+					<div>
+						<p className="font-light">{t("list.visit_address")}:</p>
+						<p className="font-semibold uppercase text-pretty">
+							{patient?.activeAddress?.address || "N/A"}
+						</p>
+						<p className="italic font-normal">
+							{t("list.notes")}: {patient?.activeAddress?.notes || "N/A"}
+						</p>
+						{patient?.activeAddress?.coordinates?.length && (
+							<Button
+								type="button"
+								variant="primary-outline"
+								size="sm"
+								className="mt-2"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									window.open(
+										`https://www.google.com/maps/search/?api=1&query=${patient?.activeAddress?.coordinates.join(",")}`,
+									);
+								}}
+							>
+								<MapPinIcon />
+								{t("list.view_on_google_maps")}
+							</Button>
+						)}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+export default function ExistingPatientSelection() {
+	const isMobile = useIsMobile();
+	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
+	const form = useFormContext<AppointmentBookingSchema>();
+	const watchPatientRecordSourceValue = useWatch({
+		control: form.control,
+		name: "formOptions.patientRecordSource",
+	});
+	const watchPatientDetailsValue = useWatch({
+		control: form.control,
+		name: "patientDetails",
+	});
+	const isNotCompletedForm = useMemo(() => {
+		const { fullName, age, dateOfBirth, gender } = watchPatientDetailsValue;
+		return !fullName || !age || !dateOfBirth || !gender;
+	}, [watchPatientDetailsValue]);
+	const hasErrorForm = useMemo(() => {
+		const hasPatientDetailsError = !!form?.formState?.errors?.patientDetails;
+		const hasContactInfoError = !!form?.formState?.errors?.contactInformation;
+
+		return hasPatientDetailsError || hasContactInfoError;
+	}, [form?.formState?.errors]);
+
+	// * manage the user selection to use existing patient data
+	const [isOpenSheet, setIsOpenSheet] = useState(false);
+	const [selectedPatient, setSelectedPatient] = useState<null | Patient>(null);
+	const patientSourceSelectionList = useMemo(() => {
+		return [
+			{
+				title: "Select existing patient",
+				value:
+					"existing" satisfies AppointmentBookingSchema["formOptions"]["patientRecordSource"],
+			},
+			{
+				title: "Add new patient record",
+				value:
+					"add" satisfies AppointmentBookingSchema["formOptions"]["patientRecordSource"],
+			},
+		];
+	}, []);
+	const isExistingPatientSource = useMemo(
+		() => watchPatientRecordSourceValue === "existing",
+		[watchPatientRecordSourceValue],
+	);
+	const onHandleChangePatientSource = useCallback(() => {
+		// reset the patient contact information and also the patient details
+		const { patientDetails, contactInformation } =
+			defineAppointmentFormDefaultValues();
+		form.resetField("contactInformation", {
+			defaultValue: { ...contactInformation },
+		});
+		form.resetField("patientDetails", {
+			defaultValue: { ...patientDetails },
+		});
+
+		// reset the data fetching of patient list
+		onHandleFetchPatientList("");
+
+		// reset the selected patient record data and the search patient state
+		setSelectedPatient(null);
+		setSearchPatient("");
+	}, [form.resetField]);
+
+	// * for get the patient list
+	const [isLoading, setIsLoading] = useState({ patientList: false });
+	const [searchPatient, setSearchPatient] = useState(
+		globalProps?.adminPortal?.currentQuery?.patientName || "",
+	);
+	const patients = useMemo(
+		() => globalProps?.patientList || [],
+		[globalProps?.patientList],
+	);
+	const onHandleFetchPatientList = useCallback(
+		debounce((value: string) => {
+			const { fullUrl } = populateQueryParams(
+				globalProps.adminPortal.router.adminPortal.appointment.new,
+				deepTransformKeysToSnakeCase({
+					patientName: value || null,
+				}),
+			);
+			router.get(
+				fullUrl,
+				{},
+				{
+					only: ["adminPortal", "flash", "errors", "patientList"],
+					preserveScroll: true,
+					preserveState: true,
+					replace: false,
+					onStart: () => {
+						setIsLoading((prev) => ({
+							...prev,
+							patientList: true,
+						}));
+					},
+					onFinish: () => {
+						setTimeout(() => {
+							setIsLoading((prev) => ({
+								...prev,
+								patientList: false,
+							}));
+						}, 250);
+					},
+				},
+			);
+		}, 250),
+		[],
+	);
+
+	// * for selected teh existing patient
+	const onSaveSelectedPatient = useCallback(() => {
+		if (!selectedPatient) return;
+
+		// provide defaults for missing nested objects
+		const {
+			name,
+			gender,
+			age,
+			dateOfBirth,
+			activeAddress = {
+				...selectedPatient.activeAddress,
+				...DEFAULT_VALUES_PATIENT_ADDRESS,
+				location: DEFAULT_VALUES_LOCATION,
+			},
+			contact = {
+				...selectedPatient.contact,
+				...DEFAULT_VALUES_PATIENT_CONTACT,
+			},
+		} = selectedPatient;
+		const {
+			latitude,
+			longitude,
+			postalCode,
+			address,
+			notes: addressNotes,
+			location,
+		} = activeAddress;
+		const patientDetails = {
+			fullName: name,
+			gender,
+			age,
+			dateOfBirth: new Date(dateOfBirth),
+			latitude,
+			longitude,
+			postalCode,
+			addressNotes: addressNotes || DEFAULT_VALUES_PATIENT_ADDRESS.addressNotes,
+			address,
+			location: {
+				id: location.id,
+				city: location.city,
+			},
+			complaintDescription: "",
+			condition: "NORMAL",
+			illnessOnsetDate: "",
+			medicalHistory: "",
+		} satisfies AppointmentBookingSchema["patientDetails"];
+		const contactInformation = {
+			contactName: contact.contactName,
+			contactPhone: contact.contactPhone,
+			email: contact.email || DEFAULT_VALUES_PATIENT_CONTACT.email,
+			miitelLink:
+				contact.miitelLink || DEFAULT_VALUES_PATIENT_CONTACT.miitelLink,
+		} satisfies AppointmentBookingSchema["contactInformation"];
+
+		// set the form values from the selected patient
+		form.setValue("patientDetails", { ...patientDetails });
+		form.setValue("contactInformation", { ...contactInformation });
+	}, [selectedPatient, form.setValue]);
+
+	return (
+		<Fragment>
+			<FormField
+				control={form.control}
+				name="formOptions.patientRecordSource"
+				render={({ field }) => (
+					<FormItem className="space-y-3 col-span-full">
+						<FormControl>
+							<RadioGroup
+								onValueChange={(event) => {
+									field.onChange(event);
+									onHandleChangePatientSource();
+								}}
+								defaultValue={field.value}
+								orientation="horizontal"
+								className="grid grid-cols-2 gap-4"
+							>
+								{patientSourceSelectionList.map((option, index) => (
+									<FormItem
+										key={option.value}
+										className="flex items-center p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+									>
+										<FormControl>
+											<RadioGroupItem value={option.value} />
+										</FormControl>
+										<FormLabel className="flex items-center gap-1.5 font-normal">
+											{index === 0 ? (
+												<MousePointerClick className="text-muted-foreground size-5" />
+											) : (
+												<UserPlus className="text-muted-foreground size-5" />
+											)}
+											{option.title}
+										</FormLabel>
+									</FormItem>
+								))}
+							</RadioGroup>
+						</FormControl>
+
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			{!!hasErrorForm && (
+				<Alert variant="destructive" className="col-span-full">
+					<AlertCircle className="size-4" />
+					<AlertTitle className="text-xs">Error</AlertTitle>
+					<AlertDescription className="text-xs">
+						Hey, just a friendly reminder to search and select the patient in
+						the record first.
+					</AlertDescription>
+				</Alert>
+			)}
+
+			{isExistingPatientSource && (
+				<Fragment>
+					<CardPatientBasicInfoForm
+						isNotCompletedForm={isNotCompletedForm}
+						details={{
+							fullName: watchPatientDetailsValue.fullName,
+							age: watchPatientDetailsValue.age,
+							dateOfBirth: watchPatientDetailsValue.dateOfBirth,
+							gender: watchPatientDetailsValue.gender,
+						}}
+						fallbackText="Select an existing patient in the record"
+						className="flex items-center justify-between gap-4 col-span-full"
+					>
+						<Button
+							variant="link"
+							size="sm"
+							effect="expandIcon"
+							iconPlacement="left"
+							type="button"
+							icon={Pencil}
+							onClick={(event) => {
+								event.preventDefault();
+								setIsOpenSheet((prev) => !prev);
+							}}
+						>
+							Edit
+						</Button>
+					</CardPatientBasicInfoForm>
+
+					<Sheet open={isOpenSheet} onOpenChange={setIsOpenSheet}>
+						<SheetContent
+							side={isMobile ? "bottom" : "right"}
+							className="!max-w-md max-h-screen p-0 overflow-auto"
+						>
+							<div className="flex flex-col w-full h-full px-6 mx-auto">
+								<SheetHeader className="flex-none py-6">
+									<SheetTitle>Select Existing Patient</SheetTitle>
+								</SheetHeader>
+
+								<div className="grid content-start flex-1 gap-4 py-4 overflow-y-auto text-sm">
+									<Input
+										placeholder="Enter the patient name..."
+										className="shadow-inner bg-sidebar"
+										value={searchPatient}
+										StartIcon={{ icon: Search }}
+										onChange={(event) => {
+											const value = event.target.value;
+
+											setSearchPatient(value);
+											onHandleFetchPatientList(value);
+										}}
+									/>
+
+									<ScrollArea
+										className={cn(
+											"w-full border rounded-md bg-sidebar",
+											isMobile ? "max-h-96" : "max-h-80",
+										)}
+									>
+										<div className="p-4">
+											<h4 className="mb-4 text-xs leading-none tracking-wider uppercase text-muted-foreground">
+												Patient list
+											</h4>
+
+											{isLoading.patientList ? (
+												<div className="flex flex-col items-center gap-2.5 text-muted-foreground">
+													<LoaderIcon className="animate-spin" />
+													<span>Please wait...</span>
+												</div>
+											) : patients?.length ? (
+												patients?.map((patient) => (
+													<Fragment key={patient.name}>
+														<button
+															type="button"
+															className={cn(
+																"w-full p-3 mb-2 text-sm text-left border rounded-md shadow-inner border-input bg-background focus:bg-primary focus:ring-1 focus:text-primary-foreground focus:ring-primary",
+																selectedPatient?.name === patient.name &&
+																	"bg-primary ring-1 text-primary-foreground ring-primary",
+															)}
+															onClick={(event) => {
+																event.preventDefault();
+																setSelectedPatient(patient);
+															}}
+														>
+															{patient.name}
+														</button>
+													</Fragment>
+												))
+											) : (
+												<div className="grid gap-4">
+													<Search className="mx-auto text-muted-foreground/75 size-6" />
+													<p className="text-center text-pretty text-muted-foreground w-[75%] mx-auto">
+														Let's start by searching for patients by name in the
+														search above.
+													</p>
+												</div>
+											)}
+										</div>
+									</ScrollArea>
+
+									{!!selectedPatient && (
+										<CardSelection patient={selectedPatient} />
+									)}
+								</div>
+
+								<SheetFooter className="sticky bottom-0 left-0 flex-none py-6">
+									<SheetClose asChild>
+										<Button variant="primary-outline" className="mt-6 sm:mt-0">
+											Close
+										</Button>
+									</SheetClose>
+
+									<Button
+										disabled={!selectedPatient}
+										onClick={(event) => {
+											event.preventDefault();
+											onSaveSelectedPatient();
+											setIsOpenSheet((prev) => !prev);
+										}}
+									>
+										Select Patient
+									</Button>
+								</SheetFooter>
+							</div>
+						</SheetContent>
+					</Sheet>
+				</Fragment>
+			)}
+		</Fragment>
+	);
+}

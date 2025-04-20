@@ -196,67 +196,67 @@ Rails.logger.info("")
 Rails.logger.info("Other admins seeding completed")
 
 # seeding the default therapists
-Rails.logger.info ""
-Rails.logger.info("Creating the therapists...")
+# Rails.logger.info ""
+# Rails.logger.info("Creating the therapists...")
 
-begin
-  therapists_data = THERAPISTS_DATA
+# begin
+#   therapists_data = THERAPISTS_DATA
 
-  therapists_data.each_with_index do |therapist_data, therapist_index|
-    # Find service and location IDs
-    service_id = Service.find_by(name: therapist_data[:service_name])&.id
-    addresses_attributes = therapist_data[:addresses_attributes].map do |address_data|
-      location_id = Location.find_by(city: address_data[:city])&.id
-      address_data.merge(location_id: location_id).except(:city)
-    end
+#   therapists_data.each_with_index do |therapist_data, therapist_index|
+#     # Find service and location IDs
+#     service_id = Service.find_by(name: therapist_data[:service_name])&.id
+#     addresses_attributes = therapist_data[:addresses_attributes].map do |address_data|
+#       location_id = Location.find_by(city: address_data[:city])&.id
+#       address_data.merge(location_id: location_id).except(:city)
+#     end
 
-    # create or update user
-    user = User.where(email: therapist_data[:email]).first_or_create do |user|
-      user.password = "Therapist123!"
-      user.password_confirmation = "Therapist123!"
+#     # create or update user
+#     user = User.where(email: therapist_data[:email]).first_or_create do |user|
+#       user.password = "Therapist123!"
+#       user.password_confirmation = "Therapist123!"
 
-      Rails.logger.debug { "User created: #{therapist_data[:email]}" }
-    end
+#       Rails.logger.debug { "User created: #{therapist_data[:email]}" }
+#     end
 
-    # create or update therapist and related records
-    therapist = Therapist.find_or_initialize_by(user_id: user.id)
-    therapist.assign_attributes(
-      therapist_data.except(
-        :email, :service_name, :addresses_attributes, :bank_details_attributes
-      )
-      .merge(
-        user_id: user.id, service_id: service_id
-      )
-    )
-    therapist.save!
+#     # create or update therapist and related records
+#     therapist = Therapist.find_or_initialize_by(user_id: user.id)
+#     therapist.assign_attributes(
+#       therapist_data.except(
+#         :email, :service_name, :addresses_attributes, :bank_details_attributes
+#       )
+#       .merge(
+#         user_id: user.id, service_id: service_id
+#       )
+#     )
+#     therapist.save!
 
-    therapist_data[:bank_details_attributes].each_with_index do |bank_data, bank_index|
-      bank_detail = BankDetail.find_or_initialize_by(bank_name: bank_data[:bank_name], account_number: bank_data[:account_number])
-      bank_detail.assign_attributes(bank_data.except(:active))
-      bank_detail.save!
+#     therapist_data[:bank_details_attributes].each_with_index do |bank_data, bank_index|
+#       bank_detail = BankDetail.find_or_initialize_by(bank_name: bank_data[:bank_name], account_number: bank_data[:account_number])
+#       bank_detail.assign_attributes(bank_data.except(:active))
+#       bank_detail.save!
 
-      TherapistBankDetail.find_or_initialize_by(therapist: therapist, bank_detail: bank_detail).update!(active: bank_data[:active])
+#       TherapistBankDetail.find_or_initialize_by(therapist: therapist, bank_detail: bank_detail).update!(active: bank_data[:active])
 
-      Rails.logger.debug { "Bank Detail #{bank_index + 1}/#{therapist_data[:bank_details_attributes].size} created/updated: #{bank_data[:bank_name]} - #{bank_data[:account_number]}" }
-    end
+#       Rails.logger.debug { "Bank Detail #{bank_index + 1}/#{therapist_data[:bank_details_attributes].size} created/updated: #{bank_data[:bank_name]} - #{bank_data[:account_number]}" }
+#     end
 
-    addresses_attributes.each_with_index do |address_data, address_index|
-      address = Address.find_or_initialize_by(address: address_data[:address])
-      address.assign_attributes(address_data.except(:active))
-      address.save!
+#     addresses_attributes.each_with_index do |address_data, address_index|
+#       address = Address.find_or_initialize_by(address: address_data[:address])
+#       address.assign_attributes(address_data.except(:active))
+#       address.save!
 
-      TherapistAddress.find_or_initialize_by(therapist: therapist, address: address).update!(active: address_data[:active])
+#       TherapistAddress.find_or_initialize_by(therapist: therapist, address: address).update!(active: address_data[:active])
 
-      Rails.logger.debug { "Address #{address_index + 1}/#{addresses_attributes.size} created/updated: #{address_data[:address]}" }
-    end
+#       Rails.logger.debug { "Address #{address_index + 1}/#{addresses_attributes.size} created/updated: #{address_data[:address]}" }
+#     end
 
-    Rails.logger.debug { "Therapist #{therapist_index + 1}/#{therapists_data.size} created/updated: #{therapist.name}" }
-  end
-rescue => e
-  Rails.logger.error("Error while seeding therapists: #{e.message}")
-end
-Rails.logger.info("")
-Rails.logger.info("Therapists seeding completed")
+#     Rails.logger.debug { "Therapist #{therapist_index + 1}/#{therapists_data.size} created/updated: #{therapist.name}" }
+#   end
+# rescue => e
+#   Rails.logger.error("Error while seeding therapists: #{e.message}")
+# end
+# Rails.logger.info("")
+# Rails.logger.info("Therapists seeding completed")
 
 Rails.logger.info("")
 Rails.logger.info("=== All accounts seeding completed ===")

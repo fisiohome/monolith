@@ -22,6 +22,7 @@ module AdminPortal
         locations: InertiaRails.defer { preparation.fetch_locations },
         services: InertiaRails.defer { preparation.fetch_services },
         therapists: -> { preparation.fetch_therapists },
+        patient_list: InertiaRails.optional { preparation.fetch_patient_list },
         options_data: InertiaRails.defer { preparation.fetch_options_data }
       })
     end

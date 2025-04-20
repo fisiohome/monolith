@@ -1,7 +1,6 @@
 import {
 	AdditionalSettingsForm,
 	AppointmentSchedulingForm,
-	ContactInformationForm,
 	FinalStep,
 	FormContainer,
 	PatientDetailsForm,
@@ -32,6 +31,7 @@ import { populateQueryParams } from "@/lib/utils";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Location } from "@/types/admin-portal/location";
 import type { Package } from "@/types/admin-portal/package";
+import type { Patient } from "@/types/admin-portal/patient";
 import type { Service } from "@/types/admin-portal/service";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
@@ -89,6 +89,7 @@ export interface AppointmentNewProps {
 		patientConditions: typeof PATIENT_CONDITIONS_WITH_DESCRIPTION;
 		fisiohomePartnerNames: typeof FISIOHOME_PARTNER;
 	};
+	patientList?: Patient[];
 	appointment: Appointment;
 }
 
@@ -114,12 +115,6 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	const steps = useMemo(
 		() =>
 			[
-				{
-					label: "Contact Information",
-					description:
-						"Patient contact information to streamline follow-up and communication.",
-					component: <ContactInformationForm />,
-				},
 				{
 					label: "Patient Profile",
 					description:
@@ -163,6 +158,7 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	const form = useForm<AppointmentBookingSchema>({
 		resolver: zodResolver(APPOINTMENT_BOOKING_SCHEMA),
 		defaultValues: {
+			formOptions: { ...formStorage?.formOptions },
 			contactInformation: { ...formStorage?.contactInformation },
 			patientDetails: { ...formStorage?.patientDetails },
 			appointmentScheduling: { ...formStorage?.appointmentScheduling },
@@ -202,10 +198,15 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	 * * watching the changed of the route
 	 * * then show the dialog for the confirmation to user if user want to navigate away from the page
 	 * * if navigated then we remove the stored form data in session storage
+	 *
+	 * ? isNavigateConfirm is required to prevent the confirmation modal from appearing twice.
 	 */
+	const [isNavigateConfirm, setIsNavigateConfirm] = useState(false);
 	useEffect(() => {
 		// Add a listener for route changes
 		return router.on("before", (event) => {
+			if (isNavigateConfirm) return;
+
 			const url = event.detail.visit.url;
 			const path = url.pathname;
 
@@ -230,18 +231,19 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			console.log(`Starting a visit to ${url}`);
 
 			// Confirm navigation away from the current page
-			const isNavigateAway = confirm("Are you sure you want to navigate away?");
-			if (isNavigateAway) {
+			if (confirm("Are you sure you want to navigate away?")) {
+				setIsNavigateConfirm(true);
 				// Remove the appointment form data from session storage
 				window.sessionStorage.removeItem("appointment-form");
+			} else {
+				event?.preventDefault();
 			}
-
-			return isNavigateAway;
 		});
 	}, [
 		globalProps.adminPortal.router.adminPortal.appointment.index,
 		pageURL,
 		isCreated,
+		isNavigateConfirm,
 	]);
 	/**
 	 * * watching the success of route navigation

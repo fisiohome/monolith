@@ -1,4 +1,5 @@
 import type { GENDERS, PATIENT_CONDITIONS } from "@/lib/constants";
+import type { Location } from "./location";
 
 interface PatientContact {
 	id: number;
@@ -22,6 +23,7 @@ interface PatientActiveAddress {
 	createdAt: string;
 	updatedAt: string;
 	notes: string | null;
+	location: Location;
 }
 
 export interface PatientMedicalRecord {

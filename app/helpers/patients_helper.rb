@@ -1,4 +1,6 @@
 module PatientsHelper
+  include LocationsHelper
+
   def serialize_patient(patient, options = {})
     patient.as_json(only: options[:only]).tap do |patient_serialized|
       # Serialize patient contact details
@@ -8,7 +10,12 @@ module PatientsHelper
 
       # Serialize the active address (if any)
       if options.fetch(:include_active_address, true) && patient.active_address.present?
-        patient_serialized["active_address"] = patient.active_address.as_json(only: options[:active_address_only])
+        addr = patient.active_address
+        patient_serialized["active_address"] = addr
+          .as_json(only: options[:active_address_only])
+          .merge(
+            "location" => serialize_location(addr.location, only: options[:location_only])
+          )
       end
 
       # Serialize patient addresses with their associated address record
@@ -30,9 +37,15 @@ module PatientsHelper
         patient_serialized["therapists"] = patient.therapists.as_json(only: options[:therapists_only])
       end
 
-      patient_serialized.merge!(
-        age: patient.age
-      )
+      # Optionally include all medical records for this patient
+      if options.fetch(:include_patient_medical_records, false)
+        records = patient.patient_medical_records
+        if records.any?
+          patient_serialized["patient_medical_records"] = records.as_json(only: options[:patient_medical_record_only])
+        end
+      end
+
+      patient_serialized.merge!(age: patient.age)
     end
   end
 end

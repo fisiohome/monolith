@@ -164,12 +164,12 @@ export const useMapRegion = ({
 	}, [watchPatientDetailsValue, selectedLocation]);
 	const onResetCoordinate = useCallback(() => {
 		// reset the lat, lng form values
-		form.resetField("patientDetails.latitude", { defaultValue: 0 });
-		form.resetField("patientDetails.longitude", { defaultValue: 0 });
+		form.setValue("patientDetails.latitude", 0);
+		form.setValue("patientDetails.longitude", 0);
 
 		// remove the map markers
 		mapRef.current?.marker.onRemove();
-	}, [form.resetField]);
+	}, [form.setValue]);
 	const onClickGMaps = useCallback(() => {
 		window.open(
 			`https://www.google.com/maps/search/?api=1&query=${coordinate.join(",")}`,
@@ -268,6 +268,8 @@ export const usePatientDateOfBirth = () => {
 		} else {
 			form.setValue("patientDetails.age", 0);
 		}
+
+		return () => {};
 	}, [watchPatientDetailsValue.dateOfBirth, form.setValue, form.trigger]);
 
 	return { dateOfBirthCalendarProps };
@@ -292,12 +294,14 @@ export const usePartnerBookingSelection = () => {
 			form.setValue("additionalSettings.customFisiohomePartnerName", "");
 			form.setValue("additionalSettings.voucherCode", "");
 		}
+
+		return () => {};
 	}, [isPartnerBooking, form.setValue]);
 
 	return { isPartnerBooking };
 };
 
-// * hooks abaout fisiohome partner name selection and handling custom partner names form values
+// * hooks abaout fisiohome partner name selection and handling custom partner name form values
 export const usePartnerNameSelection = () => {
 	const form = useFormContext<AppointmentBookingSchema>();
 	const watchFisiohomePartnerName = useWatch({
@@ -313,6 +317,7 @@ export const usePartnerNameSelection = () => {
 		[watchFisiohomePartnerName],
 	);
 
+	// * Watching changes to the fisiohome partner name and handling custom partner name
 	useEffect(() => {
 		// If the fisiohome partner is custom, set the custom fisiohome partner name value
 		if (isCustomFisiohomePartner) {
@@ -320,11 +325,12 @@ export const usePartnerNameSelection = () => {
 				"additionalSettings.customFisiohomePartnerName",
 				watchCustomFisiohomePartnerName,
 			);
-			return;
+			return () => {};
 		}
 
 		// If the fisiohome partner is not custom, clear the custom fisiohome partner name value
 		form.setValue("additionalSettings.customFisiohomePartnerName", "");
+		return () => {};
 	}, [
 		isCustomFisiohomePartner,
 		watchCustomFisiohomePartnerName,
@@ -350,6 +356,7 @@ export const usePatientReferralSource = () => {
 		[watchReferralSource],
 	);
 
+	// * Watching changes to the patient referral source and handling custom referral sources
 	useEffect(() => {
 		// If the referral source is custom, set the custom referral source value
 		if (isCustomReferral) {
@@ -357,11 +364,12 @@ export const usePatientReferralSource = () => {
 				"additionalSettings.customReferralSource",
 				watchCustomReferralSource,
 			);
-			return;
+			return () => {};
 		}
 
 		// If the referral source is not custom, clear the custom referral source value
 		form.setValue("additionalSettings.customReferralSource", "");
+		return () => {};
 	}, [isCustomReferral, watchCustomReferralSource, form.setValue]);
 
 	return { isCustomReferral };

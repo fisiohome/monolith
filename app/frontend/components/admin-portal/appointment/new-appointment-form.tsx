@@ -1,5 +1,3 @@
-import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
-import HereMap from "@/components/shared/here-map";
 import { RetroGridPattern } from "@/components/shared/retro-grid-pattern";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -21,7 +19,6 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
-	CommandSeparator,
 } from "@/components/ui/command";
 import {
 	FormControl,
@@ -32,7 +29,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/ui/phone-input";
 import {
 	Popover,
 	PopoverContent,
@@ -47,6 +43,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,17 +56,14 @@ import {
 	useStepButtons,
 } from "@/hooks/admin-portal/appointment/use-appointment-form";
 import {
-	useMapRegion,
 	usePartnerBookingSelection,
 	usePartnerNameSelection,
-	usePatientDateOfBirth,
 	usePatientReferralSource,
 	usePatientRegion,
 } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { getGenderIcon } from "@/hooks/use-gender";
 import {
 	type AppointmentBookingSchema,
-	DEFAULT_VALUES_LOCATION,
 	DEFAULT_VALUES_SERVICE,
 	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments";
@@ -85,10 +79,19 @@ import {
 	CircleCheckBig,
 	LoaderIcon,
 	Pencil,
+	User,
 	X,
 } from "lucide-react";
-import { type ComponentProps, Fragment } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { type ComponentProps, Fragment, memo } from "react";
+import { useWatch } from "react-hook-form";
+import PatientMedicalForm from "./form/patient-medical";
+import PatientContactForm from "./form/patient-contact";
+import PatientBasicInfoForm from "./form/patient-basic-info";
+import PatientRegionForm from "./form/patient-region";
+import ExistingPatientSelection from "./form/existing-patient-selection";
+import HereMap from "@/components/shared/here-map";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 // * component form container
 export interface FormContainerProps extends ComponentProps<"div"> {}
@@ -291,712 +294,39 @@ export function FinalStep() {
 	);
 }
 
-export function ContactInformationForm() {
-	const form = useFormContext<AppointmentBookingSchema>();
+export const PatientDetailsForm = memo(function Component() {
+	const { isExistingPatientSource } = usePatientDetailsForm();
 
 	return (
 		<FormStepItemContainer>
-			<FormField
-				control={form.control}
-				name="contactInformation.contactName"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Contact Name</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								type="text"
-								autoComplete="name"
-								placeholder="Enter the contact name..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
+			<ExistingPatientSelection />
 
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+			<Separator className="mt-3 col-span-full" />
 
-			<FormField
-				control={form.control}
-				name="contactInformation.contactPhone"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Contact Phone Number</FormLabel>
-						<FormControl>
-							<PhoneInput
-								{...field}
-								international
-								placeholder="Enter the contact phone number..."
-								defaultCountry="ID"
-								autoComplete="tel"
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
+			{isExistingPatientSource ? (
+				<Fragment>
+					<PatientMedicalForm />
+				</Fragment>
+			) : (
+				<Fragment>
+					<PatientContactForm />
 
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+					<Separator className="mt-3 col-span-full" />
 
-			<FormField
-				control={form.control}
-				name="contactInformation.email"
-				render={({ field }) => (
-					<FormItem className="col-span-1">
-						<FormLabel>Email</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								type="email"
-								autoComplete="email"
-								placeholder="Enter the email..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
+					<PatientBasicInfoForm />
 
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+					<Separator className="mt-3 col-span-full" />
 
-			<FormField
-				control={form.control}
-				name="contactInformation.miitelLink"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>MiiTel Link</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								type="url"
-								placeholder="Enter the MiiTel link..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
+					<PatientMedicalForm />
 
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-		</FormStepItemContainer>
-	);
-}
+					<Separator className="mt-3 col-span-full" />
 
-export function PatientDetailsForm() {
-	const {
-		locationsOption,
-		groupedLocationsOption,
-		selectedLocation,
-		coordinate,
-		mapAddress,
-		coordinateError,
-		isLoading,
-		onFocusLocationField,
-		onSelectLocation,
-	} = usePatientRegion();
-	const { dateOfBirthCalendarProps } = usePatientDateOfBirth();
-	const {
-		mapRef,
-		isMapButtonsDisabled,
-		onCalculateCoordinate,
-		onClickGMaps,
-		onResetCoordinate,
-	} = useMapRegion({ selectedLocation, coordinate });
-	const { form, isDekstop, patientFormOptions } = usePatientDetailsForm();
-
-	return (
-		<FormStepItemContainer>
-			<FormField
-				control={form.control}
-				name="patientDetails.fullName"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Full Name</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								type="text"
-								autoComplete="name"
-								placeholder="Enter the full name..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<div className="flex flex-wrap gap-3">
-				<FormField
-					control={form.control}
-					name="patientDetails.dateOfBirth"
-					render={({ field }) => (
-						<FormItem className="flex-1">
-							<FormLabel>Date of birth</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant={"outline"}
-											className={cn(
-												"relative w-full flex justify-between font-normal shadow-inner bg-sidebar",
-												!field.value && "text-muted-foreground",
-											)}
-										>
-											<p>
-												{field.value
-													? `${format(field.value, "PPP")}`
-													: "Pick a date of birth"}
-											</p>
-
-											{field.value ? (
-												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-												<div
-													className="cursor-pointer"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-
-														form.setValue(
-															"patientDetails.dateOfBirth",
-															null as unknown as Date,
-														);
-													}}
-												>
-													<X className="opacity-50" />
-												</div>
-											) : (
-												<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
-											)}
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="w-auto p-0"
-									align="start"
-									side="bottom"
-								>
-									<Calendar
-										{...dateOfBirthCalendarProps}
-										initialFocus
-										mode="single"
-										captionLayout="dropdown"
-										selected={new Date(field.value)}
-										onSelect={field.onChange}
-										defaultMonth={field.value}
-									/>
-								</PopoverContent>
-							</Popover>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name="patientDetails.age"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Age</FormLabel>
-							<FormControl>
-								<Input
-									{...field}
-									readOnly
-									type="number"
-									min={0}
-									value={field?.value || ""}
-									placeholder="Enter the age..."
-									className="shadow-inner w-fit field-sizing-content bg-sidebar"
-								/>
-							</FormControl>
-
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormDescription className="flex-none">
-					Your date of birth is used to calculate your age.
-				</FormDescription>
-			</div>
-
-			<Deferred
-				data={["optionsData"]}
-				fallback={
-					<div className="flex flex-col self-end gap-3 col-span-full">
-						<Skeleton className="w-10 h-4 rounded-md" />
-						<div className="grid grid-cols-2 gap-4">
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-						</div>
-					</div>
-				}
-			>
-				<FormField
-					control={form.control}
-					name="patientDetails.gender"
-					render={({ field }) => (
-						<FormItem className="space-y-3 col-span-full">
-							<FormLabel>Gender</FormLabel>
-							<FormControl>
-								<RadioGroup
-									onValueChange={field.onChange}
-									defaultValue={field.value}
-									orientation="horizontal"
-									className="grid grid-cols-2 gap-4"
-								>
-									{patientFormOptions.genders.map((gender) => (
-										<Fragment key={gender}>
-											<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
-												<FormControl>
-													<RadioGroupItem value={gender} />
-												</FormControl>
-												<FormLabel className="flex items-center gap-1 font-normal capitalize">
-													{getGenderIcon(gender)}
-													<span>{gender.toLowerCase()}</span>
-												</FormLabel>
-											</FormItem>
-										</Fragment>
-									))}
-								</RadioGroup>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</Deferred>
-
-			<Deferred
-				data={["optionsData"]}
-				fallback={
-					<div className="flex flex-col self-end gap-3 col-span-full">
-						<Skeleton className="w-10 h-4 rounded-md" />
-						<div className="grid grid-cols-1 gap-4">
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-						</div>
-					</div>
-				}
-			>
-				<FormField
-					control={form.control}
-					name="patientDetails.condition"
-					render={({ field }) => (
-						<FormItem className="space-y-3 col-span-full">
-							<FormLabel>Current Condition</FormLabel>
-							<FormControl>
-								<RadioGroup
-									onValueChange={field.onChange}
-									defaultValue={field.value}
-									orientation="horizontal"
-									className="flex flex-col gap-3"
-								>
-									{patientFormOptions.patientConditions.map((condition) => (
-										<Fragment key={condition.title}>
-											<FormItem className="flex items-start p-4 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
-												<FormControl>
-													<RadioGroupItem value={condition.title} />
-												</FormControl>
-												<FormLabel className="w-full space-y-1 font-normal capitalize">
-													<span>{condition.title.toLowerCase()}</span>
-													<FormDescription>
-														{condition.description}
-													</FormDescription>
-												</FormLabel>
-											</FormItem>
-										</Fragment>
-									))}
-								</RadioGroup>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</Deferred>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.complaintDescription"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>Complaint Description</FormLabel>
-						<FormControl>
-							<Textarea
-								{...field}
-								placeholder="Enter the complaint description..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.illnessOnsetDate"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>
-							Illness Onset Date{" "}
-							<span className="text-sm italic font-light">- (optional)</span>
-						</FormLabel>
-						<FormControl>
-							<Textarea
-								{...field}
-								placeholder="Enter the illness onset date..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormDescription>
-							Enter the date when the illness first began. You can use an exact
-							date if known, or an estimate if unsure.
-						</FormDescription>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.medicalHistory"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>
-							Medical History{" "}
-							<span className="text-sm italic font-light">- (optional)</span>
-						</FormLabel>
-						<FormControl>
-							<Textarea
-								{...field}
-								placeholder="Enter the medical history..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormDescription>
-							Provide an overview of the patient’s medical history including
-							allergies, chronic conditions, and any past medical events or
-							treatments relevant to the current complaint.
-						</FormDescription>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<Deferred
-				data={["locations"]}
-				fallback={
-					<div className="flex flex-col self-end gap-3">
-						<Skeleton className="w-10 h-4 rounded-md" />
-						<Skeleton className="relative w-full rounded-md h-9" />
-					</div>
-				}
-			>
-				<FormField
-					control={form.control}
-					name="patientDetails.location.city"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel className="text-nowrap">Region</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant="outline"
-											className={cn(
-												"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-												!field.value && "text-muted-foreground",
-											)}
-											onFocus={() => onFocusLocationField()}
-										>
-											<p>
-												{field.value
-													? locationsOption?.find(
-															(location) => location.city === field.value,
-														)?.city
-													: "Select region"}
-											</p>
-											{field.value ? (
-												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-												<div
-													className="cursor-pointer"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-
-														onSelectLocation(DEFAULT_VALUES_LOCATION);
-													}}
-												>
-													<X className="opacity-50" />
-												</div>
-											) : (
-												<ChevronsUpDown className="opacity-50" />
-											)}
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="p-0 w-[300px]"
-									align="start"
-									side="bottom"
-								>
-									<Command>
-										<CommandInput
-											placeholder="Search region..."
-											className="h-9"
-											autoComplete="address-level2"
-										/>
-										<CommandList>
-											<CommandEmpty>No region found.</CommandEmpty>
-											{isLoading.locations ? (
-												<CommandItem value={undefined} disabled>
-													<LoaderIcon className="animate-spin" />
-													<span>Please wait...</span>
-												</CommandItem>
-											) : (
-												groupedLocationsOption?.map((location) => (
-													<Fragment key={location.country}>
-														<span className="block px-2 py-2 text-xs font-bold text-primary-foreground bg-primary">
-															{location.country}
-														</span>
-														{location.states.map((state, stateIndex) => (
-															<CommandGroup
-																key={state.name}
-																heading={state.name}
-															>
-																{state.cities.map((city) => (
-																	<CommandItem
-																		key={city.name}
-																		value={city.name}
-																		onSelect={() =>
-																			onSelectLocation({
-																				id: String(city.id),
-																				city: city.name,
-																			})
-																		}
-																	>
-																		<span>{city.name}</span>
-																		<Check
-																			className={cn(
-																				"ml-auto",
-																				city.name === field.value
-																					? "opacity-100"
-																					: "opacity-0",
-																			)}
-																		/>
-																	</CommandItem>
-																))}
-																{location.states.length !== stateIndex + 1 && (
-																	<CommandSeparator className="mt-2" />
-																)}
-															</CommandGroup>
-														))}
-													</Fragment>
-												))
-											)}
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</Deferred>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.postalCode"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Postal Code</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								type="text"
-								placeholder="Enter the postal code..."
-								autoComplete="postal-code"
-								className="shadow-inner w-fit field-sizing-content bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.address"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>Address</FormLabel>
-						<FormControl>
-							<Textarea
-								placeholder="Enter the address..."
-								autoComplete="street-address"
-								className="shadow-inner bg-sidebar"
-								// className="resize-none"
-								{...field}
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.addressNotes"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>
-							Address Notes{" "}
-							<span className="text-sm italic font-light">- (optional)</span>
-						</FormLabel>
-						<FormControl>
-							<Textarea
-								{...field}
-								placeholder="Enter the address notes..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormDescription>
-							Any additional notes that are relevant to the location of the
-							patient address, e.g. Google Maps link.
-						</FormDescription>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			{coordinateError && (
-				<Alert variant="destructive" className="col-span-full">
-					<AlertCircle className="size-4" />
-					<AlertTitle className="text-xs">Error</AlertTitle>
-					<AlertDescription className="text-xs">
-						{coordinateError}
-					</AlertDescription>
-				</Alert>
+					<PatientRegionForm />
+				</Fragment>
 			)}
-
-			<FormField
-				control={form.control}
-				name="patientDetails.latitude"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Latitude</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								readOnly
-								type="number"
-								min={0}
-								value={field?.value || ""}
-								placeholder="Enter the latitude..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<FormField
-				control={form.control}
-				name="patientDetails.longitude"
-				render={({ field }) => (
-					<FormItem>
-						<FormLabel>Longitude</FormLabel>
-						<FormControl>
-							<Input
-								{...field}
-								readOnly
-								type="number"
-								min={0}
-								value={field?.value || ""}
-								placeholder="Enter the longitude..."
-								className="shadow-inner bg-sidebar"
-							/>
-						</FormControl>
-
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			<div className="grid gap-4 md:gap-2 md:grid-cols-3 col-span-full">
-				<PulsatingOutlineShadowButton
-					size={!isDekstop ? "default" : "sm"}
-					disabled={isMapButtonsDisabled.calculate}
-					type="button"
-					className="w-full"
-					onClick={async (event) => {
-						event.preventDefault();
-
-						await onCalculateCoordinate();
-					}}
-				>
-					Calculate Coordinate
-				</PulsatingOutlineShadowButton>
-
-				<Button
-					size={!isDekstop ? "default" : "sm"}
-					type="button"
-					variant="destructive-outline"
-					disabled={isMapButtonsDisabled.reset}
-					onClick={(event) => {
-						event.preventDefault();
-
-						if (
-							window.confirm(
-								"Are you absolutely sure? \nThis action is irreversible. Resetting coordinates deletes the calculated latitude and longitude, so you must recalculate.",
-							)
-						) {
-							onResetCoordinate();
-						}
-					}}
-				>
-					Reset Coordinate
-				</Button>
-
-				<Button
-					size={!isDekstop ? "default" : "sm"}
-					type="button"
-					variant="accent-outline"
-					disabled={isMapButtonsDisabled.gmaps}
-					onClick={(event) => {
-						event.preventDefault();
-
-						onClickGMaps();
-					}}
-				>
-					View on Google Maps
-				</Button>
-			</div>
-
-			<HereMap
-				ref={mapRef}
-				coordinate={coordinate}
-				address={{ ...mapAddress }}
-				options={{ disabledEvent: true }}
-				className="col-span-full"
-			/>
 		</FormStepItemContainer>
 	);
-}
+});
 
 export function AppointmentSchedulingForm() {
 	const { coordinate, mapAddress } = usePatientRegion();
@@ -1487,11 +817,12 @@ export function AppointmentSchedulingForm() {
 												!field.value && "text-muted-foreground",
 											)}
 										>
-											<p>
+											<p className="uppercase">
 												{field.value
 													? selectedTherapist?.name || field.value
 													: "Select therapist"}
 											</p>
+
 											{field.value ? (
 												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 												<div
@@ -1542,21 +873,56 @@ export function AppointmentSchedulingForm() {
 																})
 															}
 														>
-															<span className="flex flex-col items-start">
-																<span>{therapist.name}</span>
-																{/* <span className="text-xs font-light text-pretty">
-																{service.description}
-															</span> */}
-															</span>
+															<div className="flex items-center gap-3">
+																<Avatar className="border rounded-lg border-border bg-muted size-12">
+																	<AvatarImage src="#" />
+																	<AvatarFallback>
+																		<User className="flex-shrink-0 size-5 text-muted-foreground/75" />
+																	</AvatarFallback>
+																</Avatar>
 
-															<Check
-																className={cn(
-																	"ml-auto",
-																	therapist.name === field.value
-																		? "opacity-100"
-																		: "opacity-0",
-																)}
-															/>
+																<div className="grid text-sm line-clamp-1">
+																	<p className="font-semibold uppercase truncate">
+																		{therapist.name}
+																	</p>
+
+																	<div className="flex items-center gap-3 mt-2">
+																		<Badge
+																			variant="outline"
+																			className="font-light"
+																		>
+																			{therapist.employmentType}
+																		</Badge>
+
+																		<Separator
+																			orientation="vertical"
+																			className="bg-black/10"
+																		/>
+
+																		<Badge
+																			variant="outline"
+																			className="flex items-center gap-1 text-xs font-light"
+																		>
+																			{therapist?.gender &&
+																				getGenderIcon(
+																					therapist.gender,
+																					"size-3 text-muted-foreground",
+																				)}
+
+																			<span>{therapist?.gender || "N/A"}</span>
+																		</Badge>
+																	</div>
+																</div>
+
+																<Check
+																	className={cn(
+																		"ml-auto",
+																		therapist.name === field.value
+																			? "opacity-100"
+																			: "opacity-0",
+																	)}
+																/>
+															</div>
 														</CommandItem>
 													))
 												)}
