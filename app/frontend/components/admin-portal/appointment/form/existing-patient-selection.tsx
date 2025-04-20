@@ -1,4 +1,12 @@
-import { Fragment, useCallback, useMemo, useState } from "react";
+import {
+	type Dispatch,
+	Fragment,
+	memo,
+	type SetStateAction,
+	useCallback,
+	useMemo,
+	useState,
+} from "react";
 import {
 	FormControl,
 	FormField,
@@ -14,6 +22,11 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import {
@@ -59,7 +72,11 @@ import { getGenderIcon } from "@/hooks/use-gender";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-function CardSelection({ patient }: { patient: Patient }) {
+interface CardSelectionProps {
+	patient: Patient;
+}
+
+const CardSelection = memo(function Component({ patient }: CardSelectionProps) {
 	const { locale, tzDate } = useDateContext();
 	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
 
@@ -238,7 +255,104 @@ function CardSelection({ patient }: { patient: Patient }) {
 			</div>
 		</div>
 	);
+});
+
+interface HoverCardListItemProps {
+	isSelected: boolean;
+	patient: Patient;
+	setSelectedPatient: Dispatch<SetStateAction<Patient | null>>;
 }
+
+const HoverCardListItem = memo(function Component({
+	isSelected,
+	patient,
+	setSelectedPatient,
+}: HoverCardListItemProps) {
+	const { locale, tzDate } = useDateContext();
+	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+
+	return (
+		<HoverCard>
+			<HoverCardTrigger asChild>
+				<button
+					type="button"
+					className={cn(
+						"w-full p-3 mb-2 text-sm text-left border rounded-md shadow-inner border-input bg-background focus:bg-primary focus:ring-1 focus:text-primary-foreground focus:ring-primary",
+						isSelected &&
+							"bg-primary ring-1 text-primary-foreground ring-primary",
+					)}
+					onClick={(event) => {
+						event.preventDefault();
+						setSelectedPatient(patient);
+					}}
+				>
+					<div className="flex items-center gap-3">
+						<Avatar className="border rounded-lg border-border bg-muted size-6">
+							<AvatarImage src="#" />
+							<AvatarFallback>
+								<User className="flex-shrink-0 size-3.5 text-muted-foreground/75" />
+							</AvatarFallback>
+						</Avatar>
+
+						<div className="grid text-sm line-clamp-1">
+							<p className="font-semibold uppercase truncate">{patient.name}</p>
+						</div>
+					</div>
+				</button>
+			</HoverCardTrigger>
+
+			<HoverCardContent className="w-fit">
+				<div className="flex items-center gap-3">
+					<Avatar className="border rounded-lg border-border bg-muted size-12">
+						<AvatarImage src="#" />
+						<AvatarFallback>
+							<User className="flex-shrink-0 size-5 text-muted-foreground/75" />
+						</AvatarFallback>
+					</Avatar>
+
+					<div className="grid text-sm line-clamp-1">
+						<p className="font-semibold uppercase truncate">{patient.name}</p>
+
+						<div className="flex items-center gap-3 mt-2">
+							<div className="flex items-center gap-1 text-xs">
+								<Cake className={cn("size-3 text-muted-foreground")} />
+								<p className="font-light text-pretty">
+									<span>
+										{patient?.age || "N/A"} {t("list.years")}
+									</span>
+									<span className="mx-1">&#x2022;</span>
+									<span>
+										{patient?.dateOfBirth
+											? format(patient?.dateOfBirth, "PP", {
+													locale,
+													in: tzDate,
+												})
+											: "N/A"}
+									</span>
+								</p>
+							</div>
+
+							<Separator orientation="vertical" className={cn("bg-black/10")} />
+
+							<Badge
+								variant="outline"
+								className={cn("flex items-center gap-1 text-xs font-light")}
+							>
+								{patient?.gender &&
+									getGenderIcon(
+										patient.gender,
+										cn("size-3 text-muted-foreground"),
+									)}
+
+								<span>{patient?.gender || "N/A"}</span>
+							</Badge>
+						</div>
+					</div>
+				</div>
+			</HoverCardContent>
+		</HoverCard>
+	);
+});
 
 export default function ExistingPatientSelection() {
 	const isMobile = useIsMobile();
@@ -266,6 +380,18 @@ export default function ExistingPatientSelection() {
 	// * manage the user selection to use existing patient data
 	const [isOpenSheet, setIsOpenSheet] = useState(false);
 	const [selectedPatient, setSelectedPatient] = useState<null | Patient>(null);
+	const isPatientSelected = useCallback(
+		(patient: Patient) => {
+			if (!selectedPatient) return false;
+
+			return (
+				selectedPatient.name === patient.name &&
+				selectedPatient.age === patient.age &&
+				selectedPatient.gender === patient.gender
+			);
+		},
+		[selectedPatient],
+	);
 	const patientSourceSelectionList = useMemo(() => {
 		return [
 			{
@@ -533,22 +659,12 @@ export default function ExistingPatientSelection() {
 												</div>
 											) : patients?.length ? (
 												patients?.map((patient) => (
-													<Fragment key={patient.name}>
-														<button
-															type="button"
-															className={cn(
-																"w-full p-3 mb-2 text-sm text-left border rounded-md shadow-inner border-input bg-background focus:bg-primary focus:ring-1 focus:text-primary-foreground focus:ring-primary",
-																selectedPatient?.name === patient.name &&
-																	"bg-primary ring-1 text-primary-foreground ring-primary",
-															)}
-															onClick={(event) => {
-																event.preventDefault();
-																setSelectedPatient(patient);
-															}}
-														>
-															{patient.name}
-														</button>
-													</Fragment>
+													<HoverCardListItem
+														key={patient.name}
+														patient={patient}
+														isSelected={isPatientSelected(patient)}
+														setSelectedPatient={setSelectedPatient}
+													/>
 												))
 											) : (
 												<div className="grid gap-4">
