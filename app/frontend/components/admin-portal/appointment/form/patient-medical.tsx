@@ -247,7 +247,7 @@ export default function PatientMedicalForm() {
 							/>
 						</div>
 
-						<SheetFooter className="sticky bottom-0 left-0 flex-none py-6">
+						<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-background">
 							<SheetClose asChild>
 								<Button variant="primary-outline">Save</Button>
 							</SheetClose>

@@ -64,7 +64,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Patient } from "@/types/admin-portal/patient";
 import { CardPatientBasicInfoForm } from "./patient-basic-info";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { useDateContext } from "@/components/providers/date-provider";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
@@ -384,11 +384,15 @@ export default function ExistingPatientSelection() {
 		(patient: Patient) => {
 			if (!selectedPatient) return false;
 
-			return (
-				selectedPatient.name === patient.name &&
-				selectedPatient.age === patient.age &&
-				selectedPatient.gender === patient.gender
+			const isSameName = selectedPatient.name === patient.name;
+			const isSameAge = selectedPatient.age === patient.age;
+			const isSameGender = selectedPatient.gender === patient.gender;
+			const isSameDateOfBirth = isSameDay(
+				selectedPatient.dateOfBirth,
+				patient.dateOfBirth,
 			);
+
+			return isSameName && isSameAge && isSameGender && isSameDateOfBirth;
 		},
 		[selectedPatient],
 	);
@@ -683,7 +687,7 @@ export default function ExistingPatientSelection() {
 									)}
 								</div>
 
-								<SheetFooter className="sticky bottom-0 left-0 flex-none py-6">
+								<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-background">
 									<SheetClose asChild>
 										<Button variant="primary-outline" className="mt-6 sm:mt-0">
 											Close
