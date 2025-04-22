@@ -103,13 +103,12 @@ export function AppointmentDetailsSection({
 				<div className="mt-3">
 					<p className="font-light">{t("list.visit_address")}:</p>
 					<p className="font-semibold capitalize text-pretty">
-						{appointment.patient?.activeAddress?.address || "N/A"}
+						{appointment.visitAddress?.addressLine || "N/A"}
 					</p>
 					<p className="italic font-normal text-pretty">
-						{t("list.notes")}:{" "}
-						{appointment.patient?.activeAddress?.notes || "N/A"}
+						{t("list.notes")}: {appointment.visitAddress?.notes || "N/A"}
 					</p>
-					{appointment?.patient?.activeAddress?.coordinates?.length && (
+					{!!appointment?.visitAddress?.coordinates && (
 						<Button
 							type="button"
 							variant="primary-outline"
@@ -119,7 +118,7 @@ export function AppointmentDetailsSection({
 								event.preventDefault();
 								event.stopPropagation();
 								window.open(
-									`https://www.google.com/maps/search/?api=1&query=${appointment?.patient?.activeAddress?.coordinates.join(",")}`,
+									`https://www.google.com/maps/search/?api=1&query=${appointment?.visitAddress?.coordinates.y},${appointment.visitAddress?.coordinates.x}`,
 								);
 							}}
 						>

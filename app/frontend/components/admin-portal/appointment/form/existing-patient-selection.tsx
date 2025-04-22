@@ -581,7 +581,7 @@ export default function ExistingPatientSelection() {
 				)}
 			/>
 
-			{!!hasErrorForm && (
+			{!!hasErrorForm && isExistingPatientSource && (
 				<Alert variant="destructive" className="col-span-full">
 					<AlertCircle className="size-4" />
 					<AlertTitle className="text-xs">Error</AlertTitle>

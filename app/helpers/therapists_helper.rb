@@ -123,7 +123,8 @@ module TherapistsHelper
             formatted_discount: appointment.formatted_discount,
             total_price: appointment.total_price,
             formatted_total_price: appointment.formatted_total_price,
-            patient_medical_record: appointment.patient_medical_record
+            patient_medical_record: appointment.patient_medical_record,
+            visit_address: appointment.address_history
           )
         end
       end

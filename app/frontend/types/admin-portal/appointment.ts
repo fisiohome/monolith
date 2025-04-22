@@ -96,6 +96,22 @@ export interface Appointment {
 	startTime?: string;
 	endTime?: string;
 	patientMedicalRecord?: PatientMedicalRecord;
+	visitAddress?: {
+		id: number;
+		appointmentId: string;
+		locationId: number;
+		latitude: number;
+		longitude: number;
+		addressLine: string;
+		postalCode: string;
+		notes: string;
+		coordinates: {
+			x: number;
+			y: number;
+		};
+		createdAt: string;
+		updatedAt: string;
+	};
 	createdAt: string;
 	updatedAt: string;
 }

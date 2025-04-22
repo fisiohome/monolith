@@ -56,6 +56,11 @@ module AppointmentsHelper
         serialized["patient_medical_record"] = appointment.patient_medical_record.as_json(only: options[:medical_record_only])
       end
 
+      # Serialize the visit address
+      if options.fetch(:include_visit_address, true)
+        serialized["visit_address"] = appointment.address_history.as_json(only: options[:visit_address_only])
+      end
+
       serialized.merge!(
         voucher_discount: appointment.voucher_discount,
         formatted_discount: appointment.formatted_discount,

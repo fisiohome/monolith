@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_16_105648) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_22_183459) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -41,6 +41,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_16_105648) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_admins_on_user_id"
+  end
+
+  create_table "appointment_address_histories", force: :cascade do |t|
+    t.uuid "appointment_id", null: false
+    t.bigint "location_id", null: false
+    t.float "latitude", null: false
+    t.float "longitude", null: false
+    t.text "address_line", null: false
+    t.string "postal_code", null: false
+    t.text "notes"
+    t.point "coordinates", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["appointment_id"], name: "index_appointment_address_histories_on_appointment_id"
+    t.index ["location_id"], name: "index_appointment_address_histories_on_location_id"
   end
 
   create_table "appointment_admins", force: :cascade do |t|
@@ -313,6 +328,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_16_105648) do
 
   add_foreign_key "addresses", "locations"
   add_foreign_key "admins", "users"
+  add_foreign_key "appointment_address_histories", "appointments"
+  add_foreign_key "appointment_address_histories", "locations"
   add_foreign_key "appointment_admins", "admins"
   add_foreign_key "appointment_admins", "appointments"
   add_foreign_key "appointments", "locations"

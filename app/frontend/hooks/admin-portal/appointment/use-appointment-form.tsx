@@ -695,12 +695,31 @@ export const useAppointmentSchedulingForm = () => {
 						// Safely handle missing activeAddress
 						if (!therapist?.activeAddress) return null;
 
+						// grab prevAppointment if present
+						const prev =
+							therapist.availabilityDetails?.locations?.prevAppointment;
+
+						// determine which coords to use
+						let lat: number;
+						let lng: number;
+						let address: string;
+
+						if (prev) {
+							lat = prev.latitude;
+							lng = prev.longitude;
+							address = prev.address;
+						} else if (therapist.activeAddress) {
+							lat = therapist.activeAddress.latitude;
+							lng = therapist.activeAddress.longitude;
+							address = therapist.activeAddress.address;
+						} else {
+							// no valid location—skip this therapist
+							return null;
+						}
+
 						return {
-							position: {
-								lat: therapist.activeAddress.latitude,
-								lng: therapist.activeAddress.longitude,
-							},
-							address: therapist.activeAddress.address,
+							position: { lat, lng },
+							address,
 							bubbleContent: `
             <div class="w-[180px] text-xs flex flex-col">
               <span class="font-bold text-sm">${therapist.name}</span>

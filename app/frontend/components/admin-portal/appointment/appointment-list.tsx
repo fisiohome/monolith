@@ -609,14 +609,13 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														{t("list.visit_address")}:
 													</p>
 													<p className="font-semibold capitalize">
-														{schedule.patient?.activeAddress?.address || "N/A"}
+														{schedule.visitAddress?.addressLine || "N/A"}
 													</p>
 													<p className="italic font-normal">
 														{t("list.notes")}:{" "}
-														{schedule.patient?.activeAddress?.notes || "N/A"}
+														{schedule.visitAddress?.notes || "N/A"}
 													</p>
-													{schedule?.patient?.activeAddress?.coordinates
-														?.length && (
+													{!!schedule?.visitAddress?.coordinates && (
 														<Button
 															type="button"
 															variant="primary-outline"
@@ -626,7 +625,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																event.preventDefault();
 																event.stopPropagation();
 																window.open(
-																	`https://www.google.com/maps/search/?api=1&query=${schedule?.patient?.activeAddress?.coordinates.join(",")}`,
+																	`https://www.google.com/maps/search/?api=1&query=${schedule?.visitAddress?.coordinates.y},${schedule.visitAddress?.coordinates.x}`,
 																);
 															}}
 														>

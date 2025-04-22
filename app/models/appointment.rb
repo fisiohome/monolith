@@ -14,8 +14,17 @@ class Appointment < ApplicationRecord
   has_one :patient_medical_record, dependent: :destroy
   accepts_nested_attributes_for :patient_medical_record
 
+  has_one :address_history,
+    class_name: "AppointmentAddressHistory",
+    dependent: :destroy, # means if you ever delete an appointment, its history rows go with it.
+    inverse_of: :appointment # helps Rails link objects in memory for nested builds or validations.
+  accepts_nested_attributes_for :address_history
+
   # * cycle callbacks
   before_create :generate_registration_number
+
+  # after every create OR update, snap a fresh history record
+  after_commit :snapshot_address_history, on: [:create, :update]
 
   # * define the validations
   validates :appointment_date_time, presence: true
@@ -34,6 +43,8 @@ class Appointment < ApplicationRecord
 
   validate :no_duplicate_appointment_time
   validate :no_overlapping_appointments
+
+  validates_associated :address_history
 
   # * define the constants
   PatientCondition = Struct.new(:title, :description)
@@ -170,5 +181,24 @@ class Appointment < ApplicationRecord
         break # Stop checking after first overlap
       end
     end
+  end
+
+  def snapshot_address_history
+    addr = patient.active_address
+    return unless addr
+
+    # remove old snapshot (optional, but keeps only one record in the table)
+    address_history&.destroy
+
+    # Rails gives you this helper for has_one :address_history
+    create_address_history!(
+      location: addr.location,
+      latitude: addr.latitude,
+      longitude: addr.longitude,
+      address_line: addr.address,
+      postal_code: addr.postal_code,
+      notes: addr&.notes
+      # coordinates will be filled in by your default attribute
+    )
   end
 end
