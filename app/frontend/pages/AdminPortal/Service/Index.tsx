@@ -1,3 +1,4 @@
+import ExpandSubTable from "@/components/admin-portal/service/data-table-expand";
 import ToolbarTable from "@/components/admin-portal/service/data-table-toolbar";
 import {
 	ActivateServiceDialog,
@@ -32,36 +33,38 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableFooter,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getBrandBadgeVariant } from "@/lib/services";
-import { cn, humanize, populateQueryParams } from "@/lib/utils";
+import { cn, populateQueryParams, removeWhiteSpaces } from "@/lib/utils";
 import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps } from "@/types/globals";
 import { Deferred, Head, router, usePage } from "@inertiajs/react";
-import type { Table as TableTanstack } from "@tanstack/react-table";
+import type {
+	ExpandedState,
+	Row,
+	Table as TableTanstack,
+} from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { Ellipsis, Info, Plus } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, Ellipsis, Info, Plus } from "lucide-react";
+import { Fragment, useCallback, useMemo } from "react";
 
 export interface PageProps {
 	services: Service[];
 	selectedService: Service | null;
 }
-
 export type TableToolbarDataProps = TableTanstack<
 	PageProps["services"][number]
 >;
+export type TableRowDataProps = Row<PageProps["services"][number]>;
 
 export default function Index({ services, selectedService }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
@@ -106,6 +109,38 @@ export default function Index({ services, selectedService }: PageProps) {
 	};
 
 	// table management
+	const currentExpanded = useMemo<ExpandedState>(() => {
+		const { queryParams } = populateQueryParams(pageURL);
+		const expandedList = queryParams?.expanded
+			? removeWhiteSpaces(queryParams?.expanded)?.split(",")
+			: [];
+		const serviceIndex = services?.reduce(
+			(obj, item, index) => {
+				if (expandedList.includes(String(item.id))) {
+					obj[index] = true;
+				}
+				return obj;
+			},
+			{} as Record<number, boolean>,
+		);
+
+		return serviceIndex;
+	}, [pageURL, services]);
+	const onHandleTableExpand = useCallback(
+		(ids: string[]) => {
+			const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+				expanded: ids.join(","),
+			});
+
+			router.get(fullUrl, queryParams, {
+				only: ["adminPortal", "flash", "errors"],
+				preserveScroll: true,
+				preserveState: true,
+				replace: true,
+			});
+		},
+		[pageURL],
+	);
 	const routeTo = {
 		newService: () => {
 			router.get(
@@ -118,7 +153,9 @@ export default function Index({ services, selectedService }: PageProps) {
 			);
 		},
 		editService: (id: number) => {
-			router.get(`${pageURL}/${id}/edit`);
+			router.get(
+				`${globalProps.adminPortal.router.adminPortal.serviceManagement.index}/${id}/edit`,
+			);
 		},
 		deleteService: (id: number) => {
 			router.get(
@@ -142,6 +179,115 @@ export default function Index({ services, selectedService }: PageProps) {
 		},
 	};
 	const columns: ColumnDef<PageProps["services"][number]>[] = [
+		{
+			id: "select",
+			header: ({ table }) => {
+				// const isChecked = table.getIsAllPageRowsSelected() ||
+				//   (table.getIsSomePageRowsSelected() && "indeterminate")
+
+				return (
+					<div className="flex items-start space-x-2">
+						{/* <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                    className="translate-y-[2px]"
+                  />
+                </TooltipTrigger>
+                <TooltipContent side='top'>
+                  <span>{isChecked ? 'Un-select all' : 'Select all'}</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider> */}
+
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="border shadow size-8 lg:size-5 border-primary/25"
+										onClick={() => table.toggleAllRowsExpanded()}
+									>
+										{table.getIsAllRowsExpanded() ? (
+											<ChevronUp />
+										) : (
+											<ChevronDown />
+										)}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="top">
+									<span>
+										{table.getIsAllRowsExpanded()
+											? "Collapse all"
+											: "Expand all"}
+									</span>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
+				);
+			},
+			cell: ({ row }) => {
+				const toggleExpand = () => {
+					row.toggleExpanded();
+
+					const { queryParams: currentQuery } = populateQueryParams(pageURL);
+					const expandedList = removeWhiteSpaces(currentQuery?.expanded || "")
+						.split(",")
+						.filter(Boolean);
+					const id = String(row.original.id);
+					const updatedList = row.getIsExpanded()
+						? expandedList.filter((item) => item !== id)
+						: [...expandedList, id];
+
+					onHandleTableExpand(updatedList);
+				};
+
+				return (
+					<div className="flex items-start space-x-2">
+						{/* <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  aria-label="Select row"
+                  className="translate-y-[2px]"
+                />
+              </TooltipTrigger>
+              <TooltipContent side='top'>
+                <span>{row.getIsSelected() ? 'Un-select' : 'Select'}</span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider> */}
+
+						<TooltipProvider>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="border shadow size-8 lg:size-5 border-primary/25"
+										onClick={toggleExpand}
+									>
+										{row.getIsExpanded() ? <ChevronUp /> : <ChevronDown />}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="top">
+									<span>{row.getIsExpanded() ? "Collapse" : "Expand"}</span>
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
+				);
+			},
+			enableSorting: false,
+			enableHiding: false,
+		},
 		{
 			accessorKey: "name",
 			header: ({ column }) => (
@@ -206,21 +352,20 @@ export default function Index({ services, selectedService }: PageProps) {
 					() => packages.filter((item) => item.active) || [],
 					[packages],
 				);
+				const toggleExpand = () => {
+					row.toggleExpanded();
 
-				// dialog state management
-				const [isOpenPackage, setIsOpenPackage] = useState(false);
-				const formDialogPackage = useMemo<ResponsiveDialogProps>(() => {
-					return {
-						title: `Our ${humanize(row.original.name)} Packages`,
-						description: "Shows active and inactive packages of the brand.",
-						isOpen: isOpenPackage,
-						forceMode: "dialog",
-						dialogWidth: "1000px",
-						onOpenChange: (value: boolean) => {
-							setIsOpenPackage(value);
-						},
-					};
-				}, [row.original.name, isOpenPackage]);
+					const { queryParams: currentQuery } = populateQueryParams(pageURL);
+					const expandedList = removeWhiteSpaces(currentQuery?.expanded || "")
+						.split(",")
+						.filter(Boolean);
+					const id = String(row.original.id);
+					const updatedList = row.getIsExpanded()
+						? expandedList.filter((item) => item !== id)
+						: [...expandedList, id];
+
+					onHandleTableExpand(updatedList);
+				};
 
 				if (!packages?.length) {
 					return <span>No packages listed yet</span>;
@@ -237,122 +382,18 @@ export default function Index({ services, selectedService }: PageProps) {
 						</span>
 
 						{globalProps.auth.currentUserType === "ADMIN" && (
-							<>
-								<Button
-									variant="link"
-									className="p-0"
-									onClick={() => {
-										setIsOpenPackage(!isOpenPackage);
-									}}
-								>
-									<Info />
-								</Button>
+							<Button
+								type="button"
+								variant="link"
+								className="p-0"
+								onClick={(event) => {
+									event.preventDefault();
 
-								{formDialogPackage.isOpen && (
-									<ResponsiveDialog {...formDialogPackage}>
-										<div className="grid border rounded-xl">
-											<Table>
-												<TableHeader>
-													<TableRow>
-														<TableHead>Package</TableHead>
-														<TableHead>Status</TableHead>
-														<TableHead className="text-right">
-															Discount
-														</TableHead>
-														<TableHead className="text-right">
-															Price/Visit
-														</TableHead>
-														<TableHead className="text-right">
-															Total Price
-														</TableHead>
-														<TableHead className="text-right">
-															Fee/Visit
-														</TableHead>
-														<TableHead className="text-right">
-															Total Fee
-														</TableHead>
-													</TableRow>
-												</TableHeader>
-
-												<TableBody className="text-nowrap">
-													{packages.map((packageItem) => (
-														<Fragment key={packageItem.id}>
-															<TableRow>
-																<TableCell className="font-medium">
-																	<div className="flex flex-col items-start">
-																		<p>{packageItem.name}</p>
-																		<p className="font-light">
-																			{packageItem.numberOfVisit} Visit(s)
-																		</p>
-																	</div>
-																</TableCell>
-																<TableCell>
-																	<DotBadgeWithLabel
-																		variant={
-																			packageItem.active
-																				? "success"
-																				: "destructive"
-																		}
-																	>
-																		<span>
-																			{packageItem.active
-																				? "Active"
-																				: "Inactive"}
-																		</span>
-																	</DotBadgeWithLabel>
-																</TableCell>
-																<TableCell className="text-right">
-																	{packageItem.formattedDiscount}
-																</TableCell>
-																<TableCell className="text-right">
-																	{packageItem.formattedPricePerVisit}
-																</TableCell>
-																<TableCell className="font-medium text-right">
-																	{packageItem.formattedTotalPrice}
-																</TableCell>
-																<TableCell className="text-right">
-																	{packageItem.formattedFeePerVisit}
-																</TableCell>
-																<TableCell className="font-medium text-right">
-																	{packageItem.formattedTotalFee}
-																</TableCell>
-															</TableRow>
-														</Fragment>
-													))}
-												</TableBody>
-
-												<TableFooter>
-													<TableRow>
-														<TableCell colSpan={2}>Total</TableCell>
-														<TableCell colSpan={3} className="text-right">
-															<div className="flex flex-col space-y-0.5">
-																{row.original.packages?.totalPrices.map(
-																	(price) => (
-																		<span key={price.currency}>
-																			{price.formattedTotalPrice}
-																		</span>
-																	),
-																)}
-															</div>
-														</TableCell>
-														<TableCell colSpan={2} className="text-right">
-															<div className="flex flex-col space-y-0.5">
-																{row.original.packages?.totalPrices.map(
-																	(price) => (
-																		<span key={price.currency}>
-																			{price.formattedTotalFee}
-																		</span>
-																	),
-																)}
-															</div>
-														</TableCell>
-													</TableRow>
-												</TableFooter>
-											</Table>
-										</div>
-									</ResponsiveDialog>
-								)}
-							</>
+									toggleExpand();
+								}}
+							>
+								<Info />
+							</Button>
 						)}
 					</div>
 				);
@@ -498,7 +539,11 @@ export default function Index({ services, selectedService }: PageProps) {
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				if (globalProps.auth.currentUserType === "THERAPIST") return;
+				if (
+					globalProps.auth.currentUserType === "THERAPIST" ||
+					!globalProps.auth.currentUser?.["isSuperAdmin?"]
+				)
+					return;
 
 				return (
 					<div className="flex items-center justify-end space-x-2">
@@ -658,7 +703,9 @@ export default function Index({ services, selectedService }: PageProps) {
 									<DataTable
 										columns={columns}
 										data={services}
+										currentExpanded={currentExpanded}
 										toolbar={(table) => <ToolbarTable table={table} />}
+										subComponent={(row) => <ExpandSubTable row={row} />}
 									/>
 								</Deferred>
 							</TabsContent>
