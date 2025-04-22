@@ -539,11 +539,7 @@ export default function Index({ services, selectedService }: PageProps) {
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				if (
-					globalProps.auth.currentUserType === "THERAPIST" ||
-					!globalProps.auth.currentUser?.["isSuperAdmin?"]
-				)
-					return;
+				if (!globalProps.auth.currentUser?.["isSuperAdmin?"]) return;
 
 				return (
 					<div className="flex items-center justify-end space-x-2">
@@ -661,7 +657,7 @@ export default function Index({ services, selectedService }: PageProps) {
 
 			<PageContainer className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Our Brands</h1>
-				{globalProps.auth.currentUserType === "ADMIN" && (
+				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 					<Button
 						onClick={(event) => {
 							event.preventDefault();

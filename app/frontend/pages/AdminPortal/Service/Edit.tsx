@@ -427,7 +427,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 										{packagesForm.fields.map((packageField, fieldIndex) => (
 											<AccordionItem
 												key={packageField.name}
-												value={packageField.name}
+												value={`${packageField.name}-${fieldIndex}`}
 											>
 												<AccordionTrigger>
 													<div className="flex items-center space-x-1.5">
