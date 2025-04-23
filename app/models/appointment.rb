@@ -20,11 +20,18 @@ class Appointment < ApplicationRecord
     inverse_of: :appointment # helps Rails link objects in memory for nested builds or validations.
   accepts_nested_attributes_for :address_history
 
+  has_one :package_history,
+    class_name: "AppointmentPackageHistory",
+    dependent: :destroy,
+    inverse_of: :appointment
+  accepts_nested_attributes_for :package_history
+
   # * cycle callbacks
   before_create :generate_registration_number
 
   # after every create OR update, snap a fresh history record
   after_commit :snapshot_address_history, on: [:create, :update]
+  after_commit :snapshot_package_history, on: [:create, :update]
 
   # * define the validations
   validates :appointment_date_time, presence: true
@@ -199,6 +206,25 @@ class Appointment < ApplicationRecord
       postal_code: addr.postal_code,
       notes: addr&.notes
       # coordinates will be filled in by your default attribute
+    )
+  end
+
+  def snapshot_package_history
+    return if package.blank?
+
+    # Remove previous history if exists
+    package_history&.destroy
+
+    create_package_history!(
+      package: package,
+      name: package.name,
+      currency: package.currency,
+      number_of_visit: package.number_of_visit,
+      price_per_visit: package.price_per_visit,
+      discount: package.discount,
+      total_price: package.total_price,
+      fee_per_visit: package.fee_per_visit,
+      total_fee: package.total_fee
     )
   end
 end

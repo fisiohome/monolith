@@ -116,7 +116,7 @@ module TherapistsHelper
             patient: serialize_patient(appointment.patient),
             admins: serialize_admin(appointment.admins),
             package: serialize_package(
-              appointment.package,
+              appointment.package_history,
               options.fetch(:package_options, options.slice(:include_packages_formatted))
             ),
             voucher_discount: appointment.voucher_discount,

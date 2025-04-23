@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_22_183459) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_23_042745) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -65,6 +65,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_22_183459) do
     t.datetime "updated_at", null: false
     t.index ["admin_id"], name: "index_appointment_admins_on_admin_id"
     t.index ["appointment_id"], name: "index_appointment_admins_on_appointment_id"
+  end
+
+  create_table "appointment_package_histories", force: :cascade do |t|
+    t.uuid "appointment_id", null: false
+    t.bigint "package_id", null: false
+    t.string "name", null: false
+    t.string "currency", null: false
+    t.integer "number_of_visit", default: 1, null: false
+    t.decimal "price_per_visit", null: false
+    t.decimal "discount"
+    t.decimal "total_price", null: false
+    t.decimal "fee_per_visit", null: false
+    t.decimal "total_fee", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["appointment_id"], name: "index_appointment_package_histories_on_appointment_id"
+    t.index ["package_id"], name: "index_appointment_package_histories_on_package_id"
   end
 
   create_table "appointments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -332,6 +349,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_22_183459) do
   add_foreign_key "appointment_address_histories", "locations"
   add_foreign_key "appointment_admins", "admins"
   add_foreign_key "appointment_admins", "appointments"
+  add_foreign_key "appointment_package_histories", "appointments"
+  add_foreign_key "appointment_package_histories", "packages"
   add_foreign_key "appointments", "locations"
   add_foreign_key "appointments", "packages"
   add_foreign_key "appointments", "patients"
