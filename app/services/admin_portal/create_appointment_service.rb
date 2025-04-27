@@ -1,7 +1,8 @@
 module AdminPortal
   class CreateAppointmentService
-    def initialize(params)
+    def initialize(params, user)
       @params = permitted_params(params)
+      @current_user = user
     end
 
     def call
@@ -105,7 +106,8 @@ module AdminPortal
         service_id: @params[:service_id],
         package_id: @params[:package_id],
         therapist_id: @params[:therapist_id],
-        status: @params[:therapist_id].present? ? "PENDING PATIENT APPROVAL" : "PENDING THERAPIST ASSIGNMENT"
+        status: @params[:therapist_id].present? ? "PENDING PATIENT APPROVAL" : "PENDING THERAPIST ASSIGNMENT",
+        updater: @current_user
       }
       appointment_params = @params[:appointment] || {}
 

@@ -39,7 +39,7 @@
 		"head_title": "Jadwal Janji Temu",
 		"page_title": "Jadwal Janji Temu",
 		"statuses": {
-			"pending_therapist_assignment": "PENUGASAN TERAPIS YANG TERTUNDA",
+			"pending_therapist_assignment": "PENUGASAN TERAPIS TERTUNDA",
 			"pending_patient_approval": "MENUNGGU PERSETUJUAN PASIEN",
 			"pending_payment": "PEMBAYARAN TERTUNDA",
 			"cancelled": "DIBATALKAN",
@@ -49,8 +49,9 @@
 			"create": "Buat Janji Temu",
 			"cancel_booking": "Batalkan Pemesanan",
 			"reschedule": "Penjadwalan Ulang",
-			"update_pic": "Perbarui Penanggung Jawab (PIC)",
-			"update_status": "Perbarui Status"
+			"update_pic": "Penanggung Jawab (PIC)",
+			"update_status": "Status",
+			"dropdown_update": "Perbarui"
 		},
 		"tab": {
 			"title": {

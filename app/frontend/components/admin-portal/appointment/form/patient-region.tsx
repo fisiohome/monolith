@@ -46,7 +46,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import {
 	DEFAULT_VALUES_LOCATION,
 	type AppointmentBookingSchema,
-} from "@/lib/appointments";
+} from "@/lib/appointments/form";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { useMediaQuery } from "@uidotdev/usehooks";
 

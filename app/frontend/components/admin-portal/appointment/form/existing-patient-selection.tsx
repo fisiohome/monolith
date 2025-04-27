@@ -35,7 +35,7 @@ import {
 	DEFAULT_VALUES_PATIENT_CONTACT,
 	defineAppointmentFormDefaultValues,
 	type AppointmentBookingSchema,
-} from "@/lib/appointments";
+} from "@/lib/appointments/form";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";

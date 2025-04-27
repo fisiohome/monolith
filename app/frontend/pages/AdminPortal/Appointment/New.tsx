@@ -13,13 +13,18 @@ import {
 } from "@/components/admin-portal/shared/page-layout";
 import { Step, type StepItem, Stepper } from "@/components/shared/stepper";
 import { Form } from "@/components/ui/form";
+import { SESSION_STORAGE_FORM_KEY } from "@/hooks/admin-portal/appointment/use-appointment-form";
+import type {
+	LocationOption,
+	TherapistOption,
+} from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
 	APPOINTMENT_BOOKING_SCHEMA,
 	type AppointmentBookingSchema,
 	defineAppointmentFormDefaultValues,
-} from "@/lib/appointments";
-import { buildAppointmentPayload } from "@/lib/appointments";
+} from "@/lib/appointments/form";
+import { buildAppointmentPayload } from "@/lib/appointments/form";
 import type {
 	FISIOHOME_PARTNER,
 	GENDERS,
@@ -29,11 +34,9 @@ import type {
 } from "@/lib/constants";
 import { populateQueryParams } from "@/lib/utils";
 import type { Appointment } from "@/types/admin-portal/appointment";
-import type { Location } from "@/types/admin-portal/location";
 import type { Package } from "@/types/admin-portal/package";
 import type { Patient } from "@/types/admin-portal/patient";
 import type { Service } from "@/types/admin-portal/service";
-import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, router, usePage } from "@inertiajs/react";
@@ -51,28 +54,6 @@ export type ServiceOption = Pick<
 	Service,
 	"id" | "name" | "code" | "active" | "description"
 > & { packages: Pick<Package, "id" | "name" | "active" | "numberOfVisit"> };
-
-export type LocationOption = Pick<
-	Location,
-	"id" | "city" | "country" | "countryCode" | "state"
->;
-
-export type TherapistOption = Pick<
-	Therapist,
-	| "id"
-	| "name"
-	| "batch"
-	| "gender"
-	| "phoneNumber"
-	| "registrationNumber"
-	| "modalities"
-	| "specializations"
-	| "employmentStatus"
-	| "employmentType"
-	| "availability"
-	| "availabilityDetails"
-	| "activeAddress"
->;
 
 interface StepperProps extends StepItem {
 	component: ReactElement;
@@ -152,9 +133,12 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 		[globalProps.auth.currentUser],
 	);
 	const [formStorage, setFormStorage] =
-		useSessionStorage<null | AppointmentBookingSchema>("appointment-form", {
-			...formDefaultvalues,
-		});
+		useSessionStorage<null | AppointmentBookingSchema>(
+			SESSION_STORAGE_FORM_KEY,
+			{
+				...formDefaultvalues,
+			},
+		);
 	const form = useForm<AppointmentBookingSchema>({
 		resolver: zodResolver(APPOINTMENT_BOOKING_SCHEMA),
 		defaultValues: {
@@ -234,7 +218,7 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			if (confirm("Are you sure you want to navigate away?")) {
 				setIsNavigateConfirm(true);
 				// Remove the appointment form data from session storage
-				window.sessionStorage.removeItem("appointment-form");
+				window.sessionStorage.removeItem(SESSION_STORAGE_FORM_KEY);
 			} else {
 				event?.preventDefault();
 			}
@@ -253,8 +237,15 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	 */
 	useEffect(() => {
 		return router.on("navigate", (event) => {
+			// Determine if the path is the current root (user on reload)
+			const isCurrentRoot = event.detail.page.url.includes("new");
+			const isBookPath = event.detail.page.url.includes("book");
+
+			// If the path is current root (user on reload), or is the book path (book path mean to POST to save the appointment) do nothing
+			if (isCurrentRoot || isBookPath) return;
+
 			// Remove the appointment form data from session storage
-			window.sessionStorage.removeItem("appointment-form");
+			window.sessionStorage.removeItem(SESSION_STORAGE_FORM_KEY);
 
 			console.log(`Navigated to ${event.detail.page.url}`);
 		});

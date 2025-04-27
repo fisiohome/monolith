@@ -1,29 +1,29 @@
-import type { HereMaphandler } from "@/components/shared/here-map";
 import { useStepper } from "@/components/shared/stepper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CalendarProps } from "@/components/ui/calendar";
-import type { MarkerData } from "@/hooks/here-maps";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { getGenderIcon } from "@/hooks/use-gender";
 import {
 	type AppointmentBookingSchema,
 	DEFAULT_VALUES_PACKAGE,
 	DEFAULT_VALUES_THERAPIST,
-} from "@/lib/appointments";
+} from "@/lib/appointments/form";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { goBackHandler, populateQueryParams } from "@/lib/utils";
-import type {
-	AppointmentNewGlobalPageProps,
-	AppointmentNewProps,
-	TherapistOption,
-} from "@/pages/AdminPortal/Appointment/New";
+import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { format } from "date-fns";
 import { MapPin } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import {
+	useAppointmentDateTime,
+	usePreferredTherapistGender,
+	useTherapistAvailability,
+} from "./use-appointment-utils";
+
+export const SESSION_STORAGE_FORM_KEY = "appointment-form";
 
 export const useFinalStep = () => {
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
@@ -84,7 +84,7 @@ export const useStepButtons = ({
 	}, [prevStep]);
 	const onBack = useCallback(() => {
 		// Remove the appointment form data from session storage
-		window.sessionStorage.removeItem("appointment-form");
+		window.sessionStorage.removeItem(SESSION_STORAGE_FORM_KEY);
 
 		goBackHandler();
 	}, []);
@@ -426,11 +426,62 @@ export const useAppointmentSchedulingForm = () => {
 		therapists: false,
 	});
 
-	// * for preferred therapist gender field
-	const preferredTherapistGenderOption = useMemo(
-		() => globalProps.optionsData?.preferredTherapistGender || [],
-		[globalProps.optionsData?.preferredTherapistGender],
+	// * for therapist availability and the isoline map
+	const onChangeTherapistLoading = useCallback((value: boolean) => {
+		setIsLoading((prev) => ({ ...prev, therapists: value }));
+	}, []);
+	const onSelectTherapist = useCallback(
+		(
+			value: NonNullable<
+				AppointmentBookingSchema["appointmentScheduling"]["therapist"]
+			>,
+		) => {
+			form.setValue("appointmentScheduling.therapist", value, {
+				shouldValidate: true,
+			});
+		},
+		[form.setValue],
 	);
+	const onResetTherapistFormValue = useCallback(() => {
+		form.resetField("appointmentScheduling.therapist", {
+			defaultValue: DEFAULT_VALUES_THERAPIST,
+		});
+	}, [form.resetField]);
+	const {
+		onResetIsoline,
+		onResetTherapistOptions,
+		...therapistAndIsolineValues
+	} = useTherapistAvailability({
+		serviceIdValue: watchServiceValue,
+		appointmentDateTImeValue: watchAppointmentDateTimeValue,
+		preferredTherapistGenderValue: watchPreferredTherapistGenderValue,
+		patientValues: {
+			fullName: watchPatientDetailsValue.fullName,
+			address: watchPatientDetailsValue.address,
+			latitude: watchPatientDetailsValue.latitude,
+			longitude: watchPatientDetailsValue.longitude,
+			locationId: watchPatientDetailsValue.location.id,
+		},
+		fetchURL: pageURL,
+		onChangeTherapistLoading,
+		onResetTherapistFormValue,
+	});
+	// reset the therapist availability field value, options values from server fetch data and isoline map
+	const onResetAllTherapistState = useCallback(() => {
+		onResetTherapistFormValue();
+		onResetTherapistOptions();
+		onResetIsoline();
+	}, [onResetTherapistFormValue, onResetTherapistOptions, onResetIsoline]);
+	const therapistAvailabilityHooks = {
+		...therapistAndIsolineValues,
+		onSelectTherapist,
+		onResetAllTherapistState,
+	};
+
+	// * for preferred therapist gender field
+	const prefGenderHooks = usePreferredTherapistGender({
+		sourceOptions: globalProps.optionsData?.preferredTherapistGender,
+	});
 
 	// * for service field
 	const servicesOption = useMemo(
@@ -475,19 +526,16 @@ export const useAppointmentSchedulingForm = () => {
 			form.resetField("appointmentScheduling.package", {
 				defaultValue: DEFAULT_VALUES_PACKAGE,
 			});
-			form.resetField("appointmentScheduling.therapist", {
-				defaultValue: DEFAULT_VALUES_THERAPIST,
-			});
-			onResetTherapistOptions();
-			onResetIsoline();
+			onResetAllTherapistState();
 
 			// set the service selected value
 			form.setValue("appointmentScheduling.service", service, {
 				shouldValidate: true,
 			});
 		},
-		[form.setValue, form.resetField],
+		[form.setValue, form.resetField, onResetAllTherapistState],
 	);
+	const serviceHooks = { servicesOption, onFocusServiceField, onSelectService };
 
 	// * for package field
 	const packagesOption = useMemo(
@@ -507,328 +555,73 @@ export const useAppointmentSchedulingForm = () => {
 			form.setValue("appointmentScheduling.package", packageValue, {
 				shouldValidate: true,
 			});
+			onResetTherapistFormValue();
 		},
-		[form.setValue],
+		[form.setValue, onResetTherapistFormValue],
 	);
+	const packageHooks = { packagesOption, onSelectPackage };
 
 	// * for appointment date field
-	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
-	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
-		watchAppointmentSchedulingValue?.appointmentDateTime
-			? new Date(watchAppointmentSchedulingValue.appointmentDateTime.toString())
-			: null,
-	);
-	const [appointmentTime, setAppointmentTime] = useState<string>(
-		watchAppointmentSchedulingValue?.appointmentDateTime
-			? format(
-					watchAppointmentSchedulingValue.appointmentDateTime.toString(),
-					"HH:mm",
-				)
-			: "",
-	);
-	// Memoized calendar properties for the appointment date field
-	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
-		// Define the range of years to be displayed in the calendar
-		const currentYear = new Date().getFullYear();
-		const sixMonthsFromToday = new Date();
-		sixMonthsFromToday.setMonth(sixMonthsFromToday.getMonth() + 6);
-
-		return {
-			// Close the calendar popover when a day is clicked
-			onDayClick: () => setIsOpenAppointmentDate(false),
-			// Set the range of years to be displayed
-			fromYear: currentYear,
-			toYear: currentYear,
-			// Disable dates that are in the past or more than 6 months in the future
-			disabled: (date) => {
-				const today = new Date();
-				return date <= today || date > sixMonthsFromToday;
-			},
-		};
-	}, []);
-
-	// * for assigning the therapist
-	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
-	const [isTherapistFound, setIsTherapistFound] = useState(false);
-	const [therapistsOptions, setTherapistsOptions] = useState({
-		available: [] as AppointmentNewProps["therapists"],
-		unavailable: [] as AppointmentNewProps["therapists"],
-		feasible: [] as AppointmentNewProps["therapists"],
-		notFeasible: [] as AppointmentNewProps["therapists"],
+	const appointmentDateTimeValues = useAppointmentDateTime({
+		sourceValue: watchAppointmentDateTimeValue,
 	});
-	// reset the therapist all options
-	const onResetTherapistOptions = useCallback(() => {
-		setTherapistsOptions((prev) => ({
-			...prev,
-			notFeasible: [],
-			feasible: [],
-			available: [],
-			unavailable: [],
-		}));
-		setIsTherapistFound(false);
-	}, []);
-	// map the available and unavailable therapists, then also calculate the isoline
-	const mappingTherapists = useCallback(
-		(therapists: TherapistOption[] | undefined) => {
-			const therapistsAvailable =
-				therapists?.filter((t) => t.availabilityDetails?.available) || [];
-			const therapistsUnavailable =
-				therapists?.filter((t) => !t.availabilityDetails?.available) || [];
-			setTherapistsOptions((prev) => ({
-				...prev,
-				available: therapistsAvailable,
-				unavailable: therapistsUnavailable,
-			}));
-			if (therapistsAvailable?.length) {
-				onCalculateIsoline(therapistsAvailable);
-			} else {
-				setIsTherapistFound(true);
+	const onSelectAppointmentDate = useCallback(
+		(date?: Date) => {
+			const { appointmentTime, setAppointmentDate, setAppointmentTime } =
+				appointmentDateTimeValues;
+			if (appointmentTime) {
+				// Set the selected time to the selected date
+				const [hours, minutes] = appointmentTime.split(":");
+				date?.setHours(Number.parseInt(hours), Number.parseInt(minutes));
 			}
+
+			// update state reference and form field value data
+			setAppointmentDate(date || null);
+
+			// update state for appointment time
+			const time = date ? format(date.toString(), "HH:mm") : "";
+			setAppointmentTime(time);
+
+			// reset all therapist and isoline maps state
+			onResetAllTherapistState();
 		},
-		[],
+		[appointmentDateTimeValues, onResetAllTherapistState],
 	);
-	const onFindTherapists = useCallback(() => {
-		// fetch the services options data
-		const { queryParams } = populateQueryParams(
-			pageURL,
-			deepTransformKeysToSnakeCase({
-				locationId: watchPatientDetailsValue?.location?.id,
-				serviceId: watchAppointmentSchedulingValue?.service?.id,
-				preferredTherapistGender:
-					watchAppointmentSchedulingValue.preferredTherapistGender,
-				appointmentDateTime:
-					watchAppointmentSchedulingValue.appointmentDateTime,
-			}),
-		);
-		router.get(pageURL, queryParams, {
-			preserveScroll: true,
-			preserveState: true,
-			replace: false,
-			onStart: () => {
-				setIsLoading((prev) => ({ ...prev, therapists: true }));
-				onResetTherapistOptions();
-				onResetIsoline();
-				// reset the therapist form values
-				form.resetField("appointmentScheduling.therapist", {
-					defaultValue: DEFAULT_VALUES_THERAPIST,
-				});
-			},
-			onFinish: () => {
-				setTimeout(() => {
-					setIsLoading((prev) => ({
-						...prev,
-						therapists: false,
-					}));
-				}, 250);
-			},
-			/**
-			 * ? This callback will not be called if there is a server error for example on the validation server.
-			 * ? And instead of calling the onSuccess callback it will call the onError callback. but this has been solved.
-			 * ? That is by not using the only option (for example only: [“props”]),
-			 * ? And also instead of using InertiaRails.defer use `->` or lazy data evaluation (https://inertia-rails.dev/guide/partial-reloads#lazy-data-evaluation).
-			 *
-			 **/
-			onSuccess: ({ props }) => {
-				const result = (props as unknown as AppointmentNewGlobalPageProps)
-					.therapists;
-				mappingTherapists(result);
-			},
-		});
-	}, [
-		pageURL,
-		watchPatientDetailsValue,
-		watchAppointmentSchedulingValue,
-		form.resetField,
-		onResetTherapistOptions,
-		mappingTherapists,
-	]);
-	const onSelectTherapist = useCallback(
-		(
-			value: NonNullable<
-				AppointmentBookingSchema["appointmentScheduling"]["therapist"]
-			>,
-		) => {
-			form.setValue("appointmentScheduling.therapist", value, {
-				shouldValidate: true,
-			});
-		},
-		[form.setValue],
-	);
+	const onSelectAppointmentTime = useCallback(
+		(time: string) => {
+			const { appointmentDate, setAppointmentDate, setAppointmentTime } =
+				appointmentDateTimeValues;
+			setAppointmentTime(time);
+			if (appointmentDate) {
+				const [hours, minutes] = time.split(":");
+				const newDate = new Date(appointmentDate.getTime());
+				newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
+				setAppointmentDate(newDate);
 
-	// * state group for isolane therapist
-	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
-	// reset the isoline calculated and marker printed
-	const onResetIsoline = useCallback(() => {
-		// remove the markers
-		mapRef.current?.marker.onRemove();
-		mapRef.current?.marker.onRemove({ isSecondary: true });
+				// reset all therapist and isoline maps state
+				onResetAllTherapistState();
 
-		// remove the isoline polygon
-		mapRef.current?.isoline.onRemove();
-
-		// reset the state calculated marker
-		setIsIsolineCalculated(false);
-	}, []);
-	const onCalculateIsoline = useCallback(
-		async (therapists: NonNullable<AppointmentNewProps["therapists"]>) => {
-			if (!mapRef.current) return;
-
-			// calculate the isoline
-			const {
-				latitude,
-				longitude,
-				address: patientAddress,
-			} = watchPatientDetailsValue;
-			const patientCoords = { lat: latitude, lng: longitude };
-			await mapRef.current.isoline.onCalculate.both({
-				coord: patientCoords,
-				constraints: [
-					{ type: "distance", value: 1000 * 25 }, // 25 km
-					{ type: "time", value: 60 * 50 }, // 50 minutes
-				],
-			});
-
-			// Map therapists to MarkerData
-			const therapistCoords: MarkerData[] =
-				therapists
-					.map((therapist) => {
-						// Safely handle missing activeAddress
-						if (!therapist?.activeAddress) return null;
-
-						// grab prevAppointment if present
-						const prev =
-							therapist.availabilityDetails?.locations?.prevAppointment;
-
-						// determine which coords to use
-						let lat: number;
-						let lng: number;
-						let address: string;
-
-						if (prev) {
-							lat = prev.latitude;
-							lng = prev.longitude;
-							address = prev.address;
-						} else if (therapist.activeAddress) {
-							lat = therapist.activeAddress.latitude;
-							lng = therapist.activeAddress.longitude;
-							address = therapist.activeAddress.address;
-						} else {
-							// no valid location—skip this therapist
-							return null;
-						}
-
-						return {
-							position: { lat, lng },
-							address,
-							bubbleContent: `
-            <div class="w-[180px] text-xs flex flex-col">
-              <span class="font-bold text-sm">${therapist.name}</span>
-              <span class="font-light text-[10px]">#${therapist.registrationNumber}</span>
-            </div>
-          `,
-							additional: { therapist },
-						} satisfies MarkerData;
-					})
-					.filter((coord) => coord !== null) || [];
-
-			// Get feasibility therapists result
-			const feasibleResult = mapRef.current.isLocationFeasible(therapistCoords);
-			const therapistList = {
-				feasible: [] as AppointmentNewProps["therapists"],
-				notFeasible: [] as AppointmentNewProps["therapists"],
-			};
-			for (const item of feasibleResult || []) {
-				const therapist = item?.additional?.therapist;
-				if (!therapist) continue;
-
-				if (item.isFeasible) {
-					therapistList?.feasible?.push(therapist);
-				} else {
-					therapistList?.notFeasible?.push(therapist);
-				}
+				return newDate;
 			}
-			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
-			setIsTherapistFound(true);
 
-			// Add markers for the patient position
-			const markerPatientData: MarkerData = {
-				address: patientAddress,
-				position: patientCoords,
-				bubbleContent: `
-            <div class="w-[180px] text-xs flex flex-col">
-              <span class="font-bold text-sm">${watchPatientDetailsValue.fullName}</span>
-              <span class="font-light text-[10px]">${watchPatientDetailsValue.address}</span>
-            </div>
-          `,
-				additional: {
-					patient: { fullName: watchPatientDetailsValue.fullName },
-				},
-			};
-			mapRef.current.marker.onAdd([markerPatientData]);
-
-			// Add markers for feasible therapists
-			const markerTherapistFeasibleData: MarkerData[] =
-				therapistList.feasible
-					?.map(
-						(feasibleTherapist) =>
-							therapistCoords?.find(
-								(coord) =>
-									coord?.additional?.therapist?.id === feasibleTherapist.id,
-							) || null,
-					)
-					?.filter((coord) => coord !== null) || [];
-			mapRef.current.marker.onAdd(markerTherapistFeasibleData, {
-				isSecondary: true,
-				useRouting: true,
-			});
-
-			// Mark isoline as calculated
-			setIsIsolineCalculated(true);
+			return null;
 		},
-		[watchPatientDetailsValue],
+		[appointmentDateTimeValues, onResetAllTherapistState],
 	);
-
-	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
-	useEffect(() => {
-		if (
-			watchServiceValue ||
-			watchAppointmentDateTimeValue ||
-			watchPreferredTherapistGenderValue
-		) {
-			onResetTherapistOptions();
-			onResetIsoline();
-		}
-
-		return () => {};
-	}, [
-		watchServiceValue,
-		watchAppointmentDateTimeValue,
-		watchPreferredTherapistGenderValue,
-		onResetIsoline,
-		onResetTherapistOptions,
-	]);
+	const appointmentDateTimeHooks = {
+		...appointmentDateTimeValues,
+		onSelectAppointmentDate,
+		onSelectAppointmentTime,
+	};
 
 	return {
+		...prefGenderHooks,
+		...therapistAvailabilityHooks,
+		...serviceHooks,
+		...packageHooks,
+		...appointmentDateTimeHooks,
 		form,
 		isLoading,
-		preferredTherapistGenderOption,
-		packagesOption,
-		isOpenAppointmentDate,
-		appointmentDate,
-		appointmentTime,
-		appointmentDateCalendarProps,
-		isTherapistFound,
-		isIsolineCalculated,
-		therapistsOptions,
-		mapRef,
-		servicesOption,
-		onFocusServiceField,
-		onSelectService,
-		onSelectPackage,
-		setAppointmentDate,
-		setAppointmentTime,
-		onFindTherapists,
-		onSelectTherapist,
-		setIsOpenAppointmentDate,
+		watchAppointmentSchedulingValue,
 	};
 };

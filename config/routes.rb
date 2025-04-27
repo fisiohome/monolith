@@ -44,6 +44,8 @@ Rails.application.routes.draw do
             put ":id/cancel" => "appointments#cancel"
             put ":id/update-pic" => "appointments#update_pic"
             put ":id/update-status" => "appointments#update_status"
+            get ":id/reschedule" => "appointments#reschedule_page", :as => :reschedule_page
+            put ":id/reschedule" => "appointments#reschedule", :as => :reschedule
           end
         end
 

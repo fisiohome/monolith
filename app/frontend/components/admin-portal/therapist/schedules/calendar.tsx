@@ -691,7 +691,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 			tzDate,
 		});
 
-		return `${startTime} - ${endTime}`;
+		return `${startTime} — ${endTime}`;
 	}, [appointment.startTime, appointment.endTime, locale, tzDate]);
 	// calculate the height of the component
 	const heightBlock = useMemo(() => {
@@ -867,7 +867,7 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 			tzDate,
 		});
 
-		return `${start} - ${end}`;
+		return `${start} — ${end}`;
 	}, [startTime, endTime, locale, tzDate]);
 	const isPastTime = useMemo(
 		() =>
@@ -888,7 +888,7 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 		<div
 			ref={ref}
 			className={cn(
-				"absolute flex flex-col items-start justify-between p-2 text-xs rounded shadow left-1 right-1 inset-1 bg-purple-100/25 text-purple-800 border border-border transition-all",
+				"absolute flex flex-col items-start justify-between p-2 text-xs rounded shadow left-1 right-1 inset-1 bg-purple-800/25 text-purple-800 dark:bg-purple-300/25 dark:text-purple-300 border border-border transition-all",
 				className,
 				isPastTime && "opacity-75",
 				hovering && "-translate-y-4 z-10",

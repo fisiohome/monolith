@@ -1,17 +1,17 @@
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type { AppointmentPayload } from "@/types/admin-portal/appointment";
 import type { Auth } from "@/types/globals";
+import { add } from "date-fns";
 import { isValidPhoneNumber } from "react-phone-number-input";
-import { z } from "zod";
 import {
-	FISIOHOME_PARTNER,
 	GENDERS,
 	PATIENT_CONDITIONS,
-	PATIENT_REFERRAL_OPTIONS,
 	PREFERRED_THERAPIST_GENDER,
-} from "./constants";
-import { boolSchema, idSchema } from "./validation";
-import { add } from "date-fns";
+	PATIENT_REFERRAL_OPTIONS,
+	FISIOHOME_PARTNER,
+} from "../constants";
+import { idSchema, boolSchema } from "../validation";
+import { z } from "zod";
 
 export const DEFAULT_VALUES_LOCATION = {
 	id: "",
@@ -170,6 +170,7 @@ export const checkIsCustomReferral = (value: string) => {
 
 	return !!value && !options.includes(value);
 };
+
 /**
  * Checks if the given value is not included in the PATIENT_REFERRAL_OPTIONS array.
  *
@@ -239,8 +240,8 @@ export const ADDITIONAL_SETTINGS_SCHEMA = z
 	});
 export type AdditionalSettingsSchema = z.infer<
 	typeof ADDITIONAL_SETTINGS_SCHEMA
->;
 
+>;
 // form options schema
 export const FORM_OPTIONS_SCHEMA = z.object({
 	patientRecordSource: z.enum(["existing", "add"]),
@@ -334,12 +335,10 @@ export const defineAppointmentFormDefaultValues = ({
 	// for date of birth
 	// const dateOfBirth = new Date(1999, 3, 3);
 	// const age = calculateAge(dateOfBirth);
-
 	// // for referral
 	// const referralSource = "Other";
 	// const isCustomReferral = checkIsCustomReferral(referralSource);
 	// const customReferralSource = isCustomReferral ? "Linkedin" : undefined;
-
 	// // for fisiohome partner name
 	// const fisiohomePartnerName = "Other";
 	// const isCustomFisiohomePartner =
@@ -347,14 +346,12 @@ export const defineAppointmentFormDefaultValues = ({
 	// const customFisiohomePartnerName = isCustomFisiohomePartner
 	// 	? "Tokopedia"
 	// 	: undefined;
-
 	// // for appointment date
 	// const appointmentDateTime = add(new Date(), {
 	// 	days: 13,
 	// 	hours: 5,
 	// 	minutes: 15 - (new Date().getMinutes() % 15),
 	// });
-
 	// for admin pics
 	const admins = [
 		{
@@ -369,11 +366,12 @@ export const defineAppointmentFormDefaultValues = ({
 			patientRecordSource: "add",
 		},
 		contactInformation: {
-			contactName: "",
-			contactPhone: "",
 			// contactName: "Dendy",
 			// contactPhone: "+62896272346",
 			// email: "dendy@yopmail.com",
+			contactName: "",
+			contactPhone: "",
+			email: "",
 		},
 		patientDetails: {
 			// fullName: "Dendy Dandees",
@@ -405,7 +403,6 @@ export const defineAppointmentFormDefaultValues = ({
 			// 	id: "2",
 			// 	city: "KOTA ADM. JAKARTA BARAT",
 			// },
-
 			fullName: "",
 			dateOfBirth: null,
 			age: null,
@@ -430,7 +427,6 @@ export const defineAppointmentFormDefaultValues = ({
 			// preferredTherapistGender: "NO PREFERENCE",
 			// // appointmentDateTime,
 			// appointmentDateTime: null,
-
 			service: { id: "", name: "" },
 			package: { id: "", name: "", numberOfVisit: 0 },
 			preferredTherapistGender: "NO PREFERENCE",
@@ -445,7 +441,6 @@ export const defineAppointmentFormDefaultValues = ({
 			// voucherCode: "TEBUSMURAH",
 			// notes: "This is the patient notes",
 			// admins,
-
 			referralSource: "",
 			customReferralSource: "",
 			fisiohomePartnerBooking: false,

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_23_042745) do
+ActiveRecord::Schema[8.0].define(version: 2025_04_26_133522) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -84,6 +84,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_042745) do
     t.index ["package_id"], name: "index_appointment_package_histories_on_package_id"
   end
 
+  create_table "appointment_status_histories", force: :cascade do |t|
+    t.uuid "appointment_id", null: false
+    t.string "old_status"
+    t.string "new_status", null: false
+    t.text "reason"
+    t.uuid "changed_by", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["appointment_id"], name: "index_appointment_status_histories_on_appointment_id"
+    t.index ["changed_by"], name: "index_appointment_status_histories_on_changed_by"
+  end
+
   create_table "appointments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "therapist_id"
     t.uuid "patient_id", null: false
@@ -103,6 +115,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_042745) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "status_reason"
     t.index ["location_id"], name: "index_appointments_on_location_id"
     t.index ["package_id"], name: "index_appointments_on_package_id"
     t.index ["patient_id"], name: "index_appointments_on_patient_id"
@@ -351,6 +364,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_23_042745) do
   add_foreign_key "appointment_admins", "appointments"
   add_foreign_key "appointment_package_histories", "appointments"
   add_foreign_key "appointment_package_histories", "packages"
+  add_foreign_key "appointment_status_histories", "appointments"
   add_foreign_key "appointments", "locations"
   add_foreign_key "appointments", "packages"
   add_foreign_key "appointments", "patients"

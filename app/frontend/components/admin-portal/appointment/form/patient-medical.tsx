@@ -20,7 +20,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { AppointmentBookingSchema } from "@/lib/appointments";
+import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { Deferred, usePage } from "@inertiajs/react";
 import { AlertCircle, Pencil } from "lucide-react";

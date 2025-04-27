@@ -1,6 +1,8 @@
 module AdminPortal
   class AppointmentsController < ApplicationController
-    before_action :set_appointment, only: [:update, :cancel, :update_pic, :update_status]
+    include AppointmentsHelper
+
+    before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params)
@@ -28,10 +30,11 @@ module AdminPortal
     end
 
     def create
-      result = CreateAppointmentService.new(params).call
+      result = CreateAppointmentService.new(params, current_user).call
       if result[:success]
         redirect_to new_admin_portal_appointment_path(created: result[:data].id), notice: "Appointment was successfully booked."
       else
+        logger.error("Failed to booking the appointment: #{result[:error]}")
         error_message = result[:error]&.full_messages
 
         logger.error("Failed to save the booking of the appointment: #{error_message}.")
@@ -46,27 +49,87 @@ module AdminPortal
       end
     end
 
-    def update
+    def reschedule_page
+      appointment_list = serialize_appointment(@appointment, {
+        include_therapist: true,
+        include_patient: true,
+        include_service: true,
+        include_location: true,
+        include_visit_address: true,
+        include_package: false,
+        include_admins: false,
+        include_patient_medical_record: false
+      })
+      preparation = PreparationRescheduleAppointmentService.new(@appointment, params)
+
+      render inertia: "AdminPortal/Appointment/Reschedule", props: deep_transform_keys_to_camel_case({
+        appointment: appointment_list,
+        therapists: -> { preparation.fetch_therapists },
+        options_data: InertiaRails.defer { preparation.fetch_options_data }
+      })
+    end
+
+    def reschedule
+      result = UpdateAppointmentService.new(@appointment, params, current_user).call
+
+      if result[:success]
+        notice_msg =
+          if result[:changed]
+            "Appointment was successfully rescheduled."
+          else
+            "No changes detected."
+          end
+
+        redirect_to admin_portal_appointments_path(rescheduled: @appointment.id), notice: notice_msg
+      else
+        logger.error("Failed to reschedule: #{result[:error]}")
+        error_message = result[:error]&.full_messages
+
+        logger.error("Failed to reschedule the appointment: #{error_message}.")
+        flash[:alert] = error_message
+        redirect_to reschedule_admin_portal_appointments_path(@appointment),
+          inertia: {
+            errors: deep_transform_keys_to_camel_case(
+              result[:error]&.messages&.transform_values(&:uniq)&.merge({
+                fullMessages: error_message
+              })
+            )
+          }
+      end
     end
 
     def cancel
-      Rails.logger.info "Starting process to cancel the appointment #{@appointment.registration_number}"
+      Rails.logger.info "Starting process to cancel #{@appointment.registration_number}"
 
-      ActiveRecord::Base.transaction do
-        if @appointment.update_columns(status: "CANCELLED")
-          Rails.logger.info "Appointment #{@appointment.registration_number} status updated to CANCELLED successfully."
-          redirect_to admin_portal_appointments_path(request.query_parameters.except("cancel")), notice: "Appointment cancelled successfully."
-        else
-          Rails.logger.error "Failed to update appointment #{@appointment.registration_number}: #{@appointment.errors.full_messages.first}"
-          redirect_to admin_portal_appointments_path(request.query_parameters), alert: @appointment.errors.full_messages.first
-          raise ActiveRecord::Rollback
+      success, message = begin
+        Appointment.transaction do
+          @appointment.updater = current_user
+          service = AppointmentStatusUpdaterService.new(@appointment)
+
+          if service.call(new_status: "CANCELLED", reason: params.dig(:form_data, :reason))
+            [true, "Appointment cancelled successfully."]
+          else
+            [false, service.errors.first]
+          end
         end
+      rescue => e
+        Rails.logger.error "Exception while cancelling appointment #{@appointment.registration_number}: #{e.message}"
+        [false, e.message]
+      ensure
+        Rails.logger.info "Finished process to cancel for the appointment #{@appointment.registration_number}"
       end
-    rescue => e
-      Rails.logger.error "Exception while cancelling appointment #{@appointment.registration_number}: #{e.message}"
-      redirect_to admin_portal_appointments_path(request.query_parameters), alert: e.message
-    ensure
-      Rails.logger.info "Finished process to cancel for the appointment #{@appointment.registration_number}"
+
+      if success
+        redirect_to(
+          admin_portal_appointments_path(request.query_parameters.except("cancel")),
+          notice: message
+        )
+      else
+        redirect_to(
+          admin_portal_appointments_path(request.query_parameters),
+          alert: message
+        )
+      end
     end
 
     def update_pic
@@ -103,7 +166,9 @@ module AdminPortal
 
       begin
         ActiveRecord::Base.transaction do
-          @appointment.update(status: params.dig(:form_data, :status))
+          @appointment.updater = current_user
+          service = AppointmentStatusUpdaterService.new(@appointment)
+          service.call(new_status: params.dig(:form_data, :status), reason: params.dig(:form_data, :reason))
         end
 
         Rails.logger.info "Appointment #{@appointment.registration_number} status updated successfully."
@@ -119,7 +184,7 @@ module AdminPortal
     private
 
     def set_appointment
-      @appointment = Appointment.find(params[:id])
+      @appointment = Appointment.includes(:therapist).find(params[:id])
     end
   end
 end

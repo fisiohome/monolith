@@ -30,7 +30,7 @@ module AppointmentsHelper
       end
 
       # Serialize package details.
-      if options.fetch(:include_package, true) && appointment.package.present?
+      if options.fetch(:include_package, true) && appointment&.package_history&.present?
         serialized["package"] = serialize_package(
           appointment.package_history,
           options.fetch(:package_options, options.slice(:include_packages_formatted))

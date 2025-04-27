@@ -45,6 +45,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
+import { Textarea } from "@/components/ui/textarea";
 
 export function CancelAppointmentForm({
 	selectedAppointment,
@@ -60,11 +61,15 @@ export function CancelAppointmentForm({
 			submitText: i18n.t("appointments.modal.cancel.button_submit"),
 		};
 	}, [isLoading, forceMode]);
-	const formSchema = z.object({ id: z.string() });
+	const formSchema = z.object({
+		id: z.string(),
+		reason: z.string({ required_error: "Cancellation reason is required" }),
+	});
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			id: selectedAppointment.id,
+			reason: "",
 		},
 		mode: "onSubmit",
 	});
@@ -74,27 +79,48 @@ export function CancelAppointmentForm({
 		const { queryParams } = populateQueryParams(pageURL);
 		// generate the submit form url with the source query params
 		const { fullUrl } = populateQueryParams(routeURL, queryParams);
-		router.put(
-			fullUrl,
-			{},
-			{
-				preserveScroll: true,
-				preserveState: true,
-				onStart: () => {
-					setIsLoading(true);
-				},
-				onFinish: () => {
-					setTimeout(() => {
-						setIsLoading(false);
-					}, 250);
-				},
+		const formData = deepTransformKeysToSnakeCase({
+			formData: {
+				id: values.id,
+				reason: values.reason,
 			},
-		);
+		});
+		router.put(fullUrl, formData, {
+			preserveScroll: true,
+			preserveState: true,
+			onStart: () => {
+				setIsLoading(true);
+			},
+			onFinish: () => {
+				setTimeout(() => {
+					setIsLoading(false);
+				}, 250);
+			},
+		});
 	};
 
 	return (
 		<Form {...form}>
 			<form onSubmit={form.handleSubmit(onSubmit)}>
+				<FormField
+					control={form.control}
+					name="reason"
+					render={({ field }) => (
+						<FormItem>
+							{/* <FormLabel>Cancellation Reason</FormLabel> */}
+							<FormControl>
+								<Textarea
+									{...field}
+									placeholder="Enter the cancellation reason..."
+									className="shadow-inner bg-sidebar"
+								/>
+							</FormControl>
+
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
 				<ResponsiveDialogButton {...buttonProps} className="mb-1" />
 			</form>
 		</Form>
@@ -268,12 +294,14 @@ export function UpdateStatusForm({
 				...(keyof typeof AppointmentStatuses)[],
 			],
 		),
+		reason: z.string().optional(),
 	});
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			id: selectedAppointment.id,
 			status: selectedAppointment?.status,
+			reason: "",
 		},
 		mode: "onSubmit",
 	});
@@ -373,6 +401,25 @@ export function UpdateStatusForm({
 										</Command>
 									</PopoverContent>
 								</Popover>
+
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<FormField
+						control={form.control}
+						name="reason"
+						render={({ field }) => (
+							<FormItem>
+								{/* <FormLabel>Reason</FormLabel> */}
+								<FormControl>
+									<Textarea
+										{...field}
+										placeholder="Enter the reason..."
+										className="shadow-inner bg-sidebar"
+									/>
+								</FormControl>
 
 								<FormMessage />
 							</FormItem>

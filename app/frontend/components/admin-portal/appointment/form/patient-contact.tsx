@@ -19,7 +19,7 @@ import {
 	SheetClose,
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { AppointmentBookingSchema } from "@/lib/appointments";
+import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import { Pencil, AlertCircle, IdCard } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";

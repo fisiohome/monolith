@@ -66,7 +66,7 @@ import {
 	type AppointmentBookingSchema,
 	DEFAULT_VALUES_SERVICE,
 	DEFAULT_VALUES_THERAPIST,
-} from "@/lib/appointments";
+} from "@/lib/appointments/form";
 import { cn } from "@/lib/utils";
 import { Deferred, Link } from "@inertiajs/react";
 import { format } from "date-fns";
@@ -83,7 +83,6 @@ import {
 	X,
 } from "lucide-react";
 import { type ComponentProps, Fragment, memo } from "react";
-import { useWatch } from "react-hook-form";
 import PatientMedicalForm from "./form/patient-medical";
 import PatientContactForm from "./form/patient-contact";
 import PatientBasicInfoForm from "./form/patient-basic-info";
@@ -332,31 +331,38 @@ export function AppointmentSchedulingForm() {
 	const { coordinate, mapAddress } = usePatientRegion();
 	const {
 		form,
-		appointmentDate,
-		appointmentDateCalendarProps,
-		preferredTherapistGenderOption,
-		appointmentTime,
-		isIsolineCalculated: _isIsolineCalculated,
 		isLoading,
-		isOpenAppointmentDate,
-		isTherapistFound,
-		packagesOption,
-		mapRef,
-		therapistsOptions,
+		watchAppointmentSchedulingValue,
+		...restSchedulingHooks
+	} = useAppointmentSchedulingForm();
+	const { preferredTherapistGenderOption } = restSchedulingHooks;
+	const {
 		servicesOption,
-		onFindTherapists,
+		packagesOption,
 		onFocusServiceField,
 		onSelectService,
 		onSelectPackage,
-		onSelectTherapist,
+	} = restSchedulingHooks;
+	const {
+		isOpenAppointmentDate,
+		appointmentDate,
+		appointmentTime,
+		appointmentDateCalendarProps,
 		setAppointmentDate,
 		setAppointmentTime,
 		setIsOpenAppointmentDate,
-	} = useAppointmentSchedulingForm();
-	const watchAppointmentSchedulingValue = useWatch({
-		control: form.control,
-		name: "appointmentScheduling",
-	});
+		onSelectAppointmentDate,
+		onSelectAppointmentTime,
+	} = restSchedulingHooks;
+	const { mapRef, isIsolineCalculated: _isIsolineCalculated } =
+		restSchedulingHooks;
+	const {
+		isTherapistFound,
+		therapistsOptions,
+		onFindTherapists,
+		onSelectTherapist,
+		onResetAllTherapistState,
+	} = restSchedulingHooks;
 
 	return (
 		<FormStepItemContainer>
@@ -580,7 +586,10 @@ export function AppointmentSchedulingForm() {
 							<FormLabel>Preferred Therapist Gender</FormLabel>
 							<FormControl>
 								<RadioGroup
-									onValueChange={field.onChange}
+									onValueChange={(value) => {
+										field.onChange(value);
+										onResetAllTherapistState();
+									}}
 									defaultValue={field.value}
 									orientation="horizontal"
 									className="grid grid-cols-1 gap-4 md:grid-cols-3"
@@ -682,27 +691,11 @@ export function AppointmentSchedulingForm() {
 										mode="single"
 										captionLayout="dropdown"
 										selected={new Date(appointmentDate || field.value)}
-										onSelect={(selectedDate) => {
-											if (appointmentTime) {
-												// Set the selected time to the selected date
-												const [hours, minutes] = appointmentTime.split(":");
-												selectedDate?.setHours(
-													Number.parseInt(hours),
-													Number.parseInt(minutes),
-												);
-											}
-
-											// update state reference and form field value data
-											setAppointmentDate(selectedDate || null);
-											field.onChange(selectedDate || null);
-
-											// update state for appointment time
-											const time = selectedDate
-												? format(selectedDate.toString(), "HH:mm")
-												: "";
-											setAppointmentTime(time);
-										}}
 										defaultMonth={field.value}
+										onSelect={(date) => {
+											onSelectAppointmentDate(date);
+											field.onChange(date || null);
+										}}
 									/>
 								</PopoverContent>
 							</Popover>
@@ -721,17 +714,10 @@ export function AppointmentSchedulingForm() {
 							<FormControl>
 								<Select
 									value={appointmentTime}
-									onValueChange={(e) => {
-										setAppointmentTime(e);
-										if (appointmentDate) {
-											const [hours, minutes] = e.split(":");
-											const newDate = new Date(appointmentDate.getTime());
-											newDate.setHours(
-												Number.parseInt(hours),
-												Number.parseInt(minutes),
-											);
-											setAppointmentDate(newDate);
-											field.onChange(newDate);
+									onValueChange={(time) => {
+										const date = onSelectAppointmentTime(time);
+										if (date) {
+											field.onChange(date);
 										}
 									}}
 								>

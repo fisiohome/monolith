@@ -28,7 +28,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePatientDateOfBirth } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { getGenderIcon } from "@/hooks/use-gender";
-import type { AppointmentBookingSchema } from "@/lib/appointments";
+import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import { cn } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { usePage, Deferred } from "@inertiajs/react";

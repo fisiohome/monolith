@@ -253,7 +253,7 @@ export default function BaseAvailabilityTimeField({
 		>
 			<div className="flex flex-wrap items-center justify-between w-full gap-2 md:justify-normal">
 				<TimeInput name={`${timeFieldPath}.startTime` as const} />
-				<span className="text-center">-</span>
+				<span className="text-center">—</span>
 				<TimeInput name={`${timeFieldPath}.endTime` as const} />
 
 				{timeError && (

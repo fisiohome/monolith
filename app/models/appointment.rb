@@ -26,8 +26,15 @@ class Appointment < ApplicationRecord
     inverse_of: :appointment
   accepts_nested_attributes_for :package_history
 
+  has_many :status_histories,
+    class_name: "AppointmentStatusHistory",
+    dependent: :destroy,
+    inverse_of: :appointment
+
   # * cycle callbacks
   before_create :generate_registration_number
+
+  after_commit :track_status_change, on: [:create, :update], if: -> { saved_change_to_status? && updater.present? }
 
   # after every create OR update, snap a fresh history record
   after_commit :snapshot_address_history, on: [:create, :update]
@@ -52,6 +59,9 @@ class Appointment < ApplicationRecord
   validate :no_overlapping_appointments
 
   validates_associated :address_history
+
+  # * define the attrs and accessors
+  attr_accessor :updater  # Temporary attribute to track who updated
 
   # * define the constants
   PatientCondition = Struct.new(:title, :description)
@@ -225,6 +235,22 @@ class Appointment < ApplicationRecord
       total_price: package.total_price,
       fee_per_visit: package.fee_per_visit,
       total_fee: package.total_fee
+    )
+  end
+
+  def track_status_change
+    raw_old, raw_new = saved_change_to_status
+    # grab the enum_map = Appointment.statuses hash
+    enum_map = self.class.statuses
+    # Figure out the enum‐key for each side, whether Rails gave you the key or the value
+    old_key = enum_map.key(raw_old) || raw_old
+    new_key = enum_map.key(raw_new) || raw_new
+
+    status_histories.create!(
+      old_status: enum_map[old_key],   # always the human­readable string
+      new_status: enum_map[new_key],   # e.g. "PENDING THERAPIST ASSIGNMENT"
+      reason: status_reason, # from the optional column
+      changed_by: updater.id # or however you track the actor
     )
   end
 end
