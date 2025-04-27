@@ -5,7 +5,7 @@ module AdminPortal
       @original_status = appointment.status
       @appointment_params = params
         .require(:appointment)
-        .permit(:therapist_id, :appointment_date_time, :preferred_therapist_gender)
+        .permit(:therapist_id, :appointment_date_time, :preferred_therapist_gender, :reason)
       @current_user = user
       @updated = false
     end
@@ -68,8 +68,8 @@ module AdminPortal
       end
 
       # 4) status_reason (user‐provided or default)
-      if @appointment_params.key?(:status_reason) && @appointment_params[:status_reason].present?
-        attrs[:status_reason] = @appointment_params[:status_reason]
+      if @appointment_params.key?(:reason) && @appointment_params[:reason].present?
+        attrs[:status_reason] = @appointment_params[:reason]
       end
 
       # Assign everything (but don’t touch the DB yet)
@@ -78,7 +78,7 @@ module AdminPortal
       # Only persist if something actually changed
       if @appointment.changed?
         # If no reason came in, default it now
-        @appointment.assign_attributes(status_reason: attrs[:status_reason].blank? ? "RESCHEDULED" : nil)
+        @appointment.assign_attributes(status_reason: attrs[:status_reason].presence || "RESCHEDULED")
         # Who made the change
         @appointment.assign_attributes(updater: @current_user)
 

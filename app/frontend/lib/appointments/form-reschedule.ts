@@ -12,6 +12,7 @@ export const RESCHEDULE_APPOINTMENT_FORM_SCHEMA = z.object({
 	preferredTherapistGender,
 	appointmentDateTime,
 	therapist,
+	reason: z.string().optional()
 });
 export type AppointmentRescheduleSchema = z.infer<
 	typeof RESCHEDULE_APPOINTMENT_FORM_SCHEMA
@@ -26,6 +27,7 @@ export const defineFormDefaultValues = (appointment: Appointment) => {
 		preferredTherapistGender,
 		appointmentDateTime: new Date(appointmentDateTime),
 		therapist,
+		reason: ""
 	} satisfies AppointmentRescheduleSchema;
 };
 
@@ -34,14 +36,16 @@ export interface AppointmentReschedulePayload {
 	appointmentDateTime: Date;
 	preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
 	therapistId: string | null;
+	reason: string | null
 }
 
 export const buildPayload = (values: AppointmentRescheduleSchema) => {
-	const { preferredTherapistGender, appointmentDateTime, therapist } = values
+	const { preferredTherapistGender, appointmentDateTime, therapist, reason = null } = values
 	const payload = deepTransformKeysToSnakeCase({
 		preferredTherapistGender,
 		appointmentDateTime,
-		therapistId: therapist?.id ? String(therapist.id) : null
+		therapistId: therapist?.id ? String(therapist.id) : null,
+		reason
 	} satisfies AppointmentReschedulePayload)
 
 	return payload

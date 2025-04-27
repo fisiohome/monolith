@@ -55,6 +55,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
 import HereMap from "@/components/shared/here-map";
+import { Textarea } from "@/components/ui/textarea";
 
 export interface FormActionButtonsprops extends ComponentProps<"div"> {
 	isLoading: boolean;
@@ -106,7 +107,7 @@ export const FormActionButtons = memo(function Component({
 });
 
 // * for fields components
-export interface RescheduleFieldsProps extends ComponentProps<"div"> { }
+export interface RescheduleFieldsProps extends ComponentProps<"div"> {}
 
 export const RescheduleFields = memo(function Component({
 	className,
@@ -499,6 +500,28 @@ export const RescheduleFields = memo(function Component({
 						</FormItem>
 					);
 				}}
+			/>
+
+			<FormField
+				control={form.control}
+				name="reason"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>
+							Reschedule Reason{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
+						<FormControl>
+							<Textarea
+								{...field}
+								placeholder="Enter the reschedule reason..."
+								className="shadow-inner bg-sidebar"
+							/>
+						</FormControl>
+
+						<FormMessage />
+					</FormItem>
+				)}
 			/>
 		</div>
 	);
