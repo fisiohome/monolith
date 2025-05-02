@@ -10,15 +10,33 @@ module AdminPortal
 
     def fetch_appointments
       # Eager load all required associations
-      appointments = Appointment.includes(
-        :therapist,
-        :patient,
-        :service,
-        :package,
-        :location,
-        :admins
-      )
+      appointments = Appointment.includes(:therapist, :patient, :service, :package, :location, :admins)
 
+      # * define the filtering
+      # by therapist name
+      filter_by_therapist = @params[:therapist]
+      if filter_by_therapist.present?
+        appointments = appointments
+          .joins(:therapist)
+          .where("therapists.name ILIKE ?", "%#{filter_by_therapist}%")
+      end
+
+      # by patient name
+      filter_by_patient = @params[:patient]
+      if filter_by_patient.present?
+        appointments = appointments
+          .joins(:patient)
+          .where("patients.name ILIKE ?", "%#{filter_by_patient}%")
+      end
+
+      # by registration number
+      filter_by_reg_number = @params[:registration_number]
+      if filter_by_reg_number.present?
+        appointments = appointments
+          .where("appointments.registration_number ILIKE ?", "%#{filter_by_reg_number}%")
+      end
+
+      # by appointment status
       appointments = case @params[:filter_by_appointment_status]
       when "pending"
         # Only future appointments with pending statuses
@@ -46,6 +64,7 @@ module AdminPortal
           .status_paid
       end
 
+      # * sorting and grouping
       # ensure everything is sorted by the full date - time
       appointments = appointments.order(appointment_date_time: :asc)
 
@@ -54,7 +73,10 @@ module AdminPortal
       sorted_groups = grouped.sort_by { |date, _| date }
 
       # If filter is "past", reverse the order so the most recent past dates come first.
-      sorted_groups.reverse! if @params[:filter_by_appointment_status] == "past" || @params[:filter_by_appointment_status] == "cancel"
+      filter_by_appt_status = @params[:filter_by_appointment_status]
+      if %w[past cancel].include?(filter_by_appt_status)
+        sorted_groups.reverse!
+      end
 
       sorted_groups.map do |date, apps|
         deep_transform_keys_to_camel_case(

@@ -4,6 +4,7 @@ import {
 	UpdatePICForm,
 	UpdateStatusForm,
 } from "@/components/admin-portal/appointment/feature-form";
+import FilterList from "@/components/admin-portal/appointment/filter-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
 	ResponsiveDialog,
@@ -330,6 +331,8 @@ export default function AppointmentIndex() {
 							</Link>
 						</Button>
 					</div>
+
+					<FilterList />
 
 					{tabList.map((tab) => (
 						<Fragment key={tab.value}>

@@ -1030,7 +1030,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																	Visit {visit.visitProgress}
 																</p>
 
-																<p className="font-light">
+																<p className="text-xs font-light">
 																	{format(visit.appointmentDateTime, "PPPP", {
 																		locale,
 																		in: tzDate,
