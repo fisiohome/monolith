@@ -47,9 +47,7 @@ export default function SchedulesPage({
 	therapists,
 }: SchedulesPageProps) {
 	const { url: pageUrl } = usePage<SchedulesPageGlobalProps>();
-	const { t } = useTranslation("translation", {
-		keyPrefix: "therapist_schedules",
-	});
+	const { t } = useTranslation("therapist-schedules");
 	const { locale, tzDate } = useDateContext();
 
 	// * date params management state

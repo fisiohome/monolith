@@ -11,8 +11,8 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 export default function SettingsAppearance() {
-	const { t, i18n } = useTranslation("translation", {
-		keyPrefix: "settings.appearance",
+	const { t, i18n } = useTranslation("settings", {
+		keyPrefix: "appearance",
 	});
 
 	// * theme context

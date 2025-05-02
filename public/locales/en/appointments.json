@@ -1,0 +1,103 @@
+{
+	"head_title": "Appointment Schedule",
+	"page_title": "Appointment Schedule",
+	"statuses": {
+		"pending_therapist_assignment": "PENDING THERAPIST ASSIGNMENT",
+		"pending_patient_approval": "PENDING PATIENT APPROVAL",
+		"pending_payment": "PENDING PAYMENT",
+		"cancelled": "CANCELLED",
+		"paid": "PAID",
+		"unscheduled": "UNSCHEDULED"
+	},
+	"button": {
+		"create": "Create Appointment",
+		"cancel_booking": "Cancel Booking",
+		"reschedule": "Reschedule",
+		"series": "Series",
+		"update_pic": "PIC(s)",
+		"update_status": "Status",
+		"dropdown_update": "Update",
+		"dropdown_create": "Create"
+	},
+	"tab": {
+		"title": {
+			"upcoming": "Upcoming",
+			"pending": "Pending",
+			"past": "Past",
+			"cancelled": "Cancelled",
+			"unschedule": "Unschedule"
+		},
+		"no_content": {
+			"upcoming": "There are no upcoming appointments scheduled.",
+			"cancelled": "There are no cancelled appointments.",
+			"past": "There are no past appointments.",
+			"pending": "There are no appointments are pending confirmation.",
+			"unschedule": "There are no appointments."
+		}
+	},
+	"list": {
+		"patient_details": "Patient Details",
+		"contact_name": "Contact Name",
+		"contact_phone": "Contact Phone",
+		"gender": "Gender",
+		"age": "Age",
+		"years": "years",
+		"current_condition": "Current condition",
+		"complaint": "Complaint",
+		"illness_onset_date": "Illness onset date",
+		"medical_history": "Medical history",
+		"appointment_details": "Appointment Details",
+		"booked_appointment_date": "Booked appointment date",
+		"booked_appointment_time": "Booked appointment time",
+		"visit_service": "Visit service",
+		"visit_region": "Visit region",
+		"visit_address": "Visit address",
+		"view_on_google_maps": "View on Google Maps",
+		"preferred_therapist_gender": "Preferred therapist gender",
+		"referral_source": "Referral source",
+		"notes": "Notes",
+		"payment_details": "Payment Details",
+		"booking_partner": "Booking partner",
+		"voucher": "Voucher",
+		"price": "Price",
+		"price-info": "The price shown includes all visits in the package (not per visit).",
+		"discount": "Discount",
+		"total_price": "Total Price",
+		"therapist_details": "Therapist Details",
+		"reg_number": "Reg. Number",
+		"phone": "Phone",
+		"emp_type": "Emp. type",
+		"pic_details": "PIC(s) Details",
+		"person_in_charge": "Person in charge(s)",
+		"type": "Type",
+		"series": "Series"
+	},
+	"modal": {
+		"cancel": {
+			"title": "Cancel the Appointment",
+			"description": "Are you sure you want to cancel this appointment? This action cannot be undone. If you’d like to reschedule instead, you can do so from your appointment details.",
+			"button_submit": "Continue"
+		},
+		"update_pic": {
+			"title": "Update the Appointment PIC",
+			"description": "Assign a new admin PIC(s) or remove the current one for this appointment."
+		},
+		"update_status": {
+			"title": "Update the Appointment Status",
+			"description": "Modify the current status of this appointment to keep things up to date.",
+			"button_submit": "Update"
+		}
+	},
+	"fields": {
+		"admin_pic": {
+			"label": "Admin PIC(s)",
+			"placeholder": "Select the admin PIC(s)"
+		},
+		"appointment_status": {
+			"label": "Status",
+			"placeholder": "Select appointment status",
+			"search": "Search appointment status",
+			"empty_search": "No appointment status found."
+		}
+	}
+}

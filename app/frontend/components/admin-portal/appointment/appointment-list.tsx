@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getGenderIcon } from "@/hooks/use-gender";
 import { getBrandBadgeVariant } from "@/lib/services";
-import { cn, generateInitials } from "@/lib/utils";
+import { cn, generateInitials, populateQueryParams } from "@/lib/utils";
 import type {
 	AppointmentIndexGlobalPageProps,
 	AppointmentIndexProps,
@@ -42,6 +42,7 @@ import {
 	Ban,
 	Building,
 	Cctv,
+	ChevronDown,
 	ChevronsDown,
 	ChevronsUp,
 	Clock3,
@@ -49,19 +50,31 @@ import {
 	CreditCard,
 	Hash,
 	Hospital,
+	Info,
 	Link,
 	Mail,
 	MapPinHouse,
 	MapPinIcon,
 	Phone,
+	Plus,
 	RefreshCw,
+	Repeat,
 	ShieldCheck,
 	Stethoscope,
 	TicketPercent,
 	User,
 } from "lucide-react";
-import { type ComponentProps, memo, useEffect, useMemo, useState } from "react";
+import {
+	type ComponentProps,
+	memo,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import { useTranslation } from "react-i18next";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import type { Admin } from "@/types/admin-portal/admin";
 
 // * appointment schedule component
 interface AppointmentActionButtonsProps {
@@ -81,8 +94,22 @@ const AppointmentActionButtons = memo(function Component({
 }: AppointmentActionButtonsProps) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
-	const [openDropdown, setOpenDropdown] = useState(false);
+	const { t } = useTranslation("appointments");
+	const [openDropdown, setOpenDropdown] = useState({
+		update: false,
+		create: false,
+	});
+	const isShow = useMemo(() => {
+		const updateStatus =
+			schedule.status !== "paid" &&
+			schedule.status !== "unscheduled" &&
+			schedule.status !== "pending_therapist_assignment";
+		const createSeries =
+			schedule.totalPackageVisits > 1 &&
+			schedule.visitNumber !== schedule.totalPackageVisits;
+
+		return { updateStatus, createSeries };
+	}, [schedule]);
 	const routeTo = {
 		cancel: (id: string) => {
 			const url = pageURL;
@@ -145,12 +172,22 @@ const AppointmentActionButtons = memo(function Component({
 
 			router.visit(url);
 		},
+		createSeries: (apptSource: Appointment) => {
+			const urlSource =
+				globalProps.adminPortal.router.adminPortal.appointment.new;
+			const idSource = apptSource?.appointmentReferenceId || apptSource.id;
+			const { fullUrl } = populateQueryParams(urlSource, {
+				reference: idSource,
+			});
+
+			router.visit(fullUrl);
+		},
 	};
 
-	// side effect if the expandable card is not expanded then close dropdown menu
+	// * side effect if the expandable card is not expanded then close dropdown menu
 	useEffect(() => {
 		if (!isExpanded) {
-			setOpenDropdown(false);
+			setOpenDropdown((prev) => ({ ...prev, update: false }));
 		}
 	}, [isExpanded]);
 
@@ -163,29 +200,105 @@ const AppointmentActionButtons = memo(function Component({
 						schedule.status !== "cancelled" && (
 							<>
 								<DropdownMenu
-									open={openDropdown}
-									onOpenChange={() => setOpenDropdown(false)}
+									open={openDropdown.create}
+									onOpenChange={() =>
+										setOpenDropdown((prev) => ({ ...prev, create: false }))
+									}
 								>
 									<DropdownMenuTrigger
 										asChild
-										onMouseEnter={() => setOpenDropdown(true)}
+										onMouseEnter={() =>
+											setOpenDropdown((prev) => ({ ...prev, create: true }))
+										}
 									>
 										<Button
+											icon={ChevronDown}
+											iconPlacement="right"
 											variant="primary-outline"
-											className="w-full lg:w-auto"
+											className="w-full transition-all duration-200 lg:w-auto"
 											onClick={(event) => {
 												event.preventDefault();
 												event.stopPropagation();
 											}}
 										>
-											<RefreshCw />
+											<Plus
+												className={openDropdown.create ? "rotate-12" : ""}
+											/>
+											{t("button.dropdown_create")}
+										</Button>
+									</DropdownMenuTrigger>
+
+									<DropdownMenuContent
+										className="w-fit"
+										align="start"
+										side="bottom"
+									>
+										<DropdownMenuGroup>
+											{isShow.createSeries && (
+												<DropdownMenuItem
+													onClick={(event) => {
+														event.preventDefault();
+														event.stopPropagation();
+
+														routeTo.createSeries(schedule);
+													}}
+												>
+													<Repeat />
+													{t("button.series")}
+												</DropdownMenuItem>
+											)}
+
+											<DropdownMenuItem
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+
+													routeTo.reschedule(String(schedule.id));
+												}}
+											>
+												<Clock3 />
+												{t("button.reschedule")}
+											</DropdownMenuItem>
+										</DropdownMenuGroup>
+									</DropdownMenuContent>
+								</DropdownMenu>
+
+								<DropdownMenu
+									open={openDropdown.update}
+									onOpenChange={() =>
+										setOpenDropdown((prev) => ({ ...prev, update: false }))
+									}
+								>
+									<DropdownMenuTrigger
+										asChild
+										onMouseEnter={() =>
+											setOpenDropdown((prev) => ({ ...prev, update: true }))
+										}
+									>
+										<Button
+											icon={ChevronDown}
+											iconPlacement="right"
+											variant="primary-outline"
+											className="w-full transition-all duration-200 lg:w-auto"
+											onClick={(event) => {
+												event.preventDefault();
+												event.stopPropagation();
+											}}
+										>
+											<RefreshCw
+												className={openDropdown.update ? "rotate-45" : ""}
+											/>
 											{t("button.dropdown_update")}
 										</Button>
 									</DropdownMenuTrigger>
 
-									<DropdownMenuContent className="w-fit">
+									<DropdownMenuContent
+										className="w-fit"
+										align="start"
+										side="bottom"
+									>
 										<DropdownMenuGroup>
-											{schedule.status !== "paid" && (
+											{isShow.updateStatus && (
 												<DropdownMenuItem
 													onClick={(event) => {
 														event.preventDefault();
@@ -215,20 +328,6 @@ const AppointmentActionButtons = memo(function Component({
 								</DropdownMenu>
 
 								<Button
-									variant="outline"
-									className="w-full border lg:w-auto border-primary text-primary hover:bg-primary"
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
-
-										routeTo.reschedule(String(schedule.id));
-									}}
-								>
-									<Clock3 />
-									{t("button.reschedule")}
-								</Button>
-
-								<Button
 									variant="destructive"
 									className="w-full lg:w-auto"
 									onClick={(event) => {
@@ -249,6 +348,58 @@ const AppointmentActionButtons = memo(function Component({
 	);
 });
 
+interface AdminListProps {
+	admin: Admin;
+	index: number;
+	totalAdmin: number;
+}
+
+const AdminList = memo(function Component({
+	admin,
+	index,
+	totalAdmin,
+}: AdminListProps) {
+	const { t } = useTranslation("appointments");
+
+	return (
+		<div className="grid gap-6">
+			<div className="flex items-center gap-2">
+				<Avatar className="text-[10px] border rounded-lg border-border bg-background size-6">
+					<AvatarImage src="#" alt={admin.name} />
+					<AvatarFallback className="bg-background">
+						{generateInitials(admin.name)}
+					</AvatarFallback>
+				</Avatar>
+				<div>
+					<p className="font-semibold line-clamp-1">{admin.name}</p>
+				</div>
+			</div>
+
+			<div className="grid gap-3">
+				<div className="flex justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<Mail className="size-4 text-muted-foreground/75" />
+						<p className="font-light">Email:</p>
+					</div>
+					<p className="font-semibold">{admin?.user?.email}</p>
+				</div>
+
+				<div className="flex justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<ShieldCheck className="size-4 text-muted-foreground/75" />
+						<p className="font-light"> {t("list.type")}:</p>
+					</div>
+					<p className="font-semibold uppercase">
+						{admin.adminType.replaceAll("_", " ")}
+					</p>
+				</div>
+
+				{index + 1 !== totalAdmin && <Separator className="my-2" />}
+			</div>
+		</div>
+	);
+});
+
 interface ScheduleListProps {
 	appointment: NonNullable<AppointmentIndexProps["appointments"]>[number];
 	schedule: NonNullable<
@@ -259,36 +410,42 @@ interface ScheduleListProps {
 function ScheduleList({ schedule }: ScheduleListProps) {
 	const { locale, tzDate } = useDateContext();
 	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 	const isPastAppointment = useMemo(
 		() => isPast(schedule.appointmentDateTime),
 		[schedule.appointmentDateTime],
 	);
-	const distanceBadgeVariant = useMemo(() => {
-		const pending =
-			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100";
-		const cancel = "text-red-800 bg-red-100 dark:bg-red-900 dark:text-red-100";
-		const paid =
-			"text-emerald-800 bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-100";
-
-		return schedule.status === "pending_patient_approval" ||
-			schedule.status === "pending_payment" ||
-			schedule.status === "pending_therapist_assignment"
-			? pending
-			: schedule.status === "cancelled"
-				? cancel
-				: schedule.status === "paid"
-					? paid
-					: "";
-	}, [schedule.status]);
+	const BADGE_STYLES: Record<Appointment["status"], string> = {
+		pending_patient_approval:
+			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100",
+		pending_payment:
+			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100",
+		pending_therapist_assignment:
+			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100",
+		cancelled:
+			"text-red-800    bg-red-100    dark:bg-red-900   dark:text-red-100",
+		unscheduled:
+			"text-gray-800   bg-gray-100   dark:bg-gray-900  dark:text-gray-100",
+		paid: "text-emerald-800 bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-100",
+	};
+	const getbadgeVariantStatus = useCallback(
+		(status: Appointment["status"]) => BADGE_STYLES[status] ?? "",
+		[],
+	);
+	const distanceBadgeVariant = useMemo(
+		() => getbadgeVariantStatus(schedule.status),
+		[schedule.status, getbadgeVariantStatus],
+	);
 	const statusDotVariant = useMemo<VariantDotBadge["variant"]>(() => {
 		return schedule.status === "pending_patient_approval" ||
 			schedule.status === "pending_payment" ||
 			schedule.status === "pending_therapist_assignment"
 			? "warning"
-			: schedule.status === "cancelled"
-				? "destructive"
-				: "success";
+			: schedule.status === "unscheduled"
+				? "outline"
+				: schedule.status === "cancelled"
+					? "destructive"
+					: "success";
 	}, [schedule.status]);
 	const startTimeLabel = useMemo(() => {
 		// Format it to 12-hour time with an AM/PM indicator.
@@ -358,6 +515,12 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 										<p className="text-xs font-semibold group-hover:text-primary">
 											{startTimeLabel.period}
 										</p>
+										<Badge
+											variant="secondary"
+											className="mt-3 text-xs font-semibold group-hover:text-primary"
+										>
+											Visit {schedule.visitProgress}
+										</Badge>
 									</div>
 
 									<Separator
@@ -819,6 +982,69 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 												<div className="grid gap-4">
 													<h4 className="text-xs font-light uppercase">
+														{t("list.series")}
+													</h4>
+
+													{schedule?.allVisits?.map((visit) => (
+														<div
+															key={visit.id}
+															className={cn(
+																"grid gap-1 p-3 border rounded-lg border-border bg-muted",
+																visit.registrationNumber ===
+																	schedule.registrationNumber &&
+																	"border-primary/50 text-primary",
+															)}
+														>
+															<div className="flex items-center justify-between">
+																<div className="flex-none mb-1">
+																	<Badge
+																		variant="outline"
+																		className={cn(
+																			"text-pretty font-bold !text-[10px] px-1",
+																			schedule?.service?.code &&
+																				getBrandBadgeVariant(
+																					schedule.service.code,
+																				),
+																		)}
+																	>
+																		<Hash className="size-2.5" />
+																		<span>{visit.registrationNumber}</span>
+																	</Badge>
+																</div>
+
+																<div>
+																	<Badge
+																		variant="outline"
+																		className={cn(
+																			"mb-1 text-center text-pretty !text-[10px]",
+																			getbadgeVariantStatus(visit.status),
+																		)}
+																	>
+																		{t(`statuses.${visit.status}`)}
+																	</Badge>
+																</div>
+															</div>
+
+															<div className="flex flex-col flex-1">
+																<p className="font-bold">
+																	Visit {visit.visitProgress}
+																</p>
+
+																<p className="font-light">
+																	{format(visit.appointmentDateTime, "PPPP", {
+																		locale,
+																		in: tzDate,
+																	})}
+																</p>
+															</div>
+														</div>
+													))}
+												</div>
+
+												<Separator />
+
+												<div className="grid gap-4">
+													<h4 className="text-xs font-light uppercase">
 														{t("list.payment_details")}
 													</h4>
 
@@ -853,9 +1079,19 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													<div className="flex items-center justify-between">
 														<div className="flex items-center gap-2">
 															<CreditCard className="size-4 text-muted-foreground/75" />
-															<span className="font-light">
-																{t("list.price")}:
-															</span>
+															<p className="flex font-light gap-1.5">
+																<span>{t("list.price")}:</span>
+																<TooltipProvider>
+																	<Tooltip>
+																		<TooltipTrigger asChild>
+																			<Info className="align-top cursor-pointer size-3" />
+																		</TooltipTrigger>
+																		<TooltipContent>
+																			<p>{t("list.price-info")}</p>
+																		</TooltipContent>
+																	</Tooltip>
+																</TooltipProvider>
+															</p>
 														</div>
 														<span>
 															{schedule?.package
@@ -872,7 +1108,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																</span>
 																<Badge
 																	variant="outline"
-																	className="ml-2 text-xs border-2"
+																	className="ml-0 text-xs border-2 md:ml-2"
 																>
 																	SERVICE{schedule?.service?.code}
 																</Badge>
@@ -1063,51 +1299,13 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														</div>
 													</div>
 
-													{schedule?.admins?.map((admin, index) => (
-														<div key={admin.name} className="grid gap-6">
-															<div className="flex items-center gap-2">
-																<Avatar className="text-[10px] border rounded-lg border-border bg-background size-6">
-																	<AvatarImage src="#" alt={admin.name} />
-																	<AvatarFallback className="bg-background">
-																		{generateInitials(admin.name)}
-																	</AvatarFallback>
-																</Avatar>
-																<div>
-																	<p className="font-semibold line-clamp-1">
-																		{admin.name}
-																	</p>
-																</div>
-															</div>
-
-															<div className="grid gap-3">
-																<div className="flex justify-between gap-2">
-																	<div className="flex items-center gap-2">
-																		<Mail className="size-4 text-muted-foreground/75" />
-																		<p className="font-light">Email:</p>
-																	</div>
-																	<p className="font-semibold">
-																		{admin?.user?.email}
-																	</p>
-																</div>
-
-																<div className="flex justify-between gap-2">
-																	<div className="flex items-center gap-2">
-																		<ShieldCheck className="size-4 text-muted-foreground/75" />
-																		<p className="font-light">
-																			{" "}
-																			{t("list.type")}:
-																		</p>
-																	</div>
-																	<p className="font-semibold uppercase">
-																		{admin.adminType.replaceAll("_", " ")}
-																	</p>
-																</div>
-
-																{index + 1 !== schedule?.admins?.length && (
-																	<Separator className="my-2" />
-																)}
-															</div>
-														</div>
+													{schedule?.admins?.map((admin, adminIndex) => (
+														<AdminList
+															key={admin.name}
+															index={adminIndex}
+															admin={admin}
+															totalAdmin={schedule?.admins?.length || 0}
+														/>
 													))}
 												</div>
 											</div>

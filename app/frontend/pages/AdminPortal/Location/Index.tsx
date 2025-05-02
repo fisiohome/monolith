@@ -61,7 +61,7 @@ export type TableToolbarDataProps = TableTanstack<
 export default function Index({ locations, selectedLocations }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 	const isMobile = useIsMobile();
-	const { t: tl } = useTranslation("translation", { keyPrefix: "locations" });
+	const { t: tl } = useTranslation("locations");
 
 	// table management
 	const routeTo = {

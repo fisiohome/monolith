@@ -1,0 +1,17 @@
+{
+	"title": "Jadwal Terapis",
+	"date_toolbar": {
+		"today_btn": "Hari ini"
+	},
+	"pagination": {
+		"showing": "Menampilkan",
+		"therapists": "terapis"
+	},
+	"calendar": {
+		"block": {
+			"availability": {
+				"title": "Tersedia"
+			}
+		}
+	}
+}

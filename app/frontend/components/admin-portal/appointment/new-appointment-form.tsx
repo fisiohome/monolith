@@ -67,8 +67,8 @@ import {
 	DEFAULT_VALUES_SERVICE,
 	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments/form";
-import { cn } from "@/lib/utils";
-import { Deferred, Link } from "@inertiajs/react";
+import { cn, populateQueryParams } from "@/lib/utils";
+import { Deferred, Link, usePage } from "@inertiajs/react";
 import { format } from "date-fns";
 import {
 	AlertCircle,
@@ -77,12 +77,20 @@ import {
 	ChevronsRight,
 	ChevronsUpDown,
 	CircleCheckBig,
+	Hospital,
 	LoaderIcon,
 	Pencil,
 	User,
 	X,
 } from "lucide-react";
-import { type ComponentProps, Fragment, memo } from "react";
+import {
+	type ComponentProps,
+	createContext,
+	Fragment,
+	memo,
+	useContext,
+	useMemo,
+} from "react";
 import PatientMedicalForm from "./form/patient-medical";
 import PatientContactForm from "./form/patient-contact";
 import PatientBasicInfoForm from "./form/patient-basic-info";
@@ -91,6 +99,60 @@ import ExistingPatientSelection from "./form/existing-patient-selection";
 import HereMap from "@/components/shared/here-map";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
+
+export type FormMode = "new" | "series";
+
+// * form provider props
+interface FormProviderProps {
+	children: React.ReactNode;
+}
+
+interface FormProviderState {
+	mode: FormMode;
+	isSuccessBooked: boolean;
+}
+
+const FormProviderContext = createContext<FormProviderState>({
+	mode: "new",
+	isSuccessBooked: false,
+});
+
+export function FormProvider({ children }: FormProviderProps) {
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentNewGlobalPageProps>();
+	const formMode = useMemo(() => {
+		const reference = globalProps.adminPortal.currentQuery?.reference;
+
+		return reference ? ("series" as const) : ("new" as const);
+	}, [globalProps.adminPortal.currentQuery?.reference]);
+	const isSuccessBooked = useMemo(() => {
+		const appointmentId = globalProps?.appointment?.id;
+		const { queryParams } = populateQueryParams(pageURL);
+
+		return !!queryParams?.created && !!appointmentId;
+	}, [globalProps?.appointment?.id, pageURL]);
+	const contextValue = useMemo(() => {
+		return { mode: formMode, isSuccessBooked };
+	}, [formMode, isSuccessBooked]);
+
+	return (
+		<FormProviderContext.Provider value={contextValue}>
+			{children}
+		</FormProviderContext.Provider>
+	);
+}
+
+export const useFormProvider = () => {
+	const context = useContext(FormProviderContext);
+
+	if (context === undefined)
+		throw new Error(
+			"useFormProvider must be used within a FormProviderContext",
+		);
+
+	return context;
+};
 
 // * component form container
 export interface FormContainerProps extends ComponentProps<"div"> {}
@@ -121,7 +183,6 @@ export function FormStepItemContainer({
 // * component step button for next step, prev step, and submit
 export interface StepButtonsProps extends ComponentProps<"div"> {
 	isFormLoading: boolean;
-	isCreated: boolean;
 	setFormStorage: React.Dispatch<
 		React.SetStateAction<AppointmentBookingSchema | null>
 	>;
@@ -130,7 +191,6 @@ export interface StepButtonsProps extends ComponentProps<"div"> {
 export function StepButtons({
 	className,
 	isFormLoading,
-	isCreated,
 	setFormStorage,
 }: StepButtonsProps) {
 	const {
@@ -146,7 +206,6 @@ export function StepButtons({
 		onBack,
 		setIsOpenTherapistAlert,
 	} = useStepButtons({
-		isCreated,
 		setFormStorage,
 	});
 
@@ -328,6 +387,7 @@ export const PatientDetailsForm = memo(function Component() {
 });
 
 export function AppointmentSchedulingForm() {
+	const { mode } = useFormProvider();
 	const { coordinate, mapAddress } = usePatientRegion();
 	const {
 		form,
@@ -366,204 +426,248 @@ export function AppointmentSchedulingForm() {
 
 	return (
 		<FormStepItemContainer>
-			<Deferred
-				data={["services"]}
-				fallback={
-					<div className="flex flex-col self-end gap-3">
-						<Skeleton className="w-10 h-4 rounded-md" />
-						<Skeleton className="relative w-full rounded-md h-9" />
-					</div>
-				}
-			>
-				<FormField
-					control={form.control}
-					name="appointmentScheduling.service.name"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel className="text-nowrap">Service</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant="outline"
-											className={cn(
-												"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-												!field.value && "text-muted-foreground",
-											)}
-											onFocus={() => onFocusServiceField()}
-										>
-											<p>
-												{field.value
-													? servicesOption
-															?.find((service) => service.name === field.value)
-															?.name?.replaceAll("_", " ") ||
-														field.value.replaceAll("_", " ")
-													: "Select service"}
-											</p>
-											{field.value ? (
-												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-												<div
-													className="cursor-pointer"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-
-														onSelectService(DEFAULT_VALUES_SERVICE);
-													}}
+			{mode === "new" ? (
+				<>
+					<Deferred
+						data={["services"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<Skeleton className="relative w-full rounded-md h-9" />
+							</div>
+						}
+					>
+						<FormField
+							control={form.control}
+							name="appointmentScheduling.service.name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel className="text-nowrap">Service</FormLabel>
+									<Popover>
+										<PopoverTrigger asChild>
+											<FormControl>
+												<Button
+													variant="outline"
+													className={cn(
+														"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+														!field.value && "text-muted-foreground",
+													)}
+													onFocus={() => onFocusServiceField()}
 												>
-													<X className="opacity-50" />
-												</div>
-											) : (
-												<ChevronsUpDown className="opacity-50" />
-											)}
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="p-0 w-[300px]"
-									align="start"
-									side="bottom"
-								>
-									<Command>
-										<CommandInput
-											placeholder="Search service..."
-											className="h-9"
-											disabled={isLoading.services}
-										/>
-										<CommandList>
-											<CommandEmpty>No service found.</CommandEmpty>
-											<CommandGroup>
-												{isLoading.services ? (
-													<CommandItem value={undefined} disabled>
-														<LoaderIcon className="animate-spin" />
-														<span>Please wait...</span>
-													</CommandItem>
-												) : (
-													servicesOption?.map((service) => (
-														<CommandItem
-															key={service.id}
-															value={service.name}
-															onSelect={() =>
-																onSelectService({
-																	id: String(service.id),
-																	name: service.name,
-																})
-															}
+													<p>
+														{field.value
+															? servicesOption
+																	?.find(
+																		(service) => service.name === field.value,
+																	)
+																	?.name?.replaceAll("_", " ") ||
+																field.value.replaceAll("_", " ")
+															: "Select service"}
+													</p>
+													{field.value ? (
+														// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+														<div
+															className="cursor-pointer"
+															onClick={(event) => {
+																event.preventDefault();
+																event.stopPropagation();
+
+																onSelectService(DEFAULT_VALUES_SERVICE);
+															}}
 														>
-															<span className="flex flex-col items-start">
-																<span>{service.name.replaceAll("_", " ")}</span>
-																<span className="text-xs font-light text-pretty">
-																	{service.description}
-																</span>
-															</span>
-
-															<Check
-																className={cn(
-																	"ml-auto",
-																	service.name === field.value
-																		? "opacity-100"
-																		: "opacity-0",
-																)}
-															/>
-														</CommandItem>
-													))
-												)}
-											</CommandGroup>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</Deferred>
-
-			<FormField
-				control={form.control}
-				name="appointmentScheduling.package.name"
-				render={({ field }) => {
-					const selectedPackage = packagesOption?.find(
-						(packageItem) => packageItem.name === field.value,
-					);
-
-					return (
-						<FormItem>
-							<FormLabel className="text-nowrap">Package</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant="outline"
-											className={cn(
-												"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-												!field.value && "text-muted-foreground",
-											)}
+															<X className="opacity-50" />
+														</div>
+													) : (
+														<ChevronsUpDown className="opacity-50" />
+													)}
+												</Button>
+											</FormControl>
+										</PopoverTrigger>
+										<PopoverContent
+											className="p-0 w-[300px]"
+											align="start"
+											side="bottom"
 										>
-											{field.value ? (
-												<p>
-													<span>{selectedPackage?.name || field.value}</span>{" "}
-													<span className="italic font-light">{`(${selectedPackage?.numberOfVisit || watchAppointmentSchedulingValue?.package?.numberOfVisit} visit(s))`}</span>
-												</p>
-											) : (
-												<span>Select package</span>
-											)}
-											<ChevronsUpDown className="opacity-50" />
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="p-0 w-[300px]"
-									align="start"
-									side="bottom"
-								>
-									<Command>
-										<CommandInput
-											placeholder="Search package..."
-											className="h-9"
-										/>
-										<CommandList>
-											<CommandEmpty>No package found.</CommandEmpty>
-											<CommandGroup>
-												{packagesOption?.map((packageItem) => (
-													<CommandItem
-														key={packageItem.id}
-														value={packageItem.name}
-														onSelect={() =>
-															onSelectPackage({
-																id: packageItem.id,
-																name: packageItem.name,
-																numberOfVisit: packageItem.numberOfVisit,
-															})
-														}
-													>
+											<Command>
+												<CommandInput
+													placeholder="Search service..."
+													className="h-9"
+													disabled={isLoading.services}
+												/>
+												<CommandList>
+													<CommandEmpty>No service found.</CommandEmpty>
+													<CommandGroup>
+														{isLoading.services ? (
+															<CommandItem value={undefined} disabled>
+																<LoaderIcon className="animate-spin" />
+																<span>Please wait...</span>
+															</CommandItem>
+														) : (
+															servicesOption?.map((service) => (
+																<CommandItem
+																	key={service.id}
+																	value={service.name}
+																	onSelect={() =>
+																		onSelectService({
+																			id: String(service.id),
+																			name: service.name,
+																		})
+																	}
+																>
+																	<span className="flex flex-col items-start">
+																		<span>
+																			{service.name.replaceAll("_", " ")}
+																		</span>
+																		<span className="text-xs font-light text-pretty">
+																			{service.description}
+																		</span>
+																	</span>
+
+																	<Check
+																		className={cn(
+																			"ml-auto",
+																			service.name === field.value
+																				? "opacity-100"
+																				: "opacity-0",
+																		)}
+																	/>
+																</CommandItem>
+															))
+														)}
+													</CommandGroup>
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
+
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</Deferred>
+
+					<FormField
+						control={form.control}
+						name="appointmentScheduling.package.name"
+						render={({ field }) => {
+							const selectedPackage = packagesOption?.find(
+								(packageItem) => packageItem.name === field.value,
+							);
+
+							return (
+								<FormItem>
+									<FormLabel className="text-nowrap">Package</FormLabel>
+									<Popover>
+										<PopoverTrigger asChild>
+											<FormControl>
+												<Button
+													variant="outline"
+													className={cn(
+														"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+														!field.value && "text-muted-foreground",
+													)}
+												>
+													{field.value ? (
 														<p>
-															<span>{packageItem.name}</span>{" "}
-															<span className="italic font-light">{`(${packageItem.numberOfVisit} visit(s))`}</span>
+															<span>
+																{selectedPackage?.name || field.value}
+															</span>{" "}
+															<span className="italic font-light">{`(${selectedPackage?.numberOfVisit || watchAppointmentSchedulingValue?.package?.numberOfVisit} visit(s))`}</span>
 														</p>
+													) : (
+														<span>Select package</span>
+													)}
+													<ChevronsUpDown className="opacity-50" />
+												</Button>
+											</FormControl>
+										</PopoverTrigger>
+										<PopoverContent
+											className="p-0 w-[300px]"
+											align="start"
+											side="bottom"
+										>
+											<Command>
+												<CommandInput
+													placeholder="Search package..."
+													className="h-9"
+												/>
+												<CommandList>
+													<CommandEmpty>No package found.</CommandEmpty>
+													<CommandGroup>
+														{packagesOption?.map((packageItem) => (
+															<CommandItem
+																key={packageItem.id}
+																value={packageItem.name}
+																onSelect={() =>
+																	onSelectPackage({
+																		id: packageItem.id,
+																		name: packageItem.name,
+																		numberOfVisit: packageItem.numberOfVisit,
+																	})
+																}
+															>
+																<p>
+																	<span>{packageItem.name}</span>{" "}
+																	<span className="italic font-light">{`(${packageItem.numberOfVisit} visit(s))`}</span>
+																</p>
 
-														<Check
-															className={cn(
-																"ml-auto",
-																packageItem.name === field.value
-																	? "opacity-100"
-																	: "opacity-0",
-															)}
-														/>
-													</CommandItem>
-												))}
-											</CommandGroup>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
+																<Check
+																	className={cn(
+																		"ml-auto",
+																		packageItem.name === field.value
+																			? "opacity-100"
+																			: "opacity-0",
+																	)}
+																/>
+															</CommandItem>
+														))}
+													</CommandGroup>
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
 
-							<FormMessage />
-						</FormItem>
-					);
-				}}
-			/>
+									<FormMessage />
+								</FormItem>
+							);
+						}}
+					/>
+				</>
+			) : (
+				<div className="p-3 text-sm border rounded-md shadow-inner border-input bg-sidebar col-span-full">
+					<div className="flex items-center gap-3">
+						<Avatar className="border rounded-lg border-black/10 bg-muted size-12">
+							<AvatarImage src="#" />
+							<AvatarFallback>
+								<Hospital className="flex-shrink-0 size-5 text-muted-foreground/75" />
+							</AvatarFallback>
+						</Avatar>
+
+						<div className="grid text-sm line-clamp-1">
+							<p className="font-semibold uppercase truncate">
+								{watchAppointmentSchedulingValue.service.name.replaceAll(
+									"_",
+									" ",
+								)}
+							</p>
+
+							<div className="flex items-center gap-1 mt-2 text-xs">
+								<p className="font-light text-pretty">
+									<span className="uppercase">
+										{watchAppointmentSchedulingValue.package.name}
+									</span>
+									<span className="mx-2">&#x2022;</span>
+									<span className="italic font-light">
+										{watchAppointmentSchedulingValue.package.numberOfVisit ||
+											"N/A"}{" "}
+										visit(s)
+									</span>
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
 
 			<Deferred
 				data={["optionsData"]}
@@ -751,8 +855,6 @@ export function AppointmentSchedulingForm() {
 									</SelectContent>
 								</Select>
 							</FormControl>
-
-							<FormMessage />
 						</FormItem>
 					)}
 				/>
@@ -928,249 +1030,26 @@ export function AppointmentSchedulingForm() {
 }
 
 export function AdditionalSettingsForm() {
+	const { mode } = useFormProvider();
 	const { isPartnerBooking } = usePartnerBookingSelection();
 	const { isCustomFisiohomePartner } = usePartnerNameSelection();
 	const { isCustomReferral } = usePatientReferralSource();
-	const { form, additionalFormOptions } = useAdditionalSettingsForm();
+	const { form, additionalFormOptions, watchAdditionalSettingsValue } =
+		useAdditionalSettingsForm();
 
 	return (
 		<FormStepItemContainer>
-			<Deferred
-				data={["optionsData"]}
-				fallback={
-					<div className="flex flex-col self-end gap-3 col-span-full">
-						<Skeleton className="w-10 h-4 rounded-md" />
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-5">
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-						</div>
-					</div>
-				}
-			>
-				<FormField
-					control={form.control}
-					name="additionalSettings.referralSource"
-					render={({ field }) => (
-						<FormItem className="space-y-3 col-span-full">
-							<FormLabel>
-								Referral Source{" "}
-								<span className="text-sm italic font-light">- (optional)</span>
-							</FormLabel>
-							<FormControl>
-								<RadioGroup
-									onValueChange={field.onChange}
-									value={field.value}
-									className="flex flex-col gap-5 md:items-center md:flex-row"
-								>
-									{additionalFormOptions.referralSources.map((option) => (
-										<FormItem
-											key={option}
-											className="flex items-center space-x-3 space-y-0"
-										>
-											<FormControl>
-												<RadioGroupItem value={option} />
-											</FormControl>
-											<FormLabel className="flex items-center gap-1 font-normal capitalize">
-												<span>{option.toLowerCase()}</span>
-											</FormLabel>
-										</FormItem>
-									))}
-								</RadioGroup>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</Deferred>
-
-			{isCustomReferral && (
-				<Deferred
-					data={["optionsData"]}
-					fallback={
-						<div className="grid grid-cols-1 gap-4 col-span-full">
-							<Skeleton className="relative w-full rounded-md h-9" />
-						</div>
-					}
-				>
-					<FormField
-						control={form.control}
-						name="additionalSettings.customReferralSource"
-						render={({ field }) => (
-							<FormItem className="col-span-full motion-preset-rebound-down">
-								<FormControl>
-									<Input
-										{...field}
-										type="text"
-										placeholder="Please specify the referral source"
-										className="shadow-inner bg-sidebar"
-									/>
-								</FormControl>
-
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-				</Deferred>
-			)}
-
-			<FormField
-				control={form.control}
-				name="additionalSettings.fisiohomePartnerBooking"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormLabel>Booking from Partner?</FormLabel>
-						<FormControl>
-							<RadioGroup
-								onValueChange={field.onChange}
-								defaultValue={String(!!field.value)}
-								orientation="horizontal"
-								className="flex flex-row items-center gap-5"
-							>
-								{[true, false].map((booleanValue) => (
-									<FormItem
-										key={String(booleanValue)}
-										className="flex items-center space-x-3 space-y-0"
-									>
-										<FormControl>
-											<RadioGroupItem value={String(booleanValue)} />
-										</FormControl>
-										<FormLabel className="font-normal">
-											{booleanValue ? "Yes" : "No"}
-										</FormLabel>
-									</FormItem>
-								))}
-							</RadioGroup>
-						</FormControl>
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
-
-			{isPartnerBooking && (
+			{mode === "new" ? (
 				<>
 					<Deferred
 						data={["optionsData"]}
 						fallback={
-							<div className="flex flex-col self-end gap-3">
+							<div className="flex flex-col self-end gap-3 col-span-full">
 								<Skeleton className="w-10 h-4 rounded-md" />
-								<div className="grid grid-cols-2 gap-4">
+								<div className="grid grid-cols-1 gap-4 md:grid-cols-5">
 									<Skeleton className="relative w-full rounded-md h-9" />
 									<Skeleton className="relative w-full rounded-md h-9" />
-								</div>
-							</div>
-						}
-					>
-						<div className={cn(isCustomFisiohomePartner ? "flex gap-3 " : "")}>
-							<FormField
-								control={form.control}
-								name="additionalSettings.fisiohomePartnerName"
-								render={({ field }) => (
-									<FormItem className="motion-preset-rebound-down">
-										<FormLabel className="text-nowrap">
-											Fisiohome Partner
-										</FormLabel>
-										<Popover>
-											<PopoverTrigger asChild>
-												<FormControl>
-													<Button
-														variant="outline"
-														className={cn(
-															"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-															!field.value && "text-muted-foreground",
-														)}
-													>
-														{field.value
-															? additionalFormOptions.fisiohomePartnerNames.find(
-																	(partner) => partner === field.value,
-																)
-															: "Select fisiohome partner"}
-														<ChevronsUpDown className="opacity-50" />
-													</Button>
-												</FormControl>
-											</PopoverTrigger>
-											<PopoverContent
-												className="p-0 w-[300px]"
-												align="start"
-												side="bottom"
-											>
-												<Command>
-													<CommandInput
-														placeholder="Search fisiohome partner..."
-														className="h-9"
-													/>
-													<CommandList>
-														<CommandEmpty>
-															No fisiohome partner found.
-														</CommandEmpty>
-														<CommandGroup>
-															{additionalFormOptions.fisiohomePartnerNames.map(
-																(partner) => (
-																	<CommandItem
-																		value={partner}
-																		key={partner}
-																		onSelect={() => {
-																			form.setValue(
-																				"additionalSettings.fisiohomePartnerName",
-																				partner,
-																				{ shouldValidate: true },
-																			);
-																		}}
-																	>
-																		{partner}
-																		<Check
-																			className={cn(
-																				"ml-auto",
-																				partner === field.value
-																					? "opacity-100"
-																					: "opacity-0",
-																			)}
-																		/>
-																	</CommandItem>
-																),
-															)}
-														</CommandGroup>
-													</CommandList>
-												</Command>
-											</PopoverContent>
-										</Popover>
-
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							{isCustomFisiohomePartner && (
-								<FormField
-									control={form.control}
-									name="additionalSettings.customFisiohomePartnerName"
-									render={({ field }) => (
-										<FormItem className="w-full motion-preset-rebound-down">
-											<FormLabel className="invisible">Other Partner</FormLabel>
-											<FormControl>
-												<Input
-													{...field}
-													type="text"
-													placeholder="Please specify the fisiohome partner name"
-													className="relative shadow-inner bg-sidebar"
-												/>
-											</FormControl>
-
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							)}
-						</div>
-					</Deferred>
-
-					<Deferred
-						data={["optionsData"]}
-						fallback={
-							<div className="flex flex-col self-end gap-3">
-								<Skeleton className="w-10 h-4 rounded-md" />
-								<div className="grid grid-cols-1 gap-4">
+									<Skeleton className="relative w-full rounded-md h-9" />
 									<Skeleton className="relative w-full rounded-md h-9" />
 								</div>
 							</div>
@@ -1178,31 +1057,291 @@ export function AdditionalSettingsForm() {
 					>
 						<FormField
 							control={form.control}
-							name="additionalSettings.voucherCode"
+							name="additionalSettings.referralSource"
 							render={({ field }) => (
-								<FormItem className="motion-preset-rebound-down">
+								<FormItem className="space-y-3 col-span-full">
 									<FormLabel>
-										Voucher Code{" "}
+										Referral Source{" "}
 										<span className="text-sm italic font-light">
 											- (optional)
 										</span>
 									</FormLabel>
 									<FormControl>
-										<Input
-											{...field}
-											type="text"
-											autoComplete="name"
-											placeholder="Enter the voucher code..."
-											className="shadow-inner bg-sidebar"
-										/>
+										<RadioGroup
+											onValueChange={field.onChange}
+											value={field.value}
+											className="flex flex-col gap-5 md:items-center md:flex-row"
+										>
+											{additionalFormOptions.referralSources.map((option) => (
+												<FormItem
+													key={option}
+													className="flex items-center space-x-3 space-y-0"
+												>
+													<FormControl>
+														<RadioGroupItem value={option} />
+													</FormControl>
+													<FormLabel className="flex items-center gap-1 font-normal capitalize">
+														<span>{option.toLowerCase()}</span>
+													</FormLabel>
+												</FormItem>
+											))}
+										</RadioGroup>
 									</FormControl>
-
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
 					</Deferred>
+
+					{isCustomReferral && (
+						<Deferred
+							data={["optionsData"]}
+							fallback={
+								<div className="grid grid-cols-1 gap-4 col-span-full">
+									<Skeleton className="relative w-full rounded-md h-9" />
+								</div>
+							}
+						>
+							<FormField
+								control={form.control}
+								name="additionalSettings.customReferralSource"
+								render={({ field }) => (
+									<FormItem className="col-span-full motion-preset-rebound-down">
+										<FormControl>
+											<Input
+												{...field}
+												type="text"
+												placeholder="Please specify the referral source"
+												className="shadow-inner bg-sidebar"
+											/>
+										</FormControl>
+
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+						</Deferred>
+					)}
+
+					<FormField
+						control={form.control}
+						name="additionalSettings.fisiohomePartnerBooking"
+						render={({ field }) => (
+							<FormItem className="space-y-3 col-span-full">
+								<FormLabel>Booking from Partner?</FormLabel>
+								<FormControl>
+									<RadioGroup
+										onValueChange={field.onChange}
+										defaultValue={String(!!field.value)}
+										orientation="horizontal"
+										className="flex flex-row items-center gap-5"
+									>
+										{[true, false].map((booleanValue) => (
+											<FormItem
+												key={String(booleanValue)}
+												className="flex items-center space-x-3 space-y-0"
+											>
+												<FormControl>
+													<RadioGroupItem value={String(booleanValue)} />
+												</FormControl>
+												<FormLabel className="font-normal">
+													{booleanValue ? "Yes" : "No"}
+												</FormLabel>
+											</FormItem>
+										))}
+									</RadioGroup>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					{isPartnerBooking && (
+						<>
+							<Deferred
+								data={["optionsData"]}
+								fallback={
+									<div className="flex flex-col self-end gap-3">
+										<Skeleton className="w-10 h-4 rounded-md" />
+										<div className="grid grid-cols-2 gap-4">
+											<Skeleton className="relative w-full rounded-md h-9" />
+											<Skeleton className="relative w-full rounded-md h-9" />
+										</div>
+									</div>
+								}
+							>
+								<div
+									className={cn(isCustomFisiohomePartner ? "flex gap-3 " : "")}
+								>
+									<FormField
+										control={form.control}
+										name="additionalSettings.fisiohomePartnerName"
+										render={({ field }) => (
+											<FormItem className="motion-preset-rebound-down">
+												<FormLabel className="text-nowrap">
+													Fisiohome Partner
+												</FormLabel>
+												<Popover>
+													<PopoverTrigger asChild>
+														<FormControl>
+															<Button
+																variant="outline"
+																className={cn(
+																	"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+																	!field.value && "text-muted-foreground",
+																)}
+															>
+																{field.value
+																	? additionalFormOptions.fisiohomePartnerNames.find(
+																			(partner) => partner === field.value,
+																		)
+																	: "Select fisiohome partner"}
+																<ChevronsUpDown className="opacity-50" />
+															</Button>
+														</FormControl>
+													</PopoverTrigger>
+													<PopoverContent
+														className="p-0 w-[300px]"
+														align="start"
+														side="bottom"
+													>
+														<Command>
+															<CommandInput
+																placeholder="Search fisiohome partner..."
+																className="h-9"
+															/>
+															<CommandList>
+																<CommandEmpty>
+																	No fisiohome partner found.
+																</CommandEmpty>
+																<CommandGroup>
+																	{additionalFormOptions.fisiohomePartnerNames.map(
+																		(partner) => (
+																			<CommandItem
+																				value={partner}
+																				key={partner}
+																				onSelect={() => {
+																					form.setValue(
+																						"additionalSettings.fisiohomePartnerName",
+																						partner,
+																						{ shouldValidate: true },
+																					);
+																				}}
+																			>
+																				{partner}
+																				<Check
+																					className={cn(
+																						"ml-auto",
+																						partner === field.value
+																							? "opacity-100"
+																							: "opacity-0",
+																					)}
+																				/>
+																			</CommandItem>
+																		),
+																	)}
+																</CommandGroup>
+															</CommandList>
+														</Command>
+													</PopoverContent>
+												</Popover>
+
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+
+									{isCustomFisiohomePartner && (
+										<FormField
+											control={form.control}
+											name="additionalSettings.customFisiohomePartnerName"
+											render={({ field }) => (
+												<FormItem className="w-full motion-preset-rebound-down">
+													<FormLabel className="invisible">
+														Other Partner
+													</FormLabel>
+													<FormControl>
+														<Input
+															{...field}
+															type="text"
+															placeholder="Please specify the fisiohome partner name"
+															className="relative shadow-inner bg-sidebar"
+														/>
+													</FormControl>
+
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+									)}
+								</div>
+							</Deferred>
+
+							<Deferred
+								data={["optionsData"]}
+								fallback={
+									<div className="flex flex-col self-end gap-3">
+										<Skeleton className="w-10 h-4 rounded-md" />
+										<div className="grid grid-cols-1 gap-4">
+											<Skeleton className="relative w-full rounded-md h-9" />
+										</div>
+									</div>
+								}
+							>
+								<FormField
+									control={form.control}
+									name="additionalSettings.voucherCode"
+									render={({ field }) => (
+										<FormItem className="motion-preset-rebound-down">
+											<FormLabel>
+												Voucher Code{" "}
+												<span className="text-sm italic font-light">
+													- (optional)
+												</span>
+											</FormLabel>
+											<FormControl>
+												<Input
+													{...field}
+													type="text"
+													autoComplete="name"
+													placeholder="Enter the voucher code..."
+													className="shadow-inner bg-sidebar"
+												/>
+											</FormControl>
+
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</Deferred>
+						</>
+					)}
 				</>
+			) : (
+				<div className="grid grid-cols-1 gap-4 p-3 text-sm border rounded-md shadow-inner md:grid-cols-3 border-input bg-sidebar col-span-full">
+					<div>
+						<p className="font-light">Referral Source:</p>
+						<p className="text-pretty">
+							{watchAdditionalSettingsValue?.customReferralSource ||
+								watchAdditionalSettingsValue?.referralSource ||
+								"N/A"}
+						</p>
+					</div>
+					<div>
+						<p className="font-light">Booking Partner:</p>
+						<p className="text-pretty">
+							{watchAdditionalSettingsValue?.customFisiohomePartnerName ||
+								watchAdditionalSettingsValue?.fisiohomePartnerName ||
+								"N/A"}
+						</p>
+					</div>
+					<div>
+						<p className="font-light">Voucher:</p>
+						<p className="text-pretty">
+							{watchAdditionalSettingsValue?.voucherCode || "N/A"}
+						</p>
+					</div>
+				</div>
 			)}
 
 			<FormField

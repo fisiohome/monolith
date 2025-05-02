@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_04_26_133522) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_01_162603) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -103,8 +103,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_26_133522) do
     t.bigint "package_id", null: false
     t.bigint "location_id", null: false
     t.string "registration_number", null: false
-    t.string "status", null: false
-    t.datetime "appointment_date_time", null: false
+    t.string "status", default: "UNSCHEDULED", null: false
+    t.datetime "appointment_date_time"
     t.string "preferred_therapist_gender", null: false
     t.string "referral_source"
     t.string "other_referral_source"
@@ -116,12 +116,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_26_133522) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "status_reason"
+    t.uuid "appointment_reference_id"
+    t.integer "visit_number", default: 1, null: false
+    t.index ["appointment_reference_id", "visit_number"], name: "idx_on_appointment_reference_id_visit_number_7a88e806cc"
     t.index ["location_id"], name: "index_appointments_on_location_id"
     t.index ["package_id"], name: "index_appointments_on_package_id"
     t.index ["patient_id"], name: "index_appointments_on_patient_id"
     t.index ["registration_number"], name: "index_appointments_on_registration_number", unique: true
     t.index ["service_id"], name: "index_appointments_on_service_id"
     t.index ["therapist_id"], name: "index_appointments_on_therapist_id"
+    t.index ["visit_number"], name: "index_appointments_on_visit_number"
   end
 
   create_table "bank_details", force: :cascade do |t|
@@ -263,7 +267,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_26_133522) do
     t.boolean "available_now", default: true, null: false
     t.date "start_date_window"
     t.date "end_date_window"
-    t.integer "max_advance_booking_in_days", default: 14, null: false
+    t.integer "max_advance_booking_in_days", default: 60, null: false
     t.integer "min_booking_before_in_hours", default: 24, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -365,6 +369,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_04_26_133522) do
   add_foreign_key "appointment_package_histories", "appointments"
   add_foreign_key "appointment_package_histories", "packages"
   add_foreign_key "appointment_status_histories", "appointments"
+  add_foreign_key "appointments", "appointments", column: "appointment_reference_id"
   add_foreign_key "appointments", "locations"
   add_foreign_key "appointments", "packages"
   add_foreign_key "appointments", "patients"

@@ -4,6 +4,7 @@ module AdminPortal
     include ServicesHelper
     include LocationsHelper
     include TherapistsHelper
+    include AppointmentsHelper
 
     attr_reader :params
 
@@ -121,6 +122,14 @@ module AdminPortal
         .map { |patient| deep_transform_keys_to_camel_case(serialize_patient(patient).as_json) }
     end
 
+    def fetch_appointment_reference
+      return if appointment_reference_id.blank?
+
+      deep_transform_keys_to_camel_case(
+        serialize_appointment(Appointment.find(appointment_reference_id))
+      )
+    end
+
     private
 
     def selected_location_id
@@ -133,6 +142,10 @@ module AdminPortal
 
     def patient_search_param
       @params[:patient_name]
+    end
+
+    def appointment_reference_id
+      @params[:reference]
     end
 
     def apply_gender_filter(therapists, gender_param)

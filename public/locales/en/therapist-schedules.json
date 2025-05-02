@@ -1,0 +1,17 @@
+{
+	"title": "Therapist Schedules",
+	"date_toolbar": {
+		"today_btn": "Today"
+	},
+	"pagination": {
+		"showing": "Showing",
+		"therapists": "therapists"
+	},
+	"calendar": {
+		"block": {
+			"availability": {
+				"title": "Available"
+			}
+		}
+	}
+}

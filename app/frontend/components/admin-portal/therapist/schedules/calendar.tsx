@@ -118,9 +118,7 @@ export function ScheduleDateToolbar({
 }: DateToolbarProps) {
 	const isMobile = useIsMobile();
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("translation", {
-		keyPrefix: "therapist_schedules",
-	});
+	const { t } = useTranslation("therapist-schedules");
 	const displayedDate = useMemo(
 		() => format(selectedDate, "PPPP", { locale, in: tzDate }),
 		[selectedDate, locale, tzDate],
@@ -210,11 +208,9 @@ export function SchedulePagination({
 	metadata,
 	actions,
 }: SchedulePaginationProps) {
-	const { t } = useTranslation("translation", {
-		keyPrefix: "therapist_schedules",
-	});
-	const { t: tp } = useTranslation("translation", {
-		keyPrefix: "components.pagination",
+	const { t } = useTranslation("therapist-schedules");
+	const { t: tp } = useTranslation("components", {
+		keyPrefix: "pagination",
 	});
 	const isPrevDisabled = useMemo(() => !metadata.prev, [metadata.prev]);
 	const isNextDisabled = useMemo(() => !metadata.next, [metadata.next]);
@@ -830,9 +826,7 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 	intervalMinutes = INTERVAL_MINUTES,
 }) => {
 	const [ref, hovering] = useHover();
-	const { t } = useTranslation("translation", {
-		keyPrefix: "therapist_schedules.calendar.block.availability",
-	});
+	const { t } = useTranslation("therapist-schedules");
 	const { locale, tzDate } = useDateContext();
 	const heightBlock = useMemo(() => {
 		const [startH, startM] = startTime.split(":").map(Number);

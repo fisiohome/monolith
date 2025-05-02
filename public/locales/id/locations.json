@@ -1,0 +1,58 @@
+{
+	"head_title": "Ketersediaan Lokasi",
+	"page_title": "Lokasi Kami",
+	"button": {
+		"actions": "Aksi",
+		"add": "Tambahkan Lokasi",
+		"edit": "Sunting",
+		"delete": "Hapus"
+	},
+	"filter": {
+		"country": "Saring berdasarkan negara",
+		"state": "Saring berdasarkan negara bagian",
+		"city": "Saring berdasarkan kota"
+	},
+	"table": {
+		"header": {
+			"city": "Kota",
+			"state": "Negara Bagian/Provinsi",
+			"country": "Negara"
+		}
+	},
+	"modal": {
+		"add": {
+			"title": "Lokasi Baru",
+			"description": "Tambahkan lokasi baru yang tersedia untuk layanan."
+		},
+		"update": {
+			"title": "Perbarui Lokasi",
+			"description": "Perbarui rincian data lokasi yang tersedia."
+		},
+		"delete": {
+			"title": "Apakah Anda benar-benar yakin?",
+			"description": "Tindakan ini tidak dapat diubah. Tindakan ini akan menghapus data secara permanen dari server kami dan tidak dapat dipulihkan.",
+			"loading": "Menghapus"
+		},
+		"fields": {
+			"country": {
+				"label": "Nama Negara",
+				"placeholder": "Masukkan nama negara"
+			},
+			"state": {
+				"label": "Negara Bagian/Provinsi",
+				"placeholder": "Pilih negara bagian/provinsi",
+				"search": "Cari negara bagian/provinsi",
+				"empty_search": "Tidak ada negara bagian atau provinsi yand ditemukan."
+			},
+			"city": {
+				"label": "Kota",
+				"placeholder": "Pilih kota",
+				"search": "Cari kota",
+				"empty_search": "Tidak ada kota yang ditemukan."
+			}
+		},
+		"buttons": {
+			"add_more": "Tambahkan lebih banyak lokasi"
+		}
+	}
+}

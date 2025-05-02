@@ -1,0 +1,58 @@
+{
+	"head_title": "Location Availability",
+	"page_title": "Our Locations",
+	"button": {
+		"actions": "Actions",
+		"add": "Add Location",
+		"edit": "Edit",
+		"delete": "Delete"
+	},
+	"filter": {
+		"country": "Filter by country",
+		"state": "Filter by state",
+		"city": "Filter by city"
+	},
+	"table": {
+		"header": {
+			"city": "City",
+			"state": "State/Province",
+			"country": "Country"
+		}
+	},
+	"modal": {
+		"add": {
+			"title": "New Location",
+			"description": "Add new locations available for service."
+		},
+		"update": {
+			"title": "Update Location",
+			"description": "Update the details of available location data."
+		},
+		"delete": {
+			"title": "Are you absolutely sure?",
+			"description": "This action is irreversible. Deleting actions will permanently remove data from our servers and cannot be recovered.",
+			"loading": "Deleting"
+		},
+		"fields": {
+			"country": {
+				"label": "Country Name",
+				"placeholder": "Enter the country name"
+			},
+			"state": {
+				"label": "State/Province",
+				"placeholder": "Select state/province",
+				"search": "Search state/province",
+				"empty_search": "No state or province found."
+			},
+			"city": {
+				"label": "City",
+				"placeholder": "Select city",
+				"search": "Search city",
+				"empty_search": "No city found."
+			}
+		},
+		"buttons": {
+			"add_more": "Add more location"
+		}
+	}
+}

@@ -67,10 +67,9 @@ export const useRescheduleForm = () => {
 	// * side-effect for server validation
 	useEffect(() => {
 		if (!globalProps?.errors) return;
-		console.log(globalProps?.errors)
 
 		for (const [key, value] of Object.entries(globalProps?.errors)) {
-			form.setError(key === 'therapistId' ? 'therapist.name' : key as any, {
+			form.setError(key === "therapistId" ? "therapist.name" : (key as any), {
 				type: "custom",
 				message: (value as string[]).join(", "),
 			});
@@ -93,7 +92,7 @@ export const useRescheduleForm = () => {
 			const url = event.detail.visit.url;
 			const path = url.pathname;
 			const { queryParams } = populateQueryParams(url.href);
-			const isRescheduled = queryParams?.rescheduled
+			const isRescheduled = queryParams?.rescheduled;
 
 			// Determine if the path is the root, a parent root, or the current root
 			const isRoot = path === "/";
@@ -125,7 +124,7 @@ export const useRescheduleForm = () => {
 	}, [
 		globalProps.adminPortal.router.adminPortal.appointment.index,
 		pageURL,
-		isNavigateConfirm
+		isNavigateConfirm,
 	]);
 
 	return { form, isLoading, onSubmit };
@@ -173,6 +172,10 @@ export const useRescheduleFields = () => {
 		name: "appointmentDateTime",
 	});
 	const [isLoading, setIsLoading] = useState({ therapists: false });
+	const errorsServerValidation = useMemo(
+		() => (globalProps?.errors?.fullMessages as unknown as string[]) || null,
+		[globalProps?.errors?.fullMessages],
+	);
 
 	// * for therapist availability and isoline maps
 	const coordinate = useMemo(
@@ -306,5 +309,6 @@ export const useRescheduleFields = () => {
 		form,
 		isLoading,
 		watchAppointmentDateTimeValue,
+		errorsServerValidation,
 	};
 };

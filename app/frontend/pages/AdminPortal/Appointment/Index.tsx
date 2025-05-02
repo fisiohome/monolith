@@ -55,7 +55,7 @@ const PageProviderContext = createContext<PageProviderState>({
 function PageProvider({ children }: PageProviderProps) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	// dialog management state
 	const dialogMode = useMemo(() => {
@@ -189,7 +189,7 @@ export default function AppointmentIndex() {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const isDekstop = useMediaQuery("(min-width: 768px)");
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	// * tabs management
 	const [isTabChange, setIsTabChange] = useState(false);
@@ -206,6 +206,10 @@ export default function AppointmentIndex() {
 			{
 				text: t("tab.title.past"),
 				value: "past",
+			},
+			{
+				text: t("tab.title.unschedule"),
+				value: "unschedule",
 			},
 			{
 				text: t("tab.title.cancelled"),
@@ -271,6 +275,9 @@ export default function AppointmentIndex() {
 				break;
 			case "pending":
 				label = t("tab.no_content.pending");
+				break;
+			case "unschedule":
+				label = t("tab.no_content.unschedule");
 				break;
 		}
 

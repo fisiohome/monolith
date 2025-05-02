@@ -3,10 +3,21 @@ module AdminPortal
     def initialize(params, user)
       @params = permitted_params(params)
       @current_user = user
+      @appt_ref = @params[:reference_appointment_id].present? ? Appointment.find(@params[:reference_appointment_id]) : nil
     end
 
     def call
       ActiveRecord::Base.transaction do
+        # create the visit series
+        if @appt_ref.present?
+          @appointment = create_sequential_appointments
+
+          create_patient_medical_record_appointment
+          associate_admins
+
+          next {success: true, data: @appointment}
+        end
+
         find_or_initialize_patient
         upsert_patient_contact
         upsert_patient_address
@@ -37,7 +48,7 @@ module AdminPortal
       end
 
       # Find an existing patient by the given attributes or create a new one.
-      @patient = Patient.find_by(@params[:patient]) || Patient.create!(@params[:patient])
+      @patient = Patient.find_by(patient_params) || Patient.create!(patient_params)
     end
 
     def upsert_patient_contact
@@ -70,7 +81,6 @@ module AdminPortal
         latitude: address_params[:latitude],
         longitude: address_params[:longitude]
       )
-
       if address
         # Update the address record if any attributes differ.
         address.assign_attributes(address_params)
@@ -81,7 +91,6 @@ module AdminPortal
 
       # Look up an existing association between this patient and the found address.
       existing_patient_address = @patient.patient_addresses.find_by(address: address)
-
       if existing_patient_address
         # Optionally, ensure that the association is marked active.
         existing_patient_address.update!(active: true) unless existing_patient_address.active?
@@ -100,13 +109,15 @@ module AdminPortal
     end
 
     def create_appointment
+      # ? currently the status auto generate from appointment model while appointment creation
+      # status = @params[:therapist_id].present? ? :pending_patient_approval : :pending_therapist_assignment
       base_attributes = {
         patient: @patient,
         location_id: @params[:location_id],
         service_id: @params[:service_id],
         package_id: @params[:package_id],
         therapist_id: @params[:therapist_id],
-        status: @params[:therapist_id].present? ? "PENDING PATIENT APPROVAL" : "PENDING THERAPIST ASSIGNMENT",
+        # status:,
         updater: @current_user
       }
       appointment_params = @params[:appointment] || {}
@@ -139,10 +150,41 @@ module AdminPortal
       @appointment.create_patient_medical_record!(medical_attrs)
     end
 
+    def create_sequential_appointments
+      # Get next visit number
+      current_max_visit = @appt_ref.series_appointments.maximum(:visit_number) || @appt_ref.visit_number
+      next_visit = current_max_visit + 1
+
+      appointment_params = @params[:appointment] || {}
+      base_attributes = {
+        patient: @appt_ref.patient,
+        location: @appt_ref.location,
+        service: @appt_ref.service,
+        package: @appt_ref.package,
+        updater: @current_user,
+        appointment_reference_id: @appt_ref.id,
+        therapist_id: @params[:therapist_id],
+        visit_number: next_visit,
+        appointment_date_time: appointment_params[:appointment_date_time]&.in_time_zone(Time.zone.name),
+        preferred_therapist_gender: appointment_params[:preferred_therapist_gender],
+        notes: appointment_params[:notes]
+      }.merge(appointment_params.except(
+        :patient_illness_onset_date,
+        :patient_complaint_description,
+        :patient_condition,
+        :patient_medical_history,
+        :appointment_date_time,
+        :preferred_therapist_gender,
+        :notes
+      ))
+
+      Appointment.create!(base_attributes)
+    end
+
     def permitted_params(params)
       params.require(:appointment).permit(
         # appointemnt reference associations
-        :service_id, :package_id, :location_id, :therapist_id, :admin_ids,
+        :service_id, :package_id, :location_id, :therapist_id, :admin_ids, :reference_appointment_id,
         # contact information
         patient_contact: %i[contact_name contact_phone email miitel_link],
         # address information
@@ -151,6 +193,7 @@ module AdminPortal
         patient: [:name, :date_of_birth, :gender],
         # appointment settings
         appointment: [
+          # patient medical record
           :patient_illness_onset_date, :patient_complaint_description, :patient_condition, :patient_medical_history,
           # appointment scheduling
           :appointment_date_time, :preferred_therapist_gender,

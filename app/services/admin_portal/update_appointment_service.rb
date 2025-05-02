@@ -55,9 +55,9 @@ module AdminPortal
         unless @original_status == "paid"
           attrs[:status] =
             if new_therapist.present?
-              "pending_patient_approval"
+              :pending_patient_approval
             else
-              "pending_therapist_assignment"
+              :pending_therapist_assignment
             end
         end
       end

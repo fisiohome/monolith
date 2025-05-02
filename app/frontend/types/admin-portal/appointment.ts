@@ -11,6 +11,7 @@ import type { Service } from "./service";
 import type { Therapist } from "./therapist";
 
 export enum AppointmentStatuses {
+	unscheduled = "UNSCHEDULED",
 	pending_therapist_assignment = "PENDING THERAPIST ASSIGNMENT",
 	pending_patient_approval = "PENDING PATIENT APPROVAL",
 	pending_payment = "PENDING PAYMENT",
@@ -24,6 +25,7 @@ export interface AppointmentPayload {
 	locationId: string;
 	therapistId: string | null;
 	adminIds: string;
+	referenceAppointmentId: string | null;
 	patientContact: {
 		contactName: string;
 		contactPhone: string;
@@ -112,6 +114,14 @@ export interface Appointment {
 		createdAt: string;
 		updatedAt: string;
 	};
+	visitNumber: number;
+	appointmentReferenceId: string | null;
+	initialVisit: boolean;
+	visitProgress: string;
+	nextVisitProgress: string;
+	totalPackageVisits: number;
+	seriesAppointments: Appointment[];
+	allVisits?: Appointment[];
 	createdAt: string;
 	updatedAt: string;
 }

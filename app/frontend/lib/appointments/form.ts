@@ -1,7 +1,9 @@
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import type { AppointmentPayload } from "@/types/admin-portal/appointment";
+import type {
+	Appointment,
+	AppointmentPayload,
+} from "@/types/admin-portal/appointment";
 import type { Auth } from "@/types/globals";
-import { add } from "date-fns";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import {
 	GENDERS,
@@ -12,6 +14,7 @@ import {
 } from "../constants";
 import { idSchema, boolSchema } from "../validation";
 import { z } from "zod";
+import type { FormMode } from "@/components/admin-portal/appointment/new-appointment-form";
 
 export const DEFAULT_VALUES_LOCATION = {
 	id: "",
@@ -240,11 +243,11 @@ export const ADDITIONAL_SETTINGS_SCHEMA = z
 	});
 export type AdditionalSettingsSchema = z.infer<
 	typeof ADDITIONAL_SETTINGS_SCHEMA
-
 >;
 // form options schema
 export const FORM_OPTIONS_SCHEMA = z.object({
 	patientRecordSource: z.enum(["existing", "add"]),
+	referenceAppointmentId: idSchema.optional(),
 });
 export type FormOptionsSchema = z.infer<typeof FORM_OPTIONS_SCHEMA>;
 
@@ -267,7 +270,9 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		additionalSettings,
 		appointmentScheduling,
 		patientDetails,
+		formOptions,
 	} = values;
+	const { referenceAppointmentId } = formOptions;
 	const {
 		admins,
 		customFisiohomePartnerName,
@@ -300,6 +305,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		locationId: String(location.id),
 		therapistId: String(therapist?.id || "") || null,
 		adminIds: admins?.map((admin) => String(admin.id)).join(",") || "",
+		referenceAppointmentId: String(referenceAppointmentId || "") || null,
 		patientContact: { ...contactInformation },
 		patientAddress: {
 			...restPatientDetails,
@@ -308,7 +314,8 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		},
 		patient: {
 			name: fullName,
-			dateOfBirth: add(dateOfBirth, { hours: 7 }),
+			dateOfBirth,
+			// dateOfBirth: add(dateOfBirth, { hours: 7 }),
 			gender,
 		},
 		appointment: {
@@ -327,73 +334,51 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 };
 
 // define the form default values
-export const defineAppointmentFormDefaultValues = ({
-	user,
-}: {
+interface FormDefaultProps {
+	mode?: FormMode;
 	user?: Auth["currentUser"];
-} = {}) => {
-	// for date of birth
-	// const dateOfBirth = new Date(1999, 3, 3);
-	// const age = calculateAge(dateOfBirth);
-	// // for referral
-	// const referralSource = "Other";
-	// const isCustomReferral = checkIsCustomReferral(referralSource);
-	// const customReferralSource = isCustomReferral ? "Linkedin" : undefined;
-	// // for fisiohome partner name
-	// const fisiohomePartnerName = "Other";
-	// const isCustomFisiohomePartner =
-	// 	checkIsCustomFisiohomePartner(fisiohomePartnerName);
-	// const customFisiohomePartnerName = isCustomFisiohomePartner
-	// 	? "Tokopedia"
-	// 	: undefined;
-	// // for appointment date
-	// const appointmentDateTime = add(new Date(), {
-	// 	days: 13,
-	// 	hours: 5,
-	// 	minutes: 15 - (new Date().getMinutes() % 15),
-	// });
-	// for admin pics
-	const admins = [
-		{
-			id: user?.id || "",
-			name: user?.name || "",
-			email: user?.user?.email || "",
-		},
-	];
+	apptRef?: Appointment | null;
+}
+
+// @ts-ignore
+const devValues = () => {
+	// for referral
+	const referralSource = "Other";
+	const isCustomReferral = checkIsCustomReferral(referralSource);
+	const customReferralSource = isCustomReferral ? "Linkedin" : undefined;
+	// for fisiohome partner name
+	const fisiohomePartnerName = "Other";
+	const isCustomFisiohomePartner =
+		checkIsCustomFisiohomePartner(fisiohomePartnerName);
+	const customFisiohomePartnerName = isCustomFisiohomePartner
+		? "Tokopedia"
+		: undefined;
 
 	return {
-		formOptions: {
-			patientRecordSource: "add",
-		},
 		contactInformation: {
-			// contactName: "Dendy",
-			// contactPhone: "+62896272346",
-			// email: "dendy@yopmail.com",
-			contactName: "",
-			contactPhone: "",
-			email: "",
+			contactName: "Dendy",
+			contactPhone: "+62896272346",
+			email: "dendy@yopmail.com",
 		},
 		patientDetails: {
-			// fullName: "Dendy Dandees",
-			// // dateOfBirth,
-			// // age,
-			// dateOfBirth: null,
-			// age: null,
-			// gender: "MALE",
-			// condition: "NORMAL",
-			// medicalHistory: "Hipertensi",
-			// complaintDescription: "Sakit pinggang",
-			// illnessOnsetDate: "2 minggu lalu",
-			// addressNotes: "Taman suropati",
-			// address:
-			// 	"Jl. Taman Suropati No.5, RT.5/RW.5, Menteng, Kec. Menteng, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10310",
-			// postalCode: "10310",
-			// latitude: -6.19841,
-			// longitude: 106.83209,
-			// location: {
-			// 	id: "5",
-			// 	city: "KOTA ADM. JAKARTA PUSAT",
-			// },
+			fullName: "Dendy Dandees",
+			dateOfBirth: null,
+			age: null,
+			gender: "MALE",
+			condition: "NORMAL",
+			medicalHistory: "Hipertensi",
+			complaintDescription: "Sakit pinggang",
+			illnessOnsetDate: "2 minggu lalu",
+			addressNotes: "Taman suropati",
+			address:
+				"Jl. Taman Suropati No.5, RT.5/RW.5, Menteng, Kec. Menteng, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10310",
+			postalCode: "10310",
+			latitude: -6.19841,
+			longitude: 106.83209,
+			location: {
+				id: "5",
+				city: "KOTA ADM. JAKARTA PUSAT",
+			},
 			// address:
 			// 	"Wang Plaza, Jl. Panjang No.kav 17, RT.14/RW.7, Kedoya Utara, Kec. Kb. Jeruk, jakarta, Daerah Khusus Ibukota Jakarta 11520",
 			// postalCode: "11520",
@@ -403,52 +388,121 @@ export const defineAppointmentFormDefaultValues = ({
 			// 	id: "2",
 			// 	city: "KOTA ADM. JAKARTA BARAT",
 			// },
-			fullName: "",
-			dateOfBirth: null,
-			age: null,
-			gender: "MALE",
-			condition: "NORMAL",
-			medicalHistory: "",
-			complaintDescription: "",
-			illnessOnsetDate: "",
-			addressNotes: "",
-			address: "",
-			postalCode: "",
-			latitude: 0,
-			longitude: 0,
-			location: {
-				id: "",
-				city: "",
-			},
 		},
 		appointmentScheduling: {
 			// service: { id: "1", name: "FISIOHOME_SPECIAL_TIER" },
 			// package: { id: "3", name: "Paket Suite", numberOfVisit: 6 },
-			// preferredTherapistGender: "NO PREFERENCE",
-			// // appointmentDateTime,
-			// appointmentDateTime: null,
 			service: { id: "", name: "" },
 			package: { id: "", name: "", numberOfVisit: 0 },
 			preferredTherapistGender: "NO PREFERENCE",
 			appointmentDateTime: null,
 		},
 		additionalSettings: {
-			// referralSource,
-			// customReferralSource,
-			// fisiohomePartnerBooking: true,
-			// fisiohomePartnerName,
-			// customFisiohomePartnerName,
-			// voucherCode: "TEBUSMURAH",
-			// notes: "This is the patient notes",
-			// admins,
-			referralSource: "",
-			customReferralSource: "",
-			fisiohomePartnerBooking: false,
-			fisiohomePartnerName: "",
-			customFisiohomePartnerName: "",
-			voucherCode: "",
-			notes: "",
-			admins,
+			referralSource,
+			customReferralSource,
+			fisiohomePartnerBooking: true,
+			fisiohomePartnerName,
+			customFisiohomePartnerName,
+			voucherCode: "TEBUSMURAH",
+			notes: "This is the patient notes",
 		},
+	};
+};
+
+export const defineAppointmentFormDefaultValues = (
+	props?: FormDefaultProps,
+) => {
+	// const { contactInformation } = devValues();
+
+	// for the patient record source
+	const patientRecordSource = "existing";
+
+	// for appointment references (needed for create a appointment series)
+	const referenceAppointmentId = props?.apptRef?.id;
+
+	// for patient details
+	const contactInformation = {
+		contactName: props?.apptRef?.patient?.contact?.contactName || "",
+		contactPhone: props?.apptRef?.patient?.contact?.contactPhone || "",
+		email: props?.apptRef?.patient?.contact?.email || "",
+	};
+	const patientDetails = {
+		fullName: props?.apptRef?.patient?.name || "",
+		dateOfBirth: props?.apptRef?.patient?.dateOfBirth
+			? new Date(props?.apptRef?.patient?.dateOfBirth)
+			: null,
+		age: props?.apptRef?.patient?.age || null,
+		gender: props?.apptRef?.patient?.gender || "MALE",
+		condition: "NORMAL",
+		medicalHistory: "",
+		complaintDescription: "",
+		illnessOnsetDate: "",
+		addressNotes: props?.apptRef?.visitAddress?.notes || "",
+		address: props?.apptRef?.visitAddress?.addressLine || "",
+		postalCode: props?.apptRef?.visitAddress?.postalCode || "",
+		latitude: props?.apptRef?.visitAddress?.latitude || 0,
+		longitude: props?.apptRef?.visitAddress?.longitude || 0,
+		location: {
+			id: props?.apptRef?.location?.id || "",
+			city: props?.apptRef?.location?.city || "",
+		},
+	};
+
+	// for appointment details
+	const appointmentScheduling = {
+		service: {
+			id: props?.apptRef?.service?.id || "",
+			name: props?.apptRef?.service?.name || "",
+		},
+		package: {
+			id: props?.apptRef?.package?.id || "",
+			name: props?.apptRef?.package?.name || "",
+			numberOfVisit: props?.apptRef?.package?.numberOfVisit || 0,
+		},
+		preferredTherapistGender:
+			props?.apptRef?.preferredTherapistGender || "NO PREFERENCE",
+		appointmentDateTime: null,
+	};
+
+	// for additional settings
+	const admins = [
+		{
+			id: props?.user?.id || "",
+			name: props?.user?.name || "",
+			email: props?.user?.user?.email || "",
+		},
+	];
+	const referralSource = props?.apptRef?.otherReferralSource
+		? "Other"
+		: props?.apptRef?.referralSource || undefined;
+	const customReferralSource =
+		referralSource && checkIsCustomReferral(referralSource)
+			? props?.apptRef?.otherReferralSource
+			: undefined;
+	const fisiohomePartnerBooking = !!props?.apptRef?.fisiohomePartnerBooking;
+	const fisiohomePartnerName = props?.apptRef?.otherFisiohomePartnerName
+		? "Other"
+		: props?.apptRef?.fisiohomePartnerName || undefined;
+	const customFisiohomePartnerName =
+		fisiohomePartnerName && checkIsCustomFisiohomePartner(fisiohomePartnerName)
+			? props?.apptRef?.otherFisiohomePartnerName
+			: undefined;
+	const additionalSettings = {
+		referralSource,
+		customReferralSource,
+		fisiohomePartnerBooking,
+		fisiohomePartnerName,
+		customFisiohomePartnerName,
+		voucherCode: props?.apptRef?.voucherCode || undefined,
+		notes: props?.apptRef?.notes || undefined,
+		admins,
+	};
+
+	return {
+		formOptions: { patientRecordSource, referenceAppointmentId },
+		contactInformation,
+		patientDetails,
+		appointmentScheduling,
+		additionalSettings,
 	} as unknown as AppointmentBookingSchema;
 };

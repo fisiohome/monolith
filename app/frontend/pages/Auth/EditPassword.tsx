@@ -33,11 +33,11 @@ export interface EditPasswordPageProps {
 export default function EditPassword({ user }: EditPasswordPageProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
 	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
-	const { t } = useTranslation("translation", {
-		keyPrefix: "settings.account_security",
+	const { t } = useTranslation("settings", {
+		keyPrefix: "account_security",
 	});
-	const { t: tcpf } = useTranslation("translation", {
-		keyPrefix: "settings.account_security.change_password.form",
+	const { t: tcpf } = useTranslation("settings", {
+		keyPrefix: "account_security.change_password.form",
 	});
 
 	// form state group

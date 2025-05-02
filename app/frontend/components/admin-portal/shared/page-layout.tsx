@@ -1,6 +1,8 @@
 import { GridPattern } from "@/components/shared/grid-pattern";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { Hash } from "lucide-react";
 import type { ComponentProps } from "react";
 
 // * for page container
@@ -69,6 +71,8 @@ export function FormPageHeader({
 export interface FormPageHeaderGridPatternProps extends ComponentProps<"div"> {
 	title: string;
 	description: string;
+	regNumber?: string;
+	series?: string;
 	titleClass?: string;
 	descriptionClass?: string;
 }
@@ -76,19 +80,32 @@ export interface FormPageHeaderGridPatternProps extends ComponentProps<"div"> {
 export function FormPageHeaderGridPattern({
 	title,
 	description,
+	regNumber,
+	series,
 	titleClass,
 	descriptionClass,
 }: FormPageHeaderGridPatternProps) {
 	return (
 		<div className="relative flex p-4 overflow-hidden border shadow-inner rounded-xl md:p-6 size-full bg-background border-border">
 			<div>
+				{regNumber && series && (
+					<Badge
+						variant="outline"
+						className="text-[10px] mb-1 px-1 border-primary text-primary"
+					>
+						<Hash className="size-3 mr-0.5" />
+						<span>{regNumber}</span>
+					</Badge>
+				)}
 				<h1
 					className={cn(
-						"z-10 text-base font-bold tracking-tighter whitespace-pre-wrap",
+						"z-10 text-base font-bold tracking-tighter whitespace-pre-wrap uppercase",
 						titleClass,
 					)}
 				>
 					{title}
+					<span className="mx-1">—</span>
+					<span>Visit {series}</span>
 				</h1>
 				<p
 					className={cn(

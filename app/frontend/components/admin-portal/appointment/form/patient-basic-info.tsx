@@ -62,7 +62,7 @@ export const CardPatientBasicInfoForm = memo(function Component({
 	children,
 }: CardPatientBasicInfoFormProps) {
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	return (
 		<div

@@ -121,6 +121,7 @@ export const RescheduleFields = memo(function Component({
 		appointmentDateCalendarProps,
 		watchAppointmentDateTimeValue,
 		isLoading,
+		errorsServerValidation,
 		therapistsOptions,
 		isTherapistFound,
 		mapRef,
@@ -329,8 +330,6 @@ export const RescheduleFields = memo(function Component({
 									</SelectContent>
 								</Select>
 							</FormControl>
-
-							<FormMessage />
 						</FormItem>
 					)}
 				/>
@@ -523,6 +522,24 @@ export const RescheduleFields = memo(function Component({
 					</FormItem>
 				)}
 			/>
+
+			{/* for showing the alert error if there's any server validation error */}
+			{!!errorsServerValidation?.length && (
+				<Alert
+					variant="destructive"
+					className="col-span-full motion-preset-rebound-down"
+				>
+					<AlertCircle className="size-4" />
+					<AlertTitle className="text-xs">Error</AlertTitle>
+					<AlertDescription className="text-xs">
+						<ul className="list-disc">
+							{errorsServerValidation?.map((error) => (
+								<li key={error}>{error}</li>
+							))}
+						</ul>
+					</AlertDescription>
+				</Alert>
+			)}
 		</div>
 	);
 });

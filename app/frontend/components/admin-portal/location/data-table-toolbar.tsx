@@ -11,7 +11,7 @@ export default function ToolbarTable({
 	table: _,
 }: { table: TableToolbarDataProps }) {
 	const { url: pageURL, props: globalProps } = usePage<GlobalPageProps>();
-	const { t: tl } = useTranslation("translation", { keyPrefix: "locations" });
+	const { t: tl } = useTranslation("locations");
 
 	const [filterBy, setFilterBy] = useState({
 		country: globalProps?.adminPortal?.currentQuery?.country || "",

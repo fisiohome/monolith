@@ -16,6 +16,9 @@ module AdminPortal
 
     def new
       @appointment = params[:created] ? Appointment.find_by(id: params[:created]) || Appointment.new : Appointment.new
+      if params[:reference]
+        @appointment.reference_appointment = Appointment.find(params[:reference])
+      end
 
       preparation = PreparationNewAppointmentService.new(params)
 
@@ -25,6 +28,7 @@ module AdminPortal
         services: InertiaRails.defer { preparation.fetch_services },
         therapists: -> { preparation.fetch_therapists },
         patient_list: InertiaRails.optional { preparation.fetch_patient_list },
+        appointment_reference: preparation.fetch_appointment_reference,
         options_data: InertiaRails.defer { preparation.fetch_options_data }
       })
     end
@@ -35,14 +39,15 @@ module AdminPortal
         redirect_to new_admin_portal_appointment_path(created: result[:data].id), notice: "Appointment was successfully booked."
       else
         logger.error("Failed to booking the appointment: #{result[:error]}")
-        error_message = result[:error]&.full_messages
+        first_error = result[:error]&.full_messages&.first
+        error_messages = result[:error]&.full_messages
 
-        logger.error("Failed to save the booking of the appointment: #{error_message}.")
-        flash[:alert] = error_message
+        logger.error("Failed to save the booking of the appointment: #{error_messages}.")
+        flash[:alert] = first_error
         redirect_to new_admin_portal_appointment_path, inertia: {
           errors: deep_transform_keys_to_camel_case(
             result[:error]&.messages&.transform_values(&:uniq)&.merge({
-              full_messages: error_message
+              full_messages: error_messages
             })
           )
         }

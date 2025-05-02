@@ -38,7 +38,7 @@ export function AppointmentDetailsSection({
 	appointment,
 }: AppointmentDetailsSectionProps) {
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	return (
 		<div
@@ -251,7 +251,7 @@ export default function PatientDetailsSection({
 	patientMedicalRecord,
 }: PatientDetailsSectionProps) {
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	return (
 		<div className={cn("grid gap-3 text-muted-foreground", className)}>
@@ -381,7 +381,7 @@ export function TherapistDetailsSection({
 	className,
 	therapistDetails,
 }: TherapistDetailsSectionProps) {
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	return (
 		<div className={cn("grid gap-3 text-muted-foreground", className)}>
@@ -456,7 +456,7 @@ export function PICDetailsSection({
 	className,
 	picList,
 }: PICDetailsSectionProps) {
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	return (
 		<div className={cn("grid gap-3 text-muted-foreground", className)}>

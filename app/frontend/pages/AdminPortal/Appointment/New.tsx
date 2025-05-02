@@ -3,9 +3,11 @@ import {
 	AppointmentSchedulingForm,
 	FinalStep,
 	FormContainer,
+	FormProvider,
 	PatientDetailsForm,
 	ReviewForm,
 	StepButtons,
+	useFormProvider,
 } from "@/components/admin-portal/appointment/new-appointment-form";
 import {
 	FormPageContainer,
@@ -32,7 +34,6 @@ import type {
 	PATIENT_REFERRAL_OPTIONS,
 	PREFERRED_THERAPIST_GENDER,
 } from "@/lib/constants";
-import { populateQueryParams } from "@/lib/utils";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Package } from "@/types/admin-portal/package";
 import type { Patient } from "@/types/admin-portal/patient";
@@ -72,6 +73,7 @@ export interface AppointmentNewProps {
 	};
 	patientList?: Patient[];
 	appointment: Appointment;
+	appointmentReference: Appointment | null;
 }
 
 export interface AppointmentNewGlobalPageProps
@@ -80,17 +82,12 @@ export interface AppointmentNewGlobalPageProps
 	[key: string]: any;
 }
 
-export default function AppointmentNew(_props: AppointmentNewProps) {
+function FormComponent() {
 	const { url: pageURL, props: globalProps } =
 		usePage<AppointmentNewGlobalPageProps>();
 	const isMobile = useIsMobile();
+	const { isSuccessBooked, mode } = useFormProvider();
 	const [isLoading, setIsLoading] = useState(false);
-	const isCreated = useMemo(() => {
-		const appointmentId = globalProps?.appointment?.id;
-		const { queryParams } = populateQueryParams(pageURL);
-
-		return !!queryParams?.created && !!appointmentId;
-	}, [globalProps?.appointment?.id, pageURL]);
 
 	// stepper management state
 	const steps = useMemo(
@@ -125,12 +122,35 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	);
 
 	// form management state
+	const pageHeader = useMemo(() => {
+		const appRef = globalProps?.appointmentReference;
+		const regNumber = appRef?.registrationNumber;
+		const currentVisit = appRef?.seriesAppointments?.length
+			? Math.max(...appRef.seriesAppointments.map((a) => a.visitNumber)) + 1
+			: null;
+		const maxVisit = appRef?.totalPackageVisits;
+
+		return {
+			title:
+				regNumber && mode === "new"
+					? "Book a New Appointment"
+					: "Schedule Appointment Series",
+			description:
+				mode === "new"
+					? "Schedule a appointment session between therapist and patient."
+					: "Arrange the next visit as part of an ongoing treatment plan between therapist and patient.",
+			regNumber,
+			series: `Visit ${currentVisit}/${maxVisit}`,
+		};
+	}, [mode, globalProps?.appointmentReference]);
 	const formDefaultvalues = useMemo(
 		() =>
 			defineAppointmentFormDefaultValues({
+				mode,
 				user: globalProps.auth.currentUser,
+				apptRef: globalProps.appointmentReference,
 			}),
-		[globalProps.auth.currentUser],
+		[globalProps.auth.currentUser, globalProps.appointmentReference, mode],
 	);
 	const [formStorage, setFormStorage] =
 		useSessionStorage<null | AppointmentBookingSchema>(
@@ -206,7 +226,7 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			// If the path is not root, or parent root, or current root, or is the book path (book path mean to POST to save the appointment) do nothing
 			if (
 				!isRoot &&
-				(!isParentRoot || isCreated) &&
+				(!isParentRoot || isSuccessBooked) &&
 				(isCurrentRoot || isBookPath)
 			)
 				return;
@@ -226,7 +246,7 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	}, [
 		globalProps.adminPortal.router.adminPortal.appointment.index,
 		pageURL,
-		isCreated,
+		isSuccessBooked,
 		isNavigateConfirm,
 	]);
 	/**
@@ -252,7 +272,43 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 	}, []);
 
 	return (
-		<>
+		<section className="flex flex-col justify-center gap-4 mx-auto md:gap-6 w-12/12 xl:w-8/12">
+			<FormPageHeaderGridPattern {...pageHeader} />
+
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(onSubmit)}>
+					<Stepper
+						// scrollTracking
+						variant={isMobile ? "line" : "circle-alt"}
+						size="sm"
+						orientation="vertical"
+						initialStep={0}
+						steps={steps}
+					>
+						{steps.map((stepProps) => (
+							<Step key={stepProps.label} {...stepProps}>
+								<FormContainer>
+									{stepProps.component}
+
+									<StepButtons
+										setFormStorage={setFormStorage}
+										isFormLoading={isLoading}
+									/>
+								</FormContainer>
+							</Step>
+						))}
+
+						{isSuccessBooked && <FinalStep />}
+					</Stepper>
+				</form>
+			</Form>
+		</section>
+	);
+}
+
+export default function AppointmentNew(_props: AppointmentNewProps) {
+	return (
+		<FormProvider>
 			<Head title="Appointment Booking">
 				<link
 					rel="stylesheet"
@@ -262,42 +318,8 @@ export default function AppointmentNew(_props: AppointmentNewProps) {
 			</Head>
 
 			<FormPageContainer>
-				<section className="flex flex-col justify-center gap-4 mx-auto md:gap-6 w-12/12 xl:w-8/12">
-					<FormPageHeaderGridPattern
-						title="Book a New Appointment"
-						description="Schedule a appointment session between a therapist and a patient."
-					/>
-
-					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)}>
-							<Stepper
-								// scrollTracking
-								variant={isMobile ? "line" : "circle-alt"}
-								size="sm"
-								orientation="vertical"
-								initialStep={0}
-								steps={steps}
-							>
-								{steps.map((stepProps) => (
-									<Step key={stepProps.label} {...stepProps}>
-										<FormContainer>
-											{stepProps.component}
-
-											<StepButtons
-												setFormStorage={setFormStorage}
-												isFormLoading={isLoading}
-												isCreated={isCreated}
-											/>
-										</FormContainer>
-									</Step>
-								))}
-
-								{isCreated && <FinalStep />}
-							</Stepper>
-						</form>
-					</Form>
-				</section>
+				<FormComponent />
 			</FormPageContainer>
-		</>
+		</FormProvider>
 	);
 }

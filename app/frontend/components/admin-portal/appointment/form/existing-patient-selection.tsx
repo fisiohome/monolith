@@ -47,6 +47,7 @@ import {
 	AlertCircle,
 	Cake,
 	IdCard,
+	Info,
 	Link,
 	LoaderIcon,
 	Mail,
@@ -71,6 +72,7 @@ import { Badge } from "@/components/ui/badge";
 import { getGenderIcon } from "@/hooks/use-gender";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useFormProvider } from "../new-appointment-form";
 
 interface CardSelectionProps {
 	patient: Patient;
@@ -78,7 +80,7 @@ interface CardSelectionProps {
 
 const CardSelection = memo(function Component({ patient }: CardSelectionProps) {
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	return (
 		<div className="grid gap-4 p-3 text-sm border rounded-md shadow-inner border-input bg-sidebar text-muted-foreground">
@@ -269,7 +271,7 @@ const HoverCardListItem = memo(function Component({
 	setSelectedPatient,
 }: HoverCardListItemProps) {
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 
 	return (
 		<HoverCard>
@@ -357,6 +359,7 @@ const HoverCardListItem = memo(function Component({
 export default function ExistingPatientSelection() {
 	const isMobile = useIsMobile();
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
+	const { mode } = useFormProvider();
 	const form = useFormContext<AppointmentBookingSchema>();
 	const watchPatientRecordSourceValue = useWatch({
 		control: form.control,
@@ -379,7 +382,9 @@ export default function ExistingPatientSelection() {
 
 	// * manage the user selection to use existing patient data
 	const [isOpenSheet, setIsOpenSheet] = useState(false);
-	const [selectedPatient, setSelectedPatient] = useState<null | Patient>(null);
+	const [selectedPatient, setSelectedPatient] = useState<null | Patient>(
+		globalProps?.appointmentReference?.patient || null,
+	);
 	const isPatientSelected = useCallback(
 		(patient: Patient) => {
 			if (!selectedPatient) return false;
@@ -478,7 +483,7 @@ export default function ExistingPatientSelection() {
 		[],
 	);
 
-	// * for selected teh existing patient
+	// * for selected the existing patient
 	const onSaveSelectedPatient = useCallback(() => {
 		if (!selectedPatient) return;
 
@@ -538,50 +543,62 @@ export default function ExistingPatientSelection() {
 		form.setValue("contactInformation", { ...contactInformation });
 	}, [selectedPatient, form.setValue]);
 
+	// * show and hide components
+	const isShow = useMemo(() => {
+		return {
+			patienrRecordRadio: mode === "new",
+			formAlert: !!hasErrorForm && isExistingPatientSource && mode === "new",
+			existingPatientSource: isExistingPatientSource,
+			patientSearch: mode === "new",
+		};
+	}, [mode, hasErrorForm, isExistingPatientSource]);
+
 	return (
 		<Fragment>
-			<FormField
-				control={form.control}
-				name="formOptions.patientRecordSource"
-				render={({ field }) => (
-					<FormItem className="space-y-3 col-span-full">
-						<FormControl>
-							<RadioGroup
-								onValueChange={(event) => {
-									field.onChange(event);
-									onHandleChangePatientSource();
-								}}
-								defaultValue={field.value}
-								orientation="horizontal"
-								className="grid grid-cols-2 gap-4"
-							>
-								{patientSourceSelectionList.map((option, index) => (
-									<FormItem
-										key={option.value}
-										className="flex items-center p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-									>
-										<FormControl>
-											<RadioGroupItem value={option.value} />
-										</FormControl>
-										<FormLabel className="flex items-center gap-1.5 font-normal">
-											{index === 0 ? (
-												<MousePointerClick className="text-muted-foreground size-5" />
-											) : (
-												<UserPlus className="text-muted-foreground size-5" />
-											)}
-											{option.title}
-										</FormLabel>
-									</FormItem>
-								))}
-							</RadioGroup>
-						</FormControl>
+			{isShow.patienrRecordRadio && (
+				<FormField
+					control={form.control}
+					name="formOptions.patientRecordSource"
+					render={({ field }) => (
+						<FormItem className="space-y-3 col-span-full">
+							<FormControl>
+								<RadioGroup
+									onValueChange={(event) => {
+										field.onChange(event);
+										onHandleChangePatientSource();
+									}}
+									defaultValue={field.value}
+									orientation="horizontal"
+									className="grid grid-cols-2 gap-4"
+								>
+									{patientSourceSelectionList.map((option, index) => (
+										<FormItem
+											key={option.value}
+											className="flex items-center p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+										>
+											<FormControl>
+												<RadioGroupItem value={option.value} />
+											</FormControl>
+											<FormLabel className="flex items-center gap-1.5 font-normal">
+												{index === 0 ? (
+													<MousePointerClick className="text-muted-foreground size-5" />
+												) : (
+													<UserPlus className="text-muted-foreground size-5" />
+												)}
+												{option.title}
+											</FormLabel>
+										</FormItem>
+									))}
+								</RadioGroup>
+							</FormControl>
 
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+			)}
 
-			{!!hasErrorForm && isExistingPatientSource && (
+			{isShow.formAlert && (
 				<Alert variant="destructive" className="col-span-full">
 					<AlertCircle className="size-4" />
 					<AlertTitle className="text-xs">Error</AlertTitle>
@@ -592,7 +609,7 @@ export default function ExistingPatientSelection() {
 				</Alert>
 			)}
 
-			{isExistingPatientSource && (
+			{isShow.existingPatientSource && (
 				<Fragment>
 					<CardPatientBasicInfoForm
 						isNotCompletedForm={isNotCompletedForm}
@@ -611,13 +628,13 @@ export default function ExistingPatientSelection() {
 							effect="expandIcon"
 							iconPlacement="left"
 							type="button"
-							icon={Pencil}
+							icon={mode === "series" ? Info : Pencil}
 							onClick={(event) => {
 								event.preventDefault();
 								setIsOpenSheet((prev) => !prev);
 							}}
 						>
-							Edit
+							{mode === "series" ? "Detail" : "Edit"}
 						</Button>
 					</CardPatientBasicInfoForm>
 
@@ -632,55 +649,59 @@ export default function ExistingPatientSelection() {
 								</SheetHeader>
 
 								<div className="grid content-start flex-1 gap-4 py-4 overflow-y-auto text-sm">
-									<Input
-										placeholder="Enter the patient name..."
-										className="shadow-inner bg-sidebar"
-										value={searchPatient}
-										StartIcon={{ icon: Search }}
-										onChange={(event) => {
-											const value = event.target.value;
+									{isShow.patientSearch && (
+										<>
+											<Input
+												placeholder="Enter the patient name..."
+												className="shadow-inner bg-sidebar"
+												value={searchPatient}
+												StartIcon={{ icon: Search }}
+												onChange={(event) => {
+													const value = event.target.value;
 
-											setSearchPatient(value);
-											onHandleFetchPatientList(value);
-										}}
-									/>
+													setSearchPatient(value);
+													onHandleFetchPatientList(value);
+												}}
+											/>
 
-									<ScrollArea
-										className={cn(
-											"w-full border rounded-md bg-sidebar",
-											isMobile ? "max-h-96" : "max-h-80",
-										)}
-									>
-										<div className="p-4">
-											<h4 className="mb-4 text-xs leading-none tracking-wider uppercase text-muted-foreground">
-												Patient list
-											</h4>
+											<ScrollArea
+												className={cn(
+													"w-full border rounded-md bg-sidebar",
+													isMobile ? "max-h-96" : "max-h-80",
+												)}
+											>
+												<div className="p-4">
+													<h4 className="mb-4 text-xs leading-none tracking-wider uppercase text-muted-foreground">
+														Patient list
+													</h4>
 
-											{isLoading.patientList ? (
-												<div className="flex flex-col items-center gap-2.5 text-muted-foreground">
-													<LoaderIcon className="animate-spin" />
-													<span>Please wait...</span>
+													{isLoading.patientList ? (
+														<div className="flex flex-col items-center gap-2.5 text-muted-foreground">
+															<LoaderIcon className="animate-spin" />
+															<span>Please wait...</span>
+														</div>
+													) : patients?.length ? (
+														patients?.map((patient) => (
+															<HoverCardListItem
+																key={patient.name}
+																patient={patient}
+																isSelected={isPatientSelected(patient)}
+																setSelectedPatient={setSelectedPatient}
+															/>
+														))
+													) : (
+														<div className="grid gap-4">
+															<Search className="mx-auto text-muted-foreground/75 size-6" />
+															<p className="text-center text-pretty text-muted-foreground w-[75%] mx-auto">
+																Let's start by searching for patients by name in
+																the search above.
+															</p>
+														</div>
+													)}
 												</div>
-											) : patients?.length ? (
-												patients?.map((patient) => (
-													<HoverCardListItem
-														key={patient.name}
-														patient={patient}
-														isSelected={isPatientSelected(patient)}
-														setSelectedPatient={setSelectedPatient}
-													/>
-												))
-											) : (
-												<div className="grid gap-4">
-													<Search className="mx-auto text-muted-foreground/75 size-6" />
-													<p className="text-center text-pretty text-muted-foreground w-[75%] mx-auto">
-														Let's start by searching for patients by name in the
-														search above.
-													</p>
-												</div>
-											)}
-										</div>
-									</ScrollArea>
+											</ScrollArea>
+										</>
+									)}
 
 									{!!selectedPatient && (
 										<CardSelection patient={selectedPatient} />
@@ -694,16 +715,18 @@ export default function ExistingPatientSelection() {
 										</Button>
 									</SheetClose>
 
-									<Button
-										disabled={!selectedPatient}
-										onClick={(event) => {
-											event.preventDefault();
-											onSaveSelectedPatient();
-											setIsOpenSheet((prev) => !prev);
-										}}
-									>
-										Select Patient
-									</Button>
+									{isShow.patientSearch && (
+										<Button
+											disabled={!selectedPatient}
+											onClick={(event) => {
+												event.preventDefault();
+												onSaveSelectedPatient();
+												setIsOpenSheet((prev) => !prev);
+											}}
+										>
+											Select Patient
+										</Button>
+									)}
 								</SheetFooter>
 							</div>
 						</SheetContent>

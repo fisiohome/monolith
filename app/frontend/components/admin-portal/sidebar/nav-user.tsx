@@ -52,8 +52,8 @@ export interface NavUserProps {
 
 export function NavUser() {
 	const { isMobile, toggleSidebar } = useSidebar();
-	const { t, i18n } = useTranslation("translation", {
-		keyPrefix: "settings.appearance",
+	const { t, i18n } = useTranslation("settings", {
+		keyPrefix: "appearance",
 	});
 	const { t: tsm } = useTranslation("side-menu");
 

@@ -61,13 +61,28 @@ module AppointmentsHelper
         serialized["visit_address"] = appointment.address_history.as_json(only: options[:visit_address_only])
       end
 
+      # Serialize the all visits
+      if options.fetch(:include_all_visits, false)
+        serialized["all_visits"] = appointment.all_visits_in_series.as_json(
+          only: options[:all_visits_only],
+          methods: options[:all_visits_methods]
+        )
+      end
+
       serialized.merge!(
         voucher_discount: appointment.voucher_discount,
         formatted_discount: appointment.formatted_discount,
         total_price: appointment.total_price,
         formatted_total_price: appointment.formatted_total_price,
         start_time: appointment.start_time,
-        end_time: appointment.end_time
+        end_time: appointment.end_time,
+        initial_visit: appointment.initial_visit?,
+        visit_progress: appointment.visit_progress,
+        next_visit_progress: appointment.next_visit_progress,
+        total_package_visits: appointment.total_package_visits,
+        next_visits: appointment.next_visits,
+        series_appointments: appointment.series_appointments.as_json,
+        reference_appointment: appointment.reference_appointment.as_json
       )
 
       # Serialize appointment admins.

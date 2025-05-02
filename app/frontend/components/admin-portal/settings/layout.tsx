@@ -14,7 +14,7 @@ export interface SettingLayoutProps extends ComponentProps<"div"> {}
 
 export function SettingLayout({ children }: SettingLayoutProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	const { t } = useTranslation("translation", { keyPrefix: "settings" });
+	const { t } = useTranslation("settings");
 
 	// * tab management state
 	const tabs = useMemo(() => {

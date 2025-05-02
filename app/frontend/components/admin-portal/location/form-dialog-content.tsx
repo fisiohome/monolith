@@ -83,8 +83,8 @@ export function FormUpsertLocation({
 	forceMode,
 }: FormUpsertLocationProps) {
 	const { props: globalProps } = usePage<LocationGlobalPageProps>();
-	const { t: tl } = useTranslation("translation", {
-		keyPrefix: "locations.modal",
+	const { t: tl } = useTranslation("locations", {
+		keyPrefix: "modal",
 	});
 	const mode = useMemo(
 		() => (selectedLocations?.length ? "edit" : "add"),
@@ -497,7 +497,7 @@ export function DeleteLocationAlert({
 	selectedLocations,
 }: DeleteLocationAlertProps) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
-	const { t: tl } = useTranslation("translation", { keyPrefix: "locations" });
+	const { t: tl } = useTranslation("locations");
 	const [isLoading, setIsLoading] = useState(false);
 	const form = useForm<z.infer<typeof FORM_SCHEMA>>({
 		resolver: zodResolver(FORM_SCHEMA),

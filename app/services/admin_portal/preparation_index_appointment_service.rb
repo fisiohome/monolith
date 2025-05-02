@@ -37,12 +37,17 @@ module AdminPortal
       when "cancel"
         # Appointments with cancel statuses
         appointments.status_cancelled
+      when "unschedule"
+        appointments.status_unscheduled
       else
         # Default: future appointments
         appointments
           .where("appointment_date_time >= ?", Time.zone.now)
           .status_paid
       end
+
+      # ensure everything is sorted by the full date - time
+      appointments = appointments.order(appointment_date_time: :asc)
 
       # Group appointments by the date part of appointment_date_time, sort them by date.
       grouped = appointments.group_by { |a| a.appointment_date_time.to_date }
@@ -56,7 +61,14 @@ module AdminPortal
           {
             date: date,
             schedules: apps.map { |appointment|
-              serialize_appointment(appointment)
+              serialize_appointment(
+                appointment,
+                {
+                  include_all_visits: true,
+                  all_visits_only: [:id, :visit_progress, :appointment_date_time, :status, :registration_number],
+                  all_visits_methods: [:visit_progress]
+                }
+              )
             }
           }
         )

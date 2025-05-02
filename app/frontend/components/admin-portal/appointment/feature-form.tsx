@@ -63,7 +63,7 @@ export function CancelAppointmentForm({
 	}, [isLoading, forceMode]);
 	const formSchema = z.object({
 		id: z.string(),
-		reason: z.string({ required_error: "Cancellation reason is required" }),
+		reason: z.string().min(1, "Cancellation reason is required"),
 	});
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
@@ -267,7 +267,7 @@ export function UpdateStatusForm({
 }: { selectedAppointment: Appointment; forceMode?: ResponsiveDialogMode }) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
-	const { t } = useTranslation("translation", { keyPrefix: "appointments" });
+	const { t } = useTranslation("appointments");
 	const [isLoading, setIsLoading] = useState(false);
 	const buttonProps = useMemo<ResponsiveDialogButton>(
 		() => ({
@@ -281,6 +281,7 @@ export function UpdateStatusForm({
 		() =>
 			globalProps.optionsData?.statuses.filter(
 				(status) =>
+					status.key !== "unscheduled" &&
 					status.key !== "cancelled" &&
 					status.key !== "pending_therapist_assignment",
 			) || [],

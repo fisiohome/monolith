@@ -22,6 +22,7 @@ import {
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
+import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
 
 export const SESSION_STORAGE_FORM_KEY = "appointment-form";
 
@@ -54,14 +55,13 @@ export const useFinalStep = () => {
 };
 
 export const useStepButtons = ({
-	isCreated,
 	setFormStorage,
 }: {
-	isCreated: boolean;
 	setFormStorage: React.Dispatch<
 		React.SetStateAction<AppointmentBookingSchema | null>
 	>;
 }) => {
+	const { isSuccessBooked } = useFormProvider();
 	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
 	const form = useFormContext<AppointmentBookingSchema>();
 	const {
@@ -139,12 +139,12 @@ export const useStepButtons = ({
 
 	// * redirect to the final step components
 	useEffect(() => {
-		if (isCreated) {
+		if (isSuccessBooked) {
 			setStep(steps?.length);
 		}
 
 		return () => {};
-	}, [isCreated, steps, setStep]);
+	}, [isSuccessBooked, steps, setStep]);
 
 	return {
 		isDekstop,
@@ -198,11 +198,11 @@ export const useReviewForm = () => {
 					},
 					{
 						title: "Email",
-						value: contactInformation?.email || "-",
+						value: contactInformation?.email || "N/A",
 					},
 					{
 						title: "MiiTel Link",
-						value: contactInformation?.miitelLink || "-",
+						value: contactInformation?.miitelLink || "N/A",
 					},
 				],
 			},
@@ -232,7 +232,7 @@ export const useReviewForm = () => {
 								</span>
 							</Badge>
 						) : (
-							"-"
+							"N/A"
 						),
 					},
 					{
@@ -241,11 +241,11 @@ export const useReviewForm = () => {
 					},
 					{
 						title: "Illness Onset Date",
-						value: patientDetails?.illnessOnsetDate || "-",
+						value: patientDetails?.illnessOnsetDate || "N/A",
 					},
 					{
 						title: "Medical History",
-						value: patientDetails?.medicalHistory || "-",
+						value: patientDetails?.medicalHistory || "N/A",
 					},
 					{
 						title: "Region",
@@ -281,7 +281,7 @@ export const useReviewForm = () => {
 					},
 					{
 						title: "Address Note",
-						value: patientDetails?.addressNotes || "-",
+						value: patientDetails?.addressNotes || "N/A",
 					},
 				],
 			},
@@ -291,11 +291,21 @@ export const useReviewForm = () => {
 				subs: [
 					{
 						title: "Service",
-						value: appointmentScheduling.service.name,
+						value: appointmentScheduling.service.name.replaceAll("_", " "),
 					},
 					{
 						title: "Package",
-						value: `${appointmentScheduling.package.name} (${appointmentScheduling.package.numberOfVisit} visit(s))`,
+						value: (
+							<p>
+								<span className="uppercase">
+									{appointmentScheduling.package.name}
+								</span>
+								<span className="mx-1">&bull;</span>
+								<span className="italic font-light">
+									{appointmentScheduling.package.numberOfVisit} visit(s)
+								</span>
+							</p>
+						),
 					},
 					{
 						title: "Preferred Therapist Gender",
@@ -319,7 +329,8 @@ export const useReviewForm = () => {
 					},
 					{
 						title: "Assigned Therapist",
-						value: appointmentScheduling.therapist?.name || "-",
+						value:
+							appointmentScheduling.therapist?.name?.toUpperCase() || "N/A",
 					},
 				],
 			},
@@ -331,21 +342,21 @@ export const useReviewForm = () => {
 						title: "Referral Source",
 						value: additionalSettings?.referralSource
 							? `${additionalSettings?.referralSource} - ${additionalSettings?.customReferralSource}`
-							: "-",
+							: "N/A",
 					},
 					{
 						title: "Fisiohome Partner Booking",
 						value: additionalSettings?.fisiohomePartnerName
 							? `${additionalSettings?.fisiohomePartnerName} - ${additionalSettings?.customFisiohomePartnerName}`
-							: "-",
+							: "N/A",
 					},
 					{
 						title: "Voucher Code",
-						value: additionalSettings?.voucherCode || "-",
+						value: additionalSettings?.voucherCode || "N/A",
 					},
 					{
 						title: "Notes",
-						value: additionalSettings?.notes || "-",
+						value: additionalSettings?.notes || "N/A",
 					},
 				],
 			},
@@ -364,6 +375,10 @@ export const useReviewForm = () => {
 export const useAdditionalSettingsForm = () => {
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const form = useFormContext<AppointmentBookingSchema>();
+	const watchAdditionalSettingsValue = useWatch({
+		control: form.control,
+		name: "additionalSettings",
+	});
 	const additionalFormOptions = useMemo(() => {
 		const referralSources = globalProps.optionsData?.referralSources || [];
 		const fisiohomePartnerNames =
@@ -378,6 +393,7 @@ export const useAdditionalSettingsForm = () => {
 	return {
 		form,
 		additionalFormOptions,
+		watchAdditionalSettingsValue,
 	};
 };
 
