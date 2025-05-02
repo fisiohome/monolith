@@ -58,7 +58,7 @@ export function CancelAppointmentForm({
 		return {
 			isLoading,
 			forceMode,
-			submitText: i18n.t("appointments.modal.cancel.button_submit"),
+			submitText: i18n.t("appointments:modal.cancel.button_submit"),
 		};
 	}, [isLoading, forceMode]);
 	const formSchema = z.object({
@@ -230,7 +230,7 @@ export function UpdatePICForm({
 										<MultiSelectorTrigger>
 											<MultiSelectorInput
 												placeholder={`${i18n.t(
-													"appointments.fields.admin_pic.placeholder",
+													"appointments:fields.admin_pic.placeholder",
 												)}...`}
 											/>
 										</MultiSelectorTrigger>
