@@ -36,6 +36,14 @@ module AdminPortal
           .where("appointments.registration_number ILIKE ?", "%#{filter_by_reg_number}%")
       end
 
+      # by region city
+      filter_by_city = @params[:city]
+      if filter_by_city.present?
+        appointments = appointments
+          .joins(:location)
+          .where("locations.city ILIKE ?", "%#{filter_by_city}%")
+      end
+
       # by appointment status
       appointments = case @params[:filter_by_appointment_status]
       when "pending"
@@ -95,6 +103,12 @@ module AdminPortal
           }
         )
       end
+    end
+
+    def fetch_filter_options_data
+      locations = Location.all.as_json
+
+      deep_transform_keys_to_camel_case({locations:})
     end
 
     def fetch_selected_appointment

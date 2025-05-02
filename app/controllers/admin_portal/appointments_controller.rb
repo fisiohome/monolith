@@ -10,7 +10,8 @@ module AdminPortal
       render inertia: "AdminPortal/Appointment/Index", props: deep_transform_keys_to_camel_case({
         appointments: InertiaRails.defer { preparation.fetch_appointments },
         selected_appointment: InertiaRails.defer { preparation.fetch_selected_appointment },
-        options_data: InertiaRails.defer { preparation.fetch_options_data }
+        options_data: InertiaRails.defer { preparation.fetch_options_data },
+        filter_options_data: InertiaRails.defer { preparation.fetch_filter_options_data }
       })
     end
 

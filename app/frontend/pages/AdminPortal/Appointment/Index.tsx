@@ -20,6 +20,7 @@ import type {
 	Appointment,
 	AppointmentStatuses,
 } from "@/types/admin-portal/appointment";
+import type { Location } from "@/types/admin-portal/location";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
@@ -177,6 +178,9 @@ export interface AppointmentIndexProps {
 			key: keyof typeof AppointmentStatuses;
 			value: AppointmentStatuses;
 		}[];
+	};
+	filterOptionsData?: {
+		locations: Location[];
 	};
 }
 
