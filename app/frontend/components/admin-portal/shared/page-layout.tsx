@@ -105,7 +105,7 @@ export function FormPageHeaderGridPattern({
 				>
 					{title}
 					<span className="mx-1">—</span>
-					<span>Visit {series}</span>
+					<span>{series}</span>
 				</h1>
 				<p
 					className={cn(

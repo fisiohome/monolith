@@ -195,59 +195,56 @@ const AppointmentActionButtons = memo(function Component({
 		<ExpandableContent preset="slide-up">
 			<ExpandableCardFooter className="p-4 md:p-6">
 				<div className="flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end">
-					{(isSuperAdmin || isAdminPIC) &&
-						!isPastAppointment &&
-						schedule.status !== "cancelled" && (
-							<>
-								<DropdownMenu
-									open={openDropdown.create}
-									onOpenChange={() =>
-										setOpenDropdown((prev) => ({ ...prev, create: false }))
+					{(isSuperAdmin || isAdminPIC) && schedule.status !== "cancelled" && (
+						<>
+							<DropdownMenu
+								open={openDropdown.create}
+								onOpenChange={() =>
+									setOpenDropdown((prev) => ({ ...prev, create: false }))
+								}
+							>
+								<DropdownMenuTrigger
+									asChild
+									onMouseEnter={() =>
+										setOpenDropdown((prev) => ({ ...prev, create: true }))
 									}
 								>
-									<DropdownMenuTrigger
-										asChild
-										onMouseEnter={() =>
-											setOpenDropdown((prev) => ({ ...prev, create: true }))
-										}
+									<Button
+										icon={ChevronDown}
+										iconPlacement="right"
+										variant="primary-outline"
+										className="w-full transition-all duration-200 lg:w-auto"
+										onClick={(event) => {
+											event.preventDefault();
+											event.stopPropagation();
+										}}
 									>
-										<Button
-											icon={ChevronDown}
-											iconPlacement="right"
-											variant="primary-outline"
-											className="w-full transition-all duration-200 lg:w-auto"
-											onClick={(event) => {
-												event.preventDefault();
-												event.stopPropagation();
-											}}
-										>
-											<Plus
-												className={openDropdown.create ? "rotate-12" : ""}
-											/>
-											{t("button.dropdown_create")}
-										</Button>
-									</DropdownMenuTrigger>
+										<Plus className={openDropdown.create ? "rotate-12" : ""} />
+										{t("button.dropdown_create")}
+									</Button>
+								</DropdownMenuTrigger>
 
-									<DropdownMenuContent
-										className="w-fit"
-										align="start"
-										side="bottom"
-									>
-										<DropdownMenuGroup>
-											{isShow.createSeries && (
-												<DropdownMenuItem
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
+								<DropdownMenuContent
+									className="w-fit"
+									align="start"
+									side="bottom"
+								>
+									<DropdownMenuGroup>
+										{isShow.createSeries && (
+											<DropdownMenuItem
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
 
-														routeTo.createSeries(schedule);
-													}}
-												>
-													<Repeat />
-													{t("button.series")}
-												</DropdownMenuItem>
-											)}
+													routeTo.createSeries(schedule);
+												}}
+											>
+												<Repeat />
+												{t("button.series")}
+											</DropdownMenuItem>
+										)}
 
+										{!isPastAppointment && (
 											<DropdownMenuItem
 												onClick={(event) => {
 													event.preventDefault();
@@ -259,89 +256,94 @@ const AppointmentActionButtons = memo(function Component({
 												<Clock3 />
 												{t("button.reschedule")}
 											</DropdownMenuItem>
-										</DropdownMenuGroup>
-									</DropdownMenuContent>
-								</DropdownMenu>
+										)}
+									</DropdownMenuGroup>
+								</DropdownMenuContent>
+							</DropdownMenu>
 
-								<DropdownMenu
-									open={openDropdown.update}
-									onOpenChange={() =>
-										setOpenDropdown((prev) => ({ ...prev, update: false }))
-									}
-								>
-									<DropdownMenuTrigger
-										asChild
-										onMouseEnter={() =>
-											setOpenDropdown((prev) => ({ ...prev, update: true }))
+							{!isPastAppointment && (
+								<>
+									<DropdownMenu
+										open={openDropdown.update}
+										onOpenChange={() =>
+											setOpenDropdown((prev) => ({ ...prev, update: false }))
 										}
 									>
-										<Button
-											icon={ChevronDown}
-											iconPlacement="right"
-											variant="primary-outline"
-											className="w-full transition-all duration-200 lg:w-auto"
-											onClick={(event) => {
-												event.preventDefault();
-												event.stopPropagation();
-											}}
+										<DropdownMenuTrigger
+											asChild
+											onMouseEnter={() =>
+												setOpenDropdown((prev) => ({ ...prev, update: true }))
+											}
 										>
-											<RefreshCw
-												className={openDropdown.update ? "rotate-45" : ""}
-											/>
-											{t("button.dropdown_update")}
-										</Button>
-									</DropdownMenuTrigger>
+											<Button
+												icon={ChevronDown}
+												iconPlacement="right"
+												variant="primary-outline"
+												className="w-full transition-all duration-200 lg:w-auto"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+												}}
+											>
+												<RefreshCw
+													className={openDropdown.update ? "rotate-45" : ""}
+												/>
+												{t("button.dropdown_update")}
+											</Button>
+										</DropdownMenuTrigger>
 
-									<DropdownMenuContent
-										className="w-fit"
-										align="start"
-										side="bottom"
-									>
-										<DropdownMenuGroup>
-											{isShow.updateStatus && (
+										<DropdownMenuContent
+											className="w-fit"
+											align="start"
+											side="bottom"
+										>
+											<DropdownMenuGroup>
+												{isShow.updateStatus && (
+													<DropdownMenuItem
+														onClick={(event) => {
+															event.preventDefault();
+															event.stopPropagation();
+
+															routeTo.updateStatus(String(schedule.id));
+														}}
+													>
+														<Activity />
+														{t("button.update_status")}
+													</DropdownMenuItem>
+												)}
+
 												<DropdownMenuItem
 													onClick={(event) => {
 														event.preventDefault();
 														event.stopPropagation();
 
-														routeTo.updateStatus(String(schedule.id));
+														routeTo.updatePic(String(schedule.id));
 													}}
 												>
-													<Activity />
-													{t("button.update_status")}
+													<Cctv />
+													{t("button.update_pic")}
 												</DropdownMenuItem>
-											)}
+											</DropdownMenuGroup>
+										</DropdownMenuContent>
+									</DropdownMenu>
 
-											<DropdownMenuItem
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
+									<Button
+										variant="destructive"
+										className="w-full lg:w-auto"
+										onClick={(event) => {
+											event.preventDefault();
+											event.stopPropagation();
 
-													routeTo.updatePic(String(schedule.id));
-												}}
-											>
-												<Cctv />
-												{t("button.update_pic")}
-											</DropdownMenuItem>
-										</DropdownMenuGroup>
-									</DropdownMenuContent>
-								</DropdownMenu>
-
-								<Button
-									variant="destructive"
-									className="w-full lg:w-auto"
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
-
-										routeTo.cancel(String(schedule.id));
-									}}
-								>
-									<Ban />
-									{t("button.cancel_booking")}
-								</Button>
-							</>
-						)}
+											routeTo.cancel(String(schedule.id));
+										}}
+									>
+										<Ban />
+										{t("button.cancel_booking")}
+									</Button>
+								</>
+							)}
+						</>
+					)}
 				</div>
 			</ExpandableCardFooter>
 		</ExpandableContent>

@@ -159,7 +159,7 @@ class Appointment < ApplicationRecord
   end
 
   with_options unless: :initial_visit? do
-    validate :validate_series_constraints
+    validate :validate_series_requirements
   end
 
   with_options unless: :unscheduled? do
@@ -169,7 +169,7 @@ class Appointment < ApplicationRecord
   validate :appointment_date_time_in_the_future
   validate :validate_visit_sequence
   validate :status_must_be_valid
-  validate :validate_rescheduling_rules
+  validate :validate_appointment_sequence
   validate :no_duplicate_appointment_time
   validate :no_overlapping_appointments
 
@@ -353,7 +353,7 @@ class Appointment < ApplicationRecord
     errors.add(:appointment_date_time, "must be present for initial visit") if appointment_date_time.blank?
   end
 
-  def validate_series_constraints
+  def validate_series_requirements
     errors.add(:appointment_reference_id, "cannot be modified") if appointment_reference_id_changed? && persisted?
     errors.add(:package_id, "must match reference appointment's package") if reference_appointment&.package_id != package_id
     errors.add(:patient_id, "must match reference appointment's patient") if reference_appointment&.patient_id != patient_id
@@ -375,38 +375,36 @@ class Appointment < ApplicationRecord
     end
   end
 
-  def validate_rescheduling_rules
-    return unless appointment_date_time_changed? && persisted?
-
+  def validate_appointment_sequence
     if initial_visit?
-      validate_initial_visit_reschedule
+      validate_initial_visit_position
     elsif series?
-      validate_series_reschedule
+      validate_series_visit_position
     end
   end
 
-  def validate_initial_visit_reschedule
+  def validate_initial_visit_position
     first_series = series_appointments.order(:appointment_date_time).first
     return unless first_series
 
     return if appointment_date_time < first_series.appointment_date_time
 
     formatted_date = first_series.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-    errors.add(:appointment_date_time, "The initial visit must occur before the first appointment sequent on #{formatted_date}")
+    errors.add(:appointment_date_time, "The first visit must occur before any another visit series on #{formatted_date}")
   end
 
-  def validate_series_reschedule
+  def validate_series_visit_position
     initial = reference_appointment
     # Ensure initial visit exists and is scheduled
     if initial.appointment_date_time.blank?
-      errors.add(:appointment_date_time, "Initial visit must be scheduled first")
+      errors.add(:appointment_date_time, "First visit must be scheduled first")
       return
     end
 
     # appointment sequent must be after the initial visit
     if appointment_date_time <= initial.appointment_date_time
       formatted_initial_date = initial.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-      errors.add(:appointment_date_time, "Appointment sequent visits must be after the initial visit on #{formatted_initial_date}")
+      errors.add(:appointment_date_time, "Visits series must be after the first visit on #{formatted_initial_date}")
       return
     end
 
@@ -422,7 +420,7 @@ class Appointment < ApplicationRecord
     return if appointment_date_time < next_series.appointment_date_time
 
     formatted_next_date = next_series.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-    errors.add(:appointment_date_time, "This appointment sequent must be before the next appointment sequent on #{formatted_next_date}")
+    errors.add(:appointment_date_time, "This visit series must be before the next one on #{formatted_next_date}")
   end
 
   # * define the callback methods

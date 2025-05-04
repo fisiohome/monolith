@@ -127,7 +127,7 @@ function FormComponent() {
 		const regNumber = appRef?.registrationNumber;
 		const currentVisit = appRef?.seriesAppointments?.length
 			? Math.max(...appRef.seriesAppointments.map((a) => a.visitNumber)) + 1
-			: null;
+			: 1;
 		const maxVisit = appRef?.totalPackageVisits;
 
 		return {
