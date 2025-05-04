@@ -209,8 +209,8 @@ export function SchedulePagination({
 	actions,
 }: SchedulePaginationProps) {
 	const { t } = useTranslation("therapist-schedules");
-	const { t: tp } = useTranslation("components", {
-		keyPrefix: "pagination",
+	const { t: tp } = useTranslation("translation", {
+		keyPrefix: "components.pagination",
 	});
 	const isPrevDisabled = useMemo(() => !metadata.prev, [metadata.prev]);
 	const isNextDisabled = useMemo(() => !metadata.next, [metadata.next]);

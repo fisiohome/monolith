@@ -41,8 +41,8 @@ export default function PaginationTable<TData>({
 	table,
 	metadata,
 }: DataTablePaginationProps<TData>) {
-	const { t } = useTranslation("components", {
-		keyPrefix: "pagination",
+	const { t } = useTranslation("translation", {
+		keyPrefix: "components.pagination",
 	});
 
 	return (
