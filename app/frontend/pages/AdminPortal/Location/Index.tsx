@@ -29,8 +29,8 @@ import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
 import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, Table as TableTanstack } from "@tanstack/react-table";
-import { Ellipsis, Plus } from "lucide-react";
-import { useMemo } from "react";
+import { Ellipsis, LoaderIcon, PlusCircle, RefreshCcw } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export interface PageProps {
@@ -64,6 +64,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 	const { t: tl } = useTranslation("locations");
 
 	// table management
+	const [isLoading, setIsLoading] = useState({ sync: false });
 	const routeTo = {
 		newLocations: () => {
 			router.get(
@@ -271,28 +272,84 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 		};
 	}, [pageURL, formDialogMode.isDeleteMode]);
 
+	// for sync data
+	const doSync = useCallback(() => {
+		const baseURL = `${
+			globalProps.adminPortal.router.adminPortal.locationManagement.index
+		}/sync-data-master`;
+		router.put(
+			baseURL,
+			{},
+			{
+				preserveScroll: true,
+				preserveState: true,
+				only: ["adminPortal", "flash", "errors", "locations"],
+				onStart: () => {
+					setIsLoading((prev) => ({ ...prev, sync: true }));
+				},
+				onFinish: () => {
+					setTimeout(() => {
+						setIsLoading((prev) => ({ ...prev, sync: false }));
+					}, 250);
+				},
+			},
+		);
+	}, [globalProps.adminPortal.router.adminPortal.locationManagement.index]);
+
 	return (
 		<>
 			<Head title={tl("head_title")} />
 
-			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">
-					{tl("page_title")}
-				</h1>
-				{globalProps.auth.currentUserType === "ADMIN" && (
-					<Button
-						onClick={(event) => {
-							event.preventDefault();
-							routeTo.newLocations();
-						}}
-					>
-						<Plus />
-						{tl("button.add")}
-					</Button>
-				)}
-			</PageContainer>
-
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+				<div className="flex flex-col justify-between gap-4 md:flex-row">
+					<div>
+						<h1 className="text-lg font-bold tracking-tight uppercase">
+							{tl("page_title")}
+						</h1>
+
+						<p className="text-sm text-muted-foreground">
+							That's where we're available
+						</p>
+					</div>
+
+					{globalProps.auth.currentUserType === "ADMIN" && (
+						<div className="flex flex-col gap-2 md:flex-row">
+							<Button
+								variant="primary-outline"
+								disabled={isLoading.sync}
+								onClick={(event) => {
+									event.preventDefault();
+									doSync();
+								}}
+							>
+								{isLoading.sync ? (
+									<>
+										<LoaderIcon className="animate-spin" />
+										<span>Please wait...</span>
+									</>
+								) : (
+									<>
+										<RefreshCcw />
+										{tl("button.sync")}
+									</>
+								)}
+							</Button>
+
+							<Button
+								onClick={(event) => {
+									event.preventDefault();
+									routeTo.newLocations();
+								}}
+							>
+								<PlusCircle />
+								{tl("button.add")}
+							</Button>
+						</div>
+					)}
+				</div>
+
+				<Separator className="bg-border" />
+
 				<DataTable
 					columns={columns}
 					data={locations.data}

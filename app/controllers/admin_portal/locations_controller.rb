@@ -14,7 +14,6 @@ module AdminPortal
         .where(filter_by_country.present? ? ["country ILIKE ?", "%#{filter_by_country}%"] : nil)
         .where(filter_by_state.present? ? ["state ILIKE ?", "%#{filter_by_state}%"] : nil)
         .where(filter_by_city.present? ? ["city ILIKE ?", "%#{filter_by_city}%"] : nil)
-        .order(created_at: "DESC")
 
       @pagy, @locations = pagy_array(location_collections, page: page, limit: limit)
 
@@ -154,6 +153,16 @@ module AdminPortal
       redirect_to admin_portal_locations_path(delete: location_ids.join(","))
     ensure
       logger.info("Process for delete the locations is finished.")
+    end
+
+    def sync_data_master
+      result = MasterDataSyncService.new.location
+
+      if result[:success]
+        redirect_to admin_portal_locations_path, notice: result[:message]
+      else
+        redirect_to admin_portal_locations_path, alert: result[:error]
+      end
     end
 
     private

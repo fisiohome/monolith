@@ -5,7 +5,8 @@
 		"actions": "Aksi",
 		"add": "Tambahkan Lokasi",
 		"edit": "Sunting",
-		"delete": "Hapus"
+		"delete": "Hapus",
+		"sync": "Sync"
 	},
 	"filter": {
 		"country": "Saring berdasarkan negara",

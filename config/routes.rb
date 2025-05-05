@@ -85,6 +85,7 @@ Rails.application.routes.draw do
             post "create-bulk" => "locations#create_bulk"
             put "update-bulk" => "locations#update_bulk"
             delete "delete-bulk" => "locations#destroy_bulk"
+            put "sync-data-master" => "locations#sync_data_master"
           end
         end
       end

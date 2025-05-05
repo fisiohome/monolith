@@ -5,7 +5,8 @@
 		"actions": "Actions",
 		"add": "Add Location",
 		"edit": "Edit",
-		"delete": "Delete"
+		"delete": "Delete",
+		"sync": "Sync"
 	},
 	"filter": {
 		"country": "Filter by country",

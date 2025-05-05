@@ -216,6 +216,10 @@ GEM
       racc (~> 1.4)
     nokogiri (1.18.1-x86_64-linux-gnu)
       racc (~> 1.4)
+    open-uri (0.5.0)
+      stringio
+      time
+      uri
     orm_adapter (0.5.0)
     ostruct (0.6.1)
     pagy (9.3.3)
@@ -370,6 +374,8 @@ GEM
     thruster (0.1.8-arm64-darwin)
     thruster (0.1.8-x86_64-darwin)
     thruster (0.1.8-x86_64-linux)
+    time (0.4.1)
+      date
     timeout (0.4.3)
     turbo-rails (2.0.13)
       actionpack (>= 7.1.0)
@@ -417,6 +423,7 @@ DEPENDENCIES
   bootsnap
   brakeman (~> 7.0.0)
   capybara
+  csv (~> 3.3)
   debug
   devise (~> 4.9)
   inertia_rails (~> 3.6)
@@ -424,6 +431,7 @@ DEPENDENCIES
   jbuilder
   kamal
   mission_control-jobs (~> 1.0)
+  open-uri (~> 0.5.0)
   pagy (~> 9.3)
   pg (~> 1.1)
   propshaft

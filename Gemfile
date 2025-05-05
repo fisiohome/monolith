@@ -81,3 +81,7 @@ gem "mission_control-jobs", "~> 1.0"
 gem "state_machines", "~> 0.6.0"
 
 gem "state_machines-activerecord", "~> 0.9.0"
+
+gem "open-uri", "~> 0.5.0"
+
+gem "csv", "~> 3.3"
