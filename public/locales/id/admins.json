@@ -1,0 +1,20 @@
+{
+	"head_title": "Manajemen Admin",
+	"page_title": "Admin",
+	"page_description": "Tim operasi internal kami.",
+	"button": {
+		"add": "Tambahkan admin",
+		"sync": "Sync"
+	},
+	"tab": {
+		"all": "Semua",
+		"active": "Aktif",
+		"suspended": "Ditangguhkan"
+	},
+	"modal": {
+		"edit": {
+			"title": "Sunting Profil Admin",
+			"description": "Lakukan perubahan pada profil admin yang dipilih di sini. Klik simpan setelah Anda selesai."
+		}
+	}
+}

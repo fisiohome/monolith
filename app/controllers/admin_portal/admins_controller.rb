@@ -194,6 +194,16 @@ module AdminPortal
       logger.info "The proccess to change the password account finished..."
     end
 
+    def sync_data_master
+      result = MasterDataSyncService.new.admin_data
+
+      if result[:success]
+        redirect_to admin_portal_admins_path, notice: result[:message]
+      else
+        redirect_to admin_portal_admins_path, alert: result[:error]
+      end
+    end
+
     private
 
     def restrict_therapist_access

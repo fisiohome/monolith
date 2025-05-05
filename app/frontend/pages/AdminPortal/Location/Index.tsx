@@ -61,6 +61,7 @@ export type TableToolbarDataProps = TableTanstack<
 export default function Index({ locations, selectedLocations }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 	const isMobile = useIsMobile();
+	const { t } = useTranslation("translation");
 	const { t: tl } = useTranslation("locations");
 
 	// table management
@@ -308,7 +309,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 						</h1>
 
 						<p className="text-sm text-muted-foreground">
-							That's where we're available
+							{tl("page_description")}
 						</p>
 					</div>
 
@@ -325,7 +326,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 								{isLoading.sync ? (
 									<>
 										<LoaderIcon className="animate-spin" />
-										<span>Please wait...</span>
+										<span>{`${t("components.modal.wait")}...`}</span>
 									</>
 								) : (
 									<>

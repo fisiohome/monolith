@@ -1,6 +1,7 @@
 {
 	"head_title": "Location Availability",
 	"page_title": "Our Locations",
+	"page_description": "View and manage where we will be available.",
 	"button": {
 		"actions": "Actions",
 		"add": "Add Location",

@@ -27,6 +27,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	Tooltip,
@@ -48,9 +49,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { formatDistanceToNow } from "date-fns";
 import { format } from "date-fns/format";
-import { Plus } from "lucide-react";
+import { LoaderIcon, PlusCircle, RefreshCcw } from "lucide-react";
 import { ChevronDown, ChevronUp, Ellipsis, InfinityIcon } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type SelectedAdmin = Pick<Admin, "id" | "adminType" | "name"> & {
 	user: Pick<User, "id" | "email" | "suspendAt" | "suspendEnd" | "suspended?">;
@@ -75,6 +77,9 @@ export default function Index({
 }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 	const isDekstop = useMediaQuery("(min-width: 768px)");
+	const { t } = useTranslation("translation");
+	const { t: ta } = useTranslation("admins");
+	const [isLoading, setIsLoading] = useState({ sync: false });
 
 	// tabs management
 	const tabActive = useMemo(
@@ -85,19 +90,19 @@ export default function Index({
 	const tabList = useMemo(() => {
 		return [
 			{
-				text: "All",
+				text: ta("tab.all"),
 				value: "all",
 			},
 			{
-				text: "Active",
+				text: ta("tab.active"),
 				value: "active",
 			},
 			{
-				text: "Suspended",
+				text: ta("tab.suspended"),
 				value: "suspended",
 			},
 		] as const;
-	}, []);
+	}, [ta]);
 	const handleTabClick = (value: (typeof tabList)[number]["value"]) => {
 		const baseUrl = pageURL.split("?")[0];
 		const { fullUrl, queryParams } = populateQueryParams(baseUrl, {
@@ -114,6 +119,30 @@ export default function Index({
 			},
 		);
 	};
+
+	// for sync data
+	const doSync = useCallback(() => {
+		const baseURL = `${
+			globalProps.adminPortal.router.adminPortal.adminManagement.index
+		}/sync-data-master`;
+		router.put(
+			baseURL,
+			{},
+			{
+				preserveScroll: true,
+				preserveState: true,
+				only: ["adminPortal", "flash", "errors", "admins"],
+				onStart: () => {
+					setIsLoading((prev) => ({ ...prev, sync: true }));
+				},
+				onFinish: () => {
+					setTimeout(() => {
+						setIsLoading((prev) => ({ ...prev, sync: false }));
+					}, 250);
+				},
+			},
+		);
+	}, [globalProps.adminPortal.router.adminPortal.adminManagement.index]);
 
 	// data table management
 	const currentExpanded = useMemo<ExpandedState>(() => {
@@ -161,9 +190,8 @@ export default function Index({
 		const { queryParams } = populateQueryParams(pageURL, {});
 
 		return {
-			title: "Edit Admin Profile",
-			description:
-				"Make changes to selected admin profile here. Click save when you're done.",
+			title: ta("modal.edit.title"),
+			description: ta("modal.edit.description"),
 			isOpen: !!queryParams?.edit || false,
 			onOpenChange: (value: boolean) => {
 				if (!value) {
@@ -176,7 +204,7 @@ export default function Index({
 				}
 			},
 		};
-	}, [pageURL]);
+	}, [pageURL, ta]);
 	// for change password
 	const [linkGenerated, setLinkGenerated] = useState("");
 	const changePasswordDialog = useMemo<ResponsiveDialogProps>(() => {
@@ -594,25 +622,61 @@ export default function Index({
 
 	return (
 		<>
-			<Head title="Admin Management" />
-
-			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">Admins</h1>
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-					<Button asChild>
-						<Link
-							href={
-								globalProps.adminPortal.router.adminPortal.adminManagement.new
-							}
-						>
-							<Plus />
-							Add Admin
-						</Link>
-					</Button>
-				)}
-			</PageContainer>
+			<Head title={ta("head_title")} />
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+				<div className="flex flex-col justify-between gap-4 md:flex-row">
+					<div>
+						<h1 className="text-lg font-bold tracking-tight uppercase">
+							{ta("page_title")}
+						</h1>
+
+						<p className="text-sm text-muted-foreground">
+							{ta("page_description")}
+						</p>
+					</div>
+
+					{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
+						globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) && (
+						<div className="flex flex-col gap-2 md:flex-row">
+							<Button
+								variant="primary-outline"
+								disabled={isLoading.sync}
+								onClick={(event) => {
+									event.preventDefault();
+									doSync();
+								}}
+							>
+								{isLoading.sync ? (
+									<>
+										<LoaderIcon className="animate-spin" />
+										<span>{`${t("components.modal.wait")}...`}</span>
+									</>
+								) : (
+									<>
+										<RefreshCcw />
+										{ta("button.sync")}
+									</>
+								)}
+							</Button>
+
+							<Button asChild>
+								<Link
+									href={
+										globalProps.adminPortal.router.adminPortal.adminManagement
+											.new
+									}
+								>
+									<PlusCircle />
+									{ta("button.add")}
+								</Link>
+							</Button>
+						</div>
+					)}
+				</div>
+
+				<Separator className="bg-border" />
+
 				<Tabs defaultValue={tabActive}>
 					<TabsList
 						className={cn("", isDekstop ? "" : "grid grid-cols-3 w-full")}

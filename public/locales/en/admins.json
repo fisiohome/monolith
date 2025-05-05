@@ -1,0 +1,20 @@
+{
+	"head_title": "Admin Management",
+	"page_title": "Admins",
+	"page_description": "Our in-house operations team.",
+	"button": {
+		"add": "Add Admin",
+		"sync": "Sync"
+	},
+	"tab": {
+		"all": "All",
+		"active": "Active",
+		"suspended": "Suspended"
+	},
+	"modal": {
+		"edit": {
+			"title": "Edit Admin Profile",
+			"description": "Make changes to selected admin profile here. Click save when you're done."
+		}
+	}
+}
