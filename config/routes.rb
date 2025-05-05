@@ -78,6 +78,7 @@ Rails.application.routes.draw do
         resources :services, only: [:index, :create, :update, :edit, :destroy] do
           collection do
             put "update-status" => "services#update_status"
+            put "sync-data-master" => "services#sync_data_master"
           end
         end
 

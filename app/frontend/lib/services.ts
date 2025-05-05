@@ -10,9 +10,9 @@ export const getBrandBadgeVariant = (code: string) => {
 		? fh
 		: code === "PH"
 			? ph
-			: code === "W"
+			: code === "WI"
 				? w
-				: code === "PO"
+				: code === "OT"
 					? po
 					: "";
 };

@@ -156,7 +156,7 @@ module AdminPortal
     end
 
     def sync_data_master
-      result = MasterDataSyncService.new.location
+      result = MasterDataSyncService.new.locations
 
       if result[:success]
         redirect_to admin_portal_locations_path, notice: result[:message]

@@ -1,0 +1,19 @@
+{
+	"head_title": "Layanan Kesehatan",
+	"page_title": "Layanan Kesehatan & Paket",
+	"page_description": "Kelola penawaran, tetapkan harga, dan bundel paket ke dalam layanan yang dapat disesuaikan.",
+	"button": {
+		"actions": "Aksi",
+		"add": "Tambahkan Merek",
+		"edit": "Sunting",
+		"delete": "Hapus",
+		"inactive": "Non-aktifkan",
+		"activate": "Aktifkan",
+		"sync": "Sync"
+	},
+	"tab": {
+		"all": "Semua",
+		"active": "Aktive",
+		"inactive": "Non-aktif"
+	}
+}

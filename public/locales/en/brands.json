@@ -1,0 +1,19 @@
+{
+	"head_title": "Health Services",
+	"page_title": "Health Services & Package",
+	"page_description": "Manage offers, set prices, and bundle packages into customizable services.",
+	"button": {
+		"actions": "Actions",
+		"add": "Add Brand",
+		"edit": "Edit",
+		"delete": "Hapus",
+		"inactive": "Inactive",
+		"activate": "Activate",
+		"sync": "Sync"
+	},
+	"tab": {
+		"all": "All",
+		"active": "Active",
+		"inactive": "Inactive"
+	}
+}

@@ -133,6 +133,15 @@ module AdminPortal
       logger.info("Update brand status process finished.")
     end
 
+    def sync_data_master
+      result = MasterDataSyncService.new.brands_and_packages
+      if result[:success]
+        redirect_to admin_portal_services_path, notice: result[:message]
+      else
+        redirect_to admin_portal_services_path, alert: result[:error]
+      end
+    end
+
     private
 
     def get_service

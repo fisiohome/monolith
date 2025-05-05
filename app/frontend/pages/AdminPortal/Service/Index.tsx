@@ -54,8 +54,17 @@ import type {
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronUp, Ellipsis, Info, Plus } from "lucide-react";
-import { Fragment, useCallback, useMemo } from "react";
+import {
+	ChevronDown,
+	ChevronUp,
+	Ellipsis,
+	Info,
+	LoaderIcon,
+	Plus,
+	RefreshCcw,
+} from "lucide-react";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface PageProps {
 	services: Service[];
@@ -69,6 +78,9 @@ export type TableRowDataProps = Row<PageProps["services"][number]>;
 export default function Index({ services, selectedService }: PageProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
 	const isDekstop = useMediaQuery("(min-width: 768px)");
+	const { t } = useTranslation("translation");
+	const { t: tb } = useTranslation("brands");
+	const [isLoading, setIsLoading] = useState({ sync: false });
 
 	// tabs management
 	const tabActive = useMemo(
@@ -78,19 +90,19 @@ export default function Index({ services, selectedService }: PageProps) {
 	const tabList = useMemo(() => {
 		return [
 			{
-				text: "All",
+				text: tb("tab.all"),
 				value: "all",
 			},
 			{
-				text: "Active",
+				text: tb("tab.active"),
 				value: "active",
 			},
 			{
-				text: "Inactive",
+				text: tb("tab.inactive"),
 				value: "inactive",
 			},
 		] as const;
-	}, []);
+	}, [tb]);
 	const handleTabClick = (value: (typeof tabList)[number]["value"]) => {
 		const baseUrl = pageURL.split("?")[0];
 		const { fullUrl, queryParams } = populateQueryParams(baseUrl, {
@@ -107,6 +119,30 @@ export default function Index({ services, selectedService }: PageProps) {
 			},
 		);
 	};
+
+	// for sync data
+	const doSync = useCallback(() => {
+		const baseURL = `${
+			globalProps.adminPortal.router.adminPortal.serviceManagement.index
+		}/sync-data-master`;
+		router.put(
+			baseURL,
+			{},
+			{
+				preserveScroll: true,
+				preserveState: true,
+				only: ["adminPortal", "flash", "errors", "services"],
+				onStart: () => {
+					setIsLoading((prev) => ({ ...prev, sync: true }));
+				},
+				onFinish: () => {
+					setTimeout(() => {
+						setIsLoading((prev) => ({ ...prev, sync: false }));
+					}, 250);
+				},
+			},
+		);
+	}, [globalProps.adminPortal.router.adminPortal.serviceManagement.index]);
 
 	// table management
 	const currentExpanded = useMemo<ExpandedState>(() => {
@@ -313,7 +349,7 @@ export default function Index({ services, selectedService }: PageProps) {
 						<p className="font-medium uppercase text-nowrap">{brandName}</p>
 						<Badge
 							variant="outline"
-							className={cn("text-[10px]", brandBadgeVariant)}
+							className={cn("text-[10px] p-0 px-1", brandBadgeVariant)}
 						>
 							{brandCode}
 						</Badge>
@@ -653,24 +689,58 @@ export default function Index({ services, selectedService }: PageProps) {
 
 	return (
 		<>
-			<Head title="Brand Availability" />
-
-			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">Our Brands</h1>
-				{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-					<Button
-						onClick={(event) => {
-							event.preventDefault();
-							routeTo.newService();
-						}}
-					>
-						<Plus />
-						Add Brand
-					</Button>
-				)}
-			</PageContainer>
+			<Head title={tb("head_title")} />
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+				<div className="flex flex-col justify-between gap-4 md:flex-row">
+					<div>
+						<h1 className="text-lg font-bold tracking-tight uppercase">
+							{tb("page_title")}
+						</h1>
+
+						<p className="w-10/12 text-sm text-muted-foreground text-pretty">
+							{tb("page_description")}
+						</p>
+					</div>
+
+					{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+						<div className="flex flex-col gap-2 md:flex-row">
+							<Button
+								variant="primary-outline"
+								disabled={isLoading.sync}
+								onClick={(event) => {
+									event.preventDefault();
+									doSync();
+								}}
+							>
+								{isLoading.sync ? (
+									<>
+										<LoaderIcon className="animate-spin" />
+										<span>{`${t("components.modal.wait")}...`}</span>
+									</>
+								) : (
+									<>
+										<RefreshCcw />
+										{tb("button.sync")}
+									</>
+								)}
+							</Button>
+
+							<Button
+								onClick={(event) => {
+									event.preventDefault();
+									routeTo.newService();
+								}}
+							>
+								<Plus />
+								{tb("button.add")}
+							</Button>
+						</div>
+					)}
+				</div>
+
+				<Separator className="bg-border" />
+
 				<Tabs defaultValue={tabActive}>
 					<TabsList
 						className={cn("", isDekstop ? "" : "grid grid-cols-3 w-full")}
