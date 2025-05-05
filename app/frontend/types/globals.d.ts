@@ -11,10 +11,8 @@ type CurrentUserAdmin = Pick<
 	| "name"
 	| "adminType"
 	| "isSuperAdmin?"
-	| "isAdminL1?"
-	| "isAdminL12?"
-	| "isAdminL13?"
-	| "isAdminBacklog?"
+	| "isAdmin?"
+	| "isAdminSupervisor?"
 > & {
 	user: Pick<User, "id" | "email">;
 };

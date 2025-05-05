@@ -13,16 +13,5 @@ LOCATIONS_DATA = [
   {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. BANDUNG BARAT"},
   {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA BEKASI"},
   {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KAB. BEKASI"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA DEPOK"},
-  {country: "INDONESIA", country_code: "ID", state: "DAERAH ISTIMEWA YOGYAKARTA", city: "KOTA YOGYAKARTA"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KOTA SEMARANG"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KAB. SEMARANG"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TENGAH", city: "KOTA SURAKARTA"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA MALANG"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. MALANG"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA BATU"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KOTA SURABAYA"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. SIDOARJO"},
-  {country: "INDONESIA", country_code: "ID", state: "JAWA TIMUR", city: "KAB. GRESIK"},
-  {country: "INDONESIA", country_code: "ID", state: "BALI", city: "KOTA DENPASAR"}
+  {country: "INDONESIA", country_code: "ID", state: "JAWA BARAT", city: "KOTA DEPOK"}
 ].freeze

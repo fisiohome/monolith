@@ -11,9 +11,9 @@ super_admin_user:
   created_at: <%= Time.now %>
   updated_at: <%= Time.now %>
 
-admin_l1_user:
+admin_user:
   # id: <%= SecureRandom.uuid %>
-  email: "admin_l1@fisiohome.id"
+  email: "admin@fisiohome.id"
   encrypted_password: <%= Devise::Encryptor.digest(User, "Fisiohome123!") %>
   created_at: <%= Time.now %>
   updated_at: <%= Time.now %>

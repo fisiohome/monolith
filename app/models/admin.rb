@@ -9,7 +9,7 @@ class Admin < ApplicationRecord
   after_destroy :destroy_associated_user
 
   # * define the validation
-  TYPES = ["SUPER_ADMIN", "ADMIN_L1", "ADMIN_L2", "ADMIN_L3", "ADMIN_BACKLOG"].freeze
+  TYPES = ["SUPER_ADMIN", "ADMIN", "ADMIN_SUPERVISOR"].freeze
   validates :admin_type, inclusion: {in: TYPES, message: "%{value} is not a valid admin type"}
 
   validates :name, presence: true
@@ -20,20 +20,12 @@ class Admin < ApplicationRecord
     admin_type === "SUPER_ADMIN"
   end
 
-  def is_admin_l1?
-    admin_type === "ADMIN_L1"
+  def is_admin?
+    admin_type === "ADMIN"
   end
 
-  def is_admin_l2?
-    admin_type === "ADMIN_L2"
-  end
-
-  def is_admin_l3?
-    admin_type === "ADMIN_L3"
-  end
-
-  def is_admin_backlog?
-    admin_type === "ADMIN_BACKLOG"
+  def is_admin_supervisor?
+    admin_type === "ADMIN_SUPERVISOR"
   end
 
   private

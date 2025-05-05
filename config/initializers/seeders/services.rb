@@ -7,32 +7,31 @@ SERVICES_DATA = [
   },
   {
     name: "FISIOHOME",
-    description: "Fisiohome tier for others locations",
+    description: "Fisiohome exclude special tier",
     code: "FH",
     active: true
   },
   {
-    name: "PUSAT_OKUPASI",
-    code: "PO",
+    name: "WICARAKU_SPECIAL_TIER",
+    description: "Wicaraku special tier for Jakarta, Tangerang, Bali, and Bekasi",
+    code: "WI",
     active: true
   },
   {
     name: "WICARAKU",
-    code: "W",
+    description: "Wicaraku exclude special tier",
+    code: "WI",
+    active: true
+  },
+  {
+    name: "PUSAT_OKUPASI",
+    description: "Jabodetabek area dan Luar Jabodetabek",
+    code: "OT",
     active: true
   },
   {
     name: "PERAWAT_HOMECARE",
-    code: "PH",
-    active: true
-  },
-  {
-    name: "CAREGIVER_HOMECARE",
-    code: "PH",
-    active: true
-  },
-  {
-    name: "AESTHETIC_HOMECARE",
+    description: "Jabodetabek area dan Luar Jabodetabek",
     code: "PH",
     active: true
   }

@@ -8,9 +8,7 @@ export type Admin = {
 	adminType: AdminTypes[number];
 	name: string;
 	"isSuperAdmin?": boolean;
-	"isAdminL1?": boolean;
-	"isAdminL12?": boolean;
-	"isAdminL13?": boolean;
-	"isAdminBacklog?": boolean;
+	"isAdmin?": boolean;
+	"isAdminSupervisor?": boolean;
 	user: UserSerialize;
 } & Timestamp;

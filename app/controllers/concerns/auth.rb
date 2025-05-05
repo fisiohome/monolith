@@ -20,7 +20,7 @@ module Auth
         include: {
           admin: {
             only: %i[id name admin_type],
-            methods: %i[is_super_admin? is_admin_l1? is_admin_l2? is_admin_l3? is_admin_backlog?]
+            methods: %i[is_super_admin? is_admin? is_admin_supervisor?]
           }
         }
       )

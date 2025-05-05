@@ -18,10 +18,8 @@ export const CURRENT_DATE_TOPBAR = ({
 
 export const ADMIN_TYPES = [
 	"SUPER_ADMIN",
-	"ADMIN_L1",
-	"ADMIN_L2",
-	"ADMIN_L3",
-	"ADMIN_BACKLOG",
+	"ADMIN",
+	"ADMIN_SUPERVISOR",
 ] as const;
 
 export const GENDERS = ["MALE", "FEMALE"] as const;

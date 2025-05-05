@@ -8,10 +8,10 @@ super_admin:
   created_at: <%= Time.now %>
   updated_at: <%= Time.now %>
 
-admin_l1:
+admin:
   # id: <%= SecureRandom.uuid %>
-  admin_type: ADMIN_L1
-  name: "Admin L1"
-  user: admin_l1_user
+  admin_type: ADMIN
+  name: "Admin"
+  user: admin_user
   created_at: <%= Time.now %>
   updated_at: <%= Time.now %>

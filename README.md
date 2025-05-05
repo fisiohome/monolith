@@ -37,18 +37,12 @@ Each role is predefined to ensure proper segregation of duties. Below is the lis
    - The highest level of access in the system.
    - Full control over admin accounts and system configurations.
    
-2. **ADMIN L1**  
+2. **ADMIN SUPERVISOR**  
    - Higher-level admin with access to specific management features.
    
-3. **ADMIN L2**  
-   - Mid-level admin with restricted access compared to ADMIN L1.
-   
-4. **ADMIN L3**  
+3. **ADMIN**  
    - Entry-level admin with minimal privileges.
    
-5. **ADMIN BACKLOG**  
-   - Role dedicated to handling backlog tasks, with limited access to the system.
-
 ---
 
 ## Admin Management
@@ -97,13 +91,13 @@ Upcoming list:
 
 ## Summary of Role-Based Access in Admin Management
 
-| Feature               | SUPER ADMIN | ADMIN L1 | ADMIN L2 | ADMIN L3 | ADMIN BACKLOG |
-| --------------------- | ----------- | -------- | -------- | -------- | ------------- |
-| Add Admin Account     | ✅           | ❌        | ❌        | ❌        | ❌             |
-| Edit Admin Profile    | ✅ (All)     | ✅ (Own)  | ✅ (Own)  | ✅ (Own)  | ✅ (Own)       |
-| Change Admin Password | ✅ (Not own) | ❌        | ❌        | ❌        | ❌             |
-| Suspend Admin Account | ✅ (Not own) | ❌        | ❌        | ❌        | ❌             |
-| Delete Admin Account  | ✅ (Not own) | ❌        | ❌        | ❌        | ❌             |
+| Feature               | SUPER ADMIN | ADMIN SUPERVISOR | ADMIN   |
+| --------------------- | ----------- | ---------------- | ------- |
+| Add Admin Account     | ✅           | ❌                | ❌       |
+| Edit Admin Profile    | ✅ (All)     | ✅ (Own)          | ✅ (Own) |
+| Change Admin Password | ✅ (Not own) | ❌                | ❌       |
+| Suspend Admin Account | ✅ (Not own) | ❌                | ❌       |
+| Delete Admin Account  | ✅ (Not own) | ❌                | ❌       |
 
 ---
 
