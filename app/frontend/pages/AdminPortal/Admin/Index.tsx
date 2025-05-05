@@ -531,7 +531,7 @@ export default function Index({
 				}
 
 				return (
-					<DotBadgeWithLabel variant={isOnline ? "success" : "default"}>
+					<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
 						<span>{isOnline ? "Online" : "Offline"}</span>
 					</DotBadgeWithLabel>
 				);
@@ -549,6 +549,7 @@ export default function Index({
 				} = useActionPermissions({
 					currentUser: globalProps.auth.currentUser,
 					user: row.original.user,
+					adminType: row.original.adminType,
 				});
 
 				if (!isPermitted) return;

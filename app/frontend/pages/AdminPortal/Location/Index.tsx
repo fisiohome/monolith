@@ -162,7 +162,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 		items.push({
 			id: "actions",
 			cell: ({ row }) => {
-				if (globalProps.auth.currentUserType === "THERAPIST") return;
+				if (!globalProps.auth.currentUser?.["isSuperAdmin?"]) return;
 
 				return (
 					<div className="flex items-center justify-end space-x-2">
@@ -200,7 +200,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 
 		return items;
 	}, [
-		globalProps.auth.currentUserType,
+		globalProps.auth.currentUser,
 		isMobile,
 		routeTo.editLocation,
 		routeTo.deleteLocation,
@@ -313,7 +313,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 						</p>
 					</div>
 
-					{globalProps.auth.currentUserType === "ADMIN" && (
+					{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 						<div className="flex flex-col gap-2 md:flex-row">
 							<Button
 								variant="primary-outline"

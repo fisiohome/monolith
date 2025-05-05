@@ -29,7 +29,7 @@ import type { GlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, router, usePage } from "@inertiajs/react";
 import { Check, ChevronsUpDown, Eye, EyeClosed } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -43,6 +43,19 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 	const [passwordVisibility, setPasswordVisibility] = useState(false);
 	const [passwordConfirmationVisibility, setPasswordConfirmationVisibility] =
 		useState(false);
+	const adminTypeOptions = useMemo(() => {
+		return adminTypeList.filter((a) => {
+			// filtering options data based on the current user role
+			if (
+				globalProps.auth.currentUser?.["isAdminSupervisor?"] &&
+				(a === "SUPER_ADMIN" || a === "ADMIN_SUPERVISOR")
+			) {
+				return;
+			}
+
+			return a;
+		});
+	}, [adminTypeList, globalProps.auth.currentUser]);
 	const formSchema = z
 		.object({
 			name: z.string().min(3),
@@ -167,7 +180,7 @@ export default function New({ adminTypeList }: NewAdminPageProps) {
 													<CommandList>
 														<CommandEmpty>No admin type found.</CommandEmpty>
 														<CommandGroup>
-															{adminTypeList.map((type) => (
+															{adminTypeOptions.map((type) => (
 																<CommandItem
 																	value={type}
 																	key={type}

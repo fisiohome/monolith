@@ -93,7 +93,6 @@ export default function ToolbarTable({
 				<Popover>
 					<PopoverTrigger asChild>
 						<Button
-							disabled={!globalProps.auth.currentUser?.["isSuperAdmin?"]}
 							variant="outline"
 							className={cn(
 								"w-full flex justify-between text-muted-foreground !font-normal !mt-0 px-3",
