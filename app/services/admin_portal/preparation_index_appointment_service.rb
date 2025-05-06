@@ -12,81 +12,19 @@ module AdminPortal
       # Eager load all required associations
       appointments = Appointment.includes(:therapist, :patient, :service, :package, :location, :admins)
 
-      # * define the filtering
-      # by therapist name
-      filter_by_therapist = @params[:therapist]
-      if filter_by_therapist.present?
-        appointments = appointments
-          .joins(:therapist)
-          .where("therapists.name ILIKE ?", "%#{filter_by_therapist}%")
-      end
-
-      # by patient name
-      filter_by_patient = @params[:patient]
-      if filter_by_patient.present?
-        appointments = appointments
-          .joins(:patient)
-          .where("patients.name ILIKE ?", "%#{filter_by_patient}%")
-      end
-
-      # by registration number
-      filter_by_reg_number = @params[:registration_number]
-      if filter_by_reg_number.present?
-        appointments = appointments
-          .where("appointments.registration_number ILIKE ?", "%#{filter_by_reg_number}%")
-      end
-
-      # by region city
-      filter_by_city = @params[:city]
-      if filter_by_city.present?
-        appointments = appointments
-          .joins(:location)
-          .where("locations.city ILIKE ?", "%#{filter_by_city}%")
-      end
-
-      # by appointment status
-      appointments = case @params[:filter_by_appointment_status]
-      when "pending"
-        # Only future appointments with pending statuses
-        appointments
-          .where("appointment_date_time >= ?", Time.zone.now)
-          .where(status: [
-            "PENDING THERAPIST ASSIGNMENT",
-            "PENDING PATIENT APPROVAL",
-            "PENDING PAYMENT"
-          ])
-      when "past"
-        # Appointments before today with paid statuses
-        appointments
-          .where("appointment_date_time < ?", Time.zone.now)
-          .status_paid
-      when "cancel"
-        # Appointments with cancel statuses
-        appointments.status_cancelled
-      when "unschedule"
-        appointments.status_unscheduled
-      else
-        # Default: future appointments
-        appointments
-          .where("appointment_date_time >= ?", Time.zone.now)
-          .status_paid
-      end
+      # * apply the filter
+      appointments = appointments.apply_filters(@params)
 
       # * sorting and grouping
-      # ensure everything is sorted by the full date - time
-      appointments = appointments.order(appointment_date_time: :asc)
+      appointments = appointments
+        # ensure everything is sorted by the full date - time
+        .order(appointment_date_time: :asc)
+        # Group appointments by the date part of appointment_date_time, sort them by date.
+        .group_by { |a| a.appointment_date_time.to_date }
+        .sort_by { |date, _| date }
+      appointments = reverse_groups_if_needed(appointments)
 
-      # Group appointments by the date part of appointment_date_time, sort them by date.
-      grouped = appointments.group_by { |a| a.appointment_date_time.to_date }
-      sorted_groups = grouped.sort_by { |date, _| date }
-
-      # If filter is "past", reverse the order so the most recent past dates come first.
-      filter_by_appt_status = @params[:filter_by_appointment_status]
-      if %w[past cancel].include?(filter_by_appt_status)
-        sorted_groups.reverse!
-      end
-
-      sorted_groups.map do |date, apps|
+      appointments.map do |date, apps|
         deep_transform_keys_to_camel_case(
           {
             date: date,
@@ -125,6 +63,14 @@ module AdminPortal
       statuses = Appointment.statuses.map { |key, value| {key:, value:} }.as_json
 
       {admins:, statuses:}
+    end
+
+    private
+
+    # If filter is "past" or "cancel", reverse the order so the most recent past dates come first.
+    def reverse_groups_if_needed(groups)
+      return groups unless %w[past cancel].include?(@params[:filter_by_appointment_status])
+      groups.reverse!
     end
   end
 end

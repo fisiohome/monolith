@@ -180,6 +180,62 @@ class Appointment < ApplicationRecord
   scope :series, -> { where.not(appointment_reference_id: nil) }
   scope :scheduled, -> { where.not(status: "UNSCHEDULED") }
 
+  scope :apply_filters, ->(params) {
+    # Chain scopes based on parameters
+    filter_by_name(params[:therapist], :therapist)
+      .filter_by_name(params[:patient], :patient)
+      .filter_by_registration(params[:registration_number])
+      .filter_by_city(params[:city])
+      .apply_status_filter(params[:filter_by_appointment_status])
+  }
+  scope :filter_by_name, ->(name, association) {
+    return self if name.blank?
+    joins(association).where("#{association.to_s.pluralize}.name ILIKE ?", "%#{name}%")
+  }
+  scope :filter_by_registration, ->(reg_number) {
+    return self if reg_number.blank?
+    where("registration_number ILIKE ?", "%#{reg_number}%")
+  }
+  scope :filter_by_city, ->(city) {
+    return self if city.blank?
+    joins(:location).where("locations.city ILIKE ?", "%#{city}%")
+  }
+  scope :apply_status_filter, ->(filter) {
+    case filter
+    when "pending"
+      pending
+    when "past"
+      past
+    when "cancel"
+      cancelled
+    when "unschedule"
+      unscheduled
+    else
+      # Default scope for active appointments
+      future.status_paid
+    end
+  }
+  scope :pending, -> {
+    where(status: [
+      "PENDING THERAPIST ASSIGNMENT",
+      "PENDING PATIENT APPROVAL",
+      "PENDING PAYMENT"
+    ]).future
+  }
+  scope :cancelled, -> {
+    where(status: "CANCELLED")
+  }
+  scope :unscheduled, -> {
+    where(status: "UNSCHEDULED")
+  }
+  scope :past, -> {
+    where("appointment_date_time < ?", Time.current)
+      .status_paid
+  }
+  scope :future, -> {
+    where("appointment_date_time >= ?", Time.current)
+  }
+
   # * define the helper methods
   # Financial calculations group
   def voucher_discount
