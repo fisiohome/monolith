@@ -66,136 +66,118 @@ export function NavigationProvider({
 		globalProps.adminPortal.router.adminPortal.settings.accountSecurity,
 	]);
 	const navMainProps = useMemo<NavMainProps>(() => {
-		const dashboardMenu = {
-			title: "Dashboard",
-			url: globalProps.adminPortal.router.authenticatedRootPath,
-			icon: LayoutDashboard,
-			isActive: true,
-			subItems: [],
+		const { adminPortal, authenticatedRootPath } =
+			globalProps.adminPortal.router;
+		const { currentUserType } = globalProps.auth;
+
+		const isActiveLink = (currentUrl: string, menuUrl: string) => {
+			const isRoot = menuUrl === authenticatedRootPath;
+			const commonMatch =
+				currentUrl === menuUrl || currentUrl.startsWith(`${menuUrl}/`);
+			return isRoot ? commonMatch : commonMatch || currentUrl.includes(menuUrl);
 		};
-		const appointmentMenu = {
-			title: t("appointment"),
-			url: globalProps.adminPortal.router.adminPortal.appointment.index,
-			icon: Calendar1,
-			isActive: true,
-			subItems: [],
-		};
-		const availabilityMenu = {
-			title: t("availability"),
-			url: globalProps.adminPortal.router.adminPortal.availability.index,
-			icon: CalendarRange,
-			isActive: true,
-			subItems: [],
-		};
-		const therapistSchedule = {
-			title: t("therapist_schedules"),
-			url: globalProps.adminPortal.router.adminPortal.therapistManagement
-				.schedules,
-			icon: CalendarDays,
-			isActive: true,
-			subItems: [],
-		};
-		let userManagementMenu = {
-			title: t("user_management"),
-			url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
-			icon: Users,
+
+		const createMenuItem = (
+			title: string,
+			url: string,
+			icon: any,
+			subItems: { title: string; url: string; isActive: boolean }[] = [],
+		) => ({
+			title,
+			url,
+			icon,
 			isActive: false,
-			subItems: [
-				{
-					title: t("admins"),
-					url: globalProps.adminPortal.router.adminPortal.adminManagement.index,
-					isActive: false,
-				},
-				{
-					title: t("therapists"),
-					url: globalProps.adminPortal.router.adminPortal.therapistManagement
-						.index,
-					isActive: false,
-				},
-			],
-		};
-		const serviceManagementMenu = {
-			title: t("brand_and_location"),
-			url: globalProps.adminPortal.router.adminPortal.serviceManagement.index,
-			icon: Hospital,
-			isActive: false,
-			subItems: [
+			subItems,
+		});
+
+		const dashboardMenu = createMenuItem(
+			"Dashboard",
+			authenticatedRootPath,
+			LayoutDashboard,
+		);
+		const appointmentMenu = createMenuItem(
+			t("appointment"),
+			adminPortal.appointment.index,
+			Calendar1,
+		);
+		const availabilityMenu = createMenuItem(
+			t("availability"),
+			adminPortal.availability.index,
+			CalendarRange,
+		);
+		const therapistSchedule = createMenuItem(
+			t("therapist_schedules"),
+			adminPortal.therapistManagement.schedules,
+			CalendarDays,
+		);
+		const userManagementSubItems = [
+			{
+				title: t("admins"),
+				url: adminPortal.adminManagement.index,
+				isActive: false,
+			},
+			{
+				title: t("therapists"),
+				url: adminPortal.therapistManagement.index,
+				isActive: false,
+			},
+		];
+		const serviceManagementMenu = createMenuItem(
+			t("brand_and_location"),
+			adminPortal.serviceManagement.index,
+			Hospital,
+			[
 				{
 					title: t("brands"),
-					url: globalProps.adminPortal.router.adminPortal.serviceManagement
-						.index,
+					url: adminPortal.serviceManagement.index,
 					isActive: false,
 				},
 				{
 					title: t("locations"),
-					url: globalProps.adminPortal.router.adminPortal.locationManagement
-						.index,
+					url: adminPortal.locationManagement.index,
 					isActive: false,
 				},
 			],
-		};
+		);
 
-		// filtering menu items for therapist user account
-		if (globalProps.auth.currentUserType === "THERAPIST") {
-			userManagementMenu = {
-				...userManagementMenu,
-				subItems: userManagementMenu.subItems.filter(
-					(item) => item.title !== "Admins",
-				),
-			};
+		// filter the sub items of user management for therapist user
+		const filteredUserSubItems =
+			currentUserType === "THERAPIST"
+				? userManagementSubItems.filter((item) => item.title !== t("admins"))
+				: userManagementSubItems;
+		const userManagementMenu = createMenuItem(
+			t("user_management"),
+			adminPortal.adminManagement.index,
+			Users,
+			filteredUserSubItems,
+		);
+
+		// Construct menu based on user type
+		const items = [dashboardMenu];
+		if (currentUserType === "ADMIN") {
+			items.push(appointmentMenu, availabilityMenu, therapistSchedule);
 		}
+		items.push(userManagementMenu, serviceManagementMenu);
 
-		const items = [
-			dashboardMenu,
-			appointmentMenu,
-			availabilityMenu,
-			therapistSchedule,
-			userManagementMenu,
-			serviceManagementMenu,
-		].map((menu) => {
-			const isActiveLink = (currentUrl: string, menuUrl: string) => {
-				const isRoot =
-					menuUrl === globalProps.adminPortal.router.authenticatedRootPath;
-				const commonActiveURL =
-					currentUrl === menuUrl || currentUrl.startsWith(`${menuUrl}/`);
-
-				if (!isRoot) return commonActiveURL || currentUrl.includes(menuUrl);
-
-				return commonActiveURL;
-			};
+		// Determine active state
+		const finalItems = items.map((menu) => {
 			const updatedMenu = { ...menu, isActive: false };
 
-			if (
-				menu.subItems &&
-				Array.isArray(menu.subItems) &&
-				menu.subItems.length
-			) {
+			if (menu.subItems?.length) {
 				updatedMenu.subItems = menu.subItems.map((subItem) => {
-					const isActive = isActiveLink(currentUrl, subItem.url);
-					if (isActive) {
-						updatedMenu.isActive = true; // Set parent as active
-					}
-					return { ...subItem, isActive };
+					const active = isActiveLink(currentUrl, subItem.url);
+					if (active) updatedMenu.isActive = true;
+					return { ...subItem, isActive: active };
 				});
 			} else {
-				updatedMenu.isActive =
-					!!menu?.url && isActiveLink(currentUrl, menu.url);
+				updatedMenu.isActive = isActiveLink(currentUrl, menu.url);
 			}
 
 			return updatedMenu;
 		});
 
-		return {
-			// label: "User Management",
-			items,
-		};
-	}, [
-		currentUrl,
-		globalProps.adminPortal.router.adminPortal,
-		globalProps.adminPortal.router.authenticatedRootPath,
-		globalProps.auth.currentUserType,
-		t,
-	]);
+		return { items: finalItems };
+	}, [currentUrl, globalProps.adminPortal.router, globalProps.auth, t]);
 
 	return (
 		<NavigationProviderContext.Provider

@@ -157,6 +157,8 @@ module AdminPortal
     end
 
     def serialize_service(service)
+      is_admin = current_user&.admin.present?
+
       service.as_json.tap do |serialized_service|
         # flatten the location_services and their associated locations
         serialized_service["locations"] = service.location_services.map do |location_service|
@@ -165,26 +167,48 @@ module AdminPortal
 
         # include the packages
         packages_data = service.packages.map do |package|
-          package.attributes.merge(
-            formatted_price_per_visit: package.formatted_price_per_visit,
-            formatted_total_price: package.formatted_total_price,
-            formatted_fee_per_visit: package.formatted_fee_per_visit,
-            formatted_total_fee: package.formatted_total_fee,
-            formatted_discount: package.formatted_discount
-          )
+          if is_admin
+            package.attributes.merge(
+              formatted_price_per_visit: package.formatted_price_per_visit,
+              formatted_total_price: package.formatted_total_price,
+              formatted_fee_per_visit: package.formatted_fee_per_visit,
+              formatted_total_fee: package.formatted_total_fee,
+              formatted_discount: package.formatted_discount
+            )
+          else
+            package.attributes.merge(
+              formatted_price_per_visit: "****",
+              formatted_total_price: "****",
+              formatted_fee_per_visit: "****",
+              formatted_total_fee: "****",
+              formatted_discount: "****"
+            )
+          end
         end
+
         # get the prices total grouping by currencies
         packages_grouped_by_currency = service.packages.group_by(&:currency)
         total_prices = packages_grouped_by_currency.map do |currency, packages|
           total_price = packages.sum(&:total_price)
           total_fee = packages.sum(&:total_fee)
-          {
-            currency: currency,
-            total_price: total_price,
-            formatted_total_price: number_to_currency(total_price, unit: currency, precision: 2, format: "%u %n"),
-            total_fee: total_fee,
-            formatted_total_fee: number_to_currency(total_fee, unit: currency, precision: 2, format: "%u %n")
-          }
+
+          if is_admin
+            {
+              currency: currency,
+              total_price: total_price,
+              formatted_total_price: number_to_currency(total_price, unit: currency, precision: 2, format: "%u %n"),
+              total_fee: total_fee,
+              formatted_total_fee: number_to_currency(total_fee, unit: currency, precision: 2, format: "%u %n")
+            }
+          else
+            {
+              currency: currency,
+              total_price: nil,
+              formatted_total_price: "****",
+              total_fee: nil,
+              formatted_total_fee: "****"
+            }
+          end
         end
         serialized_service["packages"] = {
           list: packages_data,
