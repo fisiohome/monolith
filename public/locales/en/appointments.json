@@ -72,6 +72,24 @@
 		"type": "Type",
 		"series": "Series"
 	},
+	"filter": {
+		"therapist_name": {
+			"placeholder": "Filter by therapist name"
+		},
+		"patient_name": {
+			"placeholder": "Filter by patient name"
+		},
+		"reg_number": {
+			"placeholder": "Filter by reg number"
+		},
+		"region": {
+			"placeholder": "Filter by region",
+			"search": {
+				"placeholder": "Search region",
+				"empty": "No region found."
+			}
+		}
+	},
 	"modal": {
 		"cancel": {
 			"title": "Cancel the Appointment",

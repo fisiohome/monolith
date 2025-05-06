@@ -310,7 +310,7 @@ class Appointment < ApplicationRecord
   end
 
   def next_visit_progress
-    return nil if visit_number === package.number_of_visit
+    return nil if visit_number === package.number_of_visit || !next_available_visit_number
     "#{next_available_visit_number}/#{total_package_visits}"
   end
 

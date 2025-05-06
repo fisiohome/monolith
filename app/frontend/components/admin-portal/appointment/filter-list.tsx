@@ -22,10 +22,12 @@ import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { groupLocationsByCountry } from "@/lib/locations";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 export default function FilterList() {
 	const { url: pageURL, props: globalProps } =
 		usePage<AppointmentIndexGlobalPageProps>();
+	const { t: taf } = useTranslation("appointments", { keyPrefix: "filter" });
 	const locations = useMemo(
 		() => globalProps?.filterOptionsData?.locations || [],
 		[globalProps?.filterOptionsData?.locations],
@@ -84,7 +86,7 @@ export default function FilterList() {
 			<div className="col-span-full md:col-span-1">
 				<Input
 					type="text"
-					placeholder="Filter by therapist name..."
+					placeholder={`${taf("therapist_name.placeholder")}...`}
 					value={filterBy.therapist}
 					StartIcon={{ icon: Search }}
 					isLoading={isSearching}
@@ -109,7 +111,7 @@ export default function FilterList() {
 			<div className="col-span-full md:col-span-1">
 				<Input
 					type="text"
-					placeholder="Filter by patient name..."
+					placeholder={`${taf("patient_name.placeholder")}...`}
 					value={filterBy.patient}
 					StartIcon={{ icon: Search }}
 					isLoading={isSearching}
@@ -134,7 +136,7 @@ export default function FilterList() {
 			<div className="col-span-full md:col-span-1">
 				<Input
 					type="text"
-					placeholder="Filter by reg number..."
+					placeholder={`${taf("reg_number.placeholder")}...`}
 					value={filterBy.registrationNumber}
 					StartIcon={{ icon: Search }}
 					isLoading={isSearching}
@@ -180,7 +182,7 @@ export default function FilterList() {
 										? locations?.find(
 												(location) => location.city === filterBy?.city,
 											)?.city
-										: "Filter by region..."}
+										: `${taf("region.placeholder")}...`}
 								</p>
 								<ChevronsUpDown className="opacity-50" />
 							</Button>
@@ -192,12 +194,12 @@ export default function FilterList() {
 						>
 							<Command>
 								<CommandInput
-									placeholder="Search region..."
+									placeholder={`${taf("region.search.placeholder")}...`}
 									className="h-9"
 									autoComplete="address-level2"
 								/>
 								<CommandList>
-									<CommandEmpty>No region found.</CommandEmpty>
+									<CommandEmpty>{taf("region.search.empty")}</CommandEmpty>
 									{groupedLocations?.map((location) => (
 										<Fragment key={location.country}>
 											<span className="block px-2 py-2 text-xs font-bold text-primary-foreground bg-primary">

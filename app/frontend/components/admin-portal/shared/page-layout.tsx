@@ -97,6 +97,7 @@ export function FormPageHeaderGridPattern({
 						<span>{regNumber}</span>
 					</Badge>
 				)}
+
 				<h1
 					className={cn(
 						"z-10 text-base font-bold tracking-tighter whitespace-pre-wrap uppercase",
@@ -104,9 +105,15 @@ export function FormPageHeaderGridPattern({
 					)}
 				>
 					{title}
-					<span className="mx-1">—</span>
-					<span>{series}</span>
+
+					{series && (
+						<>
+							<span className="mx-1">—</span>
+							<span>{series}</span>
+						</>
+					)}
 				</h1>
+
 				<p
 					className={cn(
 						"text-sm text-muted-foreground text-pretty tracking-tight",

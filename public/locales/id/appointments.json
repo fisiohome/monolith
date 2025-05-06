@@ -72,6 +72,24 @@
 		"type": "Tipe",
 		"series": "Series"
 	},
+	"filter": {
+		"therapist_name": {
+			"placeholder": "Filter berdasarkan nama terapis"
+		},
+		"patient_name": {
+			"placeholder": "Filter berdasarkan nama pasien"
+		},
+		"reg_number": {
+			"placeholder": "Filter berdasarkan nomor registrasi"
+		},
+		"region": {
+			"placeholder": "Filter berdasarkan wilayah",
+			"search": {
+				"placeholder": "Cari wilayah",
+				"empty": "Tidak ada wilayah ditemukan."
+			}
+		}
+	},
 	"modal": {
 		"cancel": {
 			"title": "Membatalkan Janji Temu",

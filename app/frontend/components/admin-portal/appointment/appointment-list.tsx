@@ -106,7 +106,8 @@ const AppointmentActionButtons = memo(function Component({
 			schedule.status !== "pending_therapist_assignment";
 		const createSeries =
 			schedule.totalPackageVisits > 1 &&
-			schedule.visitNumber !== schedule.totalPackageVisits;
+			schedule.visitNumber !== schedule.totalPackageVisits &&
+			schedule.nextVisitProgress;
 
 		return { updateStatus, createSeries };
 	}, [schedule]);

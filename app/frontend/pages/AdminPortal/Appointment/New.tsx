@@ -132,7 +132,7 @@ function FormComponent() {
 
 		return {
 			title:
-				regNumber && mode === "new"
+				mode === "new"
 					? "Book a New Appointment"
 					: "Schedule Appointment Series",
 			description:
@@ -140,7 +140,8 @@ function FormComponent() {
 					? "Schedule a appointment session between therapist and patient."
 					: "Arrange the next visit as part of an ongoing treatment plan between therapist and patient.",
 			regNumber,
-			series: `Visit ${currentVisit}/${maxVisit}`,
+			series:
+				mode === "series" ? `Visit ${currentVisit}/${maxVisit}` : undefined,
 		};
 	}, [mode, globalProps?.appointmentReference]);
 	const formDefaultvalues = useMemo(
