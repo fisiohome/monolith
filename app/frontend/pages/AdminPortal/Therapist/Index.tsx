@@ -25,6 +25,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
 import {
 	Tooltip,
 	TooltipContent,
@@ -58,9 +59,12 @@ import {
 	ChevronUp,
 	Ellipsis,
 	InfinityIcon,
-	Plus,
+	LoaderIcon,
+	PlusCircle,
+	RefreshCcw,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export interface PageProps {
 	therapists: {
@@ -88,6 +92,33 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 	const { props: globalProps, url: pageURL } =
 		usePage<TherapistIndexGlobalPageProps>();
 	const isMobile = useIsMobile();
+	const { t } = useTranslation("translation");
+	const { t: tt } = useTranslation("therapists");
+	const [isLoading, setIsLoading] = useState({ sync: false });
+
+	// for sync data
+	const doSync = useCallback(() => {
+		const baseURL = `${
+			globalProps.adminPortal.router.adminPortal.therapistManagement.index
+		}/sync-data-master`;
+		router.put(
+			baseURL,
+			{},
+			{
+				preserveScroll: true,
+				preserveState: true,
+				only: ["adminPortal", "flash", "errors", "therapists"],
+				onStart: () => {
+					setIsLoading((prev) => ({ ...prev, sync: true }));
+				},
+				onFinish: () => {
+					setTimeout(() => {
+						setIsLoading((prev) => ({ ...prev, sync: false }));
+					}, 250);
+				},
+			},
+		);
+	}, [globalProps.adminPortal.router.adminPortal.therapistManagement.index]);
 
 	// * data table state management
 	const currentExpanded = useMemo<ExpandedState>(() => {
@@ -570,26 +601,60 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 
 	return (
 		<>
-			<Head title="Therapist Management" />
+			<Head title={tt("head_title")} />
 
-			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">Therapists</h1>
-				{globalProps.auth.currentUserType === "ADMIN" && (
-					<Button asChild>
-						<Link
-							href={
-								globalProps.adminPortal.router.adminPortal.therapistManagement
-									.new
-							}
-						>
-							<Plus />
-							Add Therapist
-						</Link>
-					</Button>
-				)}
-			</PageContainer>
+			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+				<div className="flex flex-col justify-between gap-4 md:flex-row">
+					<div>
+						<h1 className="text-lg font-bold tracking-tight uppercase">
+							{tt("page_title")}
+						</h1>
 
-			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min gap-4">
+						<p className="w-full text-sm md:w-8/12 text-pretty text-muted-foreground">
+							{tt("page_description")}
+						</p>
+					</div>
+
+					{globalProps.auth.currentUserType === "ADMIN" && (
+						<div className="flex flex-col gap-2 md:flex-row">
+							<Button
+								variant="primary-outline"
+								disabled={isLoading.sync}
+								onClick={(event) => {
+									event.preventDefault();
+									doSync();
+								}}
+							>
+								{isLoading.sync ? (
+									<>
+										<LoaderIcon className="animate-spin" />
+										<span>{`${t("components.modal.wait")}...`}</span>
+									</>
+								) : (
+									<>
+										<RefreshCcw />
+										{tt("button.sync")}
+									</>
+								)}
+							</Button>
+
+							<Button asChild>
+								<Link
+									href={
+										globalProps.adminPortal.router.adminPortal
+											.therapistManagement.new
+									}
+								>
+									<PlusCircle />
+									{tt("button.add")}
+								</Link>
+							</Button>
+						</div>
+					)}
+				</div>
+
+				<Separator className="bg-border" />
+
 				<DataTable
 					columns={columns}
 					data={therapists.data}

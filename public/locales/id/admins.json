@@ -3,7 +3,7 @@
 	"page_title": "Admin",
 	"page_description": "Tim operasi internal kami.",
 	"button": {
-		"add": "Tambahkan admin",
+		"add": "Tambahkan Admin",
 		"sync": "Sync"
 	},
 	"tab": {

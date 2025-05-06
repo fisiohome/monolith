@@ -32,6 +32,7 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 		useActionPermissions({
 			currentUser: globalProps.auth.currentUser,
 			user: row.original.user,
+			adminType: row.original.adminType,
 		});
 
 	const cards = useMemo(() => {

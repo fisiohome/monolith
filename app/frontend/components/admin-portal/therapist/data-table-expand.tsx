@@ -84,7 +84,11 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 				icon: Phone,
 				label: "Phone",
 				value: row.original?.phoneNumber
-					? formatPhoneNumberIntl(row.original.phoneNumber)
+					? formatPhoneNumberIntl(
+							row.original.phoneNumber.includes("+")
+								? row.original.phoneNumber
+								: `+${row.original.phoneNumber}`,
+						)
 					: "-",
 			},
 			{ icon: Mail, label: "Email", value: row.original.user.email },

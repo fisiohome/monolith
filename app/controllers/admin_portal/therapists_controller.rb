@@ -234,6 +234,16 @@ module AdminPortal
       })
     end
 
+    def sync_data_master
+      result = MasterDataSyncService.new.therapists
+
+      if result[:success]
+        redirect_to admin_portal_therapists_path, notice: result[:message]
+      else
+        redirect_to admin_portal_therapists_path, alert: result[:error]
+      end
+    end
+
     private
 
     # Use callbacks to share common setup or constraints between actions.

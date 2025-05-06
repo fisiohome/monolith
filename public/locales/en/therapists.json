@@ -1,0 +1,9 @@
+{
+	"head_title": "Therapist Management",
+	"page_title": "Therapist Management",
+	"page_description": "Our team of licensed and experienced therapists is dedicated to providing comprehensive healthcare services.",
+	"button": {
+		"add": "Add Therapists",
+		"sync": "Sync"
+	}
+}

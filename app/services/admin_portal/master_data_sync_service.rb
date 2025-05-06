@@ -8,6 +8,7 @@ module AdminPortal
     ADMIN_GID = "1493117737"
     BRAND_GID = "2090364532"
     PACKAGE_GID = "872007576"
+    THERAPIST_GID = "887408989"
 
     def locations
       csv = fetch_and_parse_csv(gid: LOCATION_GID)
@@ -122,7 +123,7 @@ module AdminPortal
         end
       end
 
-      Rails.logger.info "Brands & packages sync successfully."
+      Rails.logger.info "Brands sync successfully."
       {success: true, message: "Synchronized with master data successfully."}
     rescue => e
       Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
@@ -151,23 +152,122 @@ module AdminPortal
           Rails.logger.warn "Service for brand '#{brand_name}' not found, skipping package '#{package_name}'."
           next
         end
-        puts row["Harga/Visit"]
 
         package_attrs = {
           name: package_name,
-          number_of_visit: row["Jumlah Visit"]&.to_i || 1,
-          price_per_visit: row["Harga/Visit"]&.to_s&.delete(",").to_d || 0,
-          discount: row["Diskon RO/FUM"]&.to_s&.delete(",").to_d || 0,
-          total_price: row["Total Harga"]&.to_s&.delete(",").to_d || 0,
-          fee_per_visit: row["Fee Flat/Visit"]&.to_s&.delete(",").to_d || 0,
-          total_fee: row["Total Fee"]&.to_s&.delete(",").to_d || 0,
-          currency: row["Currency"],
+          number_of_visit: row["Jumlah Visit"]&.strip&.to_i || 1,
+          price_per_visit: row["Harga/Visit"]&.strip&.to_s&.delete(",").to_d || 0,
+          discount: row["Diskon RO/FUM"]&.strip&.to_s&.delete(",").to_d || 0,
+          total_price: row["Total Harga"]&.strip&.to_s&.delete(",").to_d || 0,
+          fee_per_visit: row["Fee Flat/Visit"]&.strip&.to_s&.delete(",").to_d || 0,
+          total_fee: row["Total Fee"]&.strip&.to_s&.delete(",").to_d || 0,
+          currency: row["Currency"]&.strip,
           active: true
         }
         package = Package.find_or_initialize_by(service_id: service.id, name: package_name)
         package.assign_attributes(package_attrs)
         package.save! if package.changed?
       end
+
+      Rails.logger.info "Packages sync successfully."
+      {success: true, message: "Synchronized with master data successfully."}
+    rescue => e
+      Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
+      {success: false, error: "An error occurred while syncing data."}
+    end
+
+    def therapists
+      csv = fetch_and_parse_csv(gid: THERAPIST_GID)
+      required_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
+      headers = required_headers.dup + ["Batch", "Modalities", "Specializations", "Bank Name", "Account Number", "Account Holder Name"] # standard:disable Lint/UselessAssignment
+
+      # Validate headers
+      missing_headers = required_headers - csv.headers
+      unless missing_headers.empty?
+        return {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
+      end
+
+      csv.each do |row|
+        # next iterations if name and email are blank or the employment type is "FLAT"
+        name = row["Name"]&.strip
+        email = row["Email"]&.strip&.downcase
+        employment_type = row["Employment Type"]&.strip&.upcase
+        next if [name, email, employment_type].any?(&:blank?) || employment_type === "FLAT"
+
+        # check service validation
+        brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
+        service = Service.find_by(name: brand)
+        unless service
+          Rails.logger.warn "Service for brand '#{brand}' not found, skipping therapist '#{name}'."
+          next
+        end
+
+        # check region validity
+        city = row["City"]&.strip
+        location = Location.find_by(city:)
+        unless location
+          Rails.logger.warn "Location for city '#{city}' not found, skipping therapist '#{name}'."
+          next
+        end
+
+        phone_number = row["Phone Number"]&.strip&.to_s
+        gender = (row["Gender"]&.strip&.upcase == "L") ? "MALE" : "FEMALE"
+        postal_code = row["Postal Code"]&.strip&.to_s
+        address_line = row["Address Line"]&.strip&.to_s
+        batch = row["Batch"]&.strip&.to_i
+        modalities = row["Modalities"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank
+        specializations = row["Specializations"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank
+        bank_name = row["Bank Name"]&.strip&.to_s
+        account_number = row["Account Number"]&.strip&.to_s
+        account_holder_name = row["Account Holder Name"]&.strip&.to_s&.upcase
+
+        ActiveRecord::Base.transaction do
+          # Create or update User
+          user = User.find_or_initialize_by(email:)
+          user.password ||= "Fisiohome123!" if user.new_record?
+          user.save! if user.changed?
+
+          # Create or update Address (by address_line + postal_code)
+          address = Address.find_or_initialize_by(location:, address: address_line, postal_code:, latitude: 0, longitude: 0)
+          address.save! if address.changed?
+
+          # Create or update BankDetail (by account number)
+          bank_detail = BankDetail.find_or_initialize_by(bank_name:, account_number:, account_holder_name:)
+          bank_detail.save! if bank_detail.changed?
+
+          # Create or update Therapist
+          therapist = Therapist.find_or_initialize_by(name:, phone_number:, gender:)
+          therapist.assign_attributes(
+            employment_type:,
+            employment_status: "ACTIVE",
+            batch:,
+            modalities:,
+            specializations:,
+            service:,
+            user:
+          )
+          therapist.save! if therapist.changed?
+
+          # Link or create TherapistAddress (one active per therapist)
+          therapist_address = TherapistAddress.find_or_initialize_by(therapist:, address:)
+          therapist_address.active = true if therapist_address.new_record?
+          therapist_address.save! if therapist_address.changed?
+
+          # Link or create TherapistBankDetail (one active per therapist)
+          therapist_bank_detail = TherapistBankDetail.find_or_initialize_by(therapist:, bank_detail:)
+          therapist_bank_detail.active = true if therapist_bank_detail.new_record?
+          therapist_bank_detail.save! if therapist_bank_detail.changed?
+        rescue => e
+          Rails.logger.warn "Rolled back therapist #{name} due to error: #{e.message}"
+          next
+        end
+      end
+
+      Rails.logger.info "Therapists sync successfully."
+      {success: true, message: "Synchronized with master data successfully."}
+    rescue => e
+      Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
+      {success: false, error: "An error occurred while syncing data."}
     end
 
     private

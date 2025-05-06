@@ -64,6 +64,7 @@ Rails.application.routes.draw do
           collection do
             get "generate-reset-password-url" => "therapists#generate_reset_password_url"
             put "change-password" => "therapists#change_password"
+            put "sync-data-master" => "therapists#sync_data_master"
           end
         end
 

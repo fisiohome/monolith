@@ -417,7 +417,7 @@ export default function Index({
 							</Avatar>
 							<div className="flex-1 space-y-1 text-sm leading-tight text-left">
 								<div>
-									<p className="font-semibold truncate">{name}</p>
+									<p className="font-bold uppercase truncate">{name}</p>
 									<p className="text-xs truncate">{email}</p>
 								</div>
 							</div>

@@ -60,7 +60,7 @@ import {
 	Ellipsis,
 	Info,
 	LoaderIcon,
-	Plus,
+	PlusCircle,
 	RefreshCcw,
 } from "lucide-react";
 import { Fragment, useCallback, useMemo, useState } from "react";
@@ -469,80 +469,49 @@ export default function Index({ services, selectedService }: PageProps) {
 									: `Inactive in all of  ${locations.length} locations`}
 						</span>
 
-						{globalProps.auth.currentUserType === "ADMIN" && (
-							<Popover>
-								<PopoverTrigger asChild>
-									<Button variant="link" className="p-0">
-										<Info />
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent className="w-full">
-									<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-										<div className="space-y-2 col-span-full">
-											<div className="space-y-0.5">
-												<h4 className="font-medium leading-none">
-													Show Locations
-												</h4>
-												<p className="font-light">
-													Monitor active and inactive locations.
-												</p>
-											</div>
-
-											<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
-												<div className="flex items-baseline space-x-1">
-													<div className="bg-green-700 rounded-full size-2" />
-													<span>{`${locationsActive?.length || 0} Locations`}</span>
-												</div>
-												<Separator
-													orientation="vertical"
-													className="bg-muted-foreground/25"
-												/>
-												<div className="flex items-baseline space-x-1">
-													<div className="rounded-full bg-destructive size-2" />
-													<span>{`${locationInactive?.length || 0} Locations`}</span>
-												</div>
-												<Separator
-													orientation="vertical"
-													className="bg-muted-foreground/25"
-												/>
-												<p>{`${locations?.length || 0} Total Locations`}</p>
-											</div>
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button variant="link" className="p-0">
+									<Info />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-full">
+								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+									<div className="space-y-2 col-span-full">
+										<div className="space-y-0.5">
+											<h4 className="font-medium leading-none">
+												Show Locations
+											</h4>
+											<p className="font-light">
+												Monitor active and inactive locations.
+											</p>
 										</div>
 
-										<ScrollArea className="w-full max-h-52 lg:max-h-32">
-											<AnimatePresence>
-												{locationsActive?.length ? (
-													locationsActive.map((action, index) => (
-														<motion.div
-															key={action.id}
-															initial={{ opacity: 0, y: -10 }}
-															animate={{ opacity: 1, y: 0 }}
-															exit={{ opacity: 0, y: 10 }}
-															transition={{ delay: index * 0.1 }}
-															className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
-														>
-															<div
-																className={cn(
-																	"rounded-full size-2",
-																	action.active
-																		? "bg-green-700"
-																		: "bg-destructive",
-																)}
-															/>
-															<span>{action.city}</span>
-														</motion.div>
-													))
-												) : (
-													<p className="text-sm text-muted-foreground">
-														There's no active locations
-													</p>
-												)}
-											</AnimatePresence>
-										</ScrollArea>
+										<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
+											<div className="flex items-baseline space-x-1">
+												<div className="bg-green-700 rounded-full size-2" />
+												<span>{`${locationsActive?.length || 0} Locations`}</span>
+											</div>
+											<Separator
+												orientation="vertical"
+												className="bg-muted-foreground/25"
+											/>
+											<div className="flex items-baseline space-x-1">
+												<div className="rounded-full bg-destructive size-2" />
+												<span>{`${locationInactive?.length || 0} Locations`}</span>
+											</div>
+											<Separator
+												orientation="vertical"
+												className="bg-muted-foreground/25"
+											/>
+											<p>{`${locations?.length || 0} Total Locations`}</p>
+										</div>
+									</div>
 
-										<ScrollArea className="w-full max-h-52 lg:max-h-32">
-											<AnimatePresence>
-												{locationInactive.map((action, index) => (
+									<ScrollArea className="w-full max-h-52 lg:max-h-32">
+										<AnimatePresence>
+											{locationsActive?.length ? (
+												locationsActive.map((action, index) => (
 													<motion.div
 														key={action.id}
 														initial={{ opacity: 0, y: -10 }}
@@ -561,13 +530,40 @@ export default function Index({ services, selectedService }: PageProps) {
 														/>
 														<span>{action.city}</span>
 													</motion.div>
-												))}
-											</AnimatePresence>
-										</ScrollArea>
-									</div>
-								</PopoverContent>
-							</Popover>
-						)}
+												))
+											) : (
+												<p className="text-sm text-muted-foreground">
+													There's no active locations
+												</p>
+											)}
+										</AnimatePresence>
+									</ScrollArea>
+
+									<ScrollArea className="w-full max-h-52 lg:max-h-32">
+										<AnimatePresence>
+											{locationInactive.map((action, index) => (
+												<motion.div
+													key={action.id}
+													initial={{ opacity: 0, y: -10 }}
+													animate={{ opacity: 1, y: 0 }}
+													exit={{ opacity: 0, y: 10 }}
+													transition={{ delay: index * 0.1 }}
+													className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
+												>
+													<div
+														className={cn(
+															"rounded-full size-2",
+															action.active ? "bg-green-700" : "bg-destructive",
+														)}
+													/>
+													<span>{action.city}</span>
+												</motion.div>
+											))}
+										</AnimatePresence>
+									</ScrollArea>
+								</div>
+							</PopoverContent>
+						</Popover>
 					</div>
 				);
 			},
@@ -698,7 +694,7 @@ export default function Index({ services, selectedService }: PageProps) {
 							{tb("page_title")}
 						</h1>
 
-						<p className="w-10/12 text-sm text-muted-foreground text-pretty">
+						<p className="w-full text-sm md:w-10/12 text-muted-foreground text-pretty">
 							{tb("page_description")}
 						</p>
 					</div>
@@ -732,7 +728,7 @@ export default function Index({ services, selectedService }: PageProps) {
 									routeTo.newService();
 								}}
 							>
-								<Plus />
+								<PlusCircle />
 								{tb("button.add")}
 							</Button>
 						</div>
