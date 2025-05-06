@@ -124,11 +124,12 @@ export const getDefaultValues = ({
 	const availability = therapist?.availability ?? {};
 
 	// Extracting values with proper typings and default values
+	// * all of the default values based on the database default
 	const {
 		timeZone = serverTimezone || "Asia/Jakarta",
 		appointmentDurationInMinutes = 90,
 		bufferTimeInMinutes = 30,
-		maxAdvanceBookingInDays = 14,
+		maxAdvanceBookingInDays = 60,
 		minBookingBeforeInHours = 24,
 		isAvailableNow = true,
 		startDateWindow,

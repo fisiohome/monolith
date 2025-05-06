@@ -191,6 +191,7 @@ module AdminPortal
       city_params = params[:city]
 
       therapists = Therapist
+        .left_joins(:therapist_appointment_schedule)
         .left_joins(therapist_addresses: {address: :location})
         .where(therapist_addresses: {active: true})
         .employment_status_ACTIVE
@@ -198,7 +199,11 @@ module AdminPortal
       # If a city parameter is provided, join the locations (through appointments) and filter by city name.
       therapists = therapists.where("locations.city ILIKE ?", "%#{city_params}%") if city_params.present?
 
-      pagy, paged_therapists = pagy_array(therapists, page: page_params, limit: limit_params)
+      # Order: therapists with schedule first (non-null therapist_appointment_schedule.id)
+      therapists = therapists.order(Arel.sql("therapist_appointment_schedules.id IS NULL ASC"))
+
+      # pagination
+      pagy, paged_therapists = pagy(therapists, page: page_params, limit: limit_params)
 
       # get the filter options data
       filter_options_lambda = lambda do

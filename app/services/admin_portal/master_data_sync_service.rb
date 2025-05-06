@@ -179,7 +179,7 @@ module AdminPortal
     def therapists
       csv = fetch_and_parse_csv(gid: THERAPIST_GID)
       required_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
-      headers = required_headers.dup + ["Batch", "Modalities", "Specializations", "Bank Name", "Account Number", "Account Holder Name"] # standard:disable Lint/UselessAssignment
+      headers = required_headers.dup + ["Batch", "Modalities", "Specializations", "Bank Name", "Account Number", "Account Holder Name", "Latitude", "Longitude"] # standard:disable Lint/UselessAssignment
 
       # Validate headers
       missing_headers = required_headers - csv.headers
@@ -210,6 +210,13 @@ module AdminPortal
           next
         end
 
+        latitude = Float(row["Latitude"]&.strip || 0)
+        longitude = Float(row["Longitude"]&.strip || 0)
+        invalid_coordinates = (latitude&.abs&.> 90) || (longitude&.abs&.> 180)
+        if invalid_coordinates
+          Rails.logger.warn "Invalid coordinates for '#{name}' (lat: #{latitude}, long: #{longitude}), skipping."
+        end
+
         phone_number = row["Phone Number"]&.strip&.to_s
         gender = (row["Gender"]&.strip&.upcase == "L") ? "MALE" : "FEMALE"
         postal_code = row["Postal Code"]&.strip&.to_s
@@ -228,7 +235,7 @@ module AdminPortal
           user.save! if user.changed?
 
           # Create or update Address (by address_line + postal_code)
-          address = Address.find_or_initialize_by(location:, address: address_line, postal_code:, latitude: 0, longitude: 0)
+          address = Address.find_or_initialize_by(location:, address: address_line, postal_code:, latitude:, longitude:)
           address.save! if address.changed?
 
           # Create or update BankDetail (by account number)
@@ -237,15 +244,7 @@ module AdminPortal
 
           # Create or update Therapist
           therapist = Therapist.find_or_initialize_by(name:, phone_number:, gender:)
-          therapist.assign_attributes(
-            employment_type:,
-            employment_status: "ACTIVE",
-            batch:,
-            modalities:,
-            specializations:,
-            service:,
-            user:
-          )
+          therapist.assign_attributes(employment_type:, employment_status: "ACTIVE", batch:, modalities:, specializations:, service:, user:)
           therapist.save! if therapist.changed?
 
           # Link or create TherapistAddress (one active per therapist)
@@ -257,6 +256,29 @@ module AdminPortal
           therapist_bank_detail = TherapistBankDetail.find_or_initialize_by(therapist:, bank_detail:)
           therapist_bank_detail.active = true if therapist_bank_detail.new_record?
           therapist_bank_detail.save! if therapist_bank_detail.changed?
+
+          # store the therapist availability
+          if invalid_coordinates || latitude == 0 || longitude == 0
+            # Remove the schedule if it exists
+            schedule = TherapistAppointmentSchedule.find_by(therapist:)
+            schedule&.destroy
+          else
+            schedule = TherapistAppointmentSchedule.find_or_initialize_by(therapist:)
+            # * all of the default values based on the database default
+            schedule.assign_attributes(appointment_duration_in_minutes: 90, buffer_time_in_minutes: 30, max_advance_booking_in_days: 60, min_booking_before_in_hours: 24, available_now: true)
+            schedule.save! if schedule.changed?
+
+            weekly_times = %w[Monday Tuesday Wednesday Thursday Friday].map do |day|
+              {day_of_week: day, start_time: "09:00".in_time_zone(Time.zone), end_time: "18:00".in_time_zone(Time.zone)}
+            end
+
+            weekly_times.each do |attrs|
+              TherapistWeeklyAvailability.find_or_initialize_by(therapist_appointment_schedule_id: schedule.id, day_of_week: attrs[:day_of_week]).tap do |availability|
+                availability.assign_attributes(start_time: attrs[:start_time], end_time: attrs[:end_time])
+                availability.save! if availability.changed?
+              end
+            end
+          end
         rescue => e
           Rails.logger.warn "Rolled back therapist #{name} due to error: #{e.message}"
           next
@@ -266,8 +288,8 @@ module AdminPortal
       Rails.logger.info "Therapists sync successfully."
       {success: true, message: "Synchronized with master data successfully."}
     rescue => e
-      Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
-      {success: false, error: "An error occurred while syncing data."}
+      # Rails.logger.error
+      {success: false, error: "Error syncing data: #{e.class} - #{e.message}"}
     end
 
     private
