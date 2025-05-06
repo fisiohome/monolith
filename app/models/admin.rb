@@ -16,16 +16,10 @@ class Admin < ApplicationRecord
 
   self.implicit_order_column = "created_at"
 
-  def is_super_admin?
-    admin_type === "SUPER_ADMIN"
-  end
-
-  def is_admin?
-    admin_type === "ADMIN"
-  end
-
-  def is_admin_supervisor?
-    admin_type === "ADMIN_SUPERVISOR"
+  TYPES.each do |type|
+    define_method :"is_#{type.downcase}?" do
+      admin_type == type
+    end
   end
 
   private
