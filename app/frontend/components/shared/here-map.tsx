@@ -169,10 +169,10 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 		useEffect(() => {
 			initialize(options);
 
-			// for update traffic map layer every one-minute
+			// for update traffic map layer every ten-minute
 			const trafficInterval = setInterval(
 				mapControl.updateLayer.traffic,
-				60000,
+				60000 * 10,
 			);
 			return () => {
 				clearInterval(trafficInterval);
