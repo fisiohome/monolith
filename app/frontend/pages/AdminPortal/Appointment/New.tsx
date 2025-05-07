@@ -50,6 +50,7 @@ import {
 	useState,
 } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 export type ServiceOption = Pick<
 	Service,
@@ -86,6 +87,7 @@ function FormComponent() {
 	const { url: pageURL, props: globalProps } =
 		usePage<AppointmentNewGlobalPageProps>();
 	const isMobile = useIsMobile();
+	const { t: taf } = useTranslation("appointments-form");
 	const { isSuccessBooked, mode } = useFormProvider();
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -94,31 +96,27 @@ function FormComponent() {
 		() =>
 			[
 				{
-					label: "Patient Profile",
-					description:
-						"Patient medical and personal information to ensure proper care.",
+					label: taf("stepper.patient_profile.label"),
+					description: taf("stepper.patient_profile.description"),
 					component: <PatientDetailsForm />,
 				},
 				{
-					label: "Appointment Settings and Scheduling",
-					description:
-						"Configure the appointment details, appropriate time, location, and service preferences for the appointment.",
+					label: taf("stepper.appt_settings.label"),
+					description: taf("stepper.appt_settings.description"),
 					component: <AppointmentSchedulingForm />,
 				},
 				{
-					label: "Additional Settings",
-					description:
-						"Specify any additional preferences or details for the appointment.",
+					label: taf("stepper.additional_settings.label"),
+					description: taf("stepper.additional_settings.description"),
 					component: <AdditionalSettingsForm />,
 				},
 				{
-					label: "Review",
-					description:
-						"Review the appointment details before initiating the booking.",
+					label: taf("stepper.review.label"),
+					description: taf("stepper.review.description"),
 					component: <ReviewForm />,
 				},
 			] satisfies StepperProps[],
-		[],
+		[taf],
 	);
 
 	// form management state
@@ -131,19 +129,16 @@ function FormComponent() {
 		const maxVisit = appRef?.totalPackageVisits;
 
 		return {
-			title:
-				mode === "new"
-					? "Book a New Appointment"
-					: "Schedule Appointment Series",
+			title: mode === "new" ? taf("page_title.new") : taf("page_title.series"),
 			description:
 				mode === "new"
-					? "Schedule a appointment session between therapist and patient."
-					: "Arrange the next visit as part of an ongoing treatment plan between therapist and patient.",
+					? taf("page_description.new")
+					: taf("page_description.series"),
 			regNumber,
 			series:
 				mode === "series" ? `Visit ${currentVisit}/${maxVisit}` : undefined,
 		};
-	}, [mode, globalProps?.appointmentReference]);
+	}, [mode, globalProps?.appointmentReference, taf]);
 	const formDefaultvalues = useMemo(
 		() =>
 			defineAppointmentFormDefaultValues({
@@ -234,9 +229,8 @@ function FormComponent() {
 
 			// Log the URL being visited
 			console.log(`Starting a visit to ${url}`);
-
-			// Confirm navigation away from the current page
-			if (confirm("Are you sure you want to navigate away?")) {
+			if (confirm(taf("navigate_away"))) {
+				// Confirm navigation away from the current page
 				setIsNavigateConfirm(true);
 				// Remove the appointment form data from session storage
 				window.sessionStorage.removeItem(SESSION_STORAGE_FORM_KEY);
@@ -249,6 +243,7 @@ function FormComponent() {
 		pageURL,
 		isSuccessBooked,
 		isNavigateConfirm,
+		taf,
 	]);
 	/**
 	 * * watching the success of route navigation
@@ -308,9 +303,11 @@ function FormComponent() {
 }
 
 export default function AppointmentNew(_props: AppointmentNewProps) {
+	const { t: taf } = useTranslation("appointments-form");
+
 	return (
 		<FormProvider>
-			<Head title="Appointment Booking">
+			<Head title={taf("head_title")}>
 				<link
 					rel="stylesheet"
 					type="text/css"

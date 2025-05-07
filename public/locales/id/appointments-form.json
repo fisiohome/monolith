@@ -1,0 +1,60 @@
+{
+	"head_title": "Pemesanan Janji Temu",
+	"page_title": {
+		"new": "Buat Janji Temu Baru",
+		"series": "Seri Jadwalkan Janji Temu"
+	},
+	"page_description": {
+		"new": "Jadwalkan sesi janji temu antara terapis dan pasien.",
+		"series": "Mengatur kunjungan berikutnya sebagai bagian dari rencana perawatan yang sedang berlangsung antara terapis dan pasien."
+	},
+	"navigate_away": "Apakah Anda yakin ingin menavigasi jauh?",
+	"button": {
+		"back": "Kembali",
+		"prev": "Sebelumnya",
+		"save": {
+			"label": "Simpan",
+			"loading": "Menyimpan..."
+		},
+		"next": {
+			"label": "Berikutnya",
+			"loading": "Mohon Tunggu..."
+		},
+		"skip": "Lewati"
+	},
+	"stepper": {
+		"patient_profile": {
+			"label": "Profil pasien",
+			"description": "Informasi medis dan pribadi pasien untuk memastikan perawatan yang tepat."
+		},
+		"appt_settings": {
+			"label": "Pengaturan dan Penjadwalan Janji Temu",
+			"description": "Konfigurasikan detail janji temu, waktu, lokasi, dan preferensi layanan yang sesuai untuk janji temu."
+		},
+		"additional_settings": {
+			"label": "Pengaturan Tambahan",
+			"description": "Tentukan preferensi atau detail tambahan untuk janji temu."
+		},
+		"review": {
+			"label": "Tinjauan",
+			"description": "Tinjau detail janji temu sebelum memulai pemesanan."
+		}
+	},
+	"modal": {
+		"title": "Apakah Anda benar-benar yakin?",
+		"description": "Anda belum memilih terapis untuk janji temu ini, tetapi jangan khawatir! Anda memiliki opsi untuk melewatkannya. Namun, apakah Anda yakin ingin menetapkan terapis untuk janji temu ini nanti?",
+		"button": {
+			"cancel": "Batal",
+			"skip": "Lewati",
+			"next": {
+				"label": "Berikutnya",
+				"loading": "Mohon Tunggu..."
+			}
+		}
+	},
+	"final-step": {
+		"title": "Janji temu sudah dipesan!",
+		"description": "Janji temu telah berhasil dibuat. Anda dapat mulai memberi tahu terapis dan pasien yang bersangkutan. Dan Anda akan diarahkan dalam beberapa detik.",
+		"button": "Alihkan sekarang"
+	}
+}

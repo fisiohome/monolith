@@ -100,6 +100,7 @@ import HereMap from "@/components/shared/here-map";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
+import { useTranslation } from "react-i18next";
 
 export type FormMode = "new" | "series";
 
@@ -208,6 +209,7 @@ export function StepButtons({
 	} = useStepButtons({
 		setFormStorage,
 	});
+	const { t: taf } = useTranslation("appointments-form");
 
 	return (
 		<div
@@ -228,7 +230,7 @@ export function StepButtons({
 					isFirstStep ? onBack() : onPrevStep();
 				}}
 			>
-				{isFirstStep ? "Back" : "Prev"}
+				{isFirstStep ? taf("button.back") : taf("button.prev")}
 			</Button>
 
 			{isLastStep ? (
@@ -241,10 +243,10 @@ export function StepButtons({
 					{isLoading || isFormLoading ? (
 						<>
 							<LoaderIcon className="animate-spin" />
-							<span>Saving...</span>
+							<span>{taf("button.save.loading")}</span>
 						</>
 					) : (
-						<span>Save</span>
+						<span>{taf("button.save.label")}</span>
 					)}
 				</Button>
 			) : (
@@ -261,12 +263,12 @@ export function StepButtons({
 					{isLoading || isFormLoading ? (
 						<>
 							<LoaderIcon className="animate-spin" />
-							<span>Please Wait...</span>
+							<span>{taf("button.next.loading")}</span>
 						</>
 					) : isOptionalStep ? (
-						<span>Skip</span>
+						<span>{taf("button.skip")}</span>
 					) : (
-						<span>Next</span>
+						<span>{taf("button.next.label")}</span>
 					)}
 				</Button>
 			)}
@@ -277,15 +279,13 @@ export function StepButtons({
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+						<AlertDialogTitle>{taf("modal.title")}</AlertDialogTitle>
 						<AlertDialogDescription>
-							You haven't chosen a therapist for this appointment yet, but don't
-							worry! You have the option to skip it. However, are you sure you
-							want to assign a therapist to this appointment later?
+							{taf("modal.description")}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter className="space-y-4 md:space-y-0">
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogCancel>{taf("modal.button.cancel")}</AlertDialogCancel>
 						<AlertDialogAction asChild>
 							<Button
 								type="button"
@@ -300,12 +300,12 @@ export function StepButtons({
 								{isLoading || isFormLoading ? (
 									<>
 										<LoaderIcon className="animate-spin" />
-										<span>Please Wait...</span>
+										<span>{taf("modal.button.next.loading")}</span>
 									</>
 								) : isOptionalStep ? (
-									<span>Skip</span>
+									<span>{taf("modal.button.skip")}</span>
 								) : (
-									<span>Next</span>
+									<span>{taf("modal.button.next.label")}</span>
 								)}
 							</Button>
 						</AlertDialogAction>
@@ -317,6 +317,9 @@ export function StepButtons({
 }
 
 export function FinalStep() {
+	const { t: taf } = useTranslation("appointments-form", {
+		keyPrefix: "final-step",
+	});
 	const { count, hasCompletedAllSteps, redirectURL } = useFinalStep();
 
 	if (!hasCompletedAllSteps) return null;
@@ -331,19 +334,17 @@ export function FinalStep() {
 			<div className="flex flex-col gap-3">
 				<CircleCheckBig className="mx-auto size-8 text-primary" />
 				<h1 className="mx-auto space-x-3 text-sm font-bold text-primary">
-					<span>Appointments are Booked!</span>
+					<span>{taf("title")}</span>
 				</h1>
 
 				<p className="text-xs text-pretty w-full md:w-[75%] mx-auto text-primary">
-					The appointment has been successfully created. You can start to inform
-					the therapist and patient concerned. And you will be redirected in a
-					few seconds.
+					{taf("description")}
 				</p>
 
 				<span className="my-2 text-3xl font-bold text-primary">{count}</span>
 
 				<Button effect="shine" size="lg" asChild>
-					<Link href={redirectURL}>Redirect now</Link>
+					<Link href={redirectURL}>{taf("buttn")}</Link>
 				</Button>
 			</div>
 

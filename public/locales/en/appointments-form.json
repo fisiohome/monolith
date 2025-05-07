@@ -1,0 +1,60 @@
+{
+	"head_title": "Appointment Booking",
+	"page_title": {
+		"new": "Book a New Appointment",
+		"series": "Schedule Appointment Series"
+	},
+	"page_description": {
+		"new": "Schedule a appointment session between therapist and patient.",
+		"series": "Arrange the next visit as part of an ongoing treatment plan between therapist and patient."
+	},
+	"navigate_away": "Are you sure you want to navigate away?",
+	"button": {
+		"back": "Back",
+		"prev": "Prev",
+		"save": {
+			"label": "Save",
+			"loading": "Saving..."
+		},
+		"next": {
+			"label": "Next",
+			"loading": "Please Wait..."
+		},
+		"skip": "Skip"
+	},
+	"stepper": {
+		"patient_profile": {
+			"label": "Patient Profile",
+			"description": "Patient medical and personal information to ensure proper care."
+		},
+		"appt_settings": {
+			"label": "Appointment Settings and Scheduling",
+			"description": "Configure the appointment details, appropriate time, location, and service preferences for the appointment."
+		},
+		"additional_settings": {
+			"label": "Additional Settings",
+			"description": "Specify any additional preferences or details for the appointment."
+		},
+		"review": {
+			"label": "Review",
+			"description": "Review the appointment details before initiating the booking."
+		}
+	},
+	"modal": {
+		"title": "Are you absolutely sure?",
+		"description": "You haven't chosen a therapist for this appointment yet, but don't worry! You have the option to skip it. However, are you sure you want to assign a therapist to this appointment later?",
+		"button": {
+			"cancel": "Cancel",
+			"skip": "Skip",
+			"next": {
+				"label": "Next",
+				"loading": "Please Wait..."
+			}
+		}
+	},
+	"final-step": {
+		"title": "Appointments are Booked!",
+		"description": "The appointment has been successfully created. You can start to inform the therapist and patient concerned. And you will be redirected in a few seconds.",
+		"button": "Redirect now"
+	}
+}
