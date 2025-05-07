@@ -23,6 +23,7 @@ import {
 	useTherapistAvailability,
 } from "./use-appointment-utils";
 import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
+import { useTranslation } from "react-i18next";
 
 export const SESSION_STORAGE_FORM_KEY = "appointment-form";
 
@@ -63,6 +64,7 @@ export const useStepButtons = ({
 }) => {
 	const { isSuccessBooked } = useFormProvider();
 	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
+	const { t: taf } = useTranslation("appointments-form");
 	const form = useFormContext<AppointmentBookingSchema>();
 	const {
 		prevStep,
@@ -76,8 +78,8 @@ export const useStepButtons = ({
 		steps,
 	} = useStepper();
 	const isFirstStep = useMemo(
-		() => currentStep?.label === "Contact Information",
-		[currentStep?.label],
+		() => currentStep?.label === taf("stepper.patient_profile.label"),
+		[currentStep?.label, taf],
 	);
 	const onPrevStep = useCallback(() => {
 		prevStep();
@@ -91,7 +93,7 @@ export const useStepButtons = ({
 	const onSubmit = async (options: { skipTherapist?: boolean } = {}) => {
 		const { skipTherapist = false } = options;
 
-		if (currentStep.label === "Patient Profile") {
+		if (currentStep.label === taf("stepper.patient_profile.label")) {
 			const isValidPatientDetails = await form.trigger("patientDetails");
 			const isValidContactInformation =
 				await form.trigger("contactInformation");
@@ -103,7 +105,7 @@ export const useStepButtons = ({
 			nextStep();
 		}
 
-		if (currentStep.label === "Appointment Settings and Scheduling") {
+		if (currentStep.label === taf("stepper.appt_settings.label")) {
 			const isValid = await form.trigger("appointmentScheduling");
 
 			if (!isValid) return;
@@ -119,7 +121,7 @@ export const useStepButtons = ({
 			nextStep();
 		}
 
-		if (currentStep.label === "Additional Settings") {
+		if (currentStep.label === taf("stepper.additional_settings.label")) {
 			const isValid = await form.trigger("additionalSettings");
 
 			if (!isValid) return;
