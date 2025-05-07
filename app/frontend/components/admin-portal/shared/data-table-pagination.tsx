@@ -30,6 +30,7 @@ import {
 	ChevronsLeft,
 	ChevronsRight,
 } from "lucide-react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 interface DataTablePaginationProps<TData> {
@@ -44,6 +45,9 @@ export default function PaginationTable<TData>({
 	const { t } = useTranslation("translation", {
 		keyPrefix: "components.pagination",
 	});
+	useEffect(() => {
+		table.setPageSize(metadata.limit);
+	}, [metadata.limit, table.setPageSize]);
 
 	return (
 		<div className="grid items-center grid-cols-2 gap-6 lg:grid-cols-12 text-muted-foreground">
@@ -67,10 +71,15 @@ export default function PaginationTable<TData>({
 				<Select
 					value={`${metadata.limit}`}
 					onValueChange={(value) => {
+						table.setPageSize(Number(value));
 						const { fullUrl } = populateQueryParams(metadata.pageUrl, {
 							limit: value,
 						});
-						router.get(fullUrl, {}, { preserveState: true });
+						router.get(
+							fullUrl,
+							{},
+							{ replace: true, preserveState: true, preserveScroll: false },
+						);
 					}}
 				>
 					<SelectTrigger className="bg-background h-8 w-[70px]">
@@ -100,7 +109,15 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(metadata.firstUrl, {}, { preserveState: true })
+										router.get(
+											metadata.firstUrl,
+											{},
+											{
+												replace: true,
+												preserveState: true,
+												preserveScroll: false,
+											},
+										)
 									}
 									disabled={!metadata.prev}
 								>
@@ -111,7 +128,15 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(metadata.prevUrl, {}, { preserveState: true })
+										router.get(
+											metadata.prevUrl,
+											{},
+											{
+												replace: true,
+												preserveState: true,
+												preserveScroll: false,
+											},
+										)
 									}
 									disabled={!metadata.prev}
 								>
@@ -156,7 +181,11 @@ export default function PaginationTable<TData>({
 															router.get(
 																metadata.pageUrl,
 																{ page: Number(value) },
-																{ preserveState: true },
+																{
+																	replace: true,
+																	preserveState: true,
+																	preserveScroll: false,
+																},
 															);
 														}}
 													/>
@@ -173,7 +202,15 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(metadata.nextUrl, {}, { preserveState: true })
+										router.get(
+											metadata.nextUrl,
+											{},
+											{
+												replace: true,
+												preserveState: true,
+												preserveScroll: false,
+											},
+										)
 									}
 									disabled={!metadata.next}
 								>
@@ -184,7 +221,15 @@ export default function PaginationTable<TData>({
 									variant="outline"
 									className="w-8 h-8 p-0"
 									onClick={() =>
-										router.get(metadata.lastUrl, {}, { preserveState: true })
+										router.get(
+											metadata.lastUrl,
+											{},
+											{
+												replace: true,
+												preserveState: true,
+												preserveScroll: false,
+											},
+										)
 									}
 									disabled={!metadata.next}
 								>
