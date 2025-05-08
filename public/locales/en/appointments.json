@@ -70,7 +70,9 @@
 		"pic_details": "PIC(s) Details",
 		"person_in_charge": "Person in charge(s)",
 		"type": "Type",
-		"series": "Series"
+		"series": "Series",
+		"contact_details": "Contact Details",
+		"patient_medical_record": "Patient Medical Record"
 	},
 	"filter": {
 		"therapist_name": {

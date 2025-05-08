@@ -407,13 +407,13 @@ export function CalendarHeader({ className, therapists }: CalendarHeaderProps) {
 
 	return (
 		<div className={cn("flex sticky top-[64px] z-20 min-h-8", className)}>
-			<div className="w-24" /> {/* Empty space for time column */}
+			<div className="w-16 md:w-24" /> {/* Empty space for time column */}
 			<div className="flex-1">
 				<div className="grid grid-flow-col auto-cols-[minmax(200px,1fr)]">
 					{therapists.map((t) => (
 						<div
 							key={t.id}
-							className="p-2 space-y-1 text-sm font-semibold tracking-tight truncate border-l shadow bg-background"
+							className="p-2 space-y-1 text-sm font-semibold tracking-tight truncate border-b border-l shadow bg-background"
 						>
 							<p className="uppercase">{t.name}</p>
 
@@ -489,7 +489,7 @@ function TimeSlot({
 	return (
 		<div
 			className={cn(
-				"text-xs text-right p-2",
+				"text-xs relative text-right",
 				className,
 				isPastTime && "bg-sidebar text-muted-foreground",
 				isCurrentTime && "bg-primary text-primary-foreground font-bold",
@@ -499,7 +499,11 @@ function TimeSlot({
 				height: `${SLOT_HEIGHT}px`,
 			}}
 		>
-			<p className="uppercase">{label}</p>
+			<div className="ml-4 border-t md:ml-8">
+				<p className="absolute top-[-8px] right-0 font-light uppercase">
+					{label}
+				</p>
+			</div>
 		</div>
 	);
 }
@@ -519,7 +523,7 @@ export function CalendarTimeSlot({
 	const { locale, tzDate } = useDateContext();
 
 	return (
-		<div className={cn("flex flex-col w-24 bg-background", className)}>
+		<div className={cn("flex flex-col w-16 md:w-24 bg-background", className)}>
 			{timeSlots?.map((time) => {
 				return (
 					<TimeSlot
@@ -586,7 +590,7 @@ function TherapistSlot({
 	return (
 		<div
 			className={cn(
-				"relative border-b border-l",
+				"relative border-b border-l border-border",
 				className,
 				isPastTime && "bg-sidebar",
 			)}
@@ -746,7 +750,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 				<Button
 					variant="link"
 					className={cn(
-						"absolute left-1 right-1 z-20 p-2 rounded shadow cursor-pointer inset-2 border border-border",
+						"absolute left-1 right-1 z-20 p-2 rounded shadow cursor-pointer inset-2 border border-border h-full",
 						blockColor,
 						className,
 						isPastTime && "opacity-75",
@@ -760,10 +764,22 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 					}}
 				>
 					<div className="flex flex-col items-start justify-between w-full h-full text-xs line-clamp-1">
-						<p className="flex items-center font-bold truncate">
-							<Hash className="!size-3" /> {appointment.registrationNumber}{" "}
-							&bull; {patientDetails?.name}
-						</p>
+						<div className="w-full space-y-0.5 text-left">
+							<div className="flex gap-1">
+								<p className="flex items-center gap-0.5 uppercase font-bold text-[10px]">
+									<Hash className="!size-2.5" />
+									<span>{appointment.registrationNumber}</span>
+								</p>
+
+								<span>&bull;</span>
+
+								<p className="font-light">Visit {appointment.visitProgress}</p>
+							</div>
+
+							<p className="font-semibold tracking-wide uppercase">
+								{patientDetails?.name}
+							</p>
+						</div>
 
 						<p className="font-light uppercase">{appointmentTime}</p>
 					</div>
@@ -775,10 +791,16 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 				className="max-h-screen p-0 overflow-auto bg-sidebar"
 			>
 				<div className="flex flex-col w-full h-full px-6">
-					<SheetHeader className="flex-none py-6 bg-muted">
-						<SheetTitle className="flex items-center">
-							<Hash className="!size-3" />
-							{appointment.registrationNumber}
+					<SheetHeader className="flex-none py-6 bg-sidebar">
+						<SheetTitle className="flex items-center gap-2">
+							<p className="flex items-center gap-0.5 uppercase font-bold">
+								<Hash className="!size-4" />
+								{appointment.registrationNumber}
+							</p>
+
+							<span>&bull;</span>
+
+							<p className="font-light">Visit {appointment.visitProgress}</p>
 						</SheetTitle>
 					</SheetHeader>
 
@@ -806,7 +828,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 						</div>
 					</Suspense>
 
-					<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-muted">
+					<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-sidebar">
 						<SheetClose asChild>
 							<Button variant="primary-outline">Close</Button>
 						</SheetClose>
@@ -903,7 +925,9 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 		>
 			{!isUnder2Hours ? (
 				<>
-					<p className="flex items-center font-medium truncate">{t("title")}</p>
+					<p className="flex items-center font-medium uppercase truncate">
+						{t("title")}
+					</p>
 
 					<p className="font-light uppercase">{availableTime}</p>
 				</>

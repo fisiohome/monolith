@@ -1,6 +1,12 @@
 import { useDateContext } from "@/components/providers/date-provider";
 import { LoadingBasic } from "@/components/shared/loading";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -16,18 +22,16 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import { format } from "date-fns";
 import {
 	Building,
-	Cake,
 	CreditCard,
 	Hash,
-	IdCard,
-	Mail,
 	MapPinIcon,
-	ShieldCheck,
 	TicketPercent,
 	User,
 } from "lucide-react";
-import { Fragment, type ComponentProps } from "react";
+import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+import { getBrandBadgeVariant } from "@/lib/services";
+import { getbadgeVariantStatus } from "@/lib/appointments/utils";
 
 // * for the appointment details section
 export interface AppointmentDetailsSectionProps extends ComponentProps<"div"> {
@@ -169,6 +173,62 @@ export function AppointmentDetailsSection({
 			<Separator />
 
 			<p className="font-light uppercase text-[10px] tracking-wider">
+				{t("list.series")}
+			</p>
+
+			{appointment?.allVisits?.map((visit) => (
+				<div
+					key={visit.id}
+					className={cn(
+						"grid gap-1 p-3 border rounded-lg border-border bg-muted",
+						visit.registrationNumber === appointment.registrationNumber &&
+							"border-primary/50 text-primary",
+					)}
+				>
+					<div className="flex items-center justify-between">
+						<div className="flex-none mb-1">
+							<Badge
+								variant="outline"
+								className={cn(
+									"text-pretty font-bold !text-[10px] px-1",
+									appointment?.service?.code &&
+										getBrandBadgeVariant(appointment.service.code),
+								)}
+							>
+								<Hash className="size-2.5" />
+								<span>{visit.registrationNumber}</span>
+							</Badge>
+						</div>
+
+						<div>
+							<Badge
+								variant="outline"
+								className={cn(
+									"mb-1 text-center text-pretty !text-[10px]",
+									getbadgeVariantStatus(visit.status),
+								)}
+							>
+								{t(`statuses.${visit.status}`)}
+							</Badge>
+						</div>
+					</div>
+
+					<div className="flex flex-col flex-1">
+						<p className="font-bold">Visit {visit.visitProgress}</p>
+
+						<p className="text-xs font-light">
+							{format(visit.appointmentDateTime, "PPPP", {
+								locale,
+								in: tzDate,
+							})}
+						</p>
+					</div>
+				</div>
+			))}
+
+			<Separator />
+
+			<p className="font-light uppercase text-[10px] tracking-wider">
 				{t("list.payment_details")}
 			</p>
 
@@ -277,113 +337,116 @@ export default function PatientDetailsSection({
 			</h3>
 
 			<div className="grid w-full gap-3 p-2 border rounded-lg border-border bg-background text-muted-foreground">
-				<div className="grid grid-cols-2 gap-2">
-					<div className="grid gap-2">
-						<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
-							<AvatarImage src="#" />
-							<AvatarFallback>
-								<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
-							</AvatarFallback>
-						</Avatar>
+				<Accordion type="single" collapsible className="w-full ">
+					<AccordionItem value="item-1">
+						<AccordionTrigger className="pt-0">
+							<div className="flex items-center gap-2">
+								<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
+									<AvatarImage src="#" />
+									<AvatarFallback>
+										<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
+									</AvatarFallback>
+								</Avatar>
 
-						<p className="font-semibold uppercase text-pretty">
-							{patientDetails?.name}
-						</p>
-					</div>
+								<p className="font-semibold uppercase line-clamp-1">
+									{patientDetails?.name}
+								</p>
+							</div>
+						</AccordionTrigger>
 
-					<div className="grid gap-2">
-						<p className="flex items-center gap-2 text-xs">
-							<Cake className="size-3" />
-							<span>
-								{patientDetails?.age || "N/A"} {t("list.years")} &#x2022;{" "}
-								{patientDetails?.dateOfBirth
-									? format(patientDetails?.dateOfBirth, "PP", {
-											locale,
-											in: tzDate,
-										})
-									: "N/A"}
-							</span>
-						</p>
+						<AccordionContent>
+							<div className="grid gap-3 text-xs">
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.gender")}</p>
+									<p className="col-span-2 font-semibold flex gap-1.5">
+										{getGenderIcon(
+											patientDetails.gender,
+											"flex-shrink-0 size-3.5 text-muted-foreground/75 mt-0.5",
+										)}
+										{patientDetails?.gender || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.age")}</p>
+									<p className="col-span-2 font-semibold">
+										<span>
+											{patientDetails?.age || "N/A"} {t("list.years")}:
+										</span>
+										<span className="mx-1">&#x2022;</span>
+										<span>
+											{patientDetails?.dateOfBirth
+												? format(
+														new Date(String(patientDetails?.dateOfBirth)),
+														"PP",
+														{
+															locale,
+															in: tzDate,
+														},
+													)
+												: "N/A"}
+										</span>
+									</p>
+								</div>
 
-						<p className="flex items-center gap-2 text-xs">
-							{patientDetails?.gender &&
-								getGenderIcon(patientDetails.gender, "size-3")}
-							{patientDetails?.gender || "N/A"}
-						</p>
-					</div>
-				</div>
+								<div className="mt-2 font-light uppercase text-[10px] tracking-wider col-span-full">
+									{t("list.contact_details")}
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.contact_name")}</p>
+									<p className="col-span-2 font-semibold">
+										{patientDetails?.contact?.contactName || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.contact_phone")}</p>
+									<p className="col-span-2 font-semibold">
+										{patientDetails?.contact?.contactPhone || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">MiiTel Link</p>
+									<p className="col-span-2 font-semibold">
+										{patientDetails?.contact?.miitelLink || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">Email</p>
+									<p className="col-span-2 font-semibold break-all">
+										{patientDetails?.contact?.email || "N/A"}
+									</p>
+								</div>
 
-				<Separator />
-
-				<div className="grid gap-2">
-					<div className="flex gap-3 text-xs">
-						<p className="font-light">{t("list.contact_name")}:</p>
-
-						<p className="flex-1 text-right break-all text-pretty">
-							{patientDetails?.contact?.contactName}
-						</p>
-					</div>
-
-					<div className="flex gap-3 text-xs">
-						<p className="font-light">Email:</p>
-
-						<p className="flex-1 text-right break-all text-pretty">
-							{patientDetails?.contact?.email}
-						</p>
-					</div>
-
-					<div className="flex gap-3 text-xs">
-						<p className="font-light">{t("list.contact_phone")}:</p>
-
-						<p className="flex-1 text-right break-all text-pretty">
-							{patientDetails?.contact?.contactPhone}
-						</p>
-					</div>
-
-					<div className="flex gap-3 text-xs">
-						<p className="font-light">MiiTel Link:</p>
-
-						<p className="flex-1 text-right break-all text-pretty">
-							{patientDetails?.contact?.miitelLink || "N/A"}
-						</p>
-					</div>
-				</div>
-
-				<Separator />
-
-				<div className="grid gap-2 text-xs">
-					<div>
-						<p className="font-light">{t("list.current_condition")}:</p>
-
-						<p className="break-all text-pretty">
-							{patientMedicalRecord?.condition || "N/A"}
-						</p>
-					</div>
-
-					<div>
-						<p className="font-light">{t("list.complaint")}:</p>
-
-						<p className="break-all text-pretty">
-							{patientMedicalRecord?.complaintDescription || "N/A"}
-						</p>
-					</div>
-
-					<div>
-						<p className="font-light">{t("list.illness_onset_date")}:</p>
-
-						<p className="break-all text-pretty">
-							{patientMedicalRecord?.illnessOnsetDate || "N/A"}
-						</p>
-					</div>
-
-					<div>
-						<p className="font-light">{t("list.medical_history")}:</p>
-
-						<p className="break-all text-pretty">
-							{patientMedicalRecord?.medicalHistory || "N/A"}
-						</p>
-					</div>
-				</div>
+								<div className="mt-2 font-light uppercase text-[10px] tracking-wider col-span-full">
+									{t("list.patient_medical_record")}
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.current_condition")}</p>
+									<p className="col-span-2 font-semibold text-pretty">
+										{patientMedicalRecord?.condition || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.complaint")}</p>
+									<p className="col-span-2 font-semibold text-pretty">
+										{patientMedicalRecord?.complaintDescription || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.illness_onset_date")}</p>
+									<p className="col-span-2 font-semibold text-pretty">
+										{patientMedicalRecord?.illnessOnsetDate || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.medical_history")}</p>
+									<p className="col-span-2 font-semibold text-pretty">
+										{patientMedicalRecord?.medicalHistory || "N/A"}
+									</p>
+								</div>
+							</div>
+						</AccordionContent>
+					</AccordionItem>
+				</Accordion>
 			</div>
 		</div>
 	);
@@ -415,58 +478,64 @@ export function TherapistDetailsSection({
 			</h3>
 
 			<div className="grid w-full gap-2 p-2 border rounded-lg border-border bg-background">
-				<div className="grid grid-cols-2 gap-2">
-					<div className="grid gap-2">
-						<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
-							<AvatarImage src="#" />
-							<AvatarFallback>
-								<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
-							</AvatarFallback>
-						</Avatar>
+				<Accordion type="single" collapsible className="w-full ">
+					<AccordionItem value="item-1">
+						<AccordionTrigger className="pt-0">
+							<div className="flex items-center gap-2">
+								<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
+									<AvatarImage src="#" />
+									<AvatarFallback>
+										<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
+									</AvatarFallback>
+								</Avatar>
 
-						<p className="font-semibold uppercase text-pretty">
-							{therapistDetails.name}
-						</p>
-					</div>
+								<p className="font-semibold uppercase line-clamp-1">
+									{therapistDetails.name}
+								</p>
+							</div>
+						</AccordionTrigger>
 
-					<div className="grid gap-2">
-						<p className="flex items-center gap-2 text-xs">
-							<Hash className="size-3" />
-							{therapistDetails.registrationNumber}
-						</p>
-
-						<p className="flex items-center gap-2 text-xs">
-							<IdCard className="size-3" />
-							{therapistDetails.employmentType}
-						</p>
-
-						<p className="flex items-center gap-2 text-xs">
-							{therapistDetails?.gender &&
-								getGenderIcon(therapistDetails.gender, "size-3")}
-							{therapistDetails?.gender || "N/A"}
-						</p>
-					</div>
-				</div>
-
-				<Separator />
-
-				<div className="grid gap-2">
-					<div className="flex gap-3 text-xs">
-						<p className="font-light">Email:</p>
-
-						<p className="flex-1 text-right break-all">
-							{therapistDetails.user.email}
-						</p>
-					</div>
-
-					<div className="flex gap-3 text-xs">
-						<p className="font-light">{t("list.contact_phone")}:</p>
-
-						<p className="flex-1 text-right break-all">
-							{therapistDetails.phoneNumber}
-						</p>
-					</div>
-				</div>
+						<AccordionContent>
+							<div className="grid gap-3 text-xs">
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">REG ID</p>
+									<p className="col-span-2 font-semibold flex gap-1.5">
+										<Hash className="flex-shrink-0 mt-0.5 size-3 text-muted-foreground/75" />
+										{therapistDetails.registrationNumber}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.emp_type")}</p>
+									<p className="col-span-2 font-semibold">
+										{therapistDetails.employmentType}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.gender")}</p>
+									<p className="col-span-2 font-semibold flex gap-1.5">
+										{getGenderIcon(
+											therapistDetails.gender,
+											"flex-shrink-0 size-3.5 text-muted-foreground/75 mt-0.5",
+										)}
+										{therapistDetails?.gender || "N/A"}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">Email</p>
+									<p className="col-span-2 font-semibold break-all">
+										{therapistDetails.user.email}
+									</p>
+								</div>
+								<div className="grid grid-cols-3 gap-4">
+									<p className="font-light">{t("list.contact_phone")}</p>
+									<p className="col-span-2 font-semibold">
+										{therapistDetails.phoneNumber}
+									</p>
+								</div>
+							</div>
+						</AccordionContent>
+					</AccordionItem>
+				</Accordion>
 			</div>
 		</div>
 	);
@@ -503,36 +572,41 @@ export function PICDetailsSection({
 				</p>
 
 				{picList.map((pic, index) => (
-					<Fragment key={pic.id}>
-						<div className="grid grid-cols-2 gap-2">
-							<div className="grid gap-2">
-								<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
-									<AvatarImage src="#" />
-									<AvatarFallback>
-										<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
-									</AvatarFallback>
-								</Avatar>
+					<Accordion key={pic.id} type="single" collapsible className="w-full ">
+						<AccordionItem value={pic.name}>
+							<AccordionTrigger className={cn(index === 0 && "pt-0")}>
+								<div className="flex items-center gap-2">
+									<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
+										<AvatarImage src="#" />
+										<AvatarFallback>
+											<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
+										</AvatarFallback>
+									</Avatar>
 
-								<p className="font-semibold uppercase text-pretty">
-									{pic.name}
-								</p>
-							</div>
+									<p className="font-semibold uppercase line-clamp-1">
+										{pic.name}
+									</p>
+								</div>
+							</AccordionTrigger>
 
-							<div className="grid gap-2">
-								<p className="flex items-center gap-2 text-xs break-all">
-									<ShieldCheck className="size-3" />
-									{pic.adminType.replaceAll("_", " ")}
-								</p>
-
-								<p className="flex items-center gap-2 text-xs break-all">
-									<Mail className="size-3" />
-									{pic.user.email}
-								</p>
-							</div>
-						</div>
-
-						{index + 1 !== picList?.length && <Separator className="my-2" />}
-					</Fragment>
+							<AccordionContent>
+								<div className="grid gap-3 text-xs">
+									<div className="grid grid-cols-3 gap-4">
+										<p className="font-light">{t("list.type")}</p>
+										<p className="col-span-2 font-semibold">
+											{pic.adminType.replaceAll("_", " ")}
+										</p>
+									</div>
+									<div className="grid grid-cols-3 gap-4">
+										<p className="font-light">Email</p>
+										<p className="col-span-2 font-semibold break-all">
+											{pic.user.email}
+										</p>
+									</div>
+								</div>
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
 				))}
 			</div>
 		</div>

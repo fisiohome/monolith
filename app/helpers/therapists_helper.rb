@@ -124,7 +124,18 @@ module TherapistsHelper
             total_price: appointment.total_price,
             formatted_total_price: appointment.formatted_total_price,
             patient_medical_record: appointment.patient_medical_record,
-            visit_address: appointment.address_history
+            visit_address: appointment.address_history,
+            initial_visit: appointment.initial_visit?,
+            visit_progress: appointment.visit_progress,
+            next_visit_progress: appointment.next_visit_progress,
+            total_package_visits: appointment.total_package_visits,
+            next_visits: appointment.next_visits,
+            series_appointments: appointment.series_appointments.as_json,
+            reference_appointment: appointment.reference_appointment.as_json,
+            all_visits: appointment.all_visits_in_series.as_json(
+              only: [:id, :visit_progress, :appointment_date_time, :status, :registration_number],
+              methods: [:visit_progress]
+            )
           )
         end
       end

@@ -70,7 +70,9 @@
 		"pic_details": "Rincian PIC",
 		"person_in_charge": "Penanggung jawab",
 		"type": "Tipe",
-		"series": "Series"
+		"series": "Series",
+		"contact_details": "Detil Kontak",
+		"patient_medical_record": "Rekam Medis Pasien"
 	},
 	"filter": {
 		"therapist_name": {
