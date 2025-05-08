@@ -12,7 +12,7 @@ import {
 } from "@/components/shared/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
@@ -338,39 +338,33 @@ export default function AppointmentIndex() {
 
 					<FilterList />
 
-					{tabList.map((tab) => (
-						<Fragment key={tab.value}>
-							<TabsContent value={tab.value}>
-								<Deferred
-									data={["appointments"]}
-									fallback={
-										<div className="flex flex-col self-end gap-6 mt-6">
-											<Skeleton className="w-2/12 h-4 rounded-sm" />
-											<Skeleton className="relative w-full h-32 rounded-xl" />
-										</div>
-									}
-								>
-									<div className="grid gap-6 mt-6">
-										{isAppointmentExist ? (
-											appointments.map((appointment, index) => (
-												<AppointmentList
-													key={String(appointment.date)}
-													appointment={appointment}
-													index={index}
-												/>
-											))
-										) : (
-											<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background">
-												<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">
-													{noAppointmentsLabel}
-												</h2>
-											</div>
-										)}
-									</div>
-								</Deferred>
-							</TabsContent>
-						</Fragment>
-					))}
+					<Deferred
+						data={["appointments"]}
+						fallback={
+							<div className="flex flex-col self-end gap-6 mt-6">
+								<Skeleton className="w-2/12 h-4 rounded-sm" />
+								<Skeleton className="relative w-full h-32 rounded-xl" />
+							</div>
+						}
+					>
+						<div className="grid gap-6 mt-6">
+							{isAppointmentExist ? (
+								appointments.map((appointment, index) => (
+									<AppointmentList
+										key={String(appointment.date)}
+										appointment={appointment}
+										index={index}
+									/>
+								))
+							) : (
+								<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background">
+									<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">
+										{noAppointmentsLabel}
+									</h2>
+								</div>
+							)}
+						</div>
+					</Deferred>
 				</Tabs>
 			</PageContainer>
 		</PageProvider>
