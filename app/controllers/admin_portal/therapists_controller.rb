@@ -186,28 +186,27 @@ module AdminPortal
 
     def schedules
       page_params = params.fetch(:page, 1)
-      limit_params = is_mobile? ? 1 : 5
+      limit_params = is_mobile? ? 1 : 5 # limit the therapist data for mobile device
       date_params = params.fetch(:date, Time.zone.today)
       city_params = params[:city]
 
       therapists = Therapist
-        .left_joins(:therapist_appointment_schedule)
-        .left_joins(therapist_addresses: {address: :location})
-        .where(therapist_addresses: {active: true})
+        .joins(:therapist_appointment_schedule)
+        .with_active_addresses
+        .by_city(city_params)
         .employment_status_ACTIVE
-
-      # If a city parameter is provided, join the locations (through appointments) and filter by city name.
-      therapists = therapists.where("locations.city ILIKE ?", "%#{city_params}%") if city_params.present?
-
-      # Order: therapists with schedule first (non-null therapist_appointment_schedule.id)
-      therapists = therapists.order(Arel.sql("therapist_appointment_schedules.id IS NULL ASC"))
+        # Order: therapists with schedule first (non-null therapist_appointment_schedule.id)
+        .order(
+          Arel.sql("therapist_appointment_schedules.id IS NULL ASC"),
+          :id  # Add secondary sort by therapist ID
+        )
 
       # pagination
       pagy, paged_therapists = pagy(therapists, page: page_params, limit: limit_params)
 
       # get the filter options data
       filter_options_lambda = lambda do
-        locations = Location.all.as_json
+        locations = Location.cached_locations
 
         deep_transform_keys_to_camel_case({locations:})
       end

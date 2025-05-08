@@ -1,4 +1,15 @@
 class Therapist < ApplicationRecord
+  # * define the scopes
+  scope :with_active_addresses, -> {
+    joins(therapist_addresses: :address).where(therapist_addresses: {active: true})
+  }
+
+  scope :by_city, ->(city) {
+    return if city.blank?
+    left_joins(therapist_addresses: {address: :location})
+      .where(Location.arel_table[:city].matches("%#{city}%"))
+  }
+
   # * define the associations
   belongs_to :user
 

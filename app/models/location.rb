@@ -17,8 +17,15 @@ class Location < ApplicationRecord
   validates :country, :country_code, :state, presence: true
   validates :city, presence: true, uniqueness: true
 
-  # * instance Methods
+  # * instance methods
   def full_name
     "#{city}, #{state}, #{country}"
+  end
+
+  # * cache methods
+  def self.cached_locations
+    Rails.cache.fetch("all_locations", expires_in: 1.hour) do
+      all.as_json
+    end
   end
 end
