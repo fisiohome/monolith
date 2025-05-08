@@ -9,7 +9,7 @@ import {
 } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 
-export const SLOT_HEIGHT = 32; // Height of each time slot row in pixels (for UI rendering)
+export const SLOT_HEIGHT = 48; // Height of each time slot row in pixels (for UI rendering)
 export const INTERVAL_MINUTES = 60; // Default interval between time slots
 export const START_HOUR = 6; // Default start hour of the calendar (midnight)
 export const END_HOUR = 24; // Default end hour of the calendar (end of day)
