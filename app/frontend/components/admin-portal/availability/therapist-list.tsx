@@ -66,7 +66,6 @@ function TherapistListCard({
 							? 1.05
 							: 1,
 			}}
-			whileInView={{ opacity: 1 }}
 			exit={{ opacity: 0, y: 0 }}
 			transition={{ delay: index * 0.1 }}
 			whileHover={{
