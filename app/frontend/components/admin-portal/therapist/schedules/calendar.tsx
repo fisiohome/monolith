@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import {
 	Fragment,
+	Suspense,
 	useCallback,
 	useMemo,
 	useState,
@@ -73,6 +74,7 @@ import PatientDetailsSection, {
 	PICDetailsSection,
 	TherapistDetailsSection,
 } from "./appointment-details";
+import { LoadingBasic } from "@/components/shared/loading";
 
 type GeneralProps = {
 	selectedDate: Date;
@@ -780,22 +782,29 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 						</SheetTitle>
 					</SheetHeader>
 
-					<div className="grid flex-1 gap-8 py-4 overflow-y-auto text-sm">
-						<AppointmentDetailsSection appointment={appointment} />
+					<Suspense
+						fallback={
+							<div className="w-full p-3 border rounded-lg border-border bg-background text-muted-foreground">
+								<LoadingBasic columnBased={true} />
+							</div>
+						}
+					>
+						<div className="grid flex-1 gap-8 py-4 overflow-y-auto text-sm">
+							<AppointmentDetailsSection appointment={appointment} />
+							{patientDetails && (
+								<PatientDetailsSection
+									patientDetails={patientDetails}
+									patientMedicalRecord={patientMedicalRecord}
+								/>
+							)}
 
-						{patientDetails && (
-							<PatientDetailsSection
-								patientDetails={patientDetails}
-								patientMedicalRecord={patientMedicalRecord}
-							/>
-						)}
+							{therapistDetails && (
+								<TherapistDetailsSection therapistDetails={therapistDetails} />
+							)}
 
-						{therapistDetails && (
-							<TherapistDetailsSection therapistDetails={therapistDetails} />
-						)}
-
-						{!!picList?.length && <PICDetailsSection picList={picList} />}
-					</div>
+							{!!picList?.length && <PICDetailsSection picList={picList} />}
+						</div>
+					</Suspense>
 
 					<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-muted">
 						<SheetClose asChild>

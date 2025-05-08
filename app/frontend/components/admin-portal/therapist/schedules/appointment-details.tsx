@@ -1,4 +1,5 @@
 import { useDateContext } from "@/components/providers/date-provider";
+import { LoadingBasic } from "@/components/shared/loading";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,15 @@ export function AppointmentDetailsSection({
 	appointment,
 }: AppointmentDetailsSectionProps) {
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("appointments");
+	const { t, ready } = useTranslation("appointments");
+
+	if (!ready) {
+		return (
+			<div className="p-3 border rounded-lg border-border bg-background text-muted-foreground">
+				<LoadingBasic columnBased={true} />
+			</div>
+		);
+	}
 
 	return (
 		<div
@@ -251,12 +260,20 @@ export default function PatientDetailsSection({
 	patientMedicalRecord,
 }: PatientDetailsSectionProps) {
 	const { locale, tzDate } = useDateContext();
-	const { t } = useTranslation("appointments");
+	const { t, ready } = useTranslation("appointments");
+
+	if (!ready) {
+		return (
+			<div className="p-3 border rounded-lg border-border bg-background text-muted-foreground">
+				<LoadingBasic columnBased={true} />
+			</div>
+		);
+	}
 
 	return (
 		<div className={cn("grid gap-3 text-muted-foreground", className)}>
 			<h3 className="text-xs font-semibold tracking-wider uppercase">
-				Patient Details
+				{t("list.patient_details")}
 			</h3>
 
 			<div className="grid w-full gap-3 p-2 border rounded-lg border-border bg-background text-muted-foreground">
@@ -381,12 +398,20 @@ export function TherapistDetailsSection({
 	className,
 	therapistDetails,
 }: TherapistDetailsSectionProps) {
-	const { t } = useTranslation("appointments");
+	const { t, ready } = useTranslation("appointments");
+
+	if (!ready) {
+		return (
+			<div className="p-3 border rounded-lg border-border bg-background text-muted-foreground">
+				<LoadingBasic columnBased={true} />
+			</div>
+		);
+	}
 
 	return (
 		<div className={cn("grid gap-3 text-muted-foreground", className)}>
 			<h3 className="text-xs font-semibold tracking-wider uppercase">
-				Therapist Details
+				{t("list.therapist_details")}
 			</h3>
 
 			<div className="grid w-full gap-2 p-2 border rounded-lg border-border bg-background">
@@ -456,12 +481,20 @@ export function PICDetailsSection({
 	className,
 	picList,
 }: PICDetailsSectionProps) {
-	const { t } = useTranslation("appointments");
+	const { t, ready } = useTranslation("appointments");
+
+	if (!ready) {
+		return (
+			<div className="p-3 border rounded-lg border-border bg-background text-muted-foreground">
+				<LoadingBasic columnBased={true} />
+			</div>
+		);
+	}
 
 	return (
 		<div className={cn("grid gap-3 text-muted-foreground", className)}>
 			<h3 className="text-xs font-semibold tracking-wider uppercase">
-				PIC(s) Details
+				{t("list.pic_details")}
 			</h3>
 
 			<div className="grid w-full gap-2 p-2 border rounded-lg border-border bg-background">
