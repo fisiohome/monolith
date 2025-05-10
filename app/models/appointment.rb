@@ -632,6 +632,7 @@ class Appointment < ApplicationRecord
     false
   end
 
+  # ? Bug ticket documentation see: https://fisiohome.atlassian.net/browse/PE-64?atlOrigin=eyJpIjoiODcyNmJjNDU1YzVlNDBlMGJjY2VhYzJjNzQxMGU1NmUiLCJwIjoiaiJ9
   def series_status_cannot_outpace_root
     return unless series?
     return if status_cancelled?
