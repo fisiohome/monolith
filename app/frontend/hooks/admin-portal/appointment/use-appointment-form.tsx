@@ -18,7 +18,6 @@ import { MapPin } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
-	useAppointmentDateTime,
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
@@ -503,12 +502,37 @@ export const useAppointmentSchedulingForm = () => {
 
 	// * for service field
 	const servicesOption = useMemo(
-		() =>
-			globalProps?.services?.filter(
-				(service) => service.name !== "PERAWAT_HOMECARE",
-			),
+		() => globalProps?.services,
 		[globalProps?.services],
 	);
+	const [alertService, setAlertService] = useState<{
+		title: string;
+		description: string;
+	} | null>(null);
+	const checkServicePackage = useCallback(() => {
+		setAlertService(null);
+
+		if (
+			!watchAppointmentSchedulingValue?.service?.id ||
+			!watchAppointmentSchedulingValue?.package?.id
+		) {
+			// * trigger the validation of the service and package (needs to select first)
+			form.trigger("appointmentScheduling.service.name");
+			form.trigger("appointmentScheduling.package.name");
+			setAlertService({
+				title: "Service & Package Required",
+				description:
+					"Please select a service and package before searching for a therapist and being able to schedule an appointment.",
+			});
+			return;
+		}
+
+		setAlertService(null);
+	}, [
+		watchAppointmentSchedulingValue?.service,
+		watchAppointmentSchedulingValue?.package,
+		form.trigger,
+	]);
 	const onFocusServiceField = useCallback(() => {
 		// fetch the services options data
 		const { queryParams } = populateQueryParams(
@@ -553,7 +577,13 @@ export const useAppointmentSchedulingForm = () => {
 		},
 		[form.setValue, form.resetField, onResetAllTherapistState],
 	);
-	const serviceHooks = { servicesOption, onFocusServiceField, onSelectService };
+	const serviceHooks = {
+		servicesOption,
+		alertService,
+		onFocusServiceField,
+		onSelectService,
+		checkServicePackage,
+	};
 
 	// * for package field
 	const packagesOption = useMemo(
@@ -579,65 +609,11 @@ export const useAppointmentSchedulingForm = () => {
 	);
 	const packageHooks = { packagesOption, onSelectPackage };
 
-	// * for appointment date field
-	const appointmentDateTimeValues = useAppointmentDateTime({
-		sourceValue: watchAppointmentDateTimeValue,
-	});
-	const onSelectAppointmentDate = useCallback(
-		(date?: Date) => {
-			const { appointmentTime, setAppointmentDate, setAppointmentTime } =
-				appointmentDateTimeValues;
-			if (appointmentTime) {
-				// Set the selected time to the selected date
-				const [hours, minutes] = appointmentTime.split(":");
-				date?.setHours(Number.parseInt(hours), Number.parseInt(minutes));
-			}
-
-			// update state reference and form field value data
-			setAppointmentDate(date || null);
-
-			// update state for appointment time
-			const time = date ? format(date.toString(), "HH:mm") : "";
-			setAppointmentTime(time);
-
-			// reset all therapist and isoline maps state
-			onResetAllTherapistState();
-		},
-		[appointmentDateTimeValues, onResetAllTherapistState],
-	);
-	const onSelectAppointmentTime = useCallback(
-		(time: string) => {
-			const { appointmentDate, setAppointmentDate, setAppointmentTime } =
-				appointmentDateTimeValues;
-			setAppointmentTime(time);
-			if (appointmentDate) {
-				const [hours, minutes] = time.split(":");
-				const newDate = new Date(appointmentDate.getTime());
-				newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
-				setAppointmentDate(newDate);
-
-				// reset all therapist and isoline maps state
-				onResetAllTherapistState();
-
-				return newDate;
-			}
-
-			return null;
-		},
-		[appointmentDateTimeValues, onResetAllTherapistState],
-	);
-	const appointmentDateTimeHooks = {
-		...appointmentDateTimeValues,
-		onSelectAppointmentDate,
-		onSelectAppointmentTime,
-	};
-
 	return {
 		...prefGenderHooks,
 		...therapistAvailabilityHooks,
 		...serviceHooks,
 		...packageHooks,
-		...appointmentDateTimeHooks,
 		form,
 		isLoading,
 		watchAppointmentSchedulingValue,

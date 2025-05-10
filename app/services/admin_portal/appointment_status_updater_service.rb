@@ -1,18 +1,44 @@
 module AdminPortal
   class AppointmentStatusUpdaterService
-    def initialize(appointment)
+    TRANSITION_METHODS = {
+      # "pending_therapist_assignment" => :schedule!,
+      "pending_patient_approval" => :assign_therapist!,
+      "pending_payment" => :patient_approve!,
+      "paid" => :mark_paid!,
+      "cancelled" => :cancel!
+    }.freeze
+
+    def initialize(appointment, updater)
       @appointment = appointment
+      @updater = updater
       @errors = []
     end
 
+    attr_reader :errors
+
     # args: new_status (string), reason (string)
     def call(new_status:, reason:)
-      Appointment.transaction do
-        @appointment.update!(status: new_status, status_reason: reason)
+      method_name = TRANSITION_METHODS[new_status.downcase]
+      unless method_name
+        @errors << "Invalid status: #{new_status}"
+        return false
       end
-      true
+
+      @appointment.transaction do
+        @appointment.assign_attributes(status_reason: reason, updater: @updater)
+
+        if @appointment.send(method_name)
+          true
+        else
+          @errors += @appointment.errors.full_messages
+          raise ActiveRecord::Rollback
+        end
+      end
     rescue ActiveRecord::RecordInvalid => e
-      @errors = e.record.errors.full_messages
+      @errors += e.record.errors.full_messages
+      false
+    rescue StateMachines::InvalidTransition => e
+      @errors << e.message
       false
     end
   end

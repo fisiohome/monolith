@@ -20,8 +20,8 @@ module AdminPortal
         # ensure everything is sorted by the full date - time
         .order(appointment_date_time: :asc)
         # Group appointments by the date part of appointment_date_time, sort them by date.
-        .group_by { |a| a.appointment_date_time.to_date }
-        .sort_by { |date, _| date }
+        .group_by { |a| a.appointment_date_time.to_date if a.appointment_date_time.present? }
+        .sort_by { |date, _| date.presence }
       appointments = reverse_groups_if_needed(appointments)
 
       appointments.map do |date, apps|

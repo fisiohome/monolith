@@ -237,7 +237,7 @@ export default function PatientBasicInfoForm() {
 									render={({ field }) => (
 										<FormItem className="flex-1">
 											<FormLabel>Date of birth</FormLabel>
-											<Popover>
+											<Popover modal>
 												<PopoverTrigger asChild>
 													<FormControl>
 														<Button

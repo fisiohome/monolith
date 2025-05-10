@@ -62,7 +62,7 @@ module AdminPortal
         include_service: true,
         include_location: true,
         include_visit_address: true,
-        include_package: false,
+        include_package: true,
         include_admins: false,
         include_patient_medical_record: false
       })
@@ -89,10 +89,11 @@ module AdminPortal
         redirect_to admin_portal_appointments_path(rescheduled: @appointment.id), notice: notice_msg
       else
         logger.error("Failed to reschedule: #{result[:error]}")
+        first_error = result[:error]&.full_messages&.first
         error_message = result[:error]&.full_messages
 
         logger.error("Failed to reschedule the appointment: #{error_message}.")
-        flash[:alert] = error_message
+        flash[:alert] = first_error
         redirect_to reschedule_admin_portal_appointments_path(@appointment),
           inertia: {
             errors: deep_transform_keys_to_camel_case(
@@ -109,10 +110,10 @@ module AdminPortal
 
       success, message = begin
         Appointment.transaction do
-          @appointment.updater = current_user
-          service = AppointmentStatusUpdaterService.new(@appointment)
+          service = AppointmentStatusUpdaterService.new(@appointment, current_user)
+          success = service.call(new_status: "cancelled", reason: params.dig(:form_data, :reason))
 
-          if service.call(new_status: "CANCELLED", reason: params.dig(:form_data, :reason))
+          if success
             [true, "Appointment cancelled successfully."]
           else
             [false, service.errors.first]
@@ -126,11 +127,13 @@ module AdminPortal
       end
 
       if success
+        Rails.logger.info "Appointment #{@appointment.registration_number} cancelled."
         redirect_to(
           admin_portal_appointments_path(request.query_parameters.except("cancel")),
           notice: message
         )
       else
+        Rails.logger.warn "Failed to cancel the appointment #{@appointment.registration_number}: #{message}"
         redirect_to(
           admin_portal_appointments_path(request.query_parameters),
           alert: message
@@ -172,16 +175,21 @@ module AdminPortal
 
       begin
         ActiveRecord::Base.transaction do
-          @appointment.updater = current_user
-          service = AppointmentStatusUpdaterService.new(@appointment)
-          service.call(new_status: params.dig(:form_data, :status), reason: params.dig(:form_data, :reason))
+          service = AppointmentStatusUpdaterService.new(@appointment, current_user)
+          success = service.call(new_status: params.dig(:form_data, :status), reason: params.dig(:form_data, :reason))
+          if success
+            Rails.logger.info "Appointment #{@appointment.registration_number} status updated successfully."
+            redirect_to admin_portal_appointments_path(request.query_parameters.except("update_status")), notice: "Status updated."
+          else
+            messages = service.errors.join(", ")
+            Rails.logger.warn "Failed to update status the appointment #{@appointment.registration_number}: #{messages}"
+            redirect_to admin_portal_appointments_path(request.query_parameters), alert: "Failed to update status the appointment: #{messages}"
+            raise ActiveRecord::Rollback
+          end
         end
-
-        Rails.logger.info "Appointment #{@appointment.registration_number} status updated successfully."
-        redirect_to admin_portal_appointments_path(request.query_parameters.except("update_status")), notice: "Status updated."
       rescue => e
-        Rails.logger.error "Failed to update status the appointment #{@appointment.registration_number}: #{e.message}"
-        redirect_to admin_portal_appointments_path(request.query_parameters), alert: "Failed to update status the appointment: #{e.message}"
+        Rails.logger.error "Error updating status for appointment #{@appointment.registration_number}: #{e.message}"
+        redirect_to admin_portal_appointments_path(request.query_parameters), alert: "Error updating status: #{e.message}"
       ensure
         Rails.logger.info "Finished process to update status the appointment #{@appointment.registration_number}"
       end

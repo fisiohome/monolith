@@ -441,6 +441,39 @@ export const useAppointmentDateTime = ({
 			},
 		};
 	}, []);
+	const onSelectAppointmentDate = useCallback(
+		(date?: Date) => {
+			if (appointmentTime) {
+				// Set the selected time to the selected date
+				const [hours, minutes] = appointmentTime.split(":");
+				date?.setHours(Number.parseInt(hours), Number.parseInt(minutes));
+			}
+
+			// update state reference and form field value data
+			setAppointmentDate(date || null);
+
+			// update state for appointment time
+			const time = date ? format(date.toString(), "HH:mm") : "";
+			setAppointmentTime(time);
+		},
+		[appointmentTime],
+	);
+	const onSelectAppointmentTime = useCallback(
+		(time: string) => {
+			setAppointmentTime(time);
+			if (appointmentDate) {
+				const [hours, minutes] = time.split(":");
+				const newDate = new Date(appointmentDate.getTime());
+				newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
+				setAppointmentDate(newDate);
+
+				return newDate;
+			}
+
+			return null;
+		},
+		[appointmentDate],
+	);
 
 	return {
 		isOpenAppointmentDate,
@@ -450,6 +483,8 @@ export const useAppointmentDateTime = ({
 		setAppointmentDate,
 		setAppointmentTime,
 		setIsOpenAppointmentDate,
+		onSelectAppointmentDate,
+		onSelectAppointmentTime,
 	};
 };
 
@@ -466,7 +501,7 @@ export const useTherapistAvailability = ({
 }: {
 	serviceIdValue: string | number;
 	preferredTherapistGenderValue: (typeof PREFERRED_THERAPIST_GENDER)[number];
-	appointmentDateTImeValue: Date;
+	appointmentDateTImeValue: Date | null;
 	patientValues: {
 		fullName: string;
 		latitude: number;
@@ -540,10 +575,11 @@ export const useTherapistAvailability = ({
 			preserveScroll: true,
 			preserveState: true,
 			replace: false,
-			only:
-				formType === "create"
-					? []
-					: ["adminPortal", "flash", "errors", "therapists"],
+			// only:
+			// 	formType === "create"
+			// 		? []
+			// 		: ["adminPortal", "flash", "errors", "therapists"],
+			only: [],
 			onStart: () => {
 				onChangeTherapistLoading(true);
 				onResetTherapistOptions();
@@ -612,6 +648,7 @@ export const useTherapistAvailability = ({
 				],
 			});
 
+			// TODO: about bug: therapist in patient position (second appointment on day) not displayed correctly in maps but displayed in therapist list
 			// Map therapists to MarkerData
 			const therapistCoords: MarkerData[] =
 				therapists

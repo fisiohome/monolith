@@ -10,9 +10,9 @@ const { appointmentDateTime, preferredTherapistGender, therapist } =
 
 export const RESCHEDULE_APPOINTMENT_FORM_SCHEMA = z.object({
 	preferredTherapistGender,
-	appointmentDateTime,
+	appointmentDateTime: appointmentDateTime.nullable(),
 	therapist,
-	reason: z.string().optional()
+	reason: z.string().optional(),
 });
 export type AppointmentRescheduleSchema = z.infer<
 	typeof RESCHEDULE_APPOINTMENT_FORM_SCHEMA
@@ -25,28 +25,35 @@ export const defineFormDefaultValues = (appointment: Appointment) => {
 
 	return {
 		preferredTherapistGender,
-		appointmentDateTime: new Date(appointmentDateTime),
+		appointmentDateTime: appointmentDateTime
+			? new Date(appointmentDateTime)
+			: null,
 		therapist,
-		reason: ""
+		reason: "",
 	} satisfies AppointmentRescheduleSchema;
 };
 
 // * define the form payload
 export interface AppointmentReschedulePayload {
-	appointmentDateTime: Date;
+	appointmentDateTime: Date | null;
 	preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
 	therapistId: string | null;
-	reason: string | null
+	reason: string | null;
 }
 
 export const buildPayload = (values: AppointmentRescheduleSchema) => {
-	const { preferredTherapistGender, appointmentDateTime, therapist, reason = null } = values
+	const {
+		preferredTherapistGender,
+		appointmentDateTime = null,
+		therapist,
+		reason = null,
+	} = values;
 	const payload = deepTransformKeysToSnakeCase({
 		preferredTherapistGender,
 		appointmentDateTime,
 		therapistId: therapist?.id ? String(therapist.id) : null,
-		reason
-	} satisfies AppointmentReschedulePayload)
+		reason,
+	} satisfies AppointmentReschedulePayload);
 
-	return payload
-}
+	return payload;
+};

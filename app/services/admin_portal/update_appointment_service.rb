@@ -12,7 +12,6 @@ module AdminPortal
 
     def call
       ActiveRecord::Base.transaction do
-        validate_paid_requires_therapist
         apply_updates
         {success: true, data: @appointment, changed: @updated}
       end
@@ -26,50 +25,33 @@ module AdminPortal
 
     private
 
-    # Enforce that paid appointments must have a therapist when rescheduling
-    def validate_paid_requires_therapist
-      if @original_status == "paid" && @appointment_params[:therapist_id].blank?
-        @appointment.errors.add(
-          :therapist_id,
-          "must be selected when rescheduling a paid appointment"
-        )
-        raise ActiveRecord::RecordInvalid.new(@appointment)
-      end
-    end
-
     def apply_updates
       attrs = {}
 
-      # 1) Appointment Date/Time
-      if @appointment_params.key?(:appointment_date_time)
-        attrs[:appointment_date_time] =
-          @appointment_params[:appointment_date_time].in_time_zone(Time.zone.name)
-      end
+      # Appointment Date/Time
+      date_time_param = @appointment_params[:appointment_date_time]
+      attrs[:appointment_date_time] = date_time_param&.in_time_zone(Time.zone.name)
 
-      # 2) Therapist Assignment & Status Logic
-      if @appointment_params.key?(:therapist_id)
-        new_therapist = @appointment_params[:therapist_id]
-        attrs[:therapist_id] = new_therapist
+      # Therapist Assignment & Status Logic
+      therapist_param = @appointment_params[:therapist_id]
+      attrs[:therapist_id] = therapist_param
 
-        # Only reset status if it hasn’t already been PAID
-        unless @original_status == "paid"
-          attrs[:status] =
-            if new_therapist.present?
-              :pending_patient_approval
-            else
-              :pending_therapist_assignment
-            end
-        end
-      end
+      # Preferred Therapist Gender
+      preferred_therapist_gender_param = @appointment_params[:preferred_therapist_gender]
+      attrs[:preferred_therapist_gender] = preferred_therapist_gender_param
 
-      # 3) Preferred Therapist Gender
-      if @appointment_params.key?(:preferred_therapist_gender)
-        attrs[:preferred_therapist_gender] = @appointment_params[:preferred_therapist_gender]
-      end
+      # status_reason (user‐provided or default)
+      reason = @appointment_params[:reason]
+      attrs[:status_reason] = reason if reason.present?
 
-      # 4) status_reason (user‐provided or default)
-      if @appointment_params.key?(:reason) && @appointment_params[:reason].present?
-        attrs[:status_reason] = @appointment_params[:reason]
+      # status should stay as-is once the appointment is paid
+      unless @original_status == "paid"
+        attrs[:status] =
+          case
+          when therapist_param.present? then :pending_patient_approval
+          when date_time_param.present? then :pending_therapist_assignment
+          else :unscheduled
+          end
       end
 
       # Assign everything (but don’t touch the DB yet)

@@ -1,7 +1,7 @@
 class Appointment < ApplicationRecord
   include ActionView::Helpers::NumberHelper
 
-  # * define the attrs accessors and initializer
+  # * define the attrs accessors, initializer, and the alias
   attr_accessor :updater  # Temporary attribute to track who updated
 
   def initialize(*)
@@ -22,58 +22,40 @@ class Appointment < ApplicationRecord
 
   FISIOHOME_PARTNER_NAMES = ["Cosmart", "KlinikGo", "The Asian Parent", "Orami Circle", "Ibu2canggih", "Ibu Bayi Canggih", "Kompas myValue", "Blibli", "LoveCare", "Medlife", "Medikids", "Bumi Health", "Other"].freeze
 
-  # * define the state machines
-  # graph from deepseek
-  # graph TD
-  # A[UNSCHEDULED] -->|set date/time| B[PENDING THERAPIST ASSIGNMENT]
-  # B -->|assign therapist| C[PENDING PATIENT APPROVAL]
-  # C -->|patient approves| D[PENDING PAYMENT]
-  # D -->|payment| E[PAID]
-  # any -->|cancel| G[CANCELLED]
-  state_machine :status, initial: :unscheduled do
-    # Define all states
-    state :unscheduled do
-      def schedulable?
-        appointment_date_time.present? && therapist_id.present?
-      end
-    end
-    state :pending_therapist_assignment
-    state :pending_patient_approval
-    state :pending_payment
-    state :paid
-    state :cancelled
-
-    # Event: Schedule an appointment (for sequents)
-    event :schedule do
-      transition unscheduled: :pending_therapist_assignment,
-        if: :valid_for_scheduling?
-    end
-
-    # Event: Assign therapist to appointment
-    event :assign_therapist do
-      transition pending_therapist_assignment: :pending_patient_approval
-    end
-
-    # Event: Patient approves therapist
-    event :patient_approve do
-      transition pending_patient_approval: :pending_payment
-    end
-
-    # Event: Mark payment complete
-    event :mark_paid do
-      transition pending_payment: :paid
-    end
-
-    # Event: Cancel appointment
-    event :cancel do
-      transition all => :cancelled
-    end
-
-    # Automatic transitions
-    before_transition any => :cancelled do |appointment|
-      appointment.cascade_cancellation
-    end
-  end
+  STATUS_ORDER = %w[
+    unscheduled
+    pending_therapist_assignment
+    pending_patient_approval
+    pending_payment
+    paid
+    cancelled
+  ].freeze
+  STATUS_METADATA = {
+    "unscheduled" => {
+      name: "Unscheduled",
+      description: "Appointment has not been scheduled yet"
+    },
+    "pending_therapist_assignment" => {
+      name: "Awaiting Therapist",
+      description: "Appointment waiting for therapist assignment"
+    },
+    "pending_patient_approval" => {
+      name: "Awaiting Approval",
+      description: "Appointment waiting for patient confirmation"
+    },
+    "pending_payment" => {
+      name: "Payment Required",
+      description: "Appointment waiting for payment processing"
+    },
+    "paid" => {
+      name: "Confirmed",
+      description: "Appointment confirmed and paid"
+    },
+    "cancelled" => {
+      name: "Cancelled",
+      description: "Appointment has been cancelled"
+    }
+  }.freeze
 
   # * define enums
   enum :status, {
@@ -137,6 +119,7 @@ class Appointment < ApplicationRecord
   before_validation :set_auto_status, on: :create
 
   # after every create, snap a fresh history record
+  after_commit :create_series_appointments, on: :create, if: -> { should_create_series? }
   after_commit :snapshot_address_history, on: [:create]
   after_commit :snapshot_package_history, on: [:create]
   after_commit :track_status_change, on: [:create, :update], if: -> { saved_change_to_status? && updater.present? }
@@ -162,16 +145,20 @@ class Appointment < ApplicationRecord
     validate :validate_series_requirements
   end
 
-  with_options unless: :unscheduled? do
+  with_options unless: -> { unscheduled? || status_cancelled? } do
     validates :appointment_date_time, presence: true
   end
 
   validate :appointment_date_time_in_the_future
+  validate :validate_paid_requires_therapist
   validate :validate_visit_sequence
-  validate :status_must_be_valid
+  validate :unscheduled_appointment_requirements
   validate :validate_appointment_sequence
   validate :no_duplicate_appointment_time
   validate :no_overlapping_appointments
+  validate :status_must_be_valid
+  validate :valid_status_transition
+  validate :series_status_cannot_outpace_root
 
   validates_associated :address_history
 
@@ -223,7 +210,7 @@ class Appointment < ApplicationRecord
     ]).future
   }
   scope :cancelled, -> {
-    where(status: "CANCELLED")
+    where(status: "CANCELLED").where(appointment_reference_id: nil)
   }
   scope :unscheduled, -> {
     where(status: "UNSCHEDULED")
@@ -256,10 +243,12 @@ class Appointment < ApplicationRecord
   # end group
 
   def start_time
+    return if appointment_date_time.blank?
     appointment_date_time.strftime("%H:%M")
   end
 
   def end_time
+    return if appointment_date_time.blank?
     duration = therapist&.therapist_appointment_schedule&.appointment_duration_in_minutes || 0
     buffer = therapist&.therapist_appointment_schedule&.buffer_time_in_minutes || 0
     (appointment_date_time + (duration + buffer).minutes).strftime("%H:%M")
@@ -319,7 +308,11 @@ class Appointment < ApplicationRecord
   end
 
   def unscheduled?
-    status == "UNSCHEDULED"
+    status_unscheduled?
+  end
+
+  def schedulable?
+    unscheduled? || status_pending_therapist_assignment? || status_pending_patient_approval?
   end
 
   def needs_scheduling?
@@ -336,6 +329,110 @@ class Appointment < ApplicationRecord
     root = reference_appointment || self
     # include the root visit, then children
     ([root] + root.series_appointments.order(:visit_number))
+  end
+
+  def cancellable?
+    # Initial visits can always be cancelled
+    # Series appointments can be cancelled if initial visit is cancelled
+    initial_visit? || (series? && reference_appointment.status_cancelled?)
+  end
+
+  def should_create_series?
+    initial_visit? && series_available?
+  end
+
+  def status_human_readable
+    STATUS_METADATA[status]
+  end
+
+  # * define the state_machines methods
+  def cascade_cancellation(updater: nil, reason: nil)
+    return unless initial_visit?
+
+    series_appointments.where.not(status: :cancelled).find_each do |appt|
+      appt.update(  # Use update instead of update! for validation handling
+        status: :cancelled,
+        status_reason: reason,
+        updater:
+      )
+    end
+  end
+
+  # Custom status transition methods
+  def assign_therapist!
+    base_message = "Cannot change to needs patient approval"
+    unless valid_for_scheduling?
+      errors.add(:base, "#{base_message}. " \
+        "Required details: therapist and appointment time")
+      return false
+    end
+
+    unless schedulable?
+      errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
+      return false
+    end
+
+    transaction do
+      if update(status: :pending_patient_approval, status_reason:, updater:)
+        true
+      else
+        errors.add(:base, "Failed change status to needs patient approval: #{errors.full_messages.join(", ")}")
+        false
+      end
+    end
+  end
+
+  def patient_approve!
+    base_message = "Cannot change to waiting payment"
+    unless status_pending_patient_approval?
+      errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
+      return false
+    end
+
+    transaction do
+      if update(status: :pending_payment, status_reason:, updater:)
+        true
+      else
+        errors.add(:base, "Failed change status to waiting payment: #{errors.full_messages.join(", ")}")
+        false
+      end
+    end
+  end
+
+  def mark_paid!
+    base_message = "Cannot mark paid appointment"
+    unless status_pending_payment?
+      errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
+      return false
+    end
+
+    transaction do
+      if update(status: :paid, status_reason:, updater:)
+        true
+      else
+        errors.add(:base, "Failed to mark paid appointment: #{errors.full_messages.join(", ")}")
+        false
+      end
+    end
+  end
+
+  def cancel!
+    unless cancellable?
+      base_message = "Cannot cancel series appointment"
+      error_message = (series? && !reference_appointment.cancelled?) ? "#{base_message}. First visit has not been cancelled (current status: #{status_human_readable[:name]})" : "#{base_message}, #{status_human_readable[:description]}"
+      errors.add(:base, error_message)
+      return false
+    end
+
+    transaction do
+      if update(status: :cancelled, status_reason:, updater:)
+        cascade_cancellation(updater:, reason: status_reason)
+        true
+      else
+        errors.add(:base, "Cancellation failed: #{errors.full_messages.join(", ")}")
+        false
+      end
+    end
   end
 
   private
@@ -372,12 +469,12 @@ class Appointment < ApplicationRecord
     return unless conflicting
 
     formatted_date_time = appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-    errors.add(:appointment_date_time, "Already has an appointment at #{formatted_date_time}")
+    errors.add(:appointment_date_time, "already has an appointment (#{conflicting.registration_number}) at #{formatted_date_time}")
   end
 
   # Validation: Prevent overlapping time ranges
   def no_overlapping_appointments
-    return if appointment_date_time.blank? || patient.blank?
+    return if appointment_date_time.blank? || patient.blank? || status_cancelled?
 
     current_start = appointment_date_time
     current_end = current_start + total_duration_minutes.minutes
@@ -398,14 +495,14 @@ class Appointment < ApplicationRecord
         start = existing_start.strftime("%B %d, %Y %I:%M %p")
         ending = (existing_start + existing_total_duration_minutes.minutes).strftime("%I:%M %p")
 
-        errors.add(:appointment_date_time, "overlaps with #{start} - #{ending}")
+        errors.add(:appointment_date_time, "overlaps with (#{existing.registration_number}) at #{start} — #{ending}")
         break # Stop checking after first overlap
       end
     end
   end
 
   def initial_visit_requirements
-    errors.add(:appointment_date_time, "Initial visit cannot be unscheduled") if unscheduled?
+    errors.add(:appointment_date_time, "initial visit cannot be unscheduled") if unscheduled?
     errors.add(:appointment_date_time, "must be present for initial visit") if appointment_date_time.blank?
   end
 
@@ -413,6 +510,18 @@ class Appointment < ApplicationRecord
     errors.add(:appointment_reference_id, "cannot be modified") if appointment_reference_id_changed? && persisted?
     errors.add(:package_id, "must match reference appointment's package") if reference_appointment&.package_id != package_id
     errors.add(:patient_id, "must match reference appointment's patient") if reference_appointment&.patient_id != patient_id
+  end
+
+  def unscheduled_appointment_requirements
+    return unless unscheduled?
+
+    if appointment_date_time.present?
+      errors.add(:appointment_date_time, "must be blank for unscheduled appointments")
+    end
+
+    if therapist_id.present?
+      errors.add(:therapist_id, "cannot be assigned to unscheduled appointments")
+    end
   end
 
   def validate_visit_sequence
@@ -425,12 +534,6 @@ class Appointment < ApplicationRecord
     appointment_date_time.present? && therapist_id.present?
   end
 
-  def cascade_cancellation
-    series_appointments.each do |appointment|
-      appointment.cancel! unless appointment.cancelled?
-    end
-  end
-
   def validate_appointment_sequence
     if initial_visit?
       validate_initial_visit_position
@@ -441,42 +544,134 @@ class Appointment < ApplicationRecord
 
   def validate_initial_visit_position
     first_series = series_appointments.order(:appointment_date_time).first
-    return unless first_series
+    return false unless first_series
 
-    return if appointment_date_time < first_series.appointment_date_time
+    return false if first_series.appointment_date_time.blank?
+
+    return false if appointment_date_time < first_series.appointment_date_time
 
     formatted_date = first_series.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-    errors.add(:appointment_date_time, "The first visit must occur before any another visit series on #{formatted_date}")
+    errors.add(:appointment_date_time, "the first visit must occur before any another visit series (#{first_series.registration_number}) on #{formatted_date}")
+    true
+  end
+
+  # Enforce that paid appointments must have a therapist when rescheduling
+  def validate_paid_requires_therapist
+    if status == "paid" && therapist_id.blank?
+      errors.add(
+        :therapist_id,
+        "must be selected when rescheduling a paid appointment"
+      )
+    end
   end
 
   def validate_series_visit_position
+    # skip the validation for unscheduled series & if there's not have series
+    return false unless series? && appointment_date_time.present?
+
     initial = reference_appointment
-    # Ensure initial visit exists and is scheduled
+
+    # First visit must be scheduled before any series visits
     if initial.appointment_date_time.blank?
-      errors.add(:appointment_date_time, "First visit must be scheduled first")
-      return
+      errors.add(:appointment_date_time, "first visit (#{initial.registration_number}) must be scheduled before scheduling any visit series")
+      return true
     end
 
-    # appointment sequent must be after the initial visit
+    # This series visit must come strictly after the first visit
     if appointment_date_time <= initial.appointment_date_time
-      formatted_initial_date = initial.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-      errors.add(:appointment_date_time, "Visits series must be after the first visit on #{formatted_initial_date}")
-      return
+      formatted_initial_start_date = initial.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
+      formatted_initial_end_date = (
+        initial.appointment_date_time + initial.total_duration_minutes.minutes
+      ).strftime("%I:%M %p")
+      errors.add(
+        :appointment_date_time,
+        "must be after the first visit (#{initial.registration_number}) on " \
+        "#{formatted_initial_start_date} — #{formatted_initial_end_date}"
+      )
+      return true
     end
 
-    next_series = initial.series_appointments
-      .where.not(id: id)
-      .where("appointment_date_time > ?", appointment_date_time_was)
-      .order(:appointment_date_time)
+    # This visit must be after the previous visit in the series (if any)
+    prev = initial.series_appointments
+      .where("visit_number < ?", visit_number)
+      .order(visit_number: :desc)
       .first
+    if prev&.appointment_date_time.present? && appointment_date_time <= prev.appointment_date_time
+      formatted_prev_visit_date = prev.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
+      formatted_prev_end_date = (
+        prev.appointment_date_time + prev.total_duration_minutes.minutes
+      ).strftime("%I:%M %p")
+      errors.add(
+        :appointment_date_time,
+        "must be after visit #{prev.visit_number}/#{total_package_visits} " \
+        "(#{prev.registration_number}) on " \
+        "#{formatted_prev_visit_date} — #{formatted_prev_end_date}"
+      )
+      return true
+    end
 
-    return unless next_series
+    # This visit must be before the next visit in the series (if any)
+    nxt = initial.series_appointments
+      .where("visit_number > ?", visit_number)
+      .order(visit_number: :asc)
+      .first
+    if nxt&.appointment_date_time.present? && appointment_date_time >= nxt.appointment_date_time
+      formatted_nxt_visit_date = nxt.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
+      formatted_nxt_end_date = (
+        nxt.appointment_date_time + nxt.total_duration_minutes.minutes
+      ).strftime("%I:%M %p")
+      errors.add(
+        :appointment_date_time,
+        "must be before visit #{nxt.visit_number}/#{total_package_visits} " \
+        "(#{nxt.registration_number}) on " \
+        "#{formatted_nxt_visit_date} — #{formatted_nxt_end_date}"
+      )
+      return true
+    end
 
-    # New date must be before the next appointment sequent
-    return if appointment_date_time < next_series.appointment_date_time
+    false
+  end
 
-    formatted_next_date = next_series.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-    errors.add(:appointment_date_time, "This visit series must be before the next one on #{formatted_next_date}")
+  def series_status_cannot_outpace_root
+    return unless series?
+    return if status_cancelled?
+    # skip if there's error on validate appointment sequence
+    return if validate_appointment_sequence
+
+    root = reference_appointment || self
+    root.reload if root.persisted?  # Get fresh status from DB
+    return if root.status_cancelled?
+
+    root_status = root.status
+    current_index = STATUS_ORDER.index(status)
+    root_index = STATUS_ORDER.index(root.status)
+    root_status_name = STATUS_METADATA[root_status][:name]
+
+    if current_index > root_index
+      errors.add(:status, "cannot be ahead of first visit (#{root.registration_number}) status (#{root_status_name})")
+    end
+  end
+
+  def valid_status_transition
+    return if status_was.nil? || status_cancelled? # Skip for new records or cancellation
+
+    previous_status = status_was
+    new_status = status
+
+    allowed_transitions = {
+      "unscheduled" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "cancelled"],
+      "pending_therapist_assignment" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "cancelled"],
+      "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "cancelled"],
+      "pending_payment" => ["pending_payment", "paid", "cancelled"],
+      "paid" => ["paid", "cancelled"],
+      "cancelled" => []  # Once cancelled, no more transitions
+    }
+
+    previous_status_name = STATUS_METADATA[previous_status][:name]
+    new_status_name = STATUS_METADATA[new_status][:name]
+    unless allowed_transitions[previous_status]&.include?(new_status)
+      errors.add(:status, "invalid transition from #{previous_status_name} to #{new_status_name}")
+    end
   end
 
   # * define the callback methods
@@ -499,54 +694,60 @@ class Appointment < ApplicationRecord
     addr = patient.active_address
     return unless addr
 
-    # remove old snapshot (optional, but keeps only one record in the table)
-    address_history&.destroy
+    transaction do
+      # remove old snapshot (optional, but keeps only one record in the table)
+      address_history&.destroy
 
-    # Rails gives you this helper for has_one :address_history
-    create_address_history!(
-      location: addr.location,
-      latitude: addr.latitude,
-      longitude: addr.longitude,
-      address_line: addr.address,
-      postal_code: addr.postal_code,
-      notes: addr&.notes
-      # coordinates will be filled in by your default attribute
-    )
+      # Rails gives you this helper for has_one :address_history
+      create_address_history!(
+        location: addr.location,
+        latitude: addr.latitude,
+        longitude: addr.longitude,
+        address_line: addr.address,
+        postal_code: addr.postal_code,
+        notes: addr&.notes
+        # coordinates will be filled in by your default attribute
+      )
+    end
   end
 
   def snapshot_package_history
     return if package.blank?
 
-    # Remove previous history if exists
-    package_history&.destroy
+    transaction do
+      # Remove previous history if exists
+      package_history&.destroy
 
-    create_package_history!(
-      package: package,
-      name: package.name,
-      currency: package.currency,
-      number_of_visit: package.number_of_visit,
-      price_per_visit: package.price_per_visit,
-      discount: package.discount,
-      total_price: package.total_price,
-      fee_per_visit: package.fee_per_visit,
-      total_fee: package.total_fee
-    )
+      create_package_history!(
+        package: package,
+        name: package.name,
+        currency: package.currency,
+        number_of_visit: package.number_of_visit,
+        price_per_visit: package.price_per_visit,
+        discount: package.discount,
+        total_price: package.total_price,
+        fee_per_visit: package.fee_per_visit,
+        total_fee: package.total_fee
+      )
+    end
   end
 
   def track_status_change
-    raw_old, raw_new = saved_change_to_status
-    # grab the enum_map = Appointment.statuses hash
-    enum_map = self.class.statuses
-    # Figure out the enum‐key for each side, whether Rails gave you the key or the value
-    old_key = enum_map.key(raw_old) || raw_old
-    new_key = enum_map.key(raw_new) || raw_new
+    transaction do
+      raw_old, raw_new = saved_change_to_status
+      # grab the enum_map = Appointment.statuses hash
+      enum_map = self.class.statuses
+      # Figure out the enum‐key for each side, whether Rails gave you the key or the value
+      old_key = enum_map.key(raw_old) || raw_old
+      new_key = enum_map.key(raw_new) || raw_new
 
-    status_histories.create!(
-      old_status: enum_map[old_key],   # always the human­readable string
-      new_status: enum_map[new_key],   # e.g. "PENDING THERAPIST ASSIGNMENT"
-      reason: status_reason, # from the optional column
-      changed_by: updater.id # or however you track the actor
-    )
+      status_histories.create!(
+        old_status: enum_map[old_key],   # always the human­readable string
+        new_status: enum_map[new_key],   # e.g. "PENDING THERAPIST ASSIGNMENT"
+        reason: status_reason, # from the optional column
+        changed_by: updater.id # or however you track the actor
+      )
+    end
   end
 
   def determine_initial_status
@@ -560,5 +761,39 @@ class Appointment < ApplicationRecord
     return unless new_record?
 
     self.status = determine_initial_status
+  end
+
+  def create_series_appointments
+    return unless initial_visit?
+
+    # Pull every column from the first visit
+    template = attributes
+
+    # Scrub columns that would violate PK/FK constraints or business rules
+    scrubbed_template = template.except(
+      "id", "registration_number", "visit_number", "appointment_reference_id", "therapist_id", "appointment_date_time", "status", "created_at", "updated_at"
+    )
+
+    # Add the fields that DO differ for each child
+    (2..total_package_visits).each do |visit_no|
+      sequel = series_appointments.create!(
+        scrubbed_template.merge(
+          visit_number: visit_no,
+          appointment_date_time: nil,
+          preferred_therapist_gender:,
+          status: :unscheduled,
+          updater: updater,
+          admins:
+        )
+      )
+
+      # Clone (or stub) the medical record in the same fashion
+      medical_attrs = if (pmr = patient_medical_record)
+        pmr.attributes.except("id", "appointment_id", "created_at", "updated_at")
+      else
+        {complaint_description: "", condition: ""}
+      end
+      sequel.create_patient_medical_record!(medical_attrs)
+    end
   end
 end

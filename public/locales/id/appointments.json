@@ -13,11 +13,9 @@
 		"create": "Buat Janji Temu",
 		"cancel_booking": "Batalkan Pemesanan",
 		"reschedule": "Penjadwalan Ulang",
-		"series": "Series",
-		"update_pic": "Penanggung Jawab (PIC)",
-		"update_status": "Status",
-		"dropdown_update": "Perbarui",
-		"dropdown_create": "Buat"
+		"series": "Buat Series",
+		"update_pic": "Perbarui Penanggung Jawab (PIC)",
+		"update_status": "Perbarui Status"
 	},
 	"tab": {
 		"title": {

@@ -11,7 +11,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import {
 	Command,
 	CommandEmpty,
@@ -35,14 +34,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -69,10 +60,8 @@ import {
 } from "@/lib/appointments/form";
 import { cn, populateQueryParams } from "@/lib/utils";
 import { Deferred, Link, usePage } from "@inertiajs/react";
-import { format } from "date-fns";
 import {
 	AlertCircle,
-	CalendarIcon,
 	Check,
 	ChevronsRight,
 	ChevronsUpDown,
@@ -101,6 +90,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { useTranslation } from "react-i18next";
+import DateTimePicker from "./form/date-time";
 
 export type FormMode = "new" | "series";
 
@@ -344,7 +334,7 @@ export function FinalStep() {
 				<span className="my-2 text-3xl font-bold text-primary">{count}</span>
 
 				<Button effect="shine" size="lg" asChild>
-					<Link href={redirectURL}>{taf("buttn")}</Link>
+					<Link href={redirectURL}>{taf("button")}</Link>
 				</Button>
 			</div>
 
@@ -398,22 +388,13 @@ export function AppointmentSchedulingForm() {
 	} = useAppointmentSchedulingForm();
 	const { preferredTherapistGenderOption } = restSchedulingHooks;
 	const {
+		alertService,
 		servicesOption,
 		packagesOption,
 		onFocusServiceField,
 		onSelectService,
 		onSelectPackage,
-	} = restSchedulingHooks;
-	const {
-		isOpenAppointmentDate,
-		appointmentDate,
-		appointmentTime,
-		appointmentDateCalendarProps,
-		setAppointmentDate,
-		setAppointmentTime,
-		setIsOpenAppointmentDate,
-		onSelectAppointmentDate,
-		onSelectAppointmentTime,
+		checkServicePackage,
 	} = restSchedulingHooks;
 	const { mapRef, isIsolineCalculated: _isIsolineCalculated } =
 		restSchedulingHooks;
@@ -721,145 +702,43 @@ export function AppointmentSchedulingForm() {
 				/>
 			</Deferred>
 
-			{!therapistsOptions?.feasible?.length && isTherapistFound && (
+			{(alertService !== null ||
+				(!therapistsOptions?.feasible?.length && isTherapistFound)) && (
 				<Alert
 					variant="destructive"
 					className="col-span-full motion-preset-rebound-down"
 				>
 					<AlertCircle className="w-4 h-4" />
-					<AlertTitle>Therapist not found</AlertTitle>
+					<AlertTitle>
+						{alertService?.title || "Therapist not found"}
+					</AlertTitle>
 					<AlertDescription>
-						There are no therapists available for the selected appointment date
-						and time. Please choose a different date or time.
+						{alertService?.description ||
+							"There are no therapists available for the selected appointment date and time. Please choose a different date or time."}
 					</AlertDescription>
 				</Alert>
 			)}
 
-			<div className="grid w-full grid-cols-3 gap-4">
-				<FormField
-					control={form.control}
-					name="appointmentScheduling.appointmentDateTime"
-					render={({ field }) => (
-						<FormItem className="col-span-2">
-							<FormLabel>Appointment Date</FormLabel>
-							<Popover
-								open={isOpenAppointmentDate}
-								onOpenChange={setIsOpenAppointmentDate}
-							>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant={"outline"}
-											className={cn(
-												"relative w-full pl-3 text-left font-normal shadow-inner bg-sidebar",
-												!field.value && "text-muted-foreground",
-											)}
-										>
-											<p className="truncate">
-												{field?.value
-													? format(field.value, "PPPP")
-													: "Pick a appointment date"}
-											</p>
+			<FormField
+				control={form.control}
+				name="appointmentScheduling.appointmentDateTime"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>Appointment Date</FormLabel>
 
-											{field.value ? (
-												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-												<div
-													className="cursor-pointer"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
+						<DateTimePicker
+							value={field.value}
+							onChangeValue={field.onChange}
+							callbackOnChange={() => {
+								// reset all therapist and isoline maps state
+								onResetAllTherapistState();
+							}}
+						/>
 
-														form.setValue(
-															"appointmentScheduling.appointmentDateTime",
-															null as unknown as Date,
-														);
-														setAppointmentDate(null);
-														setAppointmentTime("");
-													}}
-												>
-													<X className="opacity-50" />
-												</div>
-											) : (
-												<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
-											)}
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="w-auto p-0"
-									align="start"
-									side="bottom"
-								>
-									<Calendar
-										{...appointmentDateCalendarProps}
-										initialFocus
-										mode="single"
-										captionLayout="dropdown"
-										selected={new Date(appointmentDate || field.value)}
-										defaultMonth={field.value}
-										onSelect={(date) => {
-											onSelectAppointmentDate(date);
-											field.onChange(date || null);
-										}}
-									/>
-								</PopoverContent>
-							</Popover>
-
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name="appointmentScheduling.appointmentDateTime"
-					render={({ field }) => (
-						<FormItem className="col-span-1">
-							<FormLabel className="invisible">Time</FormLabel>
-							<FormControl>
-								<Select
-									value={appointmentTime}
-									onValueChange={(time) => {
-										const date = onSelectAppointmentTime(time);
-										if (date) {
-											field.onChange(date);
-										}
-									}}
-								>
-									<SelectTrigger
-										className={cn(
-											"shadow-inner bg-sidebar focus:ring-0 w-[100px] focus:ring-offset-0",
-											!appointmentDate && "text-muted-foreground",
-										)}
-									>
-										<SelectValue placeholder="Time" />
-									</SelectTrigger>
-									<SelectContent>
-										<ScrollArea className="h-[15rem]">
-											{Array.from({ length: 96 }).map((_, i) => {
-												const hour = Math.floor(i / 4)
-													.toString()
-													.padStart(2, "0");
-												const minute = ((i % 4) * 15)
-													.toString()
-													.padStart(2, "0");
-												return (
-													<SelectItem
-														key={String(i)}
-														value={`${hour}:${minute}`}
-													>
-														{hour}:{minute}
-													</SelectItem>
-												);
-											})}
-										</ScrollArea>
-									</SelectContent>
-								</Select>
-							</FormControl>
-						</FormItem>
-					)}
-				/>
-			</div>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
 
 			<div className="grid gap-3 col-span-full">
 				<Button
@@ -870,6 +749,10 @@ export function AppointmentSchedulingForm() {
 					disabled={!watchAppointmentSchedulingValue.appointmentDateTime}
 					onClick={(event) => {
 						event.preventDefault();
+
+						checkServicePackage();
+						if (alertService !== null) return;
+
 						onFindTherapists();
 					}}
 				>
@@ -906,11 +789,13 @@ export function AppointmentSchedulingForm() {
 												!field.value && "text-muted-foreground",
 											)}
 										>
-											<p className="uppercase">
-												{field.value
-													? selectedTherapist?.name || field.value
-													: "Select therapist"}
-											</p>
+											{field.value ? (
+												<span className="uppercase">
+													{selectedTherapist?.name || field.value}
+												</span>
+											) : (
+												<span>Select therapist</span>
+											)}
 
 											{field.value ? (
 												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>

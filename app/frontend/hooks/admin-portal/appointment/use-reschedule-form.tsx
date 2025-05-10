@@ -13,12 +13,10 @@ import { useMediaQuery } from "@uidotdev/usehooks";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { goBackHandler, populateQueryParams } from "@/lib/utils";
 import {
-	useAppointmentDateTime,
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
 import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
-import { format } from "date-fns";
 
 export const useRescheduleForm = () => {
 	const { url: pageURL, props: globalProps } =
@@ -151,6 +149,13 @@ export const useRescheduleFields = () => {
 		() => appointment.service?.id || "",
 		[appointment.service?.id],
 	);
+	const brandPackagesSource = useMemo(() => {
+		return {
+			brandName: appointment.service?.name.replaceAll("_", " "),
+			packageName: appointment.package?.name,
+			packageVisit: `${appointment.package?.numberOfVisit || "N/A"} visit(s)`,
+		};
+	}, [appointment]);
 	const patientDetails = useMemo(() => {
 		const patient = appointment?.patient;
 		const visitAddress = appointment?.visitAddress;
@@ -249,66 +254,13 @@ export const useRescheduleFields = () => {
 		sourceOptions: globalProps.optionsData?.preferredTherapistGender,
 	});
 
-	// * for appointment date field
-	const appointmentDateTimeValues = useAppointmentDateTime({
-		sourceValue: watchAppointmentDateTimeValue,
-	});
-	const onSelectAppointmentDate = useCallback(
-		(date?: Date) => {
-			const { appointmentTime, setAppointmentDate, setAppointmentTime } =
-				appointmentDateTimeValues;
-			if (appointmentTime) {
-				// Set the selected time to the selected date
-				const [hours, minutes] = appointmentTime.split(":");
-				date?.setHours(Number.parseInt(hours), Number.parseInt(minutes));
-			}
-
-			// update state reference and form field value data
-			setAppointmentDate(date || null);
-
-			// update state for appointment time
-			const time = date ? format(date.toString(), "HH:mm") : "";
-			setAppointmentTime(time);
-
-			// reset all therapist and isoline maps state
-			onResetAllTherapistState();
-		},
-		[appointmentDateTimeValues, onResetAllTherapistState],
-	);
-	const onSelectAppointmentTime = useCallback(
-		(time: string) => {
-			const { appointmentDate, setAppointmentDate, setAppointmentTime } =
-				appointmentDateTimeValues;
-			setAppointmentTime(time);
-			if (appointmentDate) {
-				const [hours, minutes] = time.split(":");
-				const newDate = new Date(appointmentDate.getTime());
-				newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
-				setAppointmentDate(newDate);
-
-				// reset all therapist and isoline maps state
-				onResetAllTherapistState();
-
-				return newDate;
-			}
-
-			return null;
-		},
-		[appointmentDateTimeValues, onResetAllTherapistState],
-	);
-	const appointmentDateTimeHooks = {
-		...appointmentDateTimeValues,
-		onSelectAppointmentDate,
-		onSelectAppointmentTime,
-	};
-
 	return {
 		...prefGenderHooks,
 		...therapistAvailabilityHooks,
-		...appointmentDateTimeHooks,
 		form,
 		isLoading,
 		watchAppointmentDateTimeValue,
 		errorsServerValidation,
+		brandPackagesSource,
 	};
 };

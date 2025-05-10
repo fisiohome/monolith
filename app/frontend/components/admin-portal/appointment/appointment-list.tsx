@@ -11,13 +11,6 @@ import {
 	ExpandableContent,
 	ExpandableTrigger,
 } from "@/components/shared/expandable";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +35,6 @@ import {
 	Ban,
 	Building,
 	Cctv,
-	ChevronDown,
 	ChevronsDown,
 	ChevronsUp,
 	Clock3,
@@ -56,22 +48,12 @@ import {
 	MapPinHouse,
 	MapPinIcon,
 	Phone,
-	Plus,
-	RefreshCw,
-	Repeat,
 	ShieldCheck,
 	Stethoscope,
 	TicketPercent,
 	User,
 } from "lucide-react";
-import {
-	type ComponentProps,
-	memo,
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-} from "react";
+import { type ComponentProps, memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Admin } from "@/types/admin-portal/admin";
@@ -87,7 +69,7 @@ interface AppointmentActionButtonsProps {
 
 const AppointmentActionButtons = memo(function Component({
 	schedule,
-	isExpanded,
+	isExpanded: _isExpanded,
 	isAdminPIC,
 	isPastAppointment,
 	isSuperAdmin,
@@ -95,21 +77,18 @@ const AppointmentActionButtons = memo(function Component({
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
-	const [openDropdown, setOpenDropdown] = useState({
-		update: false,
-		create: false,
-	});
 	const isShow = useMemo(() => {
 		const updateStatus =
 			schedule.status !== "paid" &&
 			schedule.status !== "unscheduled" &&
 			schedule.status !== "pending_therapist_assignment";
-		const createSeries =
-			schedule.totalPackageVisits > 1 &&
-			schedule.visitNumber !== schedule.totalPackageVisits &&
-			schedule.nextVisitProgress;
+		const cancel = schedule.initialVisit;
+		// const createSeries =
+		// 	schedule.totalPackageVisits > 1 &&
+		// 	schedule.visitNumber !== schedule.totalPackageVisits &&
+		// 	schedule.nextVisitProgress;
 
-		return { updateStatus, createSeries };
+		return { updateStatus, cancel };
 	}, [schedule]);
 	const routeTo = {
 		cancel: (id: string) => {
@@ -185,162 +164,89 @@ const AppointmentActionButtons = memo(function Component({
 		},
 	};
 
-	// * side effect if the expandable card is not expanded then close dropdown menu
-	useEffect(() => {
-		if (!isExpanded) {
-			setOpenDropdown((prev) => ({ ...prev, update: false }));
-		}
-	}, [isExpanded]);
-
 	return (
 		<ExpandableContent preset="slide-up">
 			<ExpandableCardFooter className="p-4 md:p-6">
 				<div className="flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end">
 					{(isSuperAdmin || isAdminPIC) && schedule.status !== "cancelled" && (
 						<>
-							<DropdownMenu
-								open={openDropdown.create}
-								onOpenChange={() =>
-									setOpenDropdown((prev) => ({ ...prev, create: false }))
-								}
-							>
-								<DropdownMenuTrigger
-									asChild
-									onMouseEnter={() =>
-										setOpenDropdown((prev) => ({ ...prev, create: true }))
-									}
+							{/* {isShow.createSeries && (
+								<Button
+									variant="primary-outline"
+									className="w-full lg:w-auto"
+									onClick={(event) => {
+										event.preventDefault();
+										event.stopPropagation();
+
+										routeTo.createSeries(schedule);
+									}}
 								>
-									<Button
-										icon={ChevronDown}
-										iconPlacement="right"
-										variant="primary-outline"
-										className="w-full transition-all duration-200 lg:w-auto"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
-										}}
-									>
-										<Plus className={openDropdown.create ? "rotate-12" : ""} />
-										{t("button.dropdown_create")}
-									</Button>
-								</DropdownMenuTrigger>
-
-								<DropdownMenuContent
-									className="w-fit"
-									align="start"
-									side="bottom"
-								>
-									<DropdownMenuGroup>
-										{isShow.createSeries && (
-											<DropdownMenuItem
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
-
-													routeTo.createSeries(schedule);
-												}}
-											>
-												<Repeat />
-												{t("button.series")}
-											</DropdownMenuItem>
-										)}
-
-										{!isPastAppointment && (
-											<DropdownMenuItem
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
-
-													routeTo.reschedule(String(schedule.id));
-												}}
-											>
-												<Clock3 />
-												{t("button.reschedule")}
-											</DropdownMenuItem>
-										)}
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
+									<Repeat />
+									{t("button.series")}
+								</Button>
+							)} */}
 
 							{!isPastAppointment && (
 								<>
-									<DropdownMenu
-										open={openDropdown.update}
-										onOpenChange={() =>
-											setOpenDropdown((prev) => ({ ...prev, update: false }))
-										}
-									>
-										<DropdownMenuTrigger
-											asChild
-											onMouseEnter={() =>
-												setOpenDropdown((prev) => ({ ...prev, update: true }))
-											}
-										>
-											<Button
-												icon={ChevronDown}
-												iconPlacement="right"
-												variant="primary-outline"
-												className="w-full transition-all duration-200 lg:w-auto"
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
-												}}
-											>
-												<RefreshCw
-													className={openDropdown.update ? "rotate-45" : ""}
-												/>
-												{t("button.dropdown_update")}
-											</Button>
-										</DropdownMenuTrigger>
-
-										<DropdownMenuContent
-											className="w-fit"
-											align="start"
-											side="bottom"
-										>
-											<DropdownMenuGroup>
-												{isShow.updateStatus && (
-													<DropdownMenuItem
-														onClick={(event) => {
-															event.preventDefault();
-															event.stopPropagation();
-
-															routeTo.updateStatus(String(schedule.id));
-														}}
-													>
-														<Activity />
-														{t("button.update_status")}
-													</DropdownMenuItem>
-												)}
-
-												<DropdownMenuItem
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-
-														routeTo.updatePic(String(schedule.id));
-													}}
-												>
-													<Cctv />
-													{t("button.update_pic")}
-												</DropdownMenuItem>
-											</DropdownMenuGroup>
-										</DropdownMenuContent>
-									</DropdownMenu>
-
 									<Button
-										variant="destructive"
+										variant="primary-outline"
 										className="w-full lg:w-auto"
 										onClick={(event) => {
 											event.preventDefault();
 											event.stopPropagation();
 
-											routeTo.cancel(String(schedule.id));
+											routeTo.reschedule(String(schedule.id));
 										}}
 									>
-										<Ban />
-										{t("button.cancel_booking")}
+										<Clock3 />
+										{t("button.reschedule")}
 									</Button>
+
+									{isShow.updateStatus && (
+										<Button
+											variant="primary-outline"
+											className="w-full lg:w-auto"
+											onClick={(event) => {
+												event.preventDefault();
+												event.stopPropagation();
+
+												routeTo.updateStatus(String(schedule.id));
+											}}
+										>
+											<Activity />
+											{t("button.update_status")}
+										</Button>
+									)}
+
+									<Button
+										variant="primary-outline"
+										className="w-full lg:w-auto"
+										onClick={(event) => {
+											event.preventDefault();
+											event.stopPropagation();
+
+											routeTo.updatePic(String(schedule.id));
+										}}
+									>
+										<Cctv />
+										{t("button.update_pic")}
+									</Button>
+
+									{isShow.cancel && (
+										<Button
+											variant="destructive"
+											className="w-full lg:w-auto"
+											onClick={(event) => {
+												event.preventDefault();
+												event.stopPropagation();
+
+												routeTo.cancel(String(schedule.id));
+											}}
+										>
+											<Ban />
+											{t("button.cancel_booking")}
+										</Button>
+									)}
 								</>
 							)}
 						</>
@@ -414,10 +320,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 	const { locale, tzDate } = useDateContext();
 	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
-	const isPastAppointment = useMemo(
-		() => isPast(schedule.appointmentDateTime),
-		[schedule.appointmentDateTime],
-	);
+	const isPastAppointment = useMemo(() => {
+		if (!schedule.appointmentDateTime) return false;
+		return isPast(schedule.appointmentDateTime);
+	}, [schedule.appointmentDateTime]);
 	const BADGE_STYLES: Record<Appointment["status"], string> = {
 		pending_patient_approval:
 			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100",
@@ -451,6 +357,12 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 					: "success";
 	}, [schedule.status]);
 	const startTimeLabel = useMemo(() => {
+		if (!schedule.appointmentDateTime)
+			return {
+				time: "--:--",
+				distance: "N/A",
+				period: "--",
+			};
 		// Format it to 12-hour time with an AM/PM indicator.
 		const timePeriod = format(schedule.appointmentDateTime, "hh:mm a", {
 			locale,
@@ -868,10 +780,12 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 															{t("list.booked_appointment_date")}:
 														</p>
 														<p className="font-semibold capitalize">
-															{format(schedule.appointmentDateTime, "PPPP", {
-																locale,
-																in: tzDate,
-															})}
+															{schedule.appointmentDateTime
+																? format(schedule.appointmentDateTime, "PPPP", {
+																		locale,
+																		in: tzDate,
+																	})
+																: "N/A"}
 														</p>
 													</div>
 
@@ -880,10 +794,16 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 															{t("list.booked_appointment_time")}:
 														</p>
 														<p className="font-semibold uppercase">
-															{format(schedule.appointmentDateTime, "hh:mm a", {
-																locale,
-																in: tzDate,
-															})}
+															{schedule.appointmentDateTime
+																? format(
+																		schedule.appointmentDateTime,
+																		"hh:mm a",
+																		{
+																			locale,
+																			in: tzDate,
+																		},
+																	)
+																: "N/A"}
 														</p>
 													</div>
 
@@ -1033,12 +953,35 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																	Visit {visit.visitProgress}
 																</p>
 
-																<p className="text-xs font-light">
-																	{format(visit.appointmentDateTime, "PPPP", {
-																		locale,
-																		in: tzDate,
-																	})}
-																</p>
+																{visit.appointmentDateTime ? (
+																	<p className="text-xs font-light">
+																		<span>
+																			{format(
+																				visit.appointmentDateTime,
+																				"hh:mm a",
+																				{
+																					locale,
+																					in: tzDate,
+																				},
+																			)}
+																		</span>
+
+																		<span className="mx-1">&bull;</span>
+
+																		<span>
+																			{format(
+																				visit.appointmentDateTime,
+																				"PPPP",
+																				{
+																					locale,
+																					in: tzDate,
+																				},
+																			)}
+																		</span>
+																	</p>
+																) : (
+																	<p className="text-xs font-light">N/A</p>
+																)}
 															</div>
 														</div>
 													))}
