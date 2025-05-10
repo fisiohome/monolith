@@ -575,6 +575,11 @@ export const useTherapistAvailability = ({
 			preserveScroll: true,
 			preserveState: true,
 			replace: false,
+			/**
+			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
+			 * ? it's related to onSuccess callback error
+			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
+			 **/
 			// only:
 			// 	formType === "create"
 			// 		? []
@@ -593,10 +598,12 @@ export const useTherapistAvailability = ({
 				}, 250);
 			},
 			/**
+			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
 			 * ? This callback will not be called if there is a server error for example on the validation server.
 			 * ? And instead of calling the onSuccess callback it will call the onError callback. but this has been solved.
 			 * ? That is by not using the only option (for example only: [“props”]),
 			 * ? And also instead of using InertiaRails.defer use `->` or lazy data evaluation (https://inertia-rails.dev/guide/partial-reloads#lazy-data-evaluation).
+			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
 			 *
 			 **/
 			onSuccess: ({ props }) => {
