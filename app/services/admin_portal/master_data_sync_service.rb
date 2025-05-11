@@ -244,7 +244,7 @@ module AdminPortal
 
           # Create or update Therapist
           therapist = Therapist.find_or_initialize_by(name:, phone_number:, gender:)
-          therapist.assign_attributes(employment_type:, employment_status: "ACTIVE", batch:, modalities:, specializations:, service:, user:)
+          therapist.assign_attributes(employment_type:, employment_status: "ACTIVE", batch:, modalities:, specializations:, service:, user:) if therapist.new_record?
           therapist.save! if therapist.changed?
 
           # Link or create TherapistAddress (one active per therapist)
