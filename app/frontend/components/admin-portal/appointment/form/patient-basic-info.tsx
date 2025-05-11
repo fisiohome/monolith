@@ -67,15 +67,15 @@ export const CardPatientBasicInfoForm = memo(function Component({
 	return (
 		<div
 			className={cn(
-				"p-3 text-sm border rounded-md shadow-inner border-input bg-sidebar",
+				"p-3 text-sm border rounded-md shadow-inner border-input bg-sidebar flex flex-col md:flex-row",
 				className,
 			)}
 		>
-			<div className="flex items-center gap-3">
-				<Avatar className="border rounded-lg border-black/10 bg-muted size-12">
+			<div className="flex flex-col items-center w-full gap-3 text-center md:flex-row md:text-start">
+				<Avatar className="border rounded-lg border-black/10 bg-muted size-8 md:size-12">
 					<AvatarImage src="#" />
 					<AvatarFallback>
-						<User className="flex-shrink-0 size-5 text-muted-foreground/75" />
+						<User className="flex-shrink-0 size-4 md:size-5 text-muted-foreground/75" />
 					</AvatarFallback>
 				</Avatar>
 
@@ -85,9 +85,9 @@ export const CardPatientBasicInfoForm = memo(function Component({
 					</p>
 
 					{!isNotCompletedForm && (
-						<div className="flex items-center gap-3 mt-2">
+						<div className="flex flex-col gap-3 mt-2 md:flex-row">
 							<div className="flex items-center gap-1 text-xs">
-								<Cake className="size-3 text-muted-foreground" />
+								<Cake className="flex-shrink-0 size-3 text-muted-foreground" />
 								<p className="font-light text-pretty">
 									<span>
 										{age || "N/A"} {t("list.years")}
@@ -104,16 +104,21 @@ export const CardPatientBasicInfoForm = memo(function Component({
 								</p>
 							</div>
 
-							<Separator orientation="vertical" className="bg-black/10" />
+							<Separator
+								orientation="vertical"
+								className="hidden bg-black/10 md:block"
+							/>
 
-							<Badge
-								variant="outline"
-								className="flex items-center gap-1 text-xs bg-background"
-							>
-								{gender &&
-									getGenderIcon(gender, "size-3 text-muted-foreground")}
-								<p className="font-light">{gender || "N/A"}</p>
-							</Badge>
+							<div className="inline-flex mx-auto">
+								<Badge
+									variant="outline"
+									className="flex items-center gap-1 text-xs bg-background"
+								>
+									{gender &&
+										getGenderIcon(gender, "size-3 text-muted-foreground")}
+									<p className="font-light">{gender || "N/A"}</p>
+								</Badge>
+							</div>
 						</div>
 					)}
 				</div>

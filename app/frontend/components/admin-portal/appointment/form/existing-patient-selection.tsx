@@ -579,11 +579,11 @@ export default function ExistingPatientSelection() {
 											<FormControl>
 												<RadioGroupItem value={option.value} />
 											</FormControl>
-											<FormLabel className="flex items-center gap-1.5 font-normal">
+											<FormLabel className="flex items-center gap-1.5 font-normal text-pretty flex-col text-center md:flex-row md:text-start">
 												{index === 0 ? (
-													<MousePointerClick className="text-muted-foreground size-5" />
+													<MousePointerClick className="flex-shrink-0 text-muted-foreground size-5" />
 												) : (
-													<UserPlus className="text-muted-foreground size-5" />
+													<UserPlus className="flex-shrink-0 text-muted-foreground size-5" />
 												)}
 												{option.title}
 											</FormLabel>
