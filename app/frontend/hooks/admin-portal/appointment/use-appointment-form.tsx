@@ -1,3 +1,4 @@
+import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
 import { useStepper } from "@/components/shared/stepper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,12 +18,11 @@ import { format } from "date-fns";
 import { MapPin } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
-import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
-import { useTranslation } from "react-i18next";
 
 export const SESSION_STORAGE_FORM_KEY = "appointment-form";
 

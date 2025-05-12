@@ -1,22 +1,22 @@
+import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
 import {
+	type AppointmentRescheduleSchema,
+	RESCHEDULE_APPOINTMENT_FORM_SCHEMA,
 	buildPayload,
 	defineFormDefaultValues,
-	RESCHEDULE_APPOINTMENT_FORM_SCHEMA,
-	type AppointmentRescheduleSchema,
 } from "@/lib/appointments/form-reschedule";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { router, usePage } from "@inertiajs/react";
-import type { AppointmentRescheduleGlobalPageProps } from "@/pages/AdminPortal/Appointment/Reschedule";
-import { useMediaQuery } from "@uidotdev/usehooks";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { goBackHandler, populateQueryParams } from "@/lib/utils";
+import type { AppointmentRescheduleGlobalPageProps } from "@/pages/AdminPortal/Appointment/Reschedule";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm, useFormContext, useWatch } from "react-hook-form";
 import {
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
-import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
 
 export const useRescheduleForm = () => {
 	const { url: pageURL, props: globalProps } =

@@ -1,11 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { LOCALES } from "@/lib/constants";
+import i18n from "@/lib/i18n";
+import type { GlobalPageProps } from "@/types/globals";
+import { tz } from "@date-fns/tz";
+import { usePage } from "@inertiajs/react";
 import type { ContextFn, Locale } from "date-fns";
 import { enUS } from "date-fns/locale";
-import { tz } from "@date-fns/tz";
-import i18n from "@/lib/i18n";
-import { LOCALES } from "@/lib/constants";
-import { usePage } from "@inertiajs/react";
-import type { GlobalPageProps } from "@/types/globals";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type DateProviderProps = {
 	children: React.ReactNode;

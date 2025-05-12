@@ -26,8 +26,8 @@ import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { Plus } from "lucide-react";
 import {
-	createContext,
 	type ReactNode,
+	createContext,
 	useCallback,
 	useContext,
 	useMemo,

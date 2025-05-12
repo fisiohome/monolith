@@ -1,6 +1,6 @@
 import type { DAY_NAMES } from "@/lib/constants";
-import type { TherapistAddress } from "./therapist";
 import type { Appointment } from "./appointment";
+import type { TherapistAddress } from "./therapist";
 
 export interface Availability {
 	id: number;

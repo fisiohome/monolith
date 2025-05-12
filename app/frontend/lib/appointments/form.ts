@@ -1,3 +1,4 @@
+import type { FormMode } from "@/components/admin-portal/appointment/new-appointment-form";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type {
 	Appointment,
@@ -5,16 +6,15 @@ import type {
 } from "@/types/admin-portal/appointment";
 import type { Auth } from "@/types/globals";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import { z } from "zod";
 import {
+	FISIOHOME_PARTNER,
 	GENDERS,
 	PATIENT_CONDITIONS,
-	PREFERRED_THERAPIST_GENDER,
 	PATIENT_REFERRAL_OPTIONS,
-	FISIOHOME_PARTNER,
+	PREFERRED_THERAPIST_GENDER,
 } from "../constants";
-import { idSchema, boolSchema } from "../validation";
-import { z } from "zod";
-import type { FormMode } from "@/components/admin-portal/appointment/new-appointment-form";
+import { boolSchema, idSchema } from "../validation";
 
 export const DEFAULT_VALUES_LOCATION = {
 	id: "",

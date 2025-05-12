@@ -1,12 +1,8 @@
-import {
-	type Dispatch,
-	Fragment,
-	memo,
-	type SetStateAction,
-	useCallback,
-	useMemo,
-	useState,
-} from "react";
+import { useDateContext } from "@/components/providers/date-provider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	FormControl,
 	FormField,
@@ -15,6 +11,15 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
 	Sheet,
 	SheetClose,
 	SheetContent,
@@ -22,27 +27,21 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { getGenderIcon } from "@/hooks/use-gender";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Input } from "@/components/ui/input";
-import {
+	type AppointmentBookingSchema,
 	DEFAULT_VALUES_LOCATION,
 	DEFAULT_VALUES_PATIENT_ADDRESS,
 	DEFAULT_VALUES_PATIENT_CONTACT,
 	defineAppointmentFormDefaultValues,
-	type AppointmentBookingSchema,
 } from "@/lib/appointments/form";
-import { useFormContext, useWatch } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, debounce, populateQueryParams } from "@/lib/utils";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { router, usePage } from "@inertiajs/react";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
+import type { Patient } from "@/types/admin-portal/patient";
+import { router, usePage } from "@inertiajs/react";
+import { format, isSameDay } from "date-fns";
 import {
 	AlertCircle,
 	Cake,
@@ -61,18 +60,19 @@ import {
 	User,
 	UserPlus,
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Patient } from "@/types/admin-portal/patient";
-import { CardPatientBasicInfoForm } from "./patient-basic-info";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format, isSameDay } from "date-fns";
-import { useDateContext } from "@/components/providers/date-provider";
+import {
+	type Dispatch,
+	Fragment,
+	type SetStateAction,
+	memo,
+	useCallback,
+	useMemo,
+	useState,
+} from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
-import { getGenderIcon } from "@/hooks/use-gender";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useFormProvider } from "../new-appointment-form";
+import { CardPatientBasicInfoForm } from "./patient-basic-info";
 
 interface CardSelectionProps {
 	patient: Patient;

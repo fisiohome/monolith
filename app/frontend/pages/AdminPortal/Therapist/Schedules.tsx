@@ -1,10 +1,4 @@
-import { Head, router, usePage } from "@inertiajs/react";
-import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
-import { useTranslation } from "react-i18next";
-import { useCallback, useMemo } from "react";
-import { addDays, format, subDays } from "date-fns";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import { useDateContext } from "@/components/providers/date-provider";
 import {
 	CalendarBodyContainer,
 	CalendarContainer,
@@ -15,11 +9,17 @@ import {
 	ScheduleFilters,
 	SchedulePagination,
 } from "@/components/admin-portal/therapist/schedules/calendar";
+import { useDateContext } from "@/components/providers/date-provider";
 import { useCalendarSchedule } from "@/hooks/use-calendar-schedule";
-import type { Metadata } from "@/types/pagy";
-import type { Therapist } from "@/types/admin-portal/therapist";
 import { populateQueryParams } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
+import type { Therapist } from "@/types/admin-portal/therapist";
+import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import type { Metadata } from "@/types/pagy";
+import { Head, router, usePage } from "@inertiajs/react";
+import { addDays, format, subDays } from "date-fns";
+import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface SchedulesPageProps {
 	params: {

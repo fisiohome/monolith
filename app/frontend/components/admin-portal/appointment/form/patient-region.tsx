@@ -1,19 +1,7 @@
-import { Fragment, useMemo } from "react";
-import { Deferred } from "@inertiajs/react";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	FormControl,
-	FormDescription,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
+import HereMap from "@/components/shared/here-map";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
 	Command,
 	CommandEmpty,
@@ -23,8 +11,34 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import {
+	FormControl,
+	FormDescription,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import {
+	useMapRegion,
+	usePatientRegion,
+} from "@/hooks/admin-portal/appointment/use-appointment-utils";
+import {
+	type AppointmentBookingSchema,
+	DEFAULT_VALUES_LOCATION,
+} from "@/lib/appointments/form";
+import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { Deferred } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import {
 	AlertCircle,
 	Check,
@@ -33,22 +47,8 @@ import {
 	MapPin,
 	X,
 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
-import HereMap from "@/components/shared/here-map";
-import {
-	useMapRegion,
-	usePatientRegion,
-} from "@/hooks/admin-portal/appointment/use-appointment-utils";
+import { Fragment, useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import {
-	DEFAULT_VALUES_LOCATION,
-	type AppointmentBookingSchema,
-} from "@/lib/appointments/form";
-import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
-import { useMediaQuery } from "@uidotdev/usehooks";
 
 export default function PatientRegionForm() {
 	const {

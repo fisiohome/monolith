@@ -1,17 +1,6 @@
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormMessage,
-} from "@/components/ui/form";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import {
 	Command,
 	CommandEmpty,
@@ -21,6 +10,13 @@ import {
 	CommandList,
 } from "@/components/ui/command";
 import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormMessage,
+} from "@/components/ui/form";
+import {
 	MultiSelector,
 	MultiSelectorContent,
 	MultiSelectorInput,
@@ -28,13 +24,19 @@ import {
 	MultiSelectorList,
 	MultiSelectorTrigger,
 } from "@/components/ui/multi-select";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import i18n from "@/lib/i18n";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
 import type {
-	AppointmentStatuses,
 	Appointment,
+	AppointmentStatuses,
 } from "@/types/admin-portal/appointment";
 import type { ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,10 +44,8 @@ import { router, usePage } from "@inertiajs/react";
 import { AlertCircle, Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { Textarea } from "@/components/ui/textarea";
+import { z } from "zod";
 
 export function CancelAppointmentForm({
 	selectedAppointment,

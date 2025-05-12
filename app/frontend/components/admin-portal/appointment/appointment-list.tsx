@@ -28,6 +28,8 @@ import type {
 	AppointmentIndexGlobalPageProps,
 	AppointmentIndexProps,
 } from "@/pages/AdminPortal/Appointment/Index";
+import type { Admin } from "@/types/admin-portal/admin";
+import type { Appointment } from "@/types/admin-portal/appointment";
 import { router, usePage } from "@inertiajs/react";
 import { format, formatDistance, isPast, isToday } from "date-fns";
 import {
@@ -55,8 +57,6 @@ import {
 } from "lucide-react";
 import { type ComponentProps, memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Appointment } from "@/types/admin-portal/appointment";
-import type { Admin } from "@/types/admin-portal/admin";
 
 // * appointment schedule component
 interface AppointmentActionButtonsProps {

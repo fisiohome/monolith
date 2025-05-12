@@ -1,14 +1,25 @@
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useDateContext } from "@/components/providers/date-provider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
+	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
-	FormControl,
 	FormMessage,
-	FormDescription,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import {
 	Sheet,
 	SheetClose,
@@ -17,31 +28,20 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePatientDateOfBirth } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { getGenderIcon } from "@/hooks/use-gender";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { AppointmentBookingSchema } from "@/lib/appointments/form";
+import type { GENDERS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
-import { usePage, Deferred } from "@inertiajs/react";
+import { Deferred, usePage } from "@inertiajs/react";
 import { format } from "date-fns";
-import { X, CalendarIcon, Pencil, AlertCircle, User, Cake } from "lucide-react";
+import { AlertCircle, Cake, CalendarIcon, Pencil, User, X } from "lucide-react";
 import { type ComponentProps, Fragment, memo, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "react-i18next";
-import { useDateContext } from "@/components/providers/date-provider";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import type { GENDERS } from "@/lib/constants";
 
 export interface CardPatientBasicInfoFormProps extends ComponentProps<"div"> {
 	isNotCompletedForm: boolean;

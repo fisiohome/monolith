@@ -1,3 +1,4 @@
+import i18n from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ResponsiveDialogMode } from "@/types/globals";
 import { useMediaQuery } from "@uidotdev/usehooks";
@@ -22,7 +23,6 @@ import {
 	DrawerTitle,
 } from "../ui/drawer";
 import { ScrollArea } from "../ui/scroll-area";
-import i18n from "@/lib/i18n";
 
 const DIALOG_MODE: ResponsiveDialogMode = "dialog";
 

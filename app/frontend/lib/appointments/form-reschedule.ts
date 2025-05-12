@@ -1,8 +1,8 @@
-import { z } from "zod";
-import { APPOINTMENT_SCHEDULING_SCHEMA } from "./form";
-import type { Appointment } from "@/types/admin-portal/appointment";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import { z } from "zod";
 import type { PREFERRED_THERAPIST_GENDER } from "../constants";
+import { APPOINTMENT_SCHEDULING_SCHEMA } from "./form";
 
 // * define the form schema
 const { appointmentDateTime, preferredTherapistGender, therapist } =

@@ -11,9 +11,9 @@ import {
 	Users,
 } from "lucide-react";
 import { createContext, useContext, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { NavMainProps } from "../admin-portal/sidebar/nav-main";
 import type { NavUserProps } from "../admin-portal/sidebar/nav-user";
-import { useTranslation } from "react-i18next";
 
 type NavigationProviderProps = {
 	children: React.ReactNode;

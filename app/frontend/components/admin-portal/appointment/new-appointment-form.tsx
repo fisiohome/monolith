@@ -1,3 +1,4 @@
+import HereMap from "@/components/shared/here-map";
 import { RetroGridPattern } from "@/components/shared/retro-grid-pattern";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -10,6 +11,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -59,6 +62,7 @@ import {
 	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments/form";
 import { cn, populateQueryParams } from "@/lib/utils";
+import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { Deferred, Link, usePage } from "@inertiajs/react";
 import {
 	AlertCircle,
@@ -74,23 +78,19 @@ import {
 } from "lucide-react";
 import {
 	type ComponentProps,
-	createContext,
 	Fragment,
+	createContext,
 	memo,
 	useContext,
 	useMemo,
 } from "react";
-import PatientMedicalForm from "./form/patient-medical";
-import PatientContactForm from "./form/patient-contact";
-import PatientBasicInfoForm from "./form/patient-basic-info";
-import PatientRegionForm from "./form/patient-region";
-import ExistingPatientSelection from "./form/existing-patient-selection";
-import HereMap from "@/components/shared/here-map";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { useTranslation } from "react-i18next";
 import DateTimePicker from "./form/date-time";
+import ExistingPatientSelection from "./form/existing-patient-selection";
+import PatientBasicInfoForm from "./form/patient-basic-info";
+import PatientContactForm from "./form/patient-contact";
+import PatientMedicalForm from "./form/patient-medical";
+import PatientRegionForm from "./form/patient-region";
 
 export type FormMode = "new" | "series";
 

@@ -1,3 +1,4 @@
+import type { HereMapProps } from "@/components/shared/here-map";
 import { isDefaultCoordinate } from "@/lib/here-maps";
 import { filterGeocodeByQueryScore } from "@/lib/here-maps/api";
 import routingLib from "@/lib/here-maps/routing";
@@ -14,7 +15,6 @@ import { useCallback, useRef, useState } from "react";
 import isolineLib from "../../lib/here-maps/isoline";
 import { UIConfig } from "../../lib/here-maps/ui";
 import useMarkers from "./use-markers";
-import type { HereMapProps } from "@/components/shared/here-map";
 
 /**
  * @interface Alignment

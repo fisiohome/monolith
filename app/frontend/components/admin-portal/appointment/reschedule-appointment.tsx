@@ -1,4 +1,16 @@
+import HereMap from "@/components/shared/here-map";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	FormControl,
 	FormField,
@@ -11,19 +23,16 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import {
+	useFormActionButtons,
+	useRescheduleFields,
+} from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import { getGenderIcon } from "@/hooks/use-gender";
+import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
 import { cn } from "@/lib/utils";
 import { Deferred } from "@inertiajs/react";
 import {
@@ -37,16 +46,7 @@ import {
 	X,
 } from "lucide-react";
 import { type ComponentProps, memo } from "react";
-import {
-	useFormActionButtons,
-	useRescheduleFields,
-} from "@/hooks/admin-portal/appointment/use-reschedule-form";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
-import { Textarea } from "@/components/ui/textarea";
 import DateTimePicker from "./form/date-time";
-import HereMap from "@/components/shared/here-map";
 
 export interface FormActionButtonsprops extends ComponentProps<"div"> {
 	isLoading: boolean;

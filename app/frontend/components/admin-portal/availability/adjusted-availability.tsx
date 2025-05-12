@@ -1,3 +1,4 @@
+import { useDateContext } from "@/components/providers/date-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -42,7 +43,6 @@ import {
 } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import BaseAvailabilityTimeField from "./time-field";
-import { useDateContext } from "@/components/providers/date-provider";
 
 const DateSelectedField = ({
 	parentIndex,

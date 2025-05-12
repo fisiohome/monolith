@@ -17,9 +17,9 @@ import {
 	SidebarMenuSubItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Link } from "@inertiajs/react";
 import { useMemo } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface NavMainProps {
 	items: {

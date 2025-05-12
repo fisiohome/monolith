@@ -1,6 +1,4 @@
-import { Fragment, useCallback, useMemo, useState } from "react";
-import { Deferred, router, usePage } from "@inertiajs/react";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
 	Command,
 	CommandEmpty,
@@ -10,18 +8,20 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
-import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
-import { cn, debounce, populateQueryParams } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { groupLocationsByCountry } from "@/lib/locations";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { cn, debounce, populateQueryParams } from "@/lib/utils";
+import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
+import { Deferred, router, usePage } from "@inertiajs/react";
+import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export default function FilterList() {

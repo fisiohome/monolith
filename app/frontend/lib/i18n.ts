@@ -1,9 +1,9 @@
 import i18n from "i18next";
-import HttpBackend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
-import { initReactI18next } from "react-i18next";
 import ChainedBackend from "i18next-chained-backend";
+import HttpBackend from "i18next-http-backend";
 import LocalStorageBackend from "i18next-localstorage-backend";
+import { initReactI18next } from "react-i18next";
 
 function genRandonNumber(length: number) {
 	const chars = "0123456789";

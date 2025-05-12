@@ -1,20 +1,20 @@
-import { Head } from "@inertiajs/react";
-import { Fragment, useMemo } from "react";
-import type { Appointment } from "@/types/admin-portal/appointment";
-import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import {
 	FormPageContainer,
 	FormPageHeaderGridPattern,
 } from "@/components/admin-portal/shared/page-layout";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import { Head } from "@inertiajs/react";
+import { Fragment, useMemo } from "react";
 
-import { Form } from "@/components/ui/form";
-import { useRescheduleForm } from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import {
 	FormActionButtons,
 	RescheduleFields,
 } from "@/components/admin-portal/appointment/reschedule-appointment";
-import type { PREFERRED_THERAPIST_GENDER } from "@/lib/constants";
+import { Form } from "@/components/ui/form";
+import { useRescheduleForm } from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import type { AppointmentRescheduleSchema } from "@/lib/appointments/form-reschedule";
+import type { PREFERRED_THERAPIST_GENDER } from "@/lib/constants";
 
 export interface AppointmentReschedulePageProps {
 	appointment: Appointment;
@@ -25,9 +25,11 @@ export interface AppointmentReschedulePageProps {
 
 export interface AppointmentRescheduleGlobalPageProps
 	extends BaseGlobalPageProps,
-	AppointmentReschedulePageProps {
+		AppointmentReschedulePageProps {
 	[key: string]: any;
-	errors: Record<keyof AppointmentRescheduleSchema, string[]> & { fullMessages: string[] };
+	errors: Record<keyof AppointmentRescheduleSchema, string[]> & {
+		fullMessages: string[];
+	};
 }
 
 export default function AppointmentReschedulePage({

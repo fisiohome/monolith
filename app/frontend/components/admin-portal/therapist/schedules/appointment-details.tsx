@@ -1,16 +1,18 @@
 import { useDateContext } from "@/components/providers/date-provider";
 import { LoadingBasic } from "@/components/shared/loading";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getGenderIcon } from "@/hooks/use-gender";
+import { getbadgeVariantStatus } from "@/lib/appointments/utils";
+import { getBrandBadgeVariant } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
 import type { Appointment } from "@/types/admin-portal/appointment";
@@ -30,8 +32,6 @@ import {
 } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import { getBrandBadgeVariant } from "@/lib/services";
-import { getbadgeVariantStatus } from "@/lib/appointments/utils";
 
 // * for the appointment details section
 export interface AppointmentDetailsSectionProps extends ComponentProps<"div"> {

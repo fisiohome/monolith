@@ -1,5 +1,5 @@
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
 	FormControl,
@@ -12,15 +12,15 @@ import { Input } from "@/components/ui/input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
 	Sheet,
+	SheetClose,
 	SheetContent,
+	SheetFooter,
 	SheetHeader,
 	SheetTitle,
-	SheetFooter,
-	SheetClose,
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { AppointmentBookingSchema } from "@/lib/appointments/form";
-import { Pencil, AlertCircle, IdCard } from "lucide-react";
+import { AlertCircle, IdCard, Pencil } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 

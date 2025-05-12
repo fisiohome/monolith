@@ -7,15 +7,15 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { IS_TABLET_MEDIA_QUERY } from "@/lib/constants";
 import type { GlobalPageProps } from "@/types/globals";
 import { Link, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
 import { HousePlus } from "lucide-react";
 import type * as React from "react";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { IS_TABLET_MEDIA_QUERY } from "@/lib/constants";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function AppSidebar({
 	...props
