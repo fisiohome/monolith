@@ -225,7 +225,7 @@ export const RescheduleFields = memo(function Component({
 				control={form.control}
 				name="appointmentDateTime"
 				render={({ field }) => (
-					<FormItem>
+					<FormItem className="col-span-full">
 						<FormLabel>Appointment Date</FormLabel>
 
 						<DateTimePicker

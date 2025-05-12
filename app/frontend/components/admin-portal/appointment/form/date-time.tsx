@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAppointmentDateTime } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { generateTimeSlots } from "@/hooks/use-calendar-schedule";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { type ComponentProps, useEffect, useRef, useState } from "react";
 
 export interface DateTimePickerProps extends ComponentProps<"div"> {
@@ -58,7 +58,7 @@ export default function DateTimePicker({
 	}, [value, calendarHeight]);
 
 	return (
-		<div ref={calendarRef} className={cn("flex w-full gap-6", className)}>
+		<div ref={calendarRef} className={cn("flex w-full gap-2", className)}>
 			<Calendar
 				{...appointmentDateCalendarProps}
 				initialFocus
@@ -80,10 +80,12 @@ export default function DateTimePicker({
 
 			<ScrollArea
 				style={{ height: calendarHeight }}
-				className="h-64 gap-4 py-1"
+				className="w-full h-64 gap-4 py-1 md:w-auto"
 			>
 				{generateTimeSlots(15).map((time) => {
 					const isSelected = value && format(value, "HH:mm") === time;
+					const slotDate = parse(time, "HH:mm", new Date());
+					const displayTime = format(slotDate, "hh:mm a");
 
 					return (
 						<div key={time} className="flex flex-col">
@@ -101,7 +103,7 @@ export default function DateTimePicker({
 									}
 								}}
 							>
-								{time}
+								{displayTime}
 							</Button>
 						</div>
 					);
