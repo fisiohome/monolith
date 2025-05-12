@@ -18,10 +18,12 @@ module AdminPortal
 
       therapist_collections = Therapist
         .joins(:user)
+        .left_joins(:therapist_appointment_schedule)
         .joins("LEFT JOIN therapist_addresses ON therapist_addresses.therapist_id = therapists.id AND therapist_addresses.active = true")
         .joins("LEFT JOIN addresses ON addresses.id = therapist_addresses.address_id")
         .joins("LEFT JOIN locations ON locations.id = addresses.location_id")
-        .where(filter_by_name.present? ? ["name ILIKE ?", "%#{filter_by_name}%"] : nil)
+        .includes(:therapist_appointment_schedule)
+        .where(filter_by_name.present? ? ["therapists.name ILIKE ?", "%#{filter_by_name}%"] : nil)
         .where(filter_by_employment_type.present? ? {employment_type: filter_by_employment_type} : nil)
         .where(filter_by_employment_status.present? ? {employment_status: filter_by_employment_status} : nil)
         .where(filter_by_city.present? ? ["locations.city ILIKE ?", "%#{filter_by_city}%"] : nil)
@@ -29,22 +31,27 @@ module AdminPortal
           if filter_by_account_status == "ACTIVE"
             ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
           else
-            (filter_by_account_status == "INACTIVE") ? ["(users.suspend_at IS NOT NULL AND users.suspend_at <= ?) AND (users.suspend_end IS NULL OR users.suspend_end >= ?)", Time.current, Time.current] :
-                        nil
+            (filter_by_account_status == "INACTIVE") ? ["(users.suspend_at IS NOT NULL AND users.suspend_at <= ?) AND (users.suspend_end IS NULL OR users.suspend_end >= ?)", Time.current, Time.current] : nil
           end
         )
-        .order(created_at: :desc)
-        .sort_by do |u|
-          [
-            u.user.is_online? ? 2 : 0,
-            u.user.last_online_at ? 1 : 0,
-            u.user.suspended? ? -1 : 0,
-            (u.employment_type == "KARPIS") ? 1 : 0,
-            {"ACTIVE" => 2, "HOLD" => 1, "INACTIVE" => 0}.fetch(u.employment_status, -1),
-            u.registration_number
-          ]
-        end
-        .reverse
+        .order(
+          Arel.sql(
+            <<~SQL
+              CASE WHEN therapist_appointment_schedules.id IS NOT NULL THEN 1 ELSE 0 END DESC,
+              CASE WHEN users.last_online_at >= NOW() - INTERVAL '15 minutes' THEN 2 ELSE 0 END DESC,
+              CASE WHEN users.last_online_at IS NOT NULL THEN 1 ELSE 0 END DESC,
+              CASE WHEN (users.suspend_at IS NOT NULL AND users.suspend_at <= NOW() AND (users.suspend_end IS NULL OR users.suspend_end >= NOW())) THEN -1 ELSE 0 END DESC,
+              CASE therapists.employment_type WHEN 'KARPIS' THEN 1 ELSE 0 END DESC,
+              CASE therapists.employment_status
+                WHEN 'ACTIVE' THEN 2
+                WHEN 'HOLD' THEN 1
+                ELSE 0
+              END DESC,
+              therapists.registration_number DESC
+            SQL
+          )
+        )
+
       @pagy, @therapists = pagy_array(therapist_collections, page:, limit:)
 
       # get the selected data admin for form
