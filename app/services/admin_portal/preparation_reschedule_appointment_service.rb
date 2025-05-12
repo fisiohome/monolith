@@ -90,11 +90,11 @@ module AdminPortal
     end
 
     def apply_availability_filter(therapists, param_value)
-      appointment_date_time = Time.zone.parse(param_value)
+      appointment_date_time = param_value.in_time_zone(Time.zone.name)
 
       # Convert to an array to filter and map in Ruby
       therapists.to_a.filter_map do |therapist|
-        details = therapist.availability_details(appointment_date_time)
+        details = therapist.availability_details(appointment_date_time, @appointment.id)
 
         # You could add a condition here if you want to exclude non-available therapists.
         # if details[:available]

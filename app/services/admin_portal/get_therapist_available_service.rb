@@ -4,9 +4,10 @@ module AdminPortal
 
     # Service to check therapist availability for a specific datetime
     # Handles complex logic including time zones, adjusted schedules, and booking constraints
-    def initialize(therapist, appointment_date_time_server_time)
+    def initialize(therapist, appointment_date_time_server_time, current_appointment_id)
       @therapist = therapist
       @appointment_date_time_server_time = appointment_date_time_server_time
+      @current_appointment_id = current_appointment_id
       @schedule = therapist.therapist_appointment_schedule
       @reasons = []
       @previous_appointment_location = nil
@@ -190,7 +191,8 @@ module AdminPortal
 
       # Check for overlapping appointments, excluding cancelled ones
       conflicting_appointments = @therapist.appointments
-        .where.not(status: "cancelled") # Adjust statuses as needed
+        .where.not(id: @current_appointment_id)
+        .where.not(status: ["CANCELLED", "UNSCHEDULED"]) # Adjust statuses as needed
         .where("appointment_date_time < ?", new_end_plus_buffer_server)
         .where("appointment_date_time + (? * INTERVAL '1 minute') > ?", duration + buffer, new_start_server)
 
@@ -206,17 +208,17 @@ module AdminPortal
 
     # Extract address, latitude, longitude from appointment's location
     def extract_location_details(appointment)
-      return nil unless appointment&.location
+      return nil unless appointment&.address_history&.address_line
 
       # Get the first address associated with the location
-      address = appointment.location.addresses.first
-      return nil unless address
-
+      visit_address = appointment&.address_history
       {
-        address: address.address,
-        latitude: address.latitude,
-        longitude: address.longitude,
-        coordinates: address.coordinates
+        id: appointment.id,
+        registration_number: appointment.registration_number,
+        address: visit_address.address_line,
+        latitude: visit_address.latitude,
+        longitude: visit_address.longitude,
+        coordinates: visit_address.coordinates
       }
     end
 
@@ -224,18 +226,26 @@ module AdminPortal
     def fetch_adjacent_appointment_addresses
       return unless @schedule
 
-      # Eager load location and addresses to avoid N+1 queries
+      # figure out the date window for “today”
+      date = @appointment_date_time_server_time.to_date
+      day_range = date.all_day
+
+      # Base scope: same therapist, not cancelled/unscheduled, not the current appt,
+      # and only appointments _on the same date_
       appointments_scope = @therapist.appointments
-        .where.not(status: "cancelled")
+        .where.not(id: @current_appointment_id)
+        .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+        .where(appointment_date_time: day_range)
         .includes(location: :addresses)
 
-      # Find the previous appointment (last one before the new appointment)
+      # Find the closest previous appointment before the current time (last one before the new appointment), on that same day
       previous_appointment = appointments_scope
+        .where.not(id: @current_appointment_id)
         .where("appointment_date_time < ?", @appointment_date_time_server_time)
         .order(appointment_date_time: :desc)
         .first
 
-      # Find the next appointment (first one after the new appointment)
+      # Find the closest next appointment after the current tme (first one after the new appointment), on that same day
       next_appointment = appointments_scope
         .where("appointment_date_time > ?", @appointment_date_time_server_time)
         .order(appointment_date_time: :asc)

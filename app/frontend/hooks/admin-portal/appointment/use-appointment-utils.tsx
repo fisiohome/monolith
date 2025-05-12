@@ -657,7 +657,6 @@ export const useTherapistAvailability = ({
 				],
 			});
 
-			// TODO: about bug: therapist in patient position (second appointment on day) not displayed correctly in maps but displayed in therapist list
 			// Map therapists to MarkerData
 			const therapistCoords: MarkerData[] =
 				therapists

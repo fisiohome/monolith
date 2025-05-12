@@ -1,5 +1,6 @@
 import type { DAY_NAMES } from "@/lib/constants";
 import type { TherapistAddress } from "./therapist";
+import type { Appointment } from "./appointment";
 
 export interface Availability {
 	id: number;
@@ -34,14 +35,20 @@ export interface AdjustedAvailability {
 export interface AvailabilityDetail {
 	available: boolean;
 	locations: {
-		prevAppointment: null | Pick<
-			TherapistAddress,
-			"latitude" | "longitude" | "address" | "coordinates"
-		>;
-		nextAppointment: null | Pick<
-			TherapistAddress,
-			"latitude" | "longitude" | "address" | "coordinates"
-		>;
+		prevAppointment:
+			| null
+			| (Pick<
+					TherapistAddress,
+					"latitude" | "longitude" | "address" | "coordinates"
+			  > &
+					Pick<Appointment, "id" | "registrationNumber">);
+		nextAppointment:
+			| null
+			| (Pick<
+					TherapistAddress,
+					"latitude" | "longitude" | "address" | "coordinates"
+			  > &
+					Pick<Appointment, "id" | "registrationNumber">);
 	};
 	reasons: string[];
 }
