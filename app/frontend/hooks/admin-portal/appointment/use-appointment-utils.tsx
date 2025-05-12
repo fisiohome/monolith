@@ -1,6 +1,7 @@
 import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
 import type { MarkerData } from "@/hooks/here-maps";
+import { useTherapistMarker } from "@/hooks/here-maps/use-markers";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import {
 	type AppointmentBookingSchema,
@@ -627,6 +628,7 @@ export const useTherapistAvailability = ({
 
 	// * state group for isolane therapist
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
+	const marker = useTherapistMarker();
 	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
 	// reset the isoline calculated and marker printed
 	const onResetIsoline = useCallback(() => {
@@ -694,6 +696,7 @@ export const useTherapistAvailability = ({
               <span class="font-light text-[10px]">#${therapist.registrationNumber}</span>
             </div>
           `,
+							customIcon: marker[therapist.employmentType],
 							additional: { therapist },
 						} satisfies MarkerData;
 					})
@@ -753,7 +756,7 @@ export const useTherapistAvailability = ({
 			// Mark isoline as calculated
 			setIsIsolineCalculated(true);
 		},
-		[patientValues],
+		[patientValues, marker],
 	);
 
 	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes

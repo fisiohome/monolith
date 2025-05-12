@@ -10,9 +10,11 @@ import type {
 	IsolineResult,
 } from "@/types/here-maps";
 import H from "@here/maps-api-for-javascript";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import isolineLib from "../../lib/here-maps/isoline";
 import { UIConfig } from "../../lib/here-maps/ui";
+import useMarkers from "./use-markers";
+import type { HereMapProps } from "@/components/shared/here-map";
 
 /**
  * @interface Alignment
@@ -56,6 +58,7 @@ export interface MarkerData {
 	position: Coordinate;
 	address: string;
 	bubbleContent?: string | Node | undefined;
+	customIcon?: H.map.Icon | null;
 	additional?: any;
 }
 
@@ -71,32 +74,26 @@ export interface FeasibleResult
  * @interface IsolineConstraint:
  * @description Define how large that range is (e.g., time in seconds, distance in meters).
  */
-
 export type IsolineConstraint = {
 	type: IsolineRequestParams["rangeType"];
 	value: number;
 };
+
 /**
- * @interface HereMapHooks
+ * @interface HereMapHooksProps
  * @description Defines the structure of the props required by the useHereMap hook.
  * @param containerRef  reference to the HTML container for the map
  * @param address structured address information
  * @param coordinate initial map center coordinates [latitude, longitude]
  * @param apiKey HERE Maps API key for authentication
  */
-
-export interface HereMapHooks {
+export interface HereMapHooksProps {
 	containerRef: React.RefObject<HTMLDivElement>;
-	address: {
-		country: string;
-		state: string;
-		city: string;
-		postalCode: string;
-		address: string;
-	};
-	coordinate: number[];
+	address: HereMapProps["address"];
+	coordinate: HereMapProps["coordinate"];
 	apiKey: string;
 }
+
 /**
  * @interface useHereMap:
  * @description A custom hook encapsulating the main HERE Map logic:
@@ -106,12 +103,11 @@ export interface HereMapHooks {
  * - Geocoding
  * - Traffic updates
  */
-
 export default function useHereMap(
-	containerRef: HereMapHooks["containerRef"],
-	coordinate: HereMapHooks["coordinate"],
-	address: HereMapHooks["address"],
-	apiKey: HereMapHooks["apiKey"],
+	containerRef: HereMapHooksProps["containerRef"],
+	coordinate: HereMapHooksProps["coordinate"],
+	address: HereMapHooksProps["address"],
+	apiKey: HereMapHooksProps["apiKey"],
 ) {
 	// * These refs store various HERE Map instances and configuration.
 	const mapRef = useRef<H.Map | null>(null);
@@ -169,22 +165,7 @@ export default function useHereMap(
 	});
 
 	// * icons group, Predefine SVG icons to be reused for markers.
-	const primaryIcon = useMemo(() => {
-		const svg = `<svg width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="cursor-pointer">
-      <path fill="#8b5cf6" d="M12 2C8.13 2 5 5.13 5 9c0 4.97 7 13 7 13s7-8.03 7-13c0-3.87-3.13-7-7-7z"/>
-      <circle cx="12" cy="9" r="4" fill="#FFFFFF"/>
-    </svg>`;
-		return new H.map.Icon(svg);
-	}, []);
-	const therapistIcon = useMemo(() => {
-		// const svg = `<svg width="48" height="48" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-		//   <path fill="#ec4899" d="M12 2C8.13 2 5 5.13 5 9c0 4.97 7 13 7 13s7-8.03 7-13c0-3.87-3.13-7-7-7z"/>
-		//   <circle cx="12" cy="9" r="4" fill="#FFFFFF"/>
-		// </svg>`;
-
-		const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stethoscope cursor-pointer"><path d="M11 2v2"/><path d="M5 2v2"/><path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"/><path d="M8 15a6 6 0 0 0 12 0v-3"/><circle cx="20" cy="10" r="2"/></svg>`;
-		return new H.map.Icon(svg);
-	}, []);
+	const { primaryIcon, secondaryIcon } = useMarkers();
 
 	// * map initialization function group
 	/**
@@ -275,7 +256,7 @@ export default function useHereMap(
 		 */
 		onAdd: useCallback(
 			(
-				locations: { position: Coordinate; address: string }[],
+				locations: MarkerData[],
 				options?: {
 					isSecondary?: boolean;
 					changeMapView?: boolean;
@@ -290,12 +271,9 @@ export default function useHereMap(
 					useRouting = false,
 				} = options || {};
 
-				// Decide which group (primary or secondary)
 				const groupRef = isSecondary
 					? secondaryMarkerGroupRef
 					: primaryMarkerGroupRef;
-				const icon = isSecondary ? therapistIcon : primaryIcon;
-
 				// Remove existing group if it exists
 				if (groupRef.current) {
 					mapRef.current.removeObject(groupRef.current);
@@ -306,9 +284,10 @@ export default function useHereMap(
 				groupRef.current = group;
 
 				// Add each marker to the group
+				const defaultIcon = isSecondary ? secondaryIcon : primaryIcon;
 				for (const location of locations) {
 					const marker = new H.map.Marker(location.position, {
-						icon,
+						icon: location?.customIcon || defaultIcon,
 						data: location,
 						volatility: true,
 					});
@@ -381,7 +360,7 @@ export default function useHereMap(
 					}
 				}
 			},
-			[primaryIcon, therapistIcon],
+			[primaryIcon, secondaryIcon],
 		),
 		/**
 		 * @function onRemove
@@ -1013,3 +992,5 @@ export default function useHereMap(
 		mapControl,
 	};
 }
+
+export type HereMapHooks = ReturnType<typeof useHereMap>;

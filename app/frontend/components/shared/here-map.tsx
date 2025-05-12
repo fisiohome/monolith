@@ -1,18 +1,7 @@
-import useHereMap, {
-	type MarkerData,
-	type IsolineConstraint,
-	type FeasibleResult,
-} from "@/hooks/here-maps";
+import useHereMap, { type HereMapHooks } from "@/hooks/here-maps";
 import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
 import { cn } from "@/lib/utils";
 import type { GlobalPageProps } from "@/types/globals";
-import type {
-	Coordinate,
-	IsolineRequestParams,
-	IsolineResult,
-} from "@/types/here-maps";
-import type { GeocodingResult } from "@/types/here-maps";
-import type H from "@here/maps-api-for-javascript";
 import { usePage } from "@inertiajs/react";
 import {
 	type ComponentProps,
@@ -28,48 +17,14 @@ import {
  * Defines the methods that the HereMap component will expose via ref.
  */
 interface HereMaphandler {
-	mapControl: {
-		setCenter: (lat: number, lng: number) => void;
-		setZoom: (zoom: number) => void;
-		getCenterPosition: () => H.geo.Point | null;
-		getZoom: () => number | null;
-	};
-	marker: {
-		onAdd: (
-			locations: MarkerData[],
-			options?: {
-				isSecondary?: boolean;
-				changeMapView?: boolean;
-				useRouting?: boolean;
-			},
-		) => void;
-		onRemove: (options?: { isSecondary?: boolean }) => void;
-	};
-	geocode: {
-		onCalculate: () => Promise<GeocodingResult | null>;
-	};
-	isoline: {
-		onCalculate: {
-			single: (
-				params: IsolineRequestParams,
-				shouldZoom?: boolean,
-			) => Promise<IsolineResult["isolines"][number] | null>;
-			both: ({
-				coord,
-				constraints,
-			}: {
-				coord: Coordinate;
-				constraints: IsolineConstraint[];
-			}) => Promise<IsolineResult["isolines"] | null>;
-		};
-		onRemove: () => void;
-		onAdd: (
-			isoline: IsolineResult["isolines"][number],
-			constraint: IsolineConstraint,
-			autoZoom?: boolean,
-		) => H.map.Group | undefined;
-	};
-	isLocationFeasible: (markers: MarkerData[]) => FeasibleResult[];
+	mapControl: Pick<
+		HereMapHooks["mapControl"],
+		"setZoom" | "setCenter" | "getCenterPosition" | "getZoom"
+	>;
+	marker: HereMapHooks["marker"];
+	geocode: HereMapHooks["geocode"];
+	isoline: HereMapHooks["isoline"];
+	isLocationFeasible: HereMapHooks["isLocationFeasible"];
 }
 
 /**
@@ -184,7 +139,8 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 				ref={mapContainerRef}
 				style={{ width, height }}
 				className={cn(
-					"relative rounded-lg shadow motion-blur-in-[10px] motion-delay-[0.75s]/blur",
+					// we need to give overflow to clip the map
+					"relative rounded-md overflow-hidden shadow motion-blur-in-[10px] motion-delay-[0.75s]/blur",
 					className,
 				)}
 			>
