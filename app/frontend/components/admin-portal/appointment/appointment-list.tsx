@@ -1298,11 +1298,15 @@ export default function AppointmentList({
 	return (
 		<section
 			className={cn(
-				"grid w-full gap-6 text-sm motion-preset-slide-down motion-delay-200",
+				"grid w-full gap-6 text-sm motion-preset-fade motion-delay-200",
 				className,
 			)}
 		>
-			<p className="text-xs font-semibold tracking-wider uppercase">{label}</p>
+			{appointment.date && (
+				<p className="text-xs font-semibold tracking-wider uppercase">
+					{label}
+				</p>
+			)}
 
 			<div className="grid gap-2">
 				{appointment.schedules.map((schedule) => (
