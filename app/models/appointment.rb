@@ -464,12 +464,12 @@ class Appointment < ApplicationRecord
     conflicting = Appointment
       .where(patient: patient, appointment_date_time: appointment_date_time)
       .where.not(id: id)
-      .exists?
+      .first
 
     return unless conflicting
 
     formatted_date_time = appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-    errors.add(:appointment_date_time, "already has an appointment (#{conflicting.registration_number}) at #{formatted_date_time}")
+    errors.add(:appointment_date_time, "already has an appointment (#{conflicting.registration_number}) on #{formatted_date_time}")
   end
 
   # Validation: Prevent overlapping time ranges
@@ -495,7 +495,7 @@ class Appointment < ApplicationRecord
         start = existing_start.strftime("%B %d, %Y %I:%M %p")
         ending = (existing_start + existing_total_duration_minutes.minutes).strftime("%I:%M %p")
 
-        errors.add(:appointment_date_time, "overlaps with (#{existing.registration_number}) at #{start} — #{ending}")
+        errors.add(:appointment_date_time, "overlaps with (#{existing.registration_number}) on #{start} — #{ending}")
         break # Stop checking after first overlap
       end
     end
@@ -539,6 +539,8 @@ class Appointment < ApplicationRecord
       validate_initial_visit_position
     elsif series?
       validate_series_visit_position
+    else
+      false
     end
   end
 
@@ -553,16 +555,6 @@ class Appointment < ApplicationRecord
     formatted_date = first_series.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
     errors.add(:appointment_date_time, "the first visit must occur before any another visit series (#{first_series.registration_number}) on #{formatted_date}")
     true
-  end
-
-  # Enforce that paid appointments must have a therapist when rescheduling
-  def validate_paid_requires_therapist
-    if status == "paid" && therapist_id.blank?
-      errors.add(
-        :therapist_id,
-        "must be selected when rescheduling a paid appointment"
-      )
-    end
   end
 
   def validate_series_visit_position
@@ -630,6 +622,16 @@ class Appointment < ApplicationRecord
     end
 
     false
+  end
+
+  # Enforce that paid appointments must have a therapist when rescheduling
+  def validate_paid_requires_therapist
+    if status == "paid" && therapist_id.blank?
+      errors.add(
+        :therapist_id,
+        "must be selected when rescheduling a paid appointment"
+      )
+    end
   end
 
   # ? Bug ticket documentation see: https://fisiohome.atlassian.net/browse/PE-64?atlOrigin=eyJpIjoiODcyNmJjNDU1YzVlNDBlMGJjY2VhYzJjNzQxMGU1NmUiLCJwIjoiaiJ9
