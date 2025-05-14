@@ -64,7 +64,7 @@ export default function DateTimePicker({
 				initialFocus
 				mode="single"
 				captionLayout="dropdown"
-				className="p-1 border rounded-md border-border"
+				className="p-1 border rounded-md border-border bg-background"
 				selected={
 					(appointmentDate ?? value) != null
 						? new Date((appointmentDate ?? value) as string | number | Date)

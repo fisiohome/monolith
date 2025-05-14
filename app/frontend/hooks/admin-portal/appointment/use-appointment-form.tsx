@@ -509,7 +509,7 @@ export const useAppointmentSchedulingForm = () => {
 		title: string;
 		description: string;
 	} | null>(null);
-	const checkServicePackage = useCallback(() => {
+	const onCheckServiceError = useCallback(() => {
 		setAlertService(null);
 
 		if (
@@ -524,10 +524,10 @@ export const useAppointmentSchedulingForm = () => {
 				description:
 					"Please select a service and package before searching for a therapist and being able to schedule an appointment.",
 			});
-			return;
+			return true;
 		}
 
-		setAlertService(null);
+		return false;
 	}, [
 		watchAppointmentSchedulingValue?.service,
 		watchAppointmentSchedulingValue?.package,
@@ -582,7 +582,7 @@ export const useAppointmentSchedulingForm = () => {
 		alertService,
 		onFocusServiceField,
 		onSelectService,
-		checkServicePackage,
+		onCheckServiceError,
 	};
 
 	// * for package field

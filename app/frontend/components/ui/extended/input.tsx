@@ -1,3 +1,7 @@
+/**
+ * * Docs: https://www.extend-ui.com/docs/components/input-extended
+ */
+
 import { hasNestedElementOfType } from "@/lib/input-extended-helper";
 import { cn } from "@/lib/utils";
 import { type VariantProps, cva } from "class-variance-authority";

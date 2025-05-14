@@ -1,16 +1,7 @@
 import HereMap from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@/components/ui/command";
 import {
 	FormControl,
 	FormField,
@@ -18,13 +9,7 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -32,21 +17,12 @@ import {
 	useRescheduleFields,
 } from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import { getGenderIcon } from "@/hooks/use-gender";
-import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
 import { cn } from "@/lib/utils";
 import { Deferred } from "@inertiajs/react";
-import {
-	AlertCircle,
-	Check,
-	ChevronsRight,
-	ChevronsUpDown,
-	Hospital,
-	LoaderIcon,
-	User,
-	X,
-} from "lucide-react";
+import { AlertCircle, Hospital, LoaderIcon } from "lucide-react";
 import { type ComponentProps, memo } from "react";
 import DateTimePicker from "./form/date-time";
+import TherapistSelection from "./form/therapist-selection";
 
 export interface FormActionButtonsprops extends ComponentProps<"div"> {
 	isLoading: boolean;
@@ -115,6 +91,7 @@ export const RescheduleFields = memo(function Component({
 		coordinate,
 		mapAddress,
 		brandPackagesSource,
+		appointment,
 		onFindTherapists,
 		onSelectTherapist,
 		onResetAllTherapistState,
@@ -156,57 +133,6 @@ export const RescheduleFields = memo(function Component({
 				</div>
 			</div>
 
-			<Deferred
-				data={["optionsData"]}
-				fallback={
-					<div className="flex flex-col self-end gap-3 col-span-full">
-						<Skeleton className="w-10 h-4 rounded-md" />
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-						</div>
-					</div>
-				}
-			>
-				<FormField
-					control={form.control}
-					name="preferredTherapistGender"
-					render={({ field }) => (
-						<FormItem className="space-y-3 col-span-full">
-							<FormLabel>Preferred Therapist Gender</FormLabel>
-							<FormControl>
-								<RadioGroup
-									onValueChange={(value) => {
-										field.onChange(value);
-										onResetAllTherapistState();
-									}}
-									defaultValue={field.value}
-									orientation="horizontal"
-									className="grid grid-cols-1 gap-4 md:grid-cols-3"
-								>
-									{preferredTherapistGenderOption.map((gender) => (
-										<FormItem
-											key={gender}
-											className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-										>
-											<FormControl>
-												<RadioGroupItem value={gender} />
-											</FormControl>
-											<FormLabel className="flex items-center gap-1 font-normal capitalize">
-												{getGenderIcon(gender)}
-												<span>{gender.toLowerCase()}</span>
-											</FormLabel>
-										</FormItem>
-									))}
-								</RadioGroup>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</Deferred>
-
 			{!therapistsOptions?.feasible?.length && isTherapistFound && (
 				<Alert
 					variant="destructive"
@@ -221,193 +147,112 @@ export const RescheduleFields = memo(function Component({
 				</Alert>
 			)}
 
-			<FormField
-				control={form.control}
-				name="appointmentDateTime"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>Appointment Date</FormLabel>
-
-						<DateTimePicker
-							value={field.value}
-							onChangeValue={field.onChange}
-							callbackOnChange={() => {
-								// reset all therapist and isoline maps state
-								onResetAllTherapistState();
-							}}
+			<div className="flex flex-col items-stretch gap-4 col-span-full lg:flex-row">
+				<div className="grid gap-4">
+					<Deferred
+						data={["optionsData"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3 col-span-full">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<div className="grid grid-cols-1 gap-4">
+									<Skeleton className="relative w-full rounded-md h-9" />
+									<Skeleton className="relative w-full rounded-md h-9" />
+									<Skeleton className="relative w-full rounded-md h-9" />
+								</div>
+							</div>
+						}
+					>
+						<FormField
+							control={form.control}
+							name="preferredTherapistGender"
+							render={({ field }) => (
+								<FormItem className="space-y-3">
+									<FormLabel>Preferred Therapist Gender</FormLabel>
+									<FormControl>
+										<RadioGroup
+											onValueChange={(value) => {
+												field.onChange(value);
+												onResetAllTherapistState();
+											}}
+											defaultValue={field.value}
+											orientation="horizontal"
+											className="grid grid-cols-1 gap-4"
+										>
+											{preferredTherapistGenderOption.map((gender) => (
+												<FormItem
+													key={gender}
+													className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+												>
+													<FormControl>
+														<RadioGroupItem value={gender} />
+													</FormControl>
+													<FormLabel className="flex items-center gap-1 font-normal capitalize">
+														{getGenderIcon(gender)}
+														<span>{gender.toLowerCase()}</span>
+													</FormLabel>
+												</FormItem>
+											))}
+										</RadioGroup>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
 						/>
+					</Deferred>
 
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+					<FormField
+						control={form.control}
+						name="appointmentDateTime"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Appointment Date</FormLabel>
 
-			<div className="grid gap-3 col-span-full">
-				<Button
-					type="button"
-					effect="shine"
-					iconPlacement="right"
-					icon={ChevronsRight}
-					disabled={!watchAppointmentDateTimeValue}
-					onClick={(event) => {
-						event.preventDefault();
-						onFindTherapists();
-					}}
-				>
-					Find the Available Therapists
-				</Button>
+								<FormControl>
+									<DateTimePicker
+										value={field.value}
+										onChangeValue={field.onChange}
+										callbackOnChange={() => {
+											// reset all therapist and isoline maps state
+											onResetAllTherapistState();
+										}}
+									/>
+								</FormControl>
 
-				<HereMap
-					ref={mapRef}
-					coordinate={coordinate}
-					address={{ ...mapAddress }}
-					options={{ disabledEvent: false }}
-					className="col-span-full"
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</div>
+
+				<FormField
+					control={form.control}
+					name="therapist.name"
+					render={({ field }) => (
+						<FormItem className="flex-1">
+							<FormLabel>Therapist</FormLabel>
+
+							<FormControl>
+								<TherapistSelection
+									value={field.value}
+									isLoading={isLoading.therapists}
+									appt={appointment}
+									therapists={therapistsOptions.feasible}
+									isDisabledFind={!watchAppointmentDateTimeValue}
+									onFindTherapists={onFindTherapists}
+									onSelectTherapist={(value) => onSelectTherapist(value)}
+								/>
+							</FormControl>
+						</FormItem>
+					)}
 				/>
 			</div>
 
-			<FormField
-				control={form.control}
-				name="therapist.name"
-				render={({ field }) => {
-					const selectedTherapist = therapistsOptions?.feasible?.find(
-						(t) => t.name === field.value,
-					);
-
-					return (
-						<FormItem>
-							<FormLabel className="text-nowrap">Therapist</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant="outline"
-											className={cn(
-												"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-												!field.value && "text-muted-foreground",
-											)}
-										>
-											{field.value ? (
-												<span className="uppercase">
-													{selectedTherapist?.name || field.value}
-												</span>
-											) : (
-												<span>Select therapist</span>
-											)}
-
-											{field.value ? (
-												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-												<div
-													className="cursor-pointer"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-
-														onSelectTherapist(DEFAULT_VALUES_THERAPIST);
-													}}
-												>
-													<X className="opacity-50" />
-												</div>
-											) : (
-												<ChevronsUpDown className="opacity-50" />
-											)}
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="p-0 w-[300px]"
-									align="start"
-									side="bottom"
-								>
-									<Command>
-										<CommandInput
-											placeholder="Search therapist..."
-											className="h-9"
-											disabled={isLoading.therapists}
-										/>
-										<CommandList>
-											<CommandEmpty>No therapist found.</CommandEmpty>
-											<CommandGroup>
-												{isLoading.therapists ? (
-													<CommandItem value={undefined} disabled>
-														<LoaderIcon className="animate-spin" />
-														<span>Please wait...</span>
-													</CommandItem>
-												) : (
-													therapistsOptions?.feasible?.map((therapist) => (
-														<CommandItem
-															key={therapist.id}
-															value={therapist.name}
-															onSelect={() =>
-																onSelectTherapist({
-																	id: therapist.id,
-																	name: therapist.name,
-																})
-															}
-														>
-															<div className="flex items-center gap-3">
-																<Avatar className="border rounded-lg border-border bg-muted size-12">
-																	<AvatarImage src="#" />
-																	<AvatarFallback>
-																		<User className="flex-shrink-0 size-5 text-muted-foreground/75" />
-																	</AvatarFallback>
-																</Avatar>
-
-																<div className="grid text-sm line-clamp-1">
-																	<p className="font-semibold uppercase truncate">
-																		{therapist.name}
-																	</p>
-
-																	<div className="flex items-center gap-3 mt-2">
-																		<Badge
-																			variant="outline"
-																			className="font-light"
-																		>
-																			{therapist.employmentType}
-																		</Badge>
-
-																		<Separator
-																			orientation="vertical"
-																			className="bg-black/10"
-																		/>
-
-																		<Badge
-																			variant="outline"
-																			className="flex items-center gap-1 text-xs font-light"
-																		>
-																			{therapist?.gender &&
-																				getGenderIcon(
-																					therapist.gender,
-																					"size-3 text-muted-foreground",
-																				)}
-
-																			<span>{therapist?.gender || "N/A"}</span>
-																		</Badge>
-																	</div>
-																</div>
-
-																<Check
-																	className={cn(
-																		"ml-auto",
-																		therapist.name === field.value
-																			? "opacity-100"
-																			: "opacity-0",
-																	)}
-																/>
-															</div>
-														</CommandItem>
-													))
-												)}
-											</CommandGroup>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-
-							<FormMessage />
-						</FormItem>
-					);
-				}}
+			<HereMap
+				ref={mapRef}
+				coordinate={coordinate}
+				address={{ ...mapAddress }}
+				options={{ disabledEvent: false }}
+				className="col-span-full"
 			/>
 
 			<FormField
@@ -423,6 +268,7 @@ export const RescheduleFields = memo(function Component({
 							<Textarea
 								{...field}
 								placeholder="Enter the reschedule reason..."
+								rows={3}
 								className="shadow-inner bg-sidebar"
 							/>
 						</FormControl>

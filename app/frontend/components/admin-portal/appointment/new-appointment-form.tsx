@@ -12,7 +12,6 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -59,7 +58,6 @@ import { getGenderIcon } from "@/hooks/use-gender";
 import {
 	type AppointmentBookingSchema,
 	DEFAULT_VALUES_SERVICE,
-	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments/form";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
@@ -67,13 +65,11 @@ import { Deferred, Link, usePage } from "@inertiajs/react";
 import {
 	AlertCircle,
 	Check,
-	ChevronsRight,
 	ChevronsUpDown,
 	CircleCheckBig,
 	Hospital,
 	LoaderIcon,
 	Pencil,
-	User,
 	X,
 } from "lucide-react";
 import {
@@ -91,6 +87,8 @@ import PatientBasicInfoForm from "./form/patient-basic-info";
 import PatientContactForm from "./form/patient-contact";
 import PatientMedicalForm from "./form/patient-medical";
 import PatientRegionForm from "./form/patient-region";
+import TherapistSelection from "./form/therapist-selection";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export type FormMode = "new" | "series";
 
@@ -378,6 +376,7 @@ export const PatientDetailsForm = memo(function Component() {
 });
 
 export function AppointmentSchedulingForm() {
+	const isMobile = useIsMobile();
 	const { mode } = useFormProvider();
 	const { coordinate, mapAddress } = usePatientRegion();
 	const {
@@ -394,7 +393,7 @@ export function AppointmentSchedulingForm() {
 		onFocusServiceField,
 		onSelectService,
 		onSelectPackage,
-		checkServicePackage,
+		onCheckServiceError,
 	} = restSchedulingHooks;
 	const { mapRef, isIsolineCalculated: _isIsolineCalculated } =
 		restSchedulingHooks;
@@ -408,214 +407,7 @@ export function AppointmentSchedulingForm() {
 
 	return (
 		<FormStepItemContainer>
-			{mode === "new" ? (
-				<>
-					<Deferred
-						data={["services"]}
-						fallback={
-							<div className="flex flex-col self-end gap-3">
-								<Skeleton className="w-10 h-4 rounded-md" />
-								<Skeleton className="relative w-full rounded-md h-9" />
-							</div>
-						}
-					>
-						<FormField
-							control={form.control}
-							name="appointmentScheduling.service.name"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel className="text-nowrap">Service</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button
-													variant="outline"
-													className={cn(
-														"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-														!field.value && "text-muted-foreground",
-													)}
-													onFocus={() => onFocusServiceField()}
-												>
-													<p>
-														{field.value
-															? servicesOption
-																	?.find(
-																		(service) => service.name === field.value,
-																	)
-																	?.name?.replaceAll("_", " ") ||
-																field.value.replaceAll("_", " ")
-															: "Select service"}
-													</p>
-													{field.value ? (
-														// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-														<div
-															className="cursor-pointer"
-															onClick={(event) => {
-																event.preventDefault();
-																event.stopPropagation();
-
-																onSelectService(DEFAULT_VALUES_SERVICE);
-															}}
-														>
-															<X className="opacity-50" />
-														</div>
-													) : (
-														<ChevronsUpDown className="opacity-50" />
-													)}
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent
-											className="p-0 w-[300px]"
-											align="start"
-											side="bottom"
-										>
-											<Command>
-												<CommandInput
-													placeholder="Search service..."
-													className="h-9"
-													disabled={isLoading.services}
-												/>
-												<CommandList>
-													<CommandEmpty>No service found.</CommandEmpty>
-													<CommandGroup>
-														{isLoading.services ? (
-															<CommandItem value={undefined} disabled>
-																<LoaderIcon className="animate-spin" />
-																<span>Please wait...</span>
-															</CommandItem>
-														) : (
-															servicesOption?.map((service) => (
-																<CommandItem
-																	key={service.id}
-																	value={service.name}
-																	onSelect={() =>
-																		onSelectService({
-																			id: String(service.id),
-																			name: service.name,
-																		})
-																	}
-																>
-																	<span className="flex flex-col items-start">
-																		<span>
-																			{service.name.replaceAll("_", " ")}
-																		</span>
-																		<span className="text-xs font-light text-pretty">
-																			{service.description}
-																		</span>
-																	</span>
-
-																	<Check
-																		className={cn(
-																			"ml-auto",
-																			service.name === field.value
-																				? "opacity-100"
-																				: "opacity-0",
-																		)}
-																	/>
-																</CommandItem>
-															))
-														)}
-													</CommandGroup>
-												</CommandList>
-											</Command>
-										</PopoverContent>
-									</Popover>
-
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					</Deferred>
-
-					<FormField
-						control={form.control}
-						name="appointmentScheduling.package.name"
-						render={({ field }) => {
-							const selectedPackage = packagesOption?.find(
-								(packageItem) => packageItem.name === field.value,
-							);
-
-							return (
-								<FormItem>
-									<FormLabel className="text-nowrap">Package</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button
-													variant="outline"
-													className={cn(
-														"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-														!field.value && "text-muted-foreground",
-													)}
-												>
-													{field.value ? (
-														<p>
-															<span>
-																{selectedPackage?.name || field.value}
-															</span>{" "}
-															<span className="italic font-light">{`(${selectedPackage?.numberOfVisit || watchAppointmentSchedulingValue?.package?.numberOfVisit} visit(s))`}</span>
-														</p>
-													) : (
-														<span>Select package</span>
-													)}
-													<ChevronsUpDown className="opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent
-											className="p-0 w-[300px]"
-											align="start"
-											side="bottom"
-										>
-											<Command>
-												<CommandInput
-													placeholder="Search package..."
-													className="h-9"
-												/>
-												<CommandList>
-													<CommandEmpty>No package found.</CommandEmpty>
-													<CommandGroup>
-														{packagesOption?.map((packageItem) => (
-															<CommandItem
-																key={packageItem.id}
-																value={packageItem.name}
-																onSelect={() =>
-																	onSelectPackage({
-																		id: packageItem.id,
-																		name: packageItem.name,
-																		numberOfVisit: packageItem.numberOfVisit,
-																	})
-																}
-															>
-																<p>
-																	<span>{packageItem.name}</span>{" "}
-																	<span className="italic font-light">{`(${packageItem.numberOfVisit} visit(s))`}</span>
-																</p>
-
-																<Check
-																	className={cn(
-																		"ml-auto",
-																		packageItem.name === field.value
-																			? "opacity-100"
-																			: "opacity-0",
-																	)}
-																/>
-															</CommandItem>
-														))}
-													</CommandGroup>
-												</CommandList>
-											</Command>
-										</PopoverContent>
-									</Popover>
-
-									<FormMessage />
-								</FormItem>
-							);
-						}}
-					/>
-				</>
-			) : (
+			{mode === "series" && (
 				<div className="p-3 text-sm border rounded-md shadow-inner border-input bg-sidebar col-span-full">
 					<div className="flex items-center gap-3">
 						<Avatar className="border rounded-lg border-black/10 bg-muted size-12">
@@ -651,57 +443,6 @@ export function AppointmentSchedulingForm() {
 				</div>
 			)}
 
-			<Deferred
-				data={["optionsData"]}
-				fallback={
-					<div className="flex flex-col self-end gap-3 col-span-full">
-						<Skeleton className="w-10 h-4 rounded-md" />
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-							<Skeleton className="relative w-full rounded-md h-9" />
-						</div>
-					</div>
-				}
-			>
-				<FormField
-					control={form.control}
-					name="appointmentScheduling.preferredTherapistGender"
-					render={({ field }) => (
-						<FormItem className="space-y-3 col-span-full">
-							<FormLabel>Preferred Therapist Gender</FormLabel>
-							<FormControl>
-								<RadioGroup
-									onValueChange={(value) => {
-										field.onChange(value);
-										onResetAllTherapistState();
-									}}
-									defaultValue={field.value}
-									orientation="horizontal"
-									className="grid grid-cols-1 gap-4 md:grid-cols-3"
-								>
-									{preferredTherapistGenderOption.map((gender) => (
-										<FormItem
-											key={gender}
-											className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-										>
-											<FormControl>
-												<RadioGroupItem value={gender} />
-											</FormControl>
-											<FormLabel className="flex items-center gap-1 font-normal capitalize">
-												{getGenderIcon(gender)}
-												<span>{gender.toLowerCase()}</span>
-											</FormLabel>
-										</FormItem>
-									))}
-								</RadioGroup>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</Deferred>
-
 			{(alertService !== null ||
 				(!therapistsOptions?.feasible?.length && isTherapistFound)) && (
 				<Alert
@@ -719,197 +460,340 @@ export function AppointmentSchedulingForm() {
 				</Alert>
 			)}
 
-			<FormField
-				control={form.control}
-				name="appointmentScheduling.appointmentDateTime"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						<FormLabel>Appointment Date</FormLabel>
+			<div className="flex flex-col items-stretch gap-4 col-span-full lg:flex-row">
+				<div className="grid gap-4">
+					{mode === "new" && (
+						<>
+							<Deferred
+								data={["services"]}
+								fallback={
+									<div className="flex flex-col self-end gap-3">
+										<Skeleton className="w-10 h-4 rounded-md" />
+										<Skeleton className="relative w-full rounded-md h-9" />
+									</div>
+								}
+							>
+								<FormField
+									control={form.control}
+									name="appointmentScheduling.service.name"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel className="text-nowrap">Service</FormLabel>
+											<Popover>
+												<PopoverTrigger asChild>
+													<FormControl>
+														<Button
+															variant="outline"
+															className={cn(
+																"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+																!field.value && "text-muted-foreground",
+															)}
+															onFocus={() => onFocusServiceField()}
+														>
+															<p>
+																{field.value
+																	? servicesOption
+																			?.find(
+																				(service) =>
+																					service.name === field.value,
+																			)
+																			?.name?.replaceAll("_", " ") ||
+																		field.value.replaceAll("_", " ")
+																	: "Select service"}
+															</p>
+															{field.value ? (
+																// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+																<div
+																	className="cursor-pointer"
+																	onClick={(event) => {
+																		event.preventDefault();
+																		event.stopPropagation();
 
-						<DateTimePicker
-							value={field.value}
-							onChangeValue={field.onChange}
-							callbackOnChange={() => {
-								// reset all therapist and isoline maps state
-								onResetAllTherapistState();
-							}}
+																		onSelectService(DEFAULT_VALUES_SERVICE);
+																	}}
+																>
+																	<X className="opacity-50" />
+																</div>
+															) : (
+																<ChevronsUpDown className="opacity-50" />
+															)}
+														</Button>
+													</FormControl>
+												</PopoverTrigger>
+												<PopoverContent
+													className="p-0 w-[300px]"
+													align="start"
+													side="bottom"
+												>
+													<Command>
+														<CommandInput
+															placeholder="Search service..."
+															className="h-9"
+															disabled={isLoading.services}
+														/>
+														<CommandList>
+															<CommandEmpty>No service found.</CommandEmpty>
+															<CommandGroup>
+																{isLoading.services ? (
+																	<CommandItem value={undefined} disabled>
+																		<LoaderIcon className="animate-spin" />
+																		<span>Please wait...</span>
+																	</CommandItem>
+																) : (
+																	servicesOption?.map((service) => (
+																		<CommandItem
+																			key={service.id}
+																			value={service.name}
+																			onSelect={() =>
+																				onSelectService({
+																					id: String(service.id),
+																					name: service.name,
+																				})
+																			}
+																		>
+																			<span className="flex flex-col items-start">
+																				<span>
+																					{service.name.replaceAll("_", " ")}
+																				</span>
+																				<span className="text-xs font-light text-pretty">
+																					{service.description}
+																				</span>
+																			</span>
+
+																			<Check
+																				className={cn(
+																					"ml-auto",
+																					service.name === field.value
+																						? "opacity-100"
+																						: "opacity-0",
+																				)}
+																			/>
+																		</CommandItem>
+																	))
+																)}
+															</CommandGroup>
+														</CommandList>
+													</Command>
+												</PopoverContent>
+											</Popover>
+
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</Deferred>
+
+							<Deferred
+								data={["services"]}
+								fallback={
+									<div className="flex flex-col self-end gap-3">
+										<Skeleton className="w-10 h-4 rounded-md" />
+										<Skeleton className="relative w-full rounded-md h-9" />
+									</div>
+								}
+							>
+								<FormField
+									control={form.control}
+									name="appointmentScheduling.package.name"
+									render={({ field }) => {
+										const selectedPackage = packagesOption?.find(
+											(packageItem) => packageItem.name === field.value,
+										);
+
+										return (
+											<FormItem>
+												<FormLabel className="text-nowrap">Package</FormLabel>
+												<Popover>
+													<PopoverTrigger asChild>
+														<FormControl>
+															<Button
+																variant="outline"
+																className={cn(
+																	"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+																	!field.value && "text-muted-foreground",
+																)}
+															>
+																{field.value ? (
+																	<p>
+																		<span>
+																			{selectedPackage?.name || field.value}
+																		</span>{" "}
+																		<span className="italic font-light">{`(${selectedPackage?.numberOfVisit || watchAppointmentSchedulingValue?.package?.numberOfVisit} visit(s))`}</span>
+																	</p>
+																) : (
+																	<span>Select package</span>
+																)}
+																<ChevronsUpDown className="opacity-50" />
+															</Button>
+														</FormControl>
+													</PopoverTrigger>
+													<PopoverContent
+														className="p-0 w-[300px]"
+														align="start"
+														side="bottom"
+													>
+														<Command>
+															<CommandInput
+																placeholder="Search package..."
+																className="h-9"
+															/>
+															<CommandList>
+																<CommandEmpty>No package found.</CommandEmpty>
+																<CommandGroup>
+																	{packagesOption?.map((packageItem) => (
+																		<CommandItem
+																			key={packageItem.id}
+																			value={packageItem.name}
+																			onSelect={() =>
+																				onSelectPackage({
+																					id: packageItem.id,
+																					name: packageItem.name,
+																					numberOfVisit:
+																						packageItem.numberOfVisit,
+																				})
+																			}
+																		>
+																			<p>
+																				<span>{packageItem.name}</span>{" "}
+																				<span className="italic font-light">{`(${packageItem.numberOfVisit} visit(s))`}</span>
+																			</p>
+
+																			<Check
+																				className={cn(
+																					"ml-auto",
+																					packageItem.name === field.value
+																						? "opacity-100"
+																						: "opacity-0",
+																				)}
+																			/>
+																		</CommandItem>
+																	))}
+																</CommandGroup>
+															</CommandList>
+														</Command>
+													</PopoverContent>
+												</Popover>
+
+												<FormMessage />
+											</FormItem>
+										);
+									}}
+								/>
+							</Deferred>
+						</>
+					)}
+
+					<Deferred
+						data={["optionsData"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3 col-span-full">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<div className="grid grid-cols-1 gap-4">
+									<Skeleton className="relative w-full rounded-md h-9" />
+									<Skeleton className="relative w-full rounded-md h-9" />
+									<Skeleton className="relative w-full rounded-md h-9" />
+								</div>
+							</div>
+						}
+					>
+						<FormField
+							control={form.control}
+							name="appointmentScheduling.preferredTherapistGender"
+							render={({ field }) => (
+								<FormItem className="space-y-3">
+									<FormLabel>Preferred Therapist Gender</FormLabel>
+									<FormControl>
+										<RadioGroup
+											onValueChange={(value) => {
+												field.onChange(value);
+												onResetAllTherapistState();
+											}}
+											defaultValue={field.value}
+											orientation="horizontal"
+											className="grid grid-cols-1 gap-4"
+										>
+											{preferredTherapistGenderOption.map((gender) => (
+												<FormItem
+													key={gender}
+													className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+												>
+													<FormControl>
+														<RadioGroupItem value={gender} />
+													</FormControl>
+													<FormLabel className="flex items-center gap-1 font-normal capitalize">
+														{getGenderIcon(gender)}
+														<span>{gender.toLowerCase()}</span>
+													</FormLabel>
+												</FormItem>
+											))}
+										</RadioGroup>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
 						/>
+					</Deferred>
 
-						<FormMessage />
-					</FormItem>
-				)}
-			/>
+					<FormField
+						control={form.control}
+						name="appointmentScheduling.appointmentDateTime"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Appointment Date</FormLabel>
 
-			<div className="grid gap-3 col-span-full">
-				<Button
-					type="button"
-					effect="shine"
-					iconPlacement="right"
-					icon={ChevronsRight}
-					disabled={!watchAppointmentSchedulingValue.appointmentDateTime}
-					onClick={(event) => {
-						event.preventDefault();
+								<FormControl>
+									<DateTimePicker
+										value={field.value}
+										onChangeValue={field.onChange}
+										callbackOnChange={() => {
+											// reset all therapist and isoline maps state
+											onResetAllTherapistState();
+										}}
+									/>
+								</FormControl>
 
-						checkServicePackage();
-						if (alertService !== null) return;
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</div>
 
-						onFindTherapists();
-					}}
-				>
-					Find the Available Therapists
-				</Button>
+				<FormField
+					control={form.control}
+					name="appointmentScheduling.therapist.name"
+					render={({ field }) => (
+						<FormItem className="flex-1">
+							<FormLabel>Therapist</FormLabel>
 
-				<HereMap
-					ref={mapRef}
-					coordinate={coordinate}
-					address={{ ...mapAddress }}
-					options={{ disabledEvent: false }}
-					className="col-span-full"
+							<FormControl>
+								<TherapistSelection
+									value={field.value}
+									isLoading={isLoading.therapists}
+									therapists={therapistsOptions.feasible}
+									height={isMobile ? undefined : 600}
+									isDisabledFind={
+										!watchAppointmentSchedulingValue.appointmentDateTime
+									}
+									onFindTherapists={async () => {
+										const isError = onCheckServiceError();
+										if (isError) return;
+
+										onFindTherapists();
+									}}
+									onSelectTherapist={(value) => onSelectTherapist(value)}
+								/>
+							</FormControl>
+						</FormItem>
+					)}
 				/>
 			</div>
 
-			<FormField
-				control={form.control}
-				name="appointmentScheduling.therapist.name"
-				render={({ field }) => {
-					const selectedTherapist = therapistsOptions?.feasible?.find(
-						(t) => t.name === field.value,
-					);
-
-					return (
-						<FormItem>
-							<FormLabel className="text-nowrap">Therapist</FormLabel>
-							<Popover>
-								<PopoverTrigger asChild>
-									<FormControl>
-										<Button
-											variant="outline"
-											className={cn(
-												"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-												!field.value && "text-muted-foreground",
-											)}
-										>
-											{field.value ? (
-												<span className="uppercase">
-													{selectedTherapist?.name || field.value}
-												</span>
-											) : (
-												<span>Select therapist</span>
-											)}
-
-											{field.value ? (
-												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-												<div
-													className="cursor-pointer"
-													onClick={(event) => {
-														event.preventDefault();
-														event.stopPropagation();
-
-														onSelectTherapist(DEFAULT_VALUES_THERAPIST);
-													}}
-												>
-													<X className="opacity-50" />
-												</div>
-											) : (
-												<ChevronsUpDown className="opacity-50" />
-											)}
-										</Button>
-									</FormControl>
-								</PopoverTrigger>
-								<PopoverContent
-									className="p-0 w-[300px]"
-									align="start"
-									side="bottom"
-								>
-									<Command>
-										<CommandInput
-											placeholder="Search therapist..."
-											className="h-9"
-											disabled={isLoading.therapists}
-										/>
-										<CommandList>
-											<CommandEmpty>No therapist found.</CommandEmpty>
-											<CommandGroup>
-												{isLoading.therapists ? (
-													<CommandItem value={undefined} disabled>
-														<LoaderIcon className="animate-spin" />
-														<span>Please wait...</span>
-													</CommandItem>
-												) : (
-													therapistsOptions?.feasible?.map((therapist) => (
-														<CommandItem
-															key={therapist.id}
-															value={therapist.name}
-															onSelect={() =>
-																onSelectTherapist({
-																	id: therapist.id,
-																	name: therapist.name,
-																})
-															}
-														>
-															<div className="flex items-center gap-3">
-																<Avatar className="border rounded-lg border-border bg-muted size-12">
-																	<AvatarImage src="#" />
-																	<AvatarFallback>
-																		<User className="flex-shrink-0 size-5 text-muted-foreground/75" />
-																	</AvatarFallback>
-																</Avatar>
-
-																<div className="grid text-sm line-clamp-1">
-																	<p className="font-semibold uppercase truncate">
-																		{therapist.name}
-																	</p>
-
-																	<div className="flex items-center gap-3 mt-2">
-																		<Badge
-																			variant="outline"
-																			className="font-light"
-																		>
-																			{therapist.employmentType}
-																		</Badge>
-
-																		<Separator
-																			orientation="vertical"
-																			className="bg-black/10"
-																		/>
-
-																		<Badge
-																			variant="outline"
-																			className="flex items-center gap-1 text-xs font-light"
-																		>
-																			{therapist?.gender &&
-																				getGenderIcon(
-																					therapist.gender,
-																					"size-3 text-muted-foreground",
-																				)}
-
-																			<span>{therapist?.gender || "N/A"}</span>
-																		</Badge>
-																	</div>
-																</div>
-
-																<Check
-																	className={cn(
-																		"ml-auto",
-																		therapist.name === field.value
-																			? "opacity-100"
-																			: "opacity-0",
-																	)}
-																/>
-															</div>
-														</CommandItem>
-													))
-												)}
-											</CommandGroup>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-
-							<FormMessage />
-						</FormItem>
-					);
-				}}
+			<HereMap
+				ref={mapRef}
+				coordinate={coordinate}
+				address={{ ...mapAddress }}
+				options={{ disabledEvent: false }}
+				className="col-span-full"
 			/>
 		</FormStepItemContainer>
 	);

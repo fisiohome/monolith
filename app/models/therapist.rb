@@ -65,7 +65,7 @@ class Therapist < ApplicationRecord
   end
 
   # Get detailed availability info
-  def availability_details(appointment_date_time_server_time, current_appointment_id)
+  def availability_details(appointment_date_time_server_time, current_appointment_id = nil)
     service = AdminPortal::GetTherapistAvailableService.new(self, appointment_date_time_server_time, current_appointment_id)
     {
       available: service.available?,

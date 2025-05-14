@@ -43,6 +43,7 @@ export type TherapistOption = Pick<
 	| "availability"
 	| "availabilityDetails"
 	| "activeAddress"
+	| "appointments"
 >;
 
 // * hook about patient region form value

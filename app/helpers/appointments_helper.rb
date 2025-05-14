@@ -80,7 +80,7 @@ module AppointmentsHelper
         visit_progress: appointment.visit_progress,
         next_visit_progress: appointment.next_visit_progress,
         total_package_visits: appointment.total_package_visits,
-        next_visits: appointment.next_visits,
+        next_visits: appointment.next_visits.as_json,
         series_appointments: appointment.series_appointments.as_json,
         reference_appointment: appointment.reference_appointment.as_json
       )

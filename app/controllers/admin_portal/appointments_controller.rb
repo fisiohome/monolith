@@ -64,7 +64,10 @@ module AdminPortal
         include_visit_address: true,
         include_package: true,
         include_admins: false,
-        include_patient_medical_record: false
+        include_patient_medical_record: false,
+        include_all_visits: true,
+        all_visits_only: [:id, :visit_progress, :appointment_date_time, :status, :registration_number],
+        all_visits_methods: [:visit_progress]
       })
       preparation = PreparationRescheduleAppointmentService.new(@appointment, params)
 

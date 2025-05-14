@@ -259,6 +259,7 @@ export const useRescheduleFields = () => {
 		...therapistAvailabilityHooks,
 		form,
 		isLoading,
+		appointment,
 		watchAppointmentDateTimeValue,
 		errorsServerValidation,
 		brandPackagesSource,

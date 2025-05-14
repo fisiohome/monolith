@@ -4,7 +4,7 @@ module AdminPortal
 
     # Service to check therapist availability for a specific datetime
     # Handles complex logic including time zones, adjusted schedules, and booking constraints
-    def initialize(therapist, appointment_date_time_server_time, current_appointment_id)
+    def initialize(therapist, appointment_date_time_server_time, current_appointment_id = nil)
       @therapist = therapist
       @appointment_date_time_server_time = appointment_date_time_server_time
       @current_appointment_id = current_appointment_id
