@@ -40,9 +40,14 @@ i18n
 				HttpBackend, // fallback
 			],
 			backendOptions: [
+				// LocalStorageBackend options
 				{
 					expirationTime: 24 * 60 * 60 * 1000 * 3, // 3 days
 					defaultVersion: `v${HASH}`, // generate a new version every build to refresh
+				},
+				// HttpBackend options
+				{
+					loadPath: `/locales/{{lng}}/{{ns}}.json?v=${HASH}`, // Force new fetch every build
 				},
 			],
 			cacheHitMode: "refreshAndUpdateStore", // learn more: https://github.com/i18next/i18next-chained-backend,
