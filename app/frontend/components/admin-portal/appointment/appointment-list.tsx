@@ -32,7 +32,13 @@ import type {
 import type { Admin } from "@/types/admin-portal/admin";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import { router, usePage } from "@inertiajs/react";
-import { format, formatDistance, isPast, isToday } from "date-fns";
+import {
+	format,
+	formatDistance,
+	isBefore,
+	isToday,
+	startOfToday,
+} from "date-fns";
 import {
 	Activity,
 	Ban,
@@ -65,14 +71,14 @@ interface AppointmentActionButtonsProps {
 	isExpanded: boolean;
 	isSuperAdmin: boolean;
 	isAdminPIC: boolean;
-	isPastAppointment: boolean;
+	isPastFromToday: boolean;
 }
 
 const AppointmentActionButtons = memo(function Component({
 	schedule,
 	isExpanded: _isExpanded,
 	isAdminPIC,
-	isPastAppointment,
+	isPastFromToday,
 	isSuperAdmin,
 }: AppointmentActionButtonsProps) {
 	const { props: globalProps, url: pageURL } =
@@ -187,7 +193,7 @@ const AppointmentActionButtons = memo(function Component({
 								</Button>
 							)} */}
 
-							{!isPastAppointment && (
+							{!isPastFromToday && (
 								<>
 									<Button
 										variant="primary-outline"
@@ -321,9 +327,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 	const { locale, tzDate } = useDateContext();
 	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
-	const isPastAppointment = useMemo(() => {
+	const isPastFromToday = useMemo(() => {
 		if (!schedule.appointmentDateTime) return false;
-		return isPast(schedule.appointmentDateTime);
+		return isBefore(schedule.appointmentDateTime, startOfToday());
 	}, [schedule.appointmentDateTime]);
 	const distanceBadgeVariant = useMemo(
 		() => getbadgeVariantStatus(schedule.status),
@@ -1249,7 +1255,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 								isExpanded={isExpanded}
 								isSuperAdmin={isSuperAdmin}
 								isAdminPIC={isAdminPIC}
-								isPastAppointment={isPastAppointment}
+								isPastFromToday={isPastFromToday}
 							/>
 						</ExpandableCard>
 					</ExpandableTrigger>
