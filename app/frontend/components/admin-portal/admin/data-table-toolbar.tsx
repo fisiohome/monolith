@@ -137,7 +137,7 @@ export default function ToolbarTable({
 											))}
 											{filterBy.adminType && (
 												<>
-													<CommandSeparator className="my-2" />
+													<CommandSeparator className="mb-2" />
 													<Button
 														className="w-full px-2"
 														variant="ghost"

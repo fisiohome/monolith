@@ -11,10 +11,9 @@ import {
 	type ResponsiveDialogProps,
 } from "@/components/shared/responsive-dialog";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { cn, populateQueryParams } from "@/lib/utils";
+import { populateQueryParams } from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
 import type {
 	Appointment,
@@ -23,17 +22,8 @@ import type {
 import type { Location } from "@/types/admin-portal/location";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
 import { Plus } from "lucide-react";
-import {
-	type ReactNode,
-	createContext,
-	useCallback,
-	useContext,
-	useMemo,
-	useState,
-} from "react";
-import { Fragment } from "react";
+import { type ReactNode, createContext, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 // * page context provider
@@ -191,140 +181,67 @@ export interface AppointmentIndexGlobalPageProps
 }
 
 export default function AppointmentIndex() {
-	const { props: globalProps, url: pageURL } =
-		usePage<AppointmentIndexGlobalPageProps>();
-	const isDekstop = useMediaQuery("(min-width: 768px)");
+	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
 
-	// * tabs management
-	const [isTabChange, setIsTabChange] = useState(false);
-	const tabList = useMemo(() => {
-		return [
-			{
-				text: t("tab.title.upcoming"),
-				value: "upcoming",
-			},
-			{
-				text: t("tab.title.pending"),
-				value: "pending",
-			},
-			{
-				text: t("tab.title.past"),
-				value: "past",
-			},
-			{
-				text: t("tab.title.unschedule"),
-				value: "unschedule",
-			},
-			{
-				text: t("tab.title.cancelled"),
-				value: "cancel",
-			},
-		] as const;
-	}, [t]);
-	const tabActive = useMemo<(typeof tabList)[number]["value"]>(
-		() =>
-			(globalProps?.adminPortal?.currentQuery
-				?.filterByAppointmentStatus as (typeof tabList)[number]["value"]) ||
-			"upcoming",
-		[globalProps?.adminPortal?.currentQuery?.filterByAppointmentStatus],
-	);
-	const onTabClick = useCallback(
-		(value: (typeof tabList)[number]["value"]) => {
-			const { fullUrl, queryParams } = populateQueryParams(
-				pageURL,
-				deepTransformKeysToSnakeCase({
-					filterByAppointmentStatus: value,
-				}),
-			);
-
-			router.get(
-				fullUrl,
-				{ ...queryParams },
-				{
-					replace: true,
-					preserveScroll: true,
-					preserveState: true,
-					only: ["adminPortal", "flash", "errors", "appointments"],
-					onStart: () => {
-						setIsTabChange(true);
-					},
-					onFinish: () => {
-						setTimeout(() => {
-							setIsTabChange(false);
-						}, 250);
-					},
-				},
-			);
-		},
-		[pageURL],
-	);
 	const appointments = useMemo(() => {
 		if (!globalProps?.appointments || !globalProps?.appointments?.length)
 			return [];
 
 		return globalProps.appointments;
 	}, [globalProps?.appointments]);
+	const isAppointmentExist = useMemo(
+		() => !!appointments?.length,
+		[appointments?.length],
+	);
 	const noAppointmentsLabel = useMemo(() => {
 		let label = "";
 
-		switch (tabActive) {
-			case "upcoming":
-				label = t("tab.no_content.upcoming");
-				break;
+		switch (globalProps?.adminPortal?.currentQuery?.status) {
 			case "cancel":
 				label = t("tab.no_content.cancelled");
 				break;
 			case "past":
 				label = t("tab.no_content.past");
 				break;
-			case "pending":
-				label = t("tab.no_content.pending");
+			case "pending_therapist":
+				label = t("tab.no_content.pending_therapist");
+				break;
+			case "pending_patient_approval":
+				label = t("tab.no_content.pending_patient_approval");
+				break;
+			case "pending_payment":
+				label = t("tab.no_content.pending_payment");
 				break;
 			case "unschedule":
+				label = t("tab.no_content.unschedule");
+				break;
+			default:
 				label = t("tab.no_content.unschedule");
 				break;
 		}
 
 		return label;
-	}, [tabActive, t]);
-	const isAppointmentExist = useMemo(
-		() => !!appointments?.length,
-		[appointments?.length],
-	);
+	}, [globalProps?.adminPortal?.currentQuery?.status, t]);
 
 	return (
 		<PageProvider>
 			<Head title={t("head_title")} />
 
-			<PageContainer className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold tracking-tight">{t("page_title")}</h1>
-			</PageContainer>
+			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+				<div className="flex flex-col justify-between gap-4 md:flex-row">
+					<div>
+						<h1 className="text-lg font-bold tracking-tight uppercase">
+							{t("page_title")}
+						</h1>
 
-			<PageContainer className="flex-1 gap-6 md:min-h-min">
-				<Tabs defaultValue={tabActive}>
-					<div className="flex flex-col items-center justify-between gap-3 md:flex-row">
-						<TabsList
-							className={cn(
-								"",
-								isDekstop ? "" : "grid grid-cols-4 w-full h-fit",
-							)}
-						>
-							{tabList.map((tab) => (
-								<Fragment key={tab.value}>
-									<TabsTrigger
-										disabled={isTabChange && tabActive !== tab.value}
-										value={tab.value}
-										className="px-3 py-2 md:py-1"
-										onClick={() => onTabClick(tab.value)}
-									>
-										{tab.text}
-									</TabsTrigger>
-								</Fragment>
-							))}
-						</TabsList>
+						<p className="w-full text-sm text-muted-foreground text-pretty md:w-8/12">
+							{t("page_description")}
+						</p>
+					</div>
 
-						<Button asChild disabled={isTabChange} className="w-full md:w-fit">
+					<div className="flex flex-col gap-2 md:flex-row">
+						<Button asChild className="w-full md:w-fit">
 							<Link
 								href={
 									globalProps.adminPortal.router.adminPortal.appointment.new
@@ -335,37 +252,39 @@ export default function AppointmentIndex() {
 							</Link>
 						</Button>
 					</div>
+				</div>
 
-					<FilterList />
+				<Separator className="bg-border" />
 
-					<Deferred
-						data={["appointments"]}
-						fallback={
-							<div className="flex flex-col self-end gap-6 mt-6">
-								<Skeleton className="w-2/12 h-4 rounded-sm" />
-								<Skeleton className="relative w-full h-32 rounded-xl" />
-							</div>
-						}
-					>
-						<div className="grid gap-6 mt-6">
-							{isAppointmentExist ? (
-								appointments.map((appointment, index) => (
-									<AppointmentList
-										key={String(appointment.date)}
-										appointment={appointment}
-										index={index}
-									/>
-								))
-							) : (
-								<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background">
-									<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">
-										{noAppointmentsLabel}
-									</h2>
-								</div>
-							)}
+				<FilterList />
+
+				<Deferred
+					data={["appointments"]}
+					fallback={
+						<div className="flex flex-col self-end gap-6 mt-6">
+							<Skeleton className="w-2/12 h-4 rounded-sm" />
+							<Skeleton className="relative w-full h-32 rounded-xl" />
 						</div>
-					</Deferred>
-				</Tabs>
+					}
+				>
+					<div className="grid gap-6 mt-6">
+						{isAppointmentExist ? (
+							appointments.map((appointment, index) => (
+								<AppointmentList
+									key={String(appointment.date)}
+									appointment={appointment}
+									index={index}
+								/>
+							))
+						) : (
+							<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background">
+								<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">
+									{noAppointmentsLabel}
+								</h2>
+							</div>
+						)}
+					</div>
+				</Deferred>
 			</PageContainer>
 		</PageProvider>
 	);

@@ -173,7 +173,7 @@ class Appointment < ApplicationRecord
       .filter_by_name(params[:patient], :patient)
       .filter_by_registration(params[:registration_number])
       .filter_by_city(params[:city])
-      .apply_status_filter(params[:filter_by_appointment_status])
+      .apply_status_filter(params[:status])
   }
   scope :filter_by_name, ->(name, association) {
     return self if name.blank?
@@ -189,39 +189,34 @@ class Appointment < ApplicationRecord
   }
   scope :apply_status_filter, ->(filter) {
     case filter
-    when "pending"
-      pending
+    when "pending_therapist"
+      pending_therapist
+    when "pending_patient_approval"
+      pending_patient_approval
+    when "pending_payment"
+      pending_payment
     when "past"
       past
     when "cancel"
       cancelled
     when "unschedule"
       unscheduled
-    else
+    when "upcoming"
       # Default scope for active appointments
       future.status_paid
+    else
+      # Default: today and future, excluding unscheduled and cancelled
+      today_and_future.where.not(status: ["UNSCHEDULED", "CANCELLED"])
     end
   }
-  scope :pending, -> {
-    where(status: [
-      "PENDING THERAPIST ASSIGNMENT",
-      "PENDING PATIENT APPROVAL",
-      "PENDING PAYMENT"
-    ]).future
-  }
-  scope :cancelled, -> {
-    where(status: "CANCELLED").where(appointment_reference_id: nil)
-  }
-  scope :unscheduled, -> {
-    where(status: "UNSCHEDULED")
-  }
-  scope :past, -> {
-    where("appointment_date_time < ?", Time.current)
-      .status_paid
-  }
-  scope :future, -> {
-    where("appointment_date_time >= ?", Time.current)
-  }
+  scope :pending_therapist, -> { where(status: ["PENDING THERAPIST ASSIGNMENT"]).today_and_future }
+  scope :pending_patient_approval, -> { where(status: ["PENDING PATIENT APPROVAL"]).today_and_future }
+  scope :pending_payment, -> { where(status: ["PENDING PAYMENT"]).today_and_future }
+  scope :cancelled, -> { where(status: "CANCELLED").where(appointment_reference_id: nil) }
+  scope :unscheduled, -> { where(status: "UNSCHEDULED") }
+  scope :past, -> { where("appointment_date_time < ?", Time.current.in_time_zone(Time.zone.name)).status_paid }
+  scope :future, -> { where("appointment_date_time >= ?", Time.current.in_time_zone(Time.zone.name)) }
+  scope :today_and_future, -> { where("appointment_date_time >= ?", Time.zone.now.beginning_of_day) }
 
   # * define the helper methods
   # Financial calculations group
@@ -457,7 +452,7 @@ class Appointment < ApplicationRecord
     end
   end
 
-  # Validation: Prevent exact time duplicates
+  # Validation: Prevents a patient from having two appointments at the exact same date and time.
   def no_duplicate_appointment_time
     return if appointment_date_time.blank? || patient.blank?
 
@@ -472,7 +467,7 @@ class Appointment < ApplicationRecord
     errors.add(:appointment_date_time, "already has an appointment (#{conflicting.registration_number}) on #{formatted_date_time}")
   end
 
-  # Validation: Prevent overlapping time ranges
+  # Validation: Prevents a patient from having appointments that overlap in time, even if the start times are different.
   def no_overlapping_appointments
     return if appointment_date_time.blank? || patient.blank? || status_cancelled?
 

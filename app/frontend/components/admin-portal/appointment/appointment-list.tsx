@@ -22,6 +22,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getGenderIcon } from "@/hooks/use-gender";
+import { getbadgeVariantStatus } from "@/lib/appointments/utils";
 import { getBrandBadgeVariant } from "@/lib/services";
 import { cn, generateInitials, populateQueryParams } from "@/lib/utils";
 import type {
@@ -55,7 +56,7 @@ import {
 	TicketPercent,
 	User,
 } from "lucide-react";
-import { type ComponentProps, memo, useCallback, useMemo } from "react";
+import { type ComponentProps, memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 // * appointment schedule component
@@ -324,26 +325,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 		if (!schedule.appointmentDateTime) return false;
 		return isPast(schedule.appointmentDateTime);
 	}, [schedule.appointmentDateTime]);
-	const BADGE_STYLES: Record<Appointment["status"], string> = {
-		pending_patient_approval:
-			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100",
-		pending_payment:
-			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100",
-		pending_therapist_assignment:
-			"text-yellow-800 bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-100",
-		cancelled:
-			"text-red-800    bg-red-100    dark:bg-red-900   dark:text-red-100",
-		unscheduled:
-			"text-gray-800   bg-gray-100   dark:bg-gray-900  dark:text-gray-100",
-		paid: "text-emerald-800 bg-emerald-100 dark:bg-emerald-900 dark:text-emerald-100",
-	};
-	const getbadgeVariantStatus = useCallback(
-		(status: Appointment["status"]) => BADGE_STYLES[status] ?? "",
-		[],
-	);
 	const distanceBadgeVariant = useMemo(
 		() => getbadgeVariantStatus(schedule.status),
-		[schedule.status, getbadgeVariantStatus],
+		[schedule.status],
 	);
 	const statusDotVariant = useMemo<VariantDotBadge["variant"]>(() => {
 		return schedule.status === "pending_patient_approval" ||
@@ -1287,13 +1271,13 @@ export default function AppointmentList({
 	index: _index,
 }: AppointmentListProps) {
 	const { locale, tzDate } = useDateContext();
-	const label = useMemo(
-		() =>
-			isToday(appointment.date)
-				? "Today"
-				: format(appointment.date, "PPPP", { locale, in: tzDate }),
-		[appointment.date, locale, tzDate],
-	);
+	const { t } = useTranslation("appointments");
+	const label = useMemo(() => {
+		if (!appointment?.date) return t("tab.title.unschedule");
+		if (isToday(appointment.date)) return t("list.today");
+
+		return format(appointment.date, "PPPP", { locale, in: tzDate });
+	}, [appointment.date, locale, tzDate, t]);
 
 	return (
 		<section
@@ -1302,11 +1286,7 @@ export default function AppointmentList({
 				className,
 			)}
 		>
-			{appointment.date && (
-				<p className="text-xs font-semibold tracking-wider uppercase">
-					{label}
-				</p>
-			)}
+			<p className="text-xs font-semibold tracking-wider uppercase">{label}</p>
 
 			<div className="grid gap-2">
 				{appointment.schedules.map((schedule) => (

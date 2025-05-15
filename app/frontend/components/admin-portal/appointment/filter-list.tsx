@@ -23,22 +23,17 @@ import { Deferred, router, usePage } from "@inertiajs/react";
 import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import DotBadgeWithLabel from "@/components/shared/dot-badge";
 
 export default function FilterList() {
 	const { url: pageURL, props: globalProps } =
 		usePage<AppointmentIndexGlobalPageProps>();
+	const { t } = useTranslation("appointments");
 	const { t: taf } = useTranslation("appointments", { keyPrefix: "filter" });
-	const locations = useMemo(
-		() => globalProps?.filterOptionsData?.locations || [],
-		[globalProps?.filterOptionsData?.locations],
-	);
-	const groupedLocations = useMemo(
-		() => groupLocationsByCountry(locations),
-		[locations],
-	);
 
 	const [isSearching, setIsSearching] = useState(false);
 	const [filterBy, setFilterBy] = useState({
+		status: globalProps?.adminPortal?.currentQuery?.status || "",
 		patient: globalProps?.adminPortal?.currentQuery?.patient || "",
 		therapist: globalProps?.adminPortal?.currentQuery?.therapist || "",
 		registrationNumber:
@@ -73,6 +68,8 @@ export default function FilterList() {
 	const handleFilterBy = useCallback(
 		({ value, type }: { value: string; type: keyof typeof filterBy }) => {
 			setFilterBy({ ...filterBy, [type]: value });
+
+			// Only send the changed field, updateQueryParams will merge and clean status if needed
 			updateQueryParams(
 				deepTransformKeysToSnakeCase({ [type]: value }),
 				pageURL,
@@ -81,8 +78,160 @@ export default function FilterList() {
 		[filterBy, pageURL, updateQueryParams],
 	);
 
+	// filter by option items
+	const locations = useMemo(
+		() => globalProps?.filterOptionsData?.locations || [],
+		[globalProps?.filterOptionsData?.locations],
+	);
+	const groupedLocations = useMemo(
+		() => groupLocationsByCountry(locations),
+		[locations],
+	);
+
+	// for filtering by statuses
+	const apptStatuses = useMemo(() => {
+		return [
+			{
+				label: t("tab.title.upcoming"),
+				value: "upcoming",
+				color: "success" as const,
+			},
+			{
+				label: t("tab.title.pending_payment"),
+				value: "pending_payment",
+				color: "warning" as const,
+			},
+			{
+				label: t("tab.title.pending_patient_approval"),
+				value: "pending_patient_approval",
+				color: "warning" as const,
+			},
+			{
+				label: t("tab.title.pending_therapist"),
+				value: "pending_therapist",
+				color: "warning" as const,
+			},
+			{
+				label: t("tab.title.unschedule"),
+				value: "unschedule",
+				color: "outline" as const,
+			},
+			{
+				label: t("tab.title.past"),
+				value: "past",
+				color: "success" as const,
+			},
+			{
+				label: t("tab.title.cancelled"),
+				value: "cancel",
+				color: "destructive" as const,
+			},
+		];
+	}, [t]);
+	const selectedStatus = useMemo(() => {
+		return apptStatuses?.find((s) => s.value === filterBy?.status);
+	}, [apptStatuses, filterBy?.status]);
+
 	return (
 		<section className="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3 md:gap-2 lg:grid-cols-4 xl:grid-cols-5">
+			<div className="col-span-full md:col-span-1">
+				<Popover>
+					<PopoverTrigger asChild>
+						<Button
+							variant="outline"
+							className={cn(
+								"relative w-full flex justify-between font-normal",
+								!filterBy?.status && "text-muted-foreground",
+							)}
+						>
+							<span className="truncate">
+								{selectedStatus ? (
+									<DotBadgeWithLabel
+										className="relative flex-shrink-0 text-left"
+										variant={selectedStatus.color}
+									>
+										<span
+											title={selectedStatus.label}
+											className="flex-grow-0 text-xs tracking-wide uppercase text-nowrap"
+										>
+											{selectedStatus.label}
+										</span>
+									</DotBadgeWithLabel>
+								) : (
+									<span>{`${taf("status.placeholder")}...`}</span>
+								)}
+							</span>
+
+							<ChevronsUpDown className="flex-shrink-0 opacity-50" />
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className="p-0 w-[300px]" align="start" side="bottom">
+						<Command>
+							<CommandInput
+								placeholder={`${taf("status.search.placeholder")}...`}
+								className="h-9"
+							/>
+							<CommandList>
+								<CommandEmpty>{taf("status.search.empty")}</CommandEmpty>
+								<CommandGroup>
+									{apptStatuses?.length ? (
+										apptStatuses?.map((s) => (
+											<CommandItem
+												key={s.value}
+												value={s.value}
+												onSelect={() =>
+													handleFilterBy({ type: "status", value: s.value })
+												}
+											>
+												<DotBadgeWithLabel
+													className="relative flex-shrink-0 text-left"
+													variant={s.color}
+												>
+													<span
+														title={s.label}
+														className="flex-grow-0 text-xs tracking-wide uppercase text-nowrap"
+													>
+														{s.label}
+													</span>
+												</DotBadgeWithLabel>
+
+												<Check
+													className={cn(
+														"ml-auto",
+														s.value === filterBy?.status
+															? "opacity-100"
+															: "opacity-0",
+													)}
+												/>
+											</CommandItem>
+										))
+									) : (
+										<CommandItem value="" disabled>
+											<span>{taf("status.search.empty")}</span>
+										</CommandItem>
+									)}
+								</CommandGroup>
+							</CommandList>
+
+							<CommandList>
+								<CommandGroup>
+									<CommandSeparator className="mb-2" />
+									<CommandItem
+										onSelect={() => {
+											handleFilterBy({ type: "status", value: "" });
+										}}
+									>
+										<span className="mx-auto font-medium text-center uppercase w-fit">
+											{taf("status.search.clear")}
+										</span>
+									</CommandItem>
+								</CommandGroup>
+							</CommandList>
+						</Command>
+					</PopoverContent>
+				</Popover>
+			</div>
+
 			<div className="col-span-full md:col-span-1">
 				<Input
 					type="text"
@@ -241,14 +390,14 @@ export default function FilterList() {
 
 								<CommandList>
 									<CommandGroup>
-										<CommandSeparator className="my-2" />
+										<CommandSeparator className="mb-2" />
 										<CommandItem
 											onSelect={() => {
 												handleFilterBy({ type: "city", value: "" });
 											}}
 										>
 											<span className="mx-auto font-medium text-center uppercase w-fit">
-												Clear
+												{taf("region.search.clear")}
 											</span>
 										</CommandItem>
 									</CommandGroup>

@@ -1,4 +1,4 @@
-import { humanize } from "@/lib/utils";
+import { humanize, populateQueryParams } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
@@ -95,9 +95,13 @@ export function NavigationProvider({
 			authenticatedRootPath,
 			LayoutDashboard,
 		);
+		// Use the utility to append the status param
+		const { fullUrl } = populateQueryParams(adminPortal.appointment.index, {
+			status: "upcoming",
+		});
 		const appointmentMenu = createMenuItem(
 			t("appointment"),
-			adminPortal.appointment.index,
+			fullUrl,
 			Calendar1,
 		);
 		const availabilityMenu = createMenuItem(

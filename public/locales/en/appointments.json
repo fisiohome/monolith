@@ -1,6 +1,7 @@
 {
-	"head_title": "Appointment Schedule",
-	"page_title": "Appointment Schedule",
+	"head_title": "Appointment Visit Management",
+	"page_title": "Appointment Visit",
+	"page_description": "Easily manage appointment visits. Book, modify, and monitor each visit to ensure smooth coordination and timely care.",
 	"statuses": {
 		"pending_therapist_assignment": "PENDING THERAPIST ASSIGNMENT",
 		"pending_patient_approval": "PENDING PATIENT APPROVAL",
@@ -20,7 +21,9 @@
 	"tab": {
 		"title": {
 			"upcoming": "Upcoming",
-			"pending": "Pending",
+			"pending_therapist": "Needs a Therapist",
+			"pending_patient_approval": "Needs an Approval",
+			"pending_payment": "Pending Payment",
 			"past": "Past",
 			"cancelled": "Cancelled",
 			"unschedule": "Unschedule"
@@ -29,7 +32,9 @@
 			"upcoming": "There are no upcoming appointments scheduled.",
 			"cancelled": "There are no cancelled appointments.",
 			"past": "There are no past appointments.",
-			"pending": "There are no appointments are pending confirmation.",
+			"pending_therapist": "There are no appointments are needs a therapist assignment.",
+			"pending_patient_approval": "There are no appointments are needs a patient approval.",
+			"pending_payment": "There are no appointments are pending payment.",
 			"unschedule": "There are no appointments."
 		}
 	},
@@ -70,9 +75,18 @@
 		"type": "Type",
 		"series": "Series",
 		"contact_details": "Contact Details",
-		"patient_medical_record": "Patient Medical Record"
+		"patient_medical_record": "Patient Medical Record",
+		"today": "Today"
 	},
 	"filter": {
+		"status": {
+			"placeholder": "Filter by appointment status",
+			"search": {
+				"placeholder": "Search appointment status",
+				"empty": "No appointment status found.",
+				"clear": "Clear"
+			}
+		},
 		"therapist_name": {
 			"placeholder": "Filter by therapist name"
 		},
@@ -86,7 +100,8 @@
 			"placeholder": "Filter by region",
 			"search": {
 				"placeholder": "Search region",
-				"empty": "No region found."
+				"empty": "No region found.",
+				"clear": "Clear"
 			}
 		}
 	},

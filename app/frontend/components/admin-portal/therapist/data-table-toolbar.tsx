@@ -373,7 +373,7 @@ export default function ToolbarTable({ table: _ }: ToolbarTableProps) {
 
 								<CommandList>
 									<CommandGroup>
-										<CommandSeparator className="my-2" />
+										<CommandSeparator className="mb-2" />
 										<CommandItem
 											onSelect={() => {
 												handleFilterBy({ type: "city", value: "" });

@@ -1,6 +1,7 @@
 {
-	"head_title": "Jadwal Janji Temu",
-	"page_title": "Jadwal Janji Temu",
+	"head_title": "Manajemen Kunjungan Janji Temu",
+	"page_title": "Kunjungan Janji Temu",
+	"page_description": "Mengelola kunjungan janji temu dengan mudah. Pesan, ubah, dan pantau setiap kunjungan untuk memastikan koordinasi yang lancar dan tepat waktu",
 	"statuses": {
 		"pending_therapist_assignment": "PENUGASAN TERAPIS TERTUNDA",
 		"pending_patient_approval": "MENUNGGU PERSETUJUAN PASIEN",
@@ -20,7 +21,9 @@
 	"tab": {
 		"title": {
 			"upcoming": "Mendatang",
-			"pending": "Tertunda",
+			"pending_therapist": "Membutuhkan Terapis",
+			"pending_patient_approval": "Membutuhkan Persetujuan",
+			"pending_payment": "Pembayaran Tertunda",
 			"past": "Masa lampau",
 			"cancelled": "Dibatalkan",
 			"unschedule": "Tidak terjadwal"
@@ -29,7 +32,9 @@
 			"upcoming": "Tidak ada janji temu yang dijadwalkan.",
 			"cancelled": "Tidak ada janji yang dibatalkan.",
 			"past": "Tidak ada janji temu di masa lalu.",
-			"pending": "Tidak ada janji temu yang menunggu konfirmasi.",
+			"pending_therapist": "Tidak ada janji temu yang membutuhkan penugasan terapis.",
+			"pending_patient_approval": "Tidak ada janji temu yang membutuhkan persetujuan pasien.",
+			"pending_payment": "Tidak ada janji temu yang menunggu pembayaran.",
 			"unschedule": "Tidak ada janji temu."
 		}
 	},
@@ -70,9 +75,18 @@
 		"type": "Tipe",
 		"series": "Series",
 		"contact_details": "Detil Kontak",
-		"patient_medical_record": "Rekam Medis Pasien"
+		"patient_medical_record": "Rekam Medis Pasien",
+		"today": "Hari Ini"
 	},
 	"filter": {
+		"status": {
+			"placeholder": "Filter berdasarkan status janji temu",
+			"search": {
+				"placeholder": "Cari status janji temu",
+				"empty": "Tidak ada status janji temu yang ditemukan.",
+				"clear": "Bersihkan"
+			}
+		},
 		"therapist_name": {
 			"placeholder": "Filter berdasarkan nama terapis"
 		},
@@ -86,7 +100,8 @@
 			"placeholder": "Filter berdasarkan wilayah",
 			"search": {
 				"placeholder": "Cari wilayah",
-				"empty": "Tidak ada wilayah ditemukan."
+				"empty": "Tidak ada wilayah ditemukan.",
+				"clear": "Bersihkan"
 			}
 		}
 	},

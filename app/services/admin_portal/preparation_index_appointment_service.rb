@@ -21,7 +21,7 @@ module AdminPortal
         .order(appointment_date_time: :asc)
         # Group appointments by the date part of appointment_date_time, sort them by date.
         .group_by { |a| a.appointment_date_time.to_date if a.appointment_date_time.present? }
-        .sort_by { |date, _| date.presence }
+        .sort_by { |date, _| [date.nil? ? 1 : 0, date || Date.new(0)] }
       appointments = reverse_groups_if_needed(appointments)
 
       appointments.map do |date, apps|
@@ -69,7 +69,7 @@ module AdminPortal
 
     # If filter is "past" or "cancel", reverse the order so the most recent past dates come first.
     def reverse_groups_if_needed(groups)
-      return groups unless %w[past cancel].include?(@params[:filter_by_appointment_status])
+      return groups unless %w[past cancel].include?(@params[:status])
       groups.reverse!
     end
   end
