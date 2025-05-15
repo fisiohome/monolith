@@ -4,10 +4,20 @@ class Therapist < ApplicationRecord
     joins(therapist_addresses: :address).where(therapist_addresses: {active: true})
   }
 
+  scope :by_name, ->(name) {
+    return if name.blank?
+    where("therapists.name ILIKE ?", "%#{name}%")
+  }
+
   scope :by_city, ->(city) {
     return if city.blank?
     left_joins(therapist_addresses: {address: :location})
       .where(Location.arel_table[:city].matches("%#{city}%"))
+  }
+
+  scope :by_employment_type, ->(employment_type) {
+    return if employment_type.blank?
+    where(employment_type: employment_type)
   }
 
   # * define the associations

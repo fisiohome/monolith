@@ -26,6 +26,14 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	INTERVAL_MINUTES,
@@ -60,6 +68,7 @@ import {
 	ChevronRight,
 	ChevronsUpDown,
 	Hash,
+	Search,
 } from "lucide-react";
 import {
 	type ComponentProps,
@@ -75,6 +84,7 @@ import PatientDetailsSection, {
 	PICDetailsSection,
 	TherapistDetailsSection,
 } from "./appointment-details";
+import { Input } from "@/components/ui/input";
 
 type GeneralProps = {
 	selectedDate: Date;
@@ -256,6 +266,10 @@ export function SchedulePagination({
 export function ScheduleFilters() {
 	const { props: globalProps, url: pageURL } =
 		usePage<SchedulesPageGlobalProps>();
+	const empTypes = useMemo(
+		() => globalProps.filterOptions?.employmentTypes || [],
+		[globalProps.filterOptions?.employmentTypes],
+	);
 	const locations = useMemo(
 		() => globalProps?.filterOptions?.locations,
 		[globalProps?.filterOptions?.locations],
@@ -265,6 +279,9 @@ export function ScheduleFilters() {
 		[globalProps?.filterOptions?.locations],
 	);
 	const [filterBy, setFilterBy] = useState({
+		name: globalProps?.adminPortal?.currentQuery?.name || "",
+		employmentType:
+			globalProps?.adminPortal?.currentQuery?.employmentType || "",
 		city: globalProps?.adminPortal?.currentQuery?.city || "",
 	});
 	const updateQueryParams = useCallback(
@@ -279,12 +296,13 @@ export function ScheduleFilters() {
 	);
 	const handleFilterBy = useCallback(
 		({ value, type }: { value: string; type: keyof typeof filterBy }) => {
-			setFilterBy((prev) => ({ ...prev, [type]: value }));
+			const nextFilters = { ...filterBy, [type]: value };
+			setFilterBy(nextFilters);
+
 			const { fullUrl } = populateQueryParams(
 				pageURL,
 				deepTransformKeysToSnakeCase({
-					...filterBy,
-					[type]: value,
+					...nextFilters,
 					// null value means reset the another param value
 					page: null,
 				}),
@@ -296,6 +314,76 @@ export function ScheduleFilters() {
 
 	return (
 		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4">
+			<div className="col-span-full md:col-span-1">
+				<Input
+					value={filterBy.name}
+					StartIcon={{ icon: Search }}
+					type="text"
+					placeholder="Filter by therapist name..."
+					onChange={(event) => {
+						event.preventDefault();
+						handleFilterBy({ type: "name", value: event.target.value });
+					}}
+				/>
+			</div>
+
+			<Deferred
+				data={["filterOptions"]}
+				fallback={
+					<Skeleton className="w-full rounded-md col-span-full md:col-span-1 h-9" />
+				}
+			>
+				<div className="col-span-full md:col-span-1">
+					<Select
+						value={filterBy.employmentType || ""}
+						onValueChange={(value) => {
+							handleFilterBy({ type: "employmentType", value });
+						}}
+					>
+						<SelectTrigger
+							className={cn(
+								"",
+								!filterBy.employmentType ? "text-muted-foreground" : "",
+							)}
+						>
+							<SelectValue placeholder="Filter by employment type..." />
+						</SelectTrigger>
+
+						<SelectContent>
+							{empTypes?.length ? (
+								<>
+									{empTypes.map((type) => (
+										<SelectItem key={type} value={type}>
+											<span>{type}</span>
+										</SelectItem>
+									))}
+									{filterBy.employmentType && (
+										<>
+											<SelectSeparator />
+											<Button
+												className="w-full px-2 font-medium uppercase"
+												variant="ghost"
+												size="sm"
+												onClick={(e) => {
+													e.stopPropagation();
+													handleFilterBy({ type: "employmentType", value: "" });
+												}}
+											>
+												Clear
+											</Button>
+										</>
+									)}
+								</>
+							) : (
+								<SelectItem value="no items" disabled>
+									No employment type found.
+								</SelectItem>
+							)}
+						</SelectContent>
+					</Select>
+				</div>
+			</Deferred>
+
 			<Deferred
 				data={["filterOptions"]}
 				fallback={
@@ -376,7 +464,7 @@ export function ScheduleFilters() {
 
 								<CommandList>
 									<CommandGroup>
-										<CommandSeparator className="my-2" />
+										<CommandSeparator className="mb-2" />
 										<CommandItem
 											onSelect={() => {
 												handleFilterBy({ type: "city", value: "" });

@@ -19,14 +19,11 @@ module AdminPortal
       therapist_collections = Therapist
         .joins(:user)
         .left_joins(:therapist_appointment_schedule)
-        .joins("LEFT JOIN therapist_addresses ON therapist_addresses.therapist_id = therapists.id AND therapist_addresses.active = true")
-        .joins("LEFT JOIN addresses ON addresses.id = therapist_addresses.address_id")
-        .joins("LEFT JOIN locations ON locations.id = addresses.location_id")
         .includes(:therapist_appointment_schedule)
-        .where(filter_by_name.present? ? ["therapists.name ILIKE ?", "%#{filter_by_name}%"] : nil)
-        .where(filter_by_employment_type.present? ? {employment_type: filter_by_employment_type} : nil)
+        .by_name(filter_by_name)
+        .by_city(filter_by_city)
+        .by_employment_type(filter_by_employment_type)
         .where(filter_by_employment_status.present? ? {employment_status: filter_by_employment_status} : nil)
-        .where(filter_by_city.present? ? ["locations.city ILIKE ?", "%#{filter_by_city}%"] : nil)
         .where(
           if filter_by_account_status == "ACTIVE"
             ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
@@ -70,7 +67,7 @@ module AdminPortal
       filter_options_lambda = lambda do
         employment_types = Therapist.employment_types.map { |key, value| value }.as_json
         employment_statuses = Therapist.employment_statuses.map { |key, value| value }.as_json
-        locations = Location.all.as_json
+        locations = Location.cached_locations.as_json
 
         deep_transform_keys_to_camel_case({employment_types:, employment_statuses:, locations:})
       end
@@ -195,12 +192,16 @@ module AdminPortal
       page_params = params.fetch(:page, 1)
       limit_params = is_mobile? ? 1 : 5 # limit the therapist data for mobile device
       date_params = params.fetch(:date, Time.zone.today)
+      name_params = params[:name]
       city_params = params[:city]
+      employment_type = params[:employment_type]
 
       therapists = Therapist
         .joins(:therapist_appointment_schedule)
         .with_active_addresses
+        .by_name(name_params)
         .by_city(city_params)
+        .by_employment_type(employment_type)
         .employment_status_ACTIVE
         # Order: therapists with schedule first (non-null therapist_appointment_schedule.id)
         .order(
@@ -213,9 +214,10 @@ module AdminPortal
 
       # get the filter options data
       filter_options_lambda = lambda do
+        employment_types = Therapist.employment_types.map { |key, value| value }.as_json
         locations = Location.cached_locations
 
-        deep_transform_keys_to_camel_case({locations:})
+        deep_transform_keys_to_camel_case({locations:, employment_types:})
       end
 
       render inertia: "AdminPortal/Therapist/Schedules", props: deep_transform_keys_to_camel_case({

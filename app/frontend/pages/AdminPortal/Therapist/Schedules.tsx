@@ -13,7 +13,10 @@ import { useDateContext } from "@/components/providers/date-provider";
 import { useCalendarSchedule } from "@/hooks/use-calendar-schedule";
 import { populateQueryParams } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
-import type { Therapist } from "@/types/admin-portal/therapist";
+import type {
+	Therapist,
+	TherapistEmploymentType,
+} from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
 import { Head, router, usePage } from "@inertiajs/react";
@@ -33,6 +36,7 @@ interface SchedulesPageProps {
 	};
 	filterOptions?: {
 		locations: Location[];
+		employmentTypes: TherapistEmploymentType;
 	};
 }
 
@@ -143,7 +147,7 @@ export default function SchedulesPage({
 				</div>
 
 				<div className="grid gap-2">
-					<div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+					<div className="flex flex-col items-center justify-between gap-4 lg:flex-row">
 						<ScheduleFilters />
 
 						<SchedulePagination
