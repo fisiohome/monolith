@@ -395,8 +395,11 @@ export function AppointmentSchedulingForm() {
 		onSelectPackage,
 		onCheckServiceError,
 	} = restSchedulingHooks;
-	const { mapRef, isIsolineCalculated: _isIsolineCalculated } =
-		restSchedulingHooks;
+	const {
+		mapRef,
+		isIsolineCalculated: _isIsolineCalculated,
+		isMapLoading,
+	} = restSchedulingHooks;
 	const {
 		isTherapistFound,
 		therapistsOptions,
@@ -768,7 +771,7 @@ export function AppointmentSchedulingForm() {
 							<FormControl>
 								<TherapistSelection
 									value={field.value}
-									isLoading={isLoading.therapists}
+									isLoading={isLoading.therapists || isMapLoading}
 									therapists={therapistsOptions.feasible}
 									height={isMobile ? undefined : 600}
 									isDisabledFind={

@@ -115,6 +115,12 @@ export default function useHereMap(
 	const behaviorRef = useRef<H.mapevents.Behavior | null>(null);
 	const uiRef = useRef<H.ui.UI | null>(null);
 
+	// * Loading state
+	const [isLoading, setIsLoading] = useState(false);
+	const [isLoadingType, setIsLoadingType] = useState<
+		null | "geocode" | "isoline" | "routing"
+	>(null);
+
 	// * marker group
 	/**
 	 * @constant primaryMarkerGroupRef
@@ -403,55 +409,64 @@ export default function useHereMap(
 		onCalculate: useCallback(async (): Promise<GeocodingResult | null> => {
 			if (!platformRef.current) return null;
 
-			/**
-			 * We combine all address parts into a `qq` query param to improve
-			 * geocoding accuracy (works better than just `q` in some cases).
-			 */
-			const qqParts = [
-				`country=${address.country}`,
-				`state=${address.state}`,
-				`city=${address.city}`,
-				`street=${address.address}`,
-			];
+			setIsLoading(true);
+			setIsLoadingType("geocode");
+			try {
+				/**
+				 * We combine all address parts into a `qq` query param to improve
+				 * geocoding accuracy (works better than just `q` in some cases).
+				 */
+				const qqParts = [
+					`country=${address.country}`,
+					`state=${address.state}`,
+					`city=${address.city}`,
+					`street=${address.address}`,
+				];
 
-			if (address?.postalCode) {
-				qqParts.push(`postalCode=${address.postalCode}`);
+				if (address?.postalCode) {
+					qqParts.push(`postalCode=${address.postalCode}`);
+				}
+				const params: H.service.ServiceParameters = {
+					qq: qqParts.join(";"),
+					// q: address.address,
+				};
+
+				const searchService = platformRef.current.getSearchService();
+				if (!searchService) {
+					console.error("Geocoder service is not available.");
+					return null;
+				}
+
+				return new Promise((resolve, reject) => {
+					searchService.geocode(
+						params,
+						(promiseResult) => {
+							const result = promiseResult as GeocodingResponse;
+							const locations = result?.items;
+							if (!locations?.length) {
+								console.warn(
+									"No geocoding results found for the provided address.",
+								);
+								resolve(null);
+								return;
+							}
+
+							// Filter and pick the best location based on custom logic
+							const bestMatch = locations.reduce(filterGeocodeByQueryScore);
+							resolve(bestMatch);
+						},
+						(error: Error) => {
+							console.error("Error during geocoding:", error.message);
+							reject(error);
+						},
+					);
+				});
+			} finally {
+				setTimeout(() => {
+					setIsLoading(false);
+					setIsLoadingType(null);
+				}, 250);
 			}
-			const params: H.service.ServiceParameters = {
-				qq: qqParts.join(";"),
-				// q: address.address,
-			};
-
-			const searchService = platformRef.current.getSearchService();
-			if (!searchService) {
-				console.error("Geocoder service is not available.");
-				return null;
-			}
-
-			return new Promise((resolve, reject) => {
-				searchService.geocode(
-					params,
-					(promiseResult) => {
-						const result = promiseResult as GeocodingResponse;
-						const locations = result?.items;
-						if (!locations?.length) {
-							console.warn(
-								"No geocoding results found for the provided address.",
-							);
-							resolve(null);
-							return;
-						}
-
-						// Filter and pick the best location based on custom logic
-						const bestMatch = locations.reduce(filterGeocodeByQueryScore);
-						resolve(bestMatch);
-					},
-					(error: Error) => {
-						console.error("Error during geocoding:", error.message);
-						reject(error);
-					},
-				);
-			});
 		}, [address]),
 	};
 
@@ -588,62 +603,73 @@ export default function useHereMap(
 				return null;
 			}
 
-			// Get the routing service from the platform
-			const router = platformRef.current.getRoutingService(undefined, 8);
+			setIsLoading(true);
+			setIsLoadingType("isoline");
+			try {
+				// Get the routing service from the platform
+				const router = platformRef.current.getRoutingService(undefined, 8);
 
-			// Construct the request parameters for the isoline calculation
-			const requestParams = {
-				...(params.origin && {
-					origin: `${params.origin.lat},${params.origin.lng}`,
-				}),
-				...(params.destination && {
-					destination: `${params.destination.lat},${params.destination.lng}`,
-				}),
-				"range[type]": params.rangeType,
-				"range[values]": params.rangeValues,
-				transportMode: params.transportMode,
-				...(params.evParams && {
-					"ev[freeFlowSpeedTable]": params.evParams.freeFlowSpeedTable,
-					"ev[trafficSpeedTable]": params.evParams.trafficSpeedTable,
-					"ev[ascent]": params.evParams.ascent,
-					"ev[descent]": params.evParams.descent,
-					"ev[auxiliaryConsumption]": params.evParams.auxiliaryConsumption,
-				}),
-				...(params.avoid && {
-					avoid: {
-						...(params?.avoid?.features && { features: params.avoid.features }),
+				// Construct the request parameters for the isoline calculation
+				const requestParams = {
+					...(params.origin && {
+						origin: `${params.origin.lat},${params.origin.lng}`,
+					}),
+					...(params.destination && {
+						destination: `${params.destination.lat},${params.destination.lng}`,
+					}),
+					"range[type]": params.rangeType,
+					"range[values]": params.rangeValues,
+					transportMode: params.transportMode,
+					...(params.evParams && {
+						"ev[freeFlowSpeedTable]": params.evParams.freeFlowSpeedTable,
+						"ev[trafficSpeedTable]": params.evParams.trafficSpeedTable,
+						"ev[ascent]": params.evParams.ascent,
+						"ev[descent]": params.evParams.descent,
+						"ev[auxiliaryConsumption]": params.evParams.auxiliaryConsumption,
+					}),
+					...(params.avoid && {
+						avoid: {
+							...(params?.avoid?.features && {
+								features: params.avoid.features,
+							}),
+						},
+					}),
+					routingMode: params.routingMode,
+				};
+
+				return new Promise<IsolineResult["isolines"][number] | null>(
+					(resolve, reject) => {
+						router.calculateIsoline(
+							requestParams,
+							(result) => {
+								const isolines = (result as IsolineResult).isolines;
+								if (!isolines?.length) {
+									resolve(null);
+									return;
+								}
+
+								// Add the isoline to the map
+								const [isoline] = isolines;
+								addIsolineToMap(
+									isoline,
+									{ type: params.rangeType, value: params.rangeValues },
+									shouldZoom,
+								);
+								resolve(isoline);
+							},
+							(error) => {
+								console.error("Isoline calculation error:", error);
+								reject(error);
+							},
+						);
 					},
-				}),
-				routingMode: params.routingMode,
-			};
-
-			return new Promise<IsolineResult["isolines"][number] | null>(
-				(resolve, reject) => {
-					router.calculateIsoline(
-						requestParams,
-						(result) => {
-							const isolines = (result as IsolineResult).isolines;
-							if (!isolines?.length) {
-								resolve(null);
-								return;
-							}
-
-							// Add the isoline to the map
-							const [isoline] = isolines;
-							addIsolineToMap(
-								isoline,
-								{ type: params.rangeType, value: params.rangeValues },
-								shouldZoom,
-							);
-							resolve(isoline);
-						},
-						(error) => {
-							console.error("Isoline calculation error:", error);
-							reject(error);
-						},
-					);
-				},
-			);
+				);
+			} finally {
+				setTimeout(() => {
+					setIsLoading(false);
+					setIsLoadingType(null);
+				}, 250);
+			}
 		},
 		[addIsolineToMap],
 	);
@@ -663,58 +689,67 @@ export default function useHereMap(
 				console.error("Platform is not available");
 				return null;
 			}
+			setIsLoading(true);
+			setIsLoadingType("isoline");
 
-			// Create promises for each constraint isoline calculation
-			const promises = constraints.map((constraint) => {
-				const params: IsolineRequestParams = {
-					origin: coord,
-					rangeType: constraint.type,
-					rangeValues: constraint.value,
-					transportMode: "car",
-					avoid: { features: "tollRoad,ferry,controlledAccessHighway" },
-					routingMode: constraint.type === "distance" ? "fast" : "short",
-				};
+			try {
+				// Create promises for each constraint isoline calculation
+				const promises = constraints.map((constraint) => {
+					const params: IsolineRequestParams = {
+						origin: coord,
+						rangeType: constraint.type,
+						rangeValues: constraint.value,
+						transportMode: "car",
+						avoid: { features: "tollRoad,ferry,controlledAccessHighway" },
+						routingMode: constraint.type === "distance" ? "fast" : "short",
+					};
 
-				return calculateIsolineSingleContrainst(params, false);
-			});
+					return calculateIsolineSingleContrainst(params, false);
+				});
 
-			const boundingBoxes: H.geo.Rect[] = [];
-			const allIsolines: IsolineResult["isolines"][number][] = [];
-			const results = await Promise.allSettled(promises);
+				const boundingBoxes: H.geo.Rect[] = [];
+				const allIsolines: IsolineResult["isolines"][number][] = [];
+				const results = await Promise.allSettled(promises);
 
-			// Process each settled result
-			for (let i = 0; i < results.length; i++) {
-				const res = results[i];
-				if (res.status === "rejected" || !res.value) {
-					console.error(
-						`Failed or no isoline for constraint ${constraints[i].type}`,
-					);
+				// Process each settled result
+				for (let i = 0; i < results.length; i++) {
+					const res = results[i];
+					if (res.status === "rejected" || !res.value) {
+						console.error(
+							`Failed or no isoline for constraint ${constraints[i].type}`,
+						);
+						return null;
+					}
+
+					// Valid isoline found
+					const isoline = res.value;
+					allIsolines.push(isoline);
+
+					// Add isoline to the map without zooming
+					const constraint = constraints[i];
+					const group = addIsolineToMap(isoline, constraint, false);
+					if (group) boundingBoxes.push(group.getBoundingBox());
+				}
+
+				// Merge bounding boxes and adjust map view
+				if (boundingBoxes.length > 0 && mapRef.current) {
+					const mergedBox = mergeAllRectangles(boundingBoxes);
+					if (mergedBox) {
+						mapRef.current.getViewModel().setLookAtData({ bounds: mergedBox });
+					}
+				} else {
+					console.error("No bounding boxes found for constraints.");
 					return null;
 				}
 
-				// Valid isoline found
-				const isoline = res.value;
-				allIsolines.push(isoline);
-
-				// Add isoline to the map without zooming
-				const constraint = constraints[i];
-				const group = addIsolineToMap(isoline, constraint, false);
-				if (group) boundingBoxes.push(group.getBoundingBox());
+				// Return the array of successful isolines
+				return allIsolines;
+			} finally {
+				setTimeout(() => {
+					setIsLoading(false);
+					setIsLoadingType(null);
+				}, 250);
 			}
-
-			// Merge bounding boxes and adjust map view
-			if (boundingBoxes.length > 0 && mapRef.current) {
-				const mergedBox = mergeAllRectangles(boundingBoxes);
-				if (mergedBox) {
-					mapRef.current.getViewModel().setLookAtData({ bounds: mergedBox });
-				}
-			} else {
-				console.error("No bounding boxes found for constraints.");
-				return null;
-			}
-
-			// Return the array of successful isolines
-			return allIsolines;
 		},
 		[calculateIsolineSingleContrainst, addIsolineToMap],
 	);
@@ -774,6 +809,8 @@ export default function useHereMap(
 				routeTooltipRef.current = null;
 			}
 
+			setIsLoading(true);
+			setIsLoadingType("routing");
 			// Calculate route
 			try {
 				const router = platformRef.current?.getRoutingService(undefined, 8);
@@ -865,6 +902,11 @@ export default function useHereMap(
 				return { routeLine };
 			} catch (error) {
 				console.error("Route calculation error:", error);
+			} finally {
+				setTimeout(() => {
+					setIsLoading(false);
+					setIsLoadingType(null);
+				}, 250);
 			}
 		},
 		[],
@@ -1000,6 +1042,8 @@ export default function useHereMap(
 		isoline,
 		isLocationFeasible,
 		mapControl,
+		isLoading,
+		isLoadingType,
 	};
 }
 

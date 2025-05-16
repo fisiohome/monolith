@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
-import { LoaderIcon } from "lucide-react";
 import type { ComponentProps } from "react";
+import { Spinner } from "../ui/kibo-ui/spinner";
 
 export interface LoadingBasicProps extends ComponentProps<"div"> {
 	text?: string;
@@ -19,7 +19,7 @@ export function LoadingBasic({
 				className,
 			)}
 		>
-			<LoaderIcon className="animate-spin" />
+			<Spinner variant="ring" />
 			<span className="text-muted-foreground">{text}</span>
 		</div>
 	);

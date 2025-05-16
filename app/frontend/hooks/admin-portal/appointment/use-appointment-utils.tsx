@@ -627,6 +627,10 @@ export const useTherapistAvailability = ({
 
 	// * state group for isolane therapist
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
+	const isMapLoading = useMemo(
+		() => mapRef.current?.isLoading.value || false,
+		[],
+	);
 	const marker = useTherapistMarker();
 	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
 	// reset the isoline calculated and marker printed
@@ -781,6 +785,7 @@ export const useTherapistAvailability = ({
 		isTherapistFound,
 		therapistsOptions,
 		mapRef,
+		isMapLoading,
 		isIsolineCalculated,
 		onResetTherapistOptions,
 		onResetIsoline,

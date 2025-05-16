@@ -25,6 +25,10 @@ interface HereMaphandler {
 	geocode: HereMapHooks["geocode"];
 	isoline: HereMapHooks["isoline"];
 	isLocationFeasible: HereMapHooks["isLocationFeasible"];
+	isLoading: {
+		value: HereMapHooks["isLoading"];
+		type: HereMapHooks["isLoadingType"];
+	};
 }
 
 /**
@@ -92,6 +96,8 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 			marker,
 			mapControl,
 			isLocationFeasible,
+			isLoading,
+			isLoadingType,
 		} = useHereMap(mapContainerRef, coordinateMemo, address, apiKey);
 
 		// Expose map methods to parent components via ref.
@@ -118,6 +124,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 				onAdd: isoline.onAdd,
 			},
 			isLocationFeasible,
+			isLoading: { value: isLoading, type: isLoadingType },
 		}));
 
 		// Initialize the map and set up the traffic update interval.

@@ -88,6 +88,7 @@ export const RescheduleFields = memo(function Component({
 		therapistsOptions,
 		isTherapistFound,
 		mapRef,
+		isMapLoading,
 		coordinate,
 		mapAddress,
 		brandPackagesSource,
@@ -234,7 +235,7 @@ export const RescheduleFields = memo(function Component({
 							<FormControl>
 								<TherapistSelection
 									value={field.value}
-									isLoading={isLoading.therapists}
+									isLoading={isLoading.therapists || isMapLoading}
 									appt={appointment}
 									therapists={therapistsOptions.feasible}
 									isDisabledFind={!watchAppointmentDateTimeValue}
