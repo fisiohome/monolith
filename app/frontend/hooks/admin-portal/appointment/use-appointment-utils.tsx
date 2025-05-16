@@ -170,15 +170,13 @@ export const useMapRegion = ({
 	});
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
 	const isMapButtonsDisabled = useMemo(() => {
-		const { latitude, longitude, address, postalCode } =
-			watchPatientDetailsValue;
+		const { latitude, longitude, address } = watchPatientDetailsValue;
 		const isValidCoordinate = !!latitude && !!longitude;
 		const isValidAddress =
 			!!selectedLocation?.country &&
 			!!selectedLocation?.state &&
 			!!selectedLocation?.city &&
 			!!address &&
-			!!postalCode &&
 			!isValidCoordinate;
 
 		return {
@@ -214,7 +212,7 @@ export const useMapRegion = ({
 
 				// Set error message for the form
 				const errorMessage =
-					"The address cannot be found. Ensure the region, postal code, and address line are entered correctly.";
+					"The address cannot be found. Ensure the region, and address line are entered correctly.";
 				form.setError("patientDetails.address", {
 					message: errorMessage,
 					type: "custom",

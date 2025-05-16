@@ -4,7 +4,7 @@ class AppointmentAddressHistory < ApplicationRecord
   belongs_to :location, inverse_of: :appointment_address_histories
 
   # * define the validation
-  validates :address_line, :postal_code, :latitude, :longitude, presence: true
+  validates :address_line, :latitude, :longitude, presence: true
 
   # * cycle callbacks
   # set coordinates from lat/lng on each new record (and on update if they change)

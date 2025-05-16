@@ -407,8 +407,18 @@ export default function useHereMap(
 			 * We combine all address parts into a `qq` query param to improve
 			 * geocoding accuracy (works better than just `q` in some cases).
 			 */
+			const qqParts = [
+				`country=${address.country}`,
+				`state=${address.state}`,
+				`city=${address.city}`,
+				`street=${address.address}`,
+			];
+
+			if (address?.postalCode) {
+				qqParts.push(`postalCode=${address.postalCode}`);
+			}
 			const params: H.service.ServiceParameters = {
-				qq: `country=${address.country};state=${address.state};city=${address.city};street=${address.address};postalCode=${address.postalCode}`,
+				qq: qqParts.join(";"),
 				// q: address.address,
 			};
 

@@ -220,7 +220,10 @@ export default function PatientRegionForm() {
 				name="patientDetails.postalCode"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Postal Code</FormLabel>
+						<FormLabel>
+							Postal Code{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
 						<FormControl>
 							<Input
 								{...field}

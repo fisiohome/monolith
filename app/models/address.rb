@@ -12,7 +12,7 @@ class Address < ApplicationRecord
   before_save :update_coordinates, if: -> { latitude_changed? || longitude_changed? }
 
   # * define the validation
-  validates :address, :postal_code, :latitude, :longitude, presence: true
+  validates :address, :latitude, :longitude, presence: true
 
   private
 
