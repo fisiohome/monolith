@@ -26,6 +26,27 @@ type NaviagtionProviderState = {
 	};
 };
 
+// Utility to strip query parameters
+const stripQueryParams = (url: string) => url.split("?")[0];
+// Compare URLs ignoring query parameters
+const isActiveLink = (
+	currentUrl: string,
+	menuUrl: string,
+	rootPath: string,
+) => {
+	const cleanCurrentUrl = stripQueryParams(currentUrl);
+	const cleanMenuUrl = stripQueryParams(menuUrl);
+	const isRoot = cleanMenuUrl === rootPath;
+
+	const exactOrSubMatch =
+		cleanCurrentUrl === cleanMenuUrl ||
+		cleanCurrentUrl.startsWith(`${cleanMenuUrl}/`);
+
+	return isRoot
+		? exactOrSubMatch
+		: exactOrSubMatch || cleanCurrentUrl.includes(cleanMenuUrl);
+};
+
 const initialState: NaviagtionProviderState = {
 	navigation: {
 		main: null,
@@ -42,41 +63,31 @@ export function NavigationProvider({
 }: NavigationProviderProps) {
 	const { props: globalProps, url: currentUrl } = usePage<GlobalPageProps>();
 	const { t } = useTranslation("side-menu");
+
 	const navUserProps = useMemo<NavUserProps>(() => {
+		const currentUser = globalProps.auth.currentUser;
+		const globalRouter = globalProps.adminPortal.router;
+
 		const userData = {
-			name: humanize(globalProps.auth.currentUser?.name || "Admin"),
-			email: globalProps.auth.currentUser?.user.email || "",
+			name: humanize(currentUser?.name || "Admin"),
+			email: currentUser?.user.email || "",
 			avatar: "",
-			type:
-				(globalProps.auth.currentUser?.adminType as AdminTypes[number]) ||
-				"THERAPIST",
+			type: (currentUser?.adminType as AdminTypes[number]) || "THERAPIST",
 		};
 		const url = {
-			logout: globalProps.adminPortal.router.logout,
-			account:
-				globalProps.adminPortal.router.adminPortal.settings.accountSecurity,
+			logout: globalRouter.logout,
+			account: globalRouter.adminPortal.settings.accountSecurity,
 		};
 
 		return { userData, url };
-	}, [
-		globalProps.auth.currentUser?.adminType,
-		globalProps.auth.currentUser?.user.email,
-		globalProps.auth.currentUser?.name,
-		globalProps.adminPortal.router.logout,
-		globalProps.adminPortal.router.adminPortal.settings.accountSecurity,
-	]);
+	}, [globalProps]);
+
 	const navMainProps = useMemo<NavMainProps>(() => {
 		const { adminPortal, authenticatedRootPath } =
 			globalProps.adminPortal.router;
 		const { currentUserType } = globalProps.auth;
 
-		const isActiveLink = (currentUrl: string, menuUrl: string) => {
-			const isRoot = menuUrl === authenticatedRootPath;
-			const commonMatch =
-				currentUrl === menuUrl || currentUrl.startsWith(`${menuUrl}/`);
-			return isRoot ? commonMatch : commonMatch || currentUrl.includes(menuUrl);
-		};
-
+		// * Helper to create menu items
 		const createMenuItem = (
 			title: string,
 			url: string,
@@ -90,6 +101,7 @@ export function NavigationProvider({
 			subItems,
 		});
 
+		// * Build menus
 		const dashboardMenu = createMenuItem(
 			"Dashboard",
 			authenticatedRootPath,
@@ -109,11 +121,12 @@ export function NavigationProvider({
 			adminPortal.availability.index,
 			CalendarRange,
 		);
-		const therapistSchedule = createMenuItem(
+		const therapistScheduleMenu = createMenuItem(
 			t("therapist_schedules"),
 			adminPortal.therapistManagement.schedules,
 			CalendarDays,
 		);
+		// filter the sub items of user management for therapist user
 		const userManagementSubItems = [
 			{
 				title: t("admins"),
@@ -126,6 +139,16 @@ export function NavigationProvider({
 				isActive: false,
 			},
 		];
+		const filteredUserSubItems =
+			currentUserType === "THERAPIST"
+				? userManagementSubItems.filter((item) => item.title !== t("admins"))
+				: userManagementSubItems;
+		const userManagementMenu = createMenuItem(
+			t("user_management"),
+			adminPortal.adminManagement.index,
+			Users,
+			filteredUserSubItems,
+		);
 		const serviceManagementMenu = createMenuItem(
 			t("brand_and_location"),
 			adminPortal.serviceManagement.index,
@@ -144,44 +167,40 @@ export function NavigationProvider({
 			],
 		);
 
-		// filter the sub items of user management for therapist user
-		const filteredUserSubItems =
-			currentUserType === "THERAPIST"
-				? userManagementSubItems.filter((item) => item.title !== t("admins"))
-				: userManagementSubItems;
-		const userManagementMenu = createMenuItem(
-			t("user_management"),
-			adminPortal.adminManagement.index,
-			Users,
-			filteredUserSubItems,
-		);
-
-		// Construct menu based on user type
-		const items = [dashboardMenu];
+		// * Construct menu based on user type
+		const allMenus = [dashboardMenu];
 		if (currentUserType === "ADMIN") {
-			items.push(appointmentMenu, availabilityMenu, therapistSchedule);
+			allMenus.push(appointmentMenu, availabilityMenu, therapistScheduleMenu);
 		}
-		items.push(userManagementMenu, serviceManagementMenu);
+		allMenus.push(userManagementMenu, serviceManagementMenu);
 
-		// Determine active state
-		const finalItems = items.map((menu) => {
+		// * Determine which items are active
+		const finalItems = allMenus.map((menu) => {
 			const updatedMenu = { ...menu, isActive: false };
 
-			if (menu.subItems?.length) {
+			if (menu.subItems.length) {
 				updatedMenu.subItems = menu.subItems.map((subItem) => {
-					const active = isActiveLink(currentUrl, subItem.url);
+					const active = isActiveLink(
+						currentUrl,
+						subItem.url,
+						authenticatedRootPath,
+					);
 					if (active) updatedMenu.isActive = true;
 					return { ...subItem, isActive: active };
 				});
 			} else {
-				updatedMenu.isActive = isActiveLink(currentUrl, menu.url);
+				updatedMenu.isActive = isActiveLink(
+					currentUrl,
+					menu.url,
+					authenticatedRootPath,
+				);
 			}
 
 			return updatedMenu;
 		});
 
 		return { items: finalItems };
-	}, [currentUrl, globalProps.adminPortal.router, globalProps.auth, t]);
+	}, [currentUrl, globalProps, t]);
 
 	return (
 		<NavigationProviderContext.Provider
