@@ -53,6 +53,16 @@
         "light": "Light",
         "dark": "Dark"
       }
+    },
+    "motion": {
+      "title": "Motion & Animation",
+      "description": "Enable or disable interface animations for a more comfortable experience.",
+      "choice": {
+        "title": "On-Off",
+        "description": "Turning off motion can help reduce distractions or discomfort for sensitive users.",
+        "on": "On",
+        "off": "Off"
+      }
     }
   }
 }

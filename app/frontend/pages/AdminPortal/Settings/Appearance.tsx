@@ -2,10 +2,12 @@ import {
 	SettingLayout,
 	SettingSectionLayout,
 } from "@/components/admin-portal/settings/layout";
+import { useMotion } from "@/components/providers/motion-provider";
 import { type Theme, useTheme } from "@/components/providers/theme-provider";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Head } from "@inertiajs/react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +26,9 @@ export default function SettingsAppearance() {
 
 	// * language context
 	const selectedLang = useMemo(() => i18n.language, [i18n.language]);
+
+	// * motion context
+	const { motion, setMotion } = useMotion();
 
 	return (
 		<>
@@ -51,6 +56,28 @@ export default function SettingsAppearance() {
 								<Label htmlFor="id">{t("language.choice.indonesian")}</Label>
 							</div>
 						</RadioGroup>
+					</SettingSectionLayout>
+
+					<SettingSectionLayout
+						title={t("motion.title")}
+						description={t("motion.description")}
+					>
+						<div className="flex flex-row items-center justify-between w-8/12 gap-6 p-4 border rounded-lg">
+							<div className="space-y-0.5 text-sm">
+								<p className="font-semibold">{t("motion.choice.title")}</p>
+								<p className="text-muted-foreground">
+									{t("motion.choice.description")}
+								</p>
+							</div>
+							<div>
+								<Switch
+									checked={motion === "on"}
+									onCheckedChange={(value) => {
+										setMotion(value ? "on" : "off");
+									}}
+								/>
+							</div>
+						</div>
 					</SettingSectionLayout>
 
 					<SettingSectionLayout

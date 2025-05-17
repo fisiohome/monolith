@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
+export const STORAGE_KEY = "portal-ui-theme";
+
 export type Theme = "dark" | "light" | "system";
 
 type ThemeProviderProps = {
@@ -23,7 +25,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
 	children,
 	defaultTheme = "system",
-	storageKey = "portal-ui-theme",
+	storageKey = STORAGE_KEY,
 	...props
 }: ThemeProviderProps) {
 	const [theme, setTheme] = useState<Theme>(

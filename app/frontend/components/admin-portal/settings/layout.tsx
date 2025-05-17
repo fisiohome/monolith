@@ -55,7 +55,7 @@ export function SettingLayout({ children }: SettingLayoutProps) {
 
 	return (
 		<FormPageContainer>
-			<section className="flex flex-col">
+			<section className="flex flex-col text-muted-foreground">
 				<FormPageHeaderGridPattern
 					title={t("title")}
 					description={t("description")}

@@ -53,6 +53,16 @@
         "light": "Terang",
         "dark": "Gelap"
       }
+    },
+    "motion": {
+      "title": "Gerak & Animasi",
+      "description": "Mengaktifkan atau menonaktifkan animasi antarmuka untuk pengalaman yang lebih nyaman.",
+      "choice": {
+        "title": "Aktifkan/Non-Aktifkan",
+        "description": "Menonaktifkan gerakan dapat membantu mengurangi gangguan atau ketidaknyamanan bagi pengguna yang sensitif.",
+        "on": "Aktifkan",
+        "off": "Non-Aktifkan"
+      }
     }
   }
 }

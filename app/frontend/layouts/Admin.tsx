@@ -1,6 +1,7 @@
 import AppSidebar from "@/components/admin-portal/sidebar/app-sidebar";
 import AppTopBar from "@/components/admin-portal/topbar/app-topbar";
 import { DateProvider } from "@/components/providers/date-provider";
+import { MotionProvider } from "@/components/providers/motion-provider";
 import { NavigationProvider } from "@/components/providers/navigation-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
@@ -23,13 +24,15 @@ function LayoutProviders({ children }: PropsWithChildren) {
 
 	return (
 		<ThemeProvider>
-			<DateProvider>
-				<ToastProvider>
-					<SidebarProvider style={sidebarStyle} defaultOpen={defaultOpen}>
-						<NavigationProvider>{children}</NavigationProvider>
-					</SidebarProvider>
-				</ToastProvider>
-			</DateProvider>
+			<MotionProvider>
+				<DateProvider>
+					<ToastProvider>
+						<SidebarProvider style={sidebarStyle} defaultOpen={defaultOpen}>
+							<NavigationProvider>{children}</NavigationProvider>
+						</SidebarProvider>
+					</ToastProvider>
+				</DateProvider>
+			</MotionProvider>
 		</ThemeProvider>
 	);
 }

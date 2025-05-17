@@ -1,7 +1,8 @@
+import { useMotion } from "@/components/providers/motion-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { LucideProps } from "lucide-react";
-import type { ComponentProps } from "react";
+import { useMemo, type ComponentProps } from "react";
 
 export interface StatCardProps extends ComponentProps<"div"> {
 	data: {
@@ -14,11 +15,17 @@ export interface StatCardProps extends ComponentProps<"div"> {
 	};
 }
 export default function StatCard({ className, data }: StatCardProps) {
+	// * state for motion toggler
+	const { motion: motionPref } = useMotion();
+	// If motion is off, disable animation/transition
+	const shouldReduceMotion = useMemo(() => motionPref === "off", [motionPref]);
+
 	return (
 		<Card
 			className={cn(
-				"bg-card motion-preset-confetti motion-delay-75",
+				"bg-card",
 				className,
+				!shouldReduceMotion && "motion-preset-confetti motion-duration-1000",
 			)}
 		>
 			<CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">

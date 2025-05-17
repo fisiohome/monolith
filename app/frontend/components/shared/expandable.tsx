@@ -16,8 +16,10 @@ import React, {
 	createContext,
 	useContext,
 	useEffect,
+	useMemo,
 	useState,
 } from "react";
+import { useMotion } from "../providers/motion-provider";
 
 const springConfig = { stiffness: 200, damping: 20, bounce: 0.2 };
 
@@ -29,6 +31,7 @@ interface ExpandableContextType {
 	transitionDuration: number; // Duration of the expansion/collapse animation
 	easeType: string; // Easing function for the animation
 	initialDelay: number; // Delay before the animation starts
+	shouldReduceMotion?: boolean; // Whether to reduce motion when the component is expanded
 	onExpandEnd?: () => void; // Callback function when expansion ends
 	onCollapseEnd?: () => void; // Callback function when collapse ends
 }
@@ -83,6 +86,14 @@ const Expandable = React.forwardRef<HTMLDivElement, ExpandableProps>(
 		},
 		ref,
 	) => {
+		// * state for motion toggler
+		const { motion: motionPref } = useMotion();
+		// If motion is off, disable animation/transition
+		const shouldReduceMotion = useMemo(
+			() => motionPref === "off",
+			[motionPref],
+		);
+
 		// Internal state for expansion when the component is uncontrolled
 		const [isExpandedInternal, setIsExpandedInternal] = useState(false);
 
@@ -111,6 +122,7 @@ const Expandable = React.forwardRef<HTMLDivElement, ExpandableProps>(
 			transitionDuration,
 			easeType,
 			initialDelay,
+			shouldReduceMotion,
 			onExpandEnd,
 			onCollapseEnd,
 		};
@@ -260,9 +272,12 @@ const ExpandableContent = React.forwardRef<
 		},
 		ref,
 	) => {
-		const { isExpanded, transitionDuration, easeType } = useExpandable();
+		const { isExpanded, transitionDuration, easeType, shouldReduceMotion } =
+			useExpandable();
 		// useMeasure is used to measure the height of the content
 		const [measureRef, { height: measuredHeight }] = useMeasure();
+		// useState to store the height of the content when not animated
+		const [noAnimatedHeight, setNoAnimatedHeight] = useState(0);
 		// useMotionValue creates a value that can be animated smoothly
 		const animatedHeight = useMotionValue(0);
 		// useSpring applies a spring animation to the height value
@@ -271,8 +286,10 @@ const ExpandableContent = React.forwardRef<
 		useEffect(() => {
 			// Animate the height based on whether the content is expanded or collapsed
 			if (isExpanded) {
+				setNoAnimatedHeight(measuredHeight || 0);
 				animatedHeight.set(measuredHeight || 0);
 			} else {
+				setNoAnimatedHeight(0);
 				animatedHeight.set(0);
 			}
 		}, [isExpanded, measuredHeight, animatedHeight]);
@@ -284,7 +301,7 @@ const ExpandableContent = React.forwardRef<
 			<motion.div
 				ref={ref}
 				style={{
-					height: smoothHeight,
+					height: !shouldReduceMotion ? smoothHeight : noAnimatedHeight,
 					overflow: "hidden",
 				}}
 				transition={{ duration: transitionDuration, ease: easeType }}
@@ -366,7 +383,8 @@ const ExpandableCard = React.forwardRef<HTMLDivElement, ExpandableCardProps>(
 		ref,
 	) => {
 		// Get the expansion state and toggle function from the ExpandableContext
-		const { isExpanded, toggleExpand, expandDirection } = useExpandable();
+		const { isExpanded, toggleExpand, expandDirection, shouldReduceMotion } =
+			useExpandable();
 
 		// Use useMeasure hook to get the dimensions of the content
 		const [measureRef, { width, height }] = useMeasure();
@@ -419,9 +437,11 @@ const ExpandableCard = React.forwardRef<HTMLDivElement, ExpandableCardProps>(
 				style={{
 					// Set width and height based on expansion direction
 					width:
-						expandDirection === "vertical" ? collapsedSize?.width : smoothWidth,
+						expandDirection === "vertical" || shouldReduceMotion
+							? collapsedSize?.width
+							: smoothWidth,
 					height:
-						expandDirection === "horizontal"
+						expandDirection === "horizontal" || shouldReduceMotion
 							? collapsedSize?.height
 							: smoothHeight,
 				}}
