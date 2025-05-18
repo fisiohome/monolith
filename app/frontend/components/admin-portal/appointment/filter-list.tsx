@@ -395,6 +395,52 @@ export default function FilterList({
 			)}
 		>
 			<div className="col-span-full md:col-span-1">
+				<Select
+					value={filterBy.assignedTo}
+					onValueChange={(value) =>
+						handleFilterBy({ type: "assignedTo", value })
+					}
+				>
+					<SelectTrigger
+						className={cn(
+							"bg-input shadow-inner",
+							!filterBy.assignedTo ? "text-muted-foreground" : "",
+						)}
+					>
+						<SelectValue placeholder={`${taf("assigned_to.placeholder")}...`} />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectGroup>
+							{assignedToList.map((i) => (
+								<SelectItem key={i.value} value={i.value}>
+									<div className="flex flex-row items-center gap-2 uppercase">
+										{i.icon}
+										{i.label}
+									</div>
+								</SelectItem>
+							))}
+						</SelectGroup>
+
+						<SelectSeparator />
+
+						<SelectGroup>
+							<Button
+								className="w-full px-2 font-medium uppercase"
+								variant="ghost"
+								size="sm"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleFilterBy({ type: "assignedTo", value: "" });
+								}}
+							>
+								{taf("assigned_to.search.clear")}
+							</Button>
+						</SelectGroup>
+					</SelectContent>
+				</Select>
+			</div>
+
+			<div className="col-span-full md:col-span-1">
 				<Popover>
 					<PopoverTrigger asChild>
 						<Button
@@ -490,52 +536,6 @@ export default function FilterList({
 						</Command>
 					</PopoverContent>
 				</Popover>
-			</div>
-
-			<div className="col-span-full md:col-span-1">
-				<Select
-					value={filterBy.assignedTo}
-					onValueChange={(value) =>
-						handleFilterBy({ type: "assignedTo", value })
-					}
-				>
-					<SelectTrigger
-						className={cn(
-							"bg-input shadow-inner",
-							!filterBy.assignedTo ? "text-muted-foreground" : "",
-						)}
-					>
-						<SelectValue placeholder={`${taf("assigned_to.placeholder")}...`} />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectGroup>
-							{assignedToList.map((i) => (
-								<SelectItem key={i.value} value={i.value}>
-									<div className="flex flex-row items-center gap-2 uppercase">
-										{i.icon}
-										{i.label}
-									</div>
-								</SelectItem>
-							))}
-						</SelectGroup>
-
-						<SelectSeparator />
-
-						<SelectGroup>
-							<Button
-								className="w-full px-2 font-medium uppercase"
-								variant="ghost"
-								size="sm"
-								onClick={(e) => {
-									e.stopPropagation();
-									handleFilterBy({ type: "assignedTo", value: "" });
-								}}
-							>
-								{taf("assigned_to.search.clear")}
-							</Button>
-						</SelectGroup>
-					</SelectContent>
-				</Select>
 			</div>
 
 			<div className="col-span-full md:col-span-1">

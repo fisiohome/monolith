@@ -14,6 +14,7 @@ import { createContext, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { NavMainProps } from "../admin-portal/sidebar/nav-main";
 import type { NavUserProps } from "../admin-portal/sidebar/nav-user";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 
 type NavigationProviderProps = {
 	children: React.ReactNode;
@@ -107,10 +108,13 @@ export function NavigationProvider({
 			authenticatedRootPath,
 			LayoutDashboard,
 		);
-		// Use the utility to append the status param
-		const { fullUrl } = populateQueryParams(adminPortal.appointment.index, {
-			status: "upcoming",
-		});
+		// Use the utility to append the additional param
+		const { fullUrl } = populateQueryParams(
+			adminPortal.appointment.index,
+			deepTransformKeysToSnakeCase({
+				assignedTo: "me",
+			}),
+		);
 		const appointmentMenu = createMenuItem(
 			t("appointment"),
 			fullUrl,
