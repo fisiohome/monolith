@@ -146,8 +146,8 @@ export default function SchedulesPage({
 					/>
 				</div>
 
-				<div className="grid gap-2">
-					<div className="flex flex-col items-center justify-between gap-4 lg:flex-row">
+				<div className="grid gap-4">
+					<div className="flex flex-col items-start justify-between gap-4 xl:flex-row">
 						<ScheduleFilters />
 
 						<SchedulePagination

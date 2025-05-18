@@ -5,6 +5,7 @@ import {
 	UpdateStatusForm,
 } from "@/components/admin-portal/appointment/feature-form";
 import FilterList from "@/components/admin-portal/appointment/filter-list";
+import ApptPagination from "@/components/admin-portal/appointment/pagination-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
 	ResponsiveDialog,
@@ -13,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { GENDERS } from "@/lib/constants";
 import { populateQueryParams } from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
 import type {
@@ -20,11 +22,24 @@ import type {
 	AppointmentStatuses,
 } from "@/types/admin-portal/appointment";
 import type { Location } from "@/types/admin-portal/location";
+import type { Package } from "@/types/admin-portal/package";
+import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import type { Metadata } from "@/types/pagy";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
-import { Plus } from "lucide-react";
-import { type ReactNode, createContext, useContext, useMemo } from "react";
+import { useLocalStorage } from "@uidotdev/usehooks";
+import { AnimatePresence, motion } from "framer-motion";
+import { ListFilter, Plus } from "lucide-react";
+import {
+	type ReactNode,
+	createContext,
+	useCallback,
+	useContext,
+	useMemo,
+} from "react";
 import { useTranslation } from "react-i18next";
+
+export const PREFERENCES_STORAGE_KEY = "appointment-index-preferences";
 
 // * page context provider
 interface PageProviderState {
@@ -159,8 +174,12 @@ export const usePageContext = () => {
 };
 
 // * page component
+type ServicePick = { packages: Package[] } & Omit<Service, "packages">;
 export interface AppointmentIndexProps {
-	appointments?: { date: string; schedules: Appointment[] }[];
+	appointments?: {
+		data: { date: string; schedules: Appointment[] }[];
+		metadata: Metadata;
+	};
 	selectedAppointment?: Appointment;
 	optionsData?: {
 		admins: Admin[];
@@ -171,6 +190,8 @@ export interface AppointmentIndexProps {
 	};
 	filterOptionsData?: {
 		locations: Location[];
+		services: ServicePick[];
+		patientGenders: typeof GENDERS;
 	};
 }
 
@@ -185,14 +206,20 @@ export default function AppointmentIndex() {
 	const { t } = useTranslation("appointments");
 
 	const appointments = useMemo(() => {
-		if (!globalProps?.appointments || !globalProps?.appointments?.length)
+		if (!globalProps?.appointments || !globalProps?.appointments?.data?.length)
 			return [];
 
-		return globalProps.appointments;
+		return globalProps.appointments.data;
+	}, [globalProps?.appointments]);
+	const apptMetadata = useMemo(() => {
+		if (!globalProps?.appointments || !globalProps?.appointments?.metadata)
+			return null;
+
+		return globalProps.appointments.metadata;
 	}, [globalProps?.appointments]);
 	const isAppointmentExist = useMemo(
-		() => !!appointments?.length,
-		[appointments?.length],
+		() => !!globalProps?.appointments?.data?.length,
+		[globalProps?.appointments?.data?.length],
 	);
 	const noAppointmentsLabel = useMemo(() => {
 		let label = "";
@@ -224,6 +251,67 @@ export default function AppointmentIndex() {
 		return label;
 	}, [globalProps?.adminPortal?.currentQuery?.status, t]);
 
+	// * pagination params management state
+	const changePageParam = useCallback(
+		(type: "prev" | "next" | "limit", value?: string) => {
+			if (!apptMetadata) {
+				console.warn("Pagination metadata not available");
+				return;
+			}
+
+			let url: string | undefined;
+			switch (type) {
+				case "prev":
+					url = apptMetadata.prevUrl;
+					break;
+				case "next":
+					url = apptMetadata.nextUrl;
+					break;
+				case "limit": {
+					if (!value) {
+						console.warn("Value required for 'limit' pagination");
+						return;
+					}
+					const { fullUrl } = populateQueryParams(apptMetadata.pageUrl, {
+						limit: value,
+					});
+					url = fullUrl;
+					break;
+				}
+				default:
+					console.warn("Invalid pagination type");
+					return;
+			}
+
+			if (!url) {
+				console.warn("No pagination URL available");
+				return;
+			}
+
+			router.get(
+				url,
+				{},
+				{
+					preserveScroll: false,
+					preserveState: true,
+					only: ["adminPortal", "flash", "errors", "appointments"],
+				},
+			);
+		},
+		[apptMetadata],
+	);
+
+	// * filter management state with animation
+	const [preferences, savePreferences] = useLocalStorage(
+		PREFERENCES_STORAGE_KEY,
+		{
+			isShowFilter: false,
+		},
+	);
+	const handleToggleFilter = () => {
+		savePreferences((prev) => ({ ...prev, isShowFilter: !prev.isShowFilter }));
+	};
+
 	return (
 		<PageProvider>
 			<Head title={t("head_title")} />
@@ -235,12 +323,32 @@ export default function AppointmentIndex() {
 							{t("page_title")}
 						</h1>
 
-						<p className="w-full text-sm text-muted-foreground text-pretty md:w-8/12">
+						<p className="w-full text-sm text-muted-foreground text-pretty md:w-10/12 xl:w-8/12">
 							{t("page_description")}
 						</p>
 					</div>
+				</div>
 
-					<div className="flex flex-col gap-2 md:flex-row">
+				<Separator className="bg-border" />
+
+				<div className="grid gap-4">
+					<div className="z-10 flex flex-col justify-end gap-2 md:flex-row">
+						<Button
+							type="button"
+							variant={preferences.isShowFilter ? "default" : "outline"}
+							className="w-full md:w-fit"
+							onClick={(event) => {
+								event.preventDefault();
+
+								handleToggleFilter();
+							}}
+						>
+							<ListFilter />
+							{preferences.isShowFilter
+								? t("button.close_filter")
+								: t("button.filter")}
+						</Button>
+
 						<Button asChild className="w-full md:w-fit">
 							<Link
 								href={
@@ -252,11 +360,26 @@ export default function AppointmentIndex() {
 							</Link>
 						</Button>
 					</div>
+
+					<AnimatePresence initial={false}>
+						{preferences.isShowFilter && (
+							<motion.section
+								initial={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+								animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+								exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+								transition={{ duration: 0.3, ease: "easeOut" }}
+							>
+								<FilterList
+									className="p-3 border shadow-inner rounded-xl bg-background"
+									isShow={preferences.isShowFilter}
+									onToggleShow={() => {
+										handleToggleFilter();
+									}}
+								/>
+							</motion.section>
+						)}
+					</AnimatePresence>
 				</div>
-
-				<Separator className="bg-border" />
-
-				<FilterList />
 
 				<Deferred
 					data={["appointments"]}
@@ -267,9 +390,9 @@ export default function AppointmentIndex() {
 						</div>
 					}
 				>
-					<div className="grid gap-6 mt-6">
+					<div className="grid gap-6 !mt-8 !mb-6">
 						{isAppointmentExist ? (
-							appointments.map((appointment, index) => (
+							appointments?.map((appointment, index) => (
 								<AppointmentList
 									key={String(appointment.date)}
 									appointment={appointment}
@@ -277,13 +400,32 @@ export default function AppointmentIndex() {
 								/>
 							))
 						) : (
-							<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background">
+							<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background text-muted-foreground">
 								<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">
 									{noAppointmentsLabel}
 								</h2>
 							</div>
 						)}
 					</div>
+				</Deferred>
+
+				<Deferred
+					data={["appointments"]}
+					fallback={
+						<div className="flex flex-col self-end gap-6 mt-6">
+							<Skeleton className="w-2/12 h-4 rounded-sm" />
+							<Skeleton className="relative w-full h-32 rounded-xl" />
+						</div>
+					}
+				>
+					<ApptPagination
+						metadata={apptMetadata}
+						actions={{
+							goToPrevpage: () => changePageParam("prev"),
+							goToNextPage: () => changePageParam("next"),
+							onChangeLimit: (value) => changePageParam("limit", value),
+						}}
+					/>
 				</Deferred>
 			</PageContainer>
 		</PageProvider>

@@ -247,7 +247,7 @@ const MultiSelectorTrigger = forwardRef<
 		<div
 			ref={ref}
 			className={cn(
-				"flex flex-wrap items-center gap-1 px-3 py-1 ring-1 ring-muted border border-input rounded-md bg-background shadow-sm text-sm transition-colors ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm min-h-9",
+				"flex flex-wrap items-center gap-1 px-3 py-1 ring-1 ring-muted border border-input rounded-md bg-background shadow text-sm transition-colors ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm min-h-9",
 				{
 					"ring-1 focus-within:ring-ring": activeIndex === -1,
 				},
@@ -255,13 +255,41 @@ const MultiSelectorTrigger = forwardRef<
 			)}
 			{...props}
 		>
-			{value.map((item, index) => {
-				if (index > maxShows && maxShows !== -1) return;
+			{!!value?.length &&
+				value.map((item, index) => {
+					if (index > maxShows && maxShows !== -1) return;
 
-				if (index === maxShows && maxShows !== -1) {
+					if (index === maxShows && maxShows !== -1) {
+						return (
+							<Badge
+								key={`${item}-rest-badge`}
+								className={cn(
+									"px-1 rounded-sm flex items-center gap-1",
+									activeIndex === index && "ring-2 ring-muted-foreground",
+									value?.length === index + 1 && "mr-3",
+								)}
+								variant={"secondary"}
+							>
+								<span className="text-xs">
+									+ {value.length - maxShows} items
+								</span>
+								<button
+									aria-label="Remove all option"
+									aria-roledescription="button to remove all option"
+									type="button"
+									onMouseDown={mousePreventDefault}
+									onClick={() => onValueChange(value.slice(0, maxShows))}
+								>
+									<span className="sr-only">Remove all option</span>
+									<RemoveIcon className="w-4 h-4 hover:stroke-destructive" />
+								</button>
+							</Badge>
+						);
+					}
+
 					return (
 						<Badge
-							key={`${item}-rest-badge`}
+							key={`${item}-badge`}
 							className={cn(
 								"px-1 rounded-sm flex items-center gap-1",
 								activeIndex === index && "ring-2 ring-muted-foreground",
@@ -269,45 +297,20 @@ const MultiSelectorTrigger = forwardRef<
 							)}
 							variant={"secondary"}
 						>
-							<span className="text-xs">+ {value.length - 5} items</span>
+							<span className="text-xs">{item}</span>
 							<button
-								aria-label="Remove all option"
-								aria-roledescription="button to remove all option"
+								aria-label={`Remove ${item} option`}
+								aria-roledescription="button to remove option"
 								type="button"
 								onMouseDown={mousePreventDefault}
-								onClick={() => onValueChange(value.slice(0, 5))}
+								onClick={() => onValueChange(item)}
 							>
-								<span className="sr-only">Remove all option</span>
+								<span className="sr-only">Remove {item} option</span>
 								<RemoveIcon className="w-4 h-4 hover:stroke-destructive" />
 							</button>
 						</Badge>
 					);
-				}
-
-				return (
-					<Badge
-						key={`${item}-badge`}
-						className={cn(
-							"px-1 rounded-sm flex items-center gap-1",
-							activeIndex === index && "ring-2 ring-muted-foreground",
-							value?.length === index + 1 && "mr-3",
-						)}
-						variant={"secondary"}
-					>
-						<span className="text-xs">{item}</span>
-						<button
-							aria-label={`Remove ${item} option`}
-							aria-roledescription="button to remove option"
-							type="button"
-							onMouseDown={mousePreventDefault}
-							onClick={() => onValueChange(item)}
-						>
-							<span className="sr-only">Remove {item} option</span>
-							<RemoveIcon className="w-4 h-4 hover:stroke-destructive" />
-						</button>
-					</Badge>
-				);
-			})}
+				})}
 			{children}
 		</div>
 	);

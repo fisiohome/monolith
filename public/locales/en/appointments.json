@@ -16,7 +16,10 @@
 		"reschedule": "Reschedule",
 		"series": "Create Series",
 		"update_pic": "Update PIC(s)",
-		"update_status": "Update Status"
+		"update_status": "Update Status",
+		"filter": "Filter",
+		"clear_all_filters": "Clear All",
+		"close_filter": "Close"
 	},
 	"tab": {
 		"title": {
@@ -80,7 +83,7 @@
 	},
 	"filter": {
 		"status": {
-			"placeholder": "Filter by appointment status",
+			"placeholder": "By appointment status",
 			"search": {
 				"placeholder": "Search appointment status",
 				"empty": "No appointment status found.",
@@ -88,19 +91,53 @@
 			}
 		},
 		"therapist_name": {
-			"placeholder": "Filter by therapist name"
+			"placeholder": "By therapist name"
 		},
 		"patient_name": {
-			"placeholder": "Filter by patient name"
+			"placeholder": "By patient name"
 		},
 		"reg_number": {
-			"placeholder": "Filter by reg number"
+			"placeholder": "By reg number"
 		},
 		"region": {
-			"placeholder": "Filter by region",
+			"placeholder": "By region",
 			"search": {
 				"placeholder": "Search region",
 				"empty": "No region found.",
+				"clear": "Clear"
+			}
+		},
+		"assigned_to": {
+			"placeholder": "Assigned to",
+			"search": {
+				"clear": "Clear"
+			},
+			"items": {
+				"me": "me",
+				"anyone": "anyone"
+			}
+		},
+		"services": {
+			"placeholder": "By services",
+			"search": {
+				"placeholder": "Search the service",
+				"empty": "No service found.",
+				"clear": "Clear"
+			}
+		},
+		"packages": {
+			"placeholder": "By packages",
+			"search": {
+				"placeholder": "Search the package",
+				"empty": "No package found.",
+				"clear": "Clear"
+			}
+		},
+		"patient_genders": {
+			"placeholder": "By patient genders",
+			"search": {
+				"placeholder": "Search the gender",
+				"empty": "No gender found.",
 				"clear": "Clear"
 			}
 		}
@@ -132,5 +169,9 @@
 			"search": "Search appointment status",
 			"empty_search": "No appointment status found."
 		}
+	},
+	"pagination": {
+		"showing": "Showing",
+		"appointments": "appointments"
 	}
 }

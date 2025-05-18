@@ -317,10 +317,12 @@ const AdminList = memo(function Component({
 });
 
 interface ScheduleListProps {
-	appointment: NonNullable<AppointmentIndexProps["appointments"]>[number];
+	appointment: NonNullable<
+		AppointmentIndexProps["appointments"]
+	>["data"][number];
 	schedule: NonNullable<
 		AppointmentIndexProps["appointments"]
-	>[number]["schedules"][number];
+	>["data"][number]["schedules"][number];
 }
 
 function ScheduleList({ schedule }: ScheduleListProps) {
@@ -1267,7 +1269,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 
 // * appointment list component
 export interface AppointmentListProps extends ComponentProps<"section"> {
-	appointment: NonNullable<AppointmentIndexProps["appointments"]>[number];
+	appointment: NonNullable<
+		AppointmentIndexProps["appointments"]
+	>["data"][number];
 	index: number;
 }
 

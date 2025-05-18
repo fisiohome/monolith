@@ -230,7 +230,7 @@ export function SchedulePagination({
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-4 justify-between md:justify-end",
+				"flex items-center gap-4 justify-between md:justify-end w-full md:w-auto",
 				className,
 			)}
 		>

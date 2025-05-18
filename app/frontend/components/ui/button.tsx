@@ -8,7 +8,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 transition-all",
 	{
 		variants: {
 			variant: {
@@ -16,8 +16,7 @@ const buttonVariants = cva(
 					"bg-primary text-primary-foreground shadow hover:bg-primary/90",
 				destructive:
 					"bg-destructive text-destructive-foreground shadow hover:bg-destructive/90",
-				outline:
-					"border border-input bg-background shadow hover:bg-primary hover:text-primary-foreground",
+				outline: "border border-input bg-background shadow hover:bg-input",
 				"primary-outline":
 					"border border-primary text-primary hover:bg-primary hover:text-primary-foreground",
 				"accent-outline":
@@ -27,6 +26,7 @@ const buttonVariants = cva(
 				secondary:
 					"bg-secondary text-secondary-foreground shadow hover:bg-secondary/80",
 				ghost: "hover:bg-accent hover:text-accent-foreground",
+				"ghost-destructive": "text-destructive hover:bg-accent",
 				link: "text-primary underline-offset-4 hover:underline",
 			},
 			effect: {

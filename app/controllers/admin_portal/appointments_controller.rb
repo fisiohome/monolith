@@ -5,10 +5,19 @@ module AdminPortal
     before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule]
 
     def index
-      preparation = PreparationIndexAppointmentService.new(params)
+      preparation = PreparationIndexAppointmentService.new(params, current_user)
 
       render inertia: "AdminPortal/Appointment/Index", props: deep_transform_keys_to_camel_case({
-        appointments: InertiaRails.defer { preparation.fetch_appointments },
+        appointments: InertiaRails.defer {
+          service_appt = preparation.fetch_appointments
+
+          deep_transform_keys_to_camel_case(
+            {
+              data: service_appt[:data],
+              metadata: pagy_metadata(service_appt[:metadata])
+            }
+          )
+        },
         selected_appointment: InertiaRails.defer { preparation.fetch_selected_appointment },
         options_data: InertiaRails.defer { preparation.fetch_options_data },
         filter_options_data: InertiaRails.defer { preparation.fetch_filter_options_data }

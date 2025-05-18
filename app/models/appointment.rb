@@ -167,12 +167,16 @@ class Appointment < ApplicationRecord
   scope :series, -> { where.not(appointment_reference_id: nil) }
   scope :scheduled, -> { where.not(status: "UNSCHEDULED") }
 
-  scope :apply_filters, ->(params) {
+  scope :apply_filters, ->(params, current_user = nil) {
     # Chain scopes based on parameters
     filter_by_name(params[:therapist], :therapist)
       .filter_by_name(params[:patient], :patient)
       .filter_by_registration(params[:registration_number])
       .filter_by_city(params[:city])
+      .filter_by_patient_genders(params[:patient_genders])
+      .filter_by_service_ids(params[:service_ids])
+      .filter_by_package_ids(params[:package_ids])
+      .assigned_to(current_user)
       .apply_status_filter(params[:status])
   }
   scope :filter_by_name, ->(name, association) {
@@ -186,6 +190,31 @@ class Appointment < ApplicationRecord
   scope :filter_by_city, ->(city) {
     return self if city.blank?
     joins(:location).where("locations.city ILIKE ?", "%#{city}%")
+  }
+  # Filter appointments by one or more patient genders (e.g., ["MALE", "FEMALE"])
+  scope :filter_by_patient_genders, ->(genders) {
+    return self if genders.blank?
+    joins(:patient).where(patients: {gender: genders.strip.split(/\s*,\s*/)})
+  }
+  # Filter appointments by one or more service_ids
+  scope :filter_by_service_ids, ->(service_ids) {
+    return self if service_ids.blank?
+    where(service_id: service_ids.strip.split(/\s*,\s*/))
+  }
+  # Filter appointments by one or more package_ids
+  scope :filter_by_package_ids, ->(package_ids) {
+    return self if package_ids.blank?
+    where(package_id: package_ids.strip.split(/\s*,\s*/))
+  }
+  # Scope: appointments assigned to a given user (therapist or admin)
+  # Usage: Appointment.assigned_to(user)
+  scope :assigned_to, ->(user) {
+    return nil if user.blank?
+    if user&.therapist&.present?
+      where(therapist_id: user.therapist.id)
+    elsif user&.admin&.present?
+      joins(:admins).where(appointment_admins: {admin_id: user.admin.id})
+    end
   }
   scope :apply_status_filter, ->(filter) {
     case filter

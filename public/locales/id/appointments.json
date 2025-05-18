@@ -16,7 +16,10 @@
 		"reschedule": "Penjadwalan Ulang",
 		"series": "Buat Series",
 		"update_pic": "Perbarui Penanggung Jawab (PIC)",
-		"update_status": "Perbarui Status"
+		"update_status": "Perbarui Status",
+		"filter": "Filter",
+		"clear_all_filters": "Hapus Semua",
+		"close_filter": "Tutup"
 	},
 	"tab": {
 		"title": {
@@ -80,7 +83,7 @@
 	},
 	"filter": {
 		"status": {
-			"placeholder": "Filter berdasarkan status janji temu",
+			"placeholder": "Berdasarkan status janji temu",
 			"search": {
 				"placeholder": "Cari status janji temu",
 				"empty": "Tidak ada status janji temu yang ditemukan.",
@@ -88,19 +91,53 @@
 			}
 		},
 		"therapist_name": {
-			"placeholder": "Filter berdasarkan nama terapis"
+			"placeholder": "Berdasarkan nama terapis"
 		},
 		"patient_name": {
-			"placeholder": "Filter berdasarkan nama pasien"
+			"placeholder": "Berdasarkan nama pasien"
 		},
 		"reg_number": {
-			"placeholder": "Filter berdasarkan nomor registrasi"
+			"placeholder": "Berdasarkan nomor registrasi"
 		},
 		"region": {
-			"placeholder": "Filter berdasarkan wilayah",
+			"placeholder": "Berdasarkan wilayah",
 			"search": {
 				"placeholder": "Cari wilayah",
 				"empty": "Tidak ada wilayah ditemukan.",
+				"clear": "Bersihkan"
+			}
+		},
+		"assigned_to": {
+			"placeholder": "Ditugaskan kepada",
+			"search": {
+				"clear": "Bersihkan"
+			},
+			"items": {
+				"me": "saya",
+				"anyone": "siapa saja"
+			}
+		},
+		"services": {
+			"placeholder": "Berdasarkan layanan kesehatan",
+			"search": {
+				"placeholder": "Cari layanan kesehatan",
+				"empty": "Tidak ada layanan kesehatan yang ditemukan.",
+				"clear": "Bersihkan"
+			}
+		},
+		"packages": {
+			"placeholder": "Berdasarkan paket",
+			"search": {
+				"placeholder": "Cari paket",
+				"empty": "Tidak ada paket yang ditemukan.",
+				"clear": "Bersihkan"
+			}
+		},
+		"patient_genders": {
+			"placeholder": "Berdasarkan jenis kelamin pasien",
+			"search": {
+				"placeholder": "Cari jenis kelamin",
+				"empty": "Tidak ada jenis kelamin yang ditemukan.",
 				"clear": "Bersihkan"
 			}
 		}
@@ -132,5 +169,9 @@
 			"search": "Cari status janji temu",
 			"empty_search": "Tidak ada status janji temu yang ditemukan."
 		}
+	},
+	"pagination": {
+		"showing": "Menampilkan",
+		"appointments": "janji temu"
 	}
 }
