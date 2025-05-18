@@ -449,9 +449,19 @@ export default function AppointmentIndex() {
 				<Deferred
 					data={["appointments"]}
 					fallback={
-						<div className="flex flex-col self-end gap-6 mt-6">
-							<Skeleton className="w-2/12 h-4 rounded-sm" />
-							<Skeleton className="relative w-full h-32 rounded-xl" />
+						<div className="flex flex-col justify-between gap-6 mt-6 md:flex-row">
+							<div className="flex items-center self-end gap-4 md:self-start">
+								<Skeleton className="w-[120px] h-4 rounded-sm" />
+								<Skeleton className="w-[75px] rounded-sm h-9" />
+							</div>
+
+							<div className="flex items-center gap-4">
+								<Skeleton className="w-full md:w-[200px] h-4 rounded-sm" />
+								<div className="flex items-center gap-2">
+									<Skeleton className="w-[35px] rounded-sm h-9" />
+									<Skeleton className="w-[35px] rounded-sm h-9" />
+								</div>
+							</div>
 						</div>
 					}
 				>
