@@ -12,6 +12,11 @@ import {
 	type ResponsiveDialogProps,
 } from "@/components/shared/responsive-dialog";
 import { Button } from "@/components/ui/button";
+import {
+	Announcement,
+	AnnouncementTag,
+	AnnouncementTitle,
+} from "@/components/ui/kibo-ui/announcement";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GENDERS } from "@/lib/constants";
@@ -29,7 +34,7 @@ import type { Metadata } from "@/types/pagy";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { ListFilter, Plus } from "lucide-react";
+import { AlarmClock, ListFilter, Plus } from "lucide-react";
 import {
 	type ReactNode,
 	createContext,
@@ -250,6 +255,16 @@ export default function AppointmentIndex() {
 
 		return label;
 	}, [globalProps?.adminPortal?.currentQuery?.status, t]);
+	const isShowAnnouncement = useMemo(
+		() =>
+			!!globalProps?.adminPortal?.currentQuery?.status &&
+			[
+				"pending_therapist",
+				"pending_patient_approval",
+				"pending_payment",
+			].includes(globalProps.adminPortal.currentQuery.status),
+		[globalProps?.adminPortal?.currentQuery?.status],
+	);
 
 	// * pagination params management state
 	const changePageParam = useCallback(
@@ -366,7 +381,6 @@ export default function AppointmentIndex() {
 							<motion.section
 								initial={{ opacity: 0, y: -20, filter: "blur(8px)" }}
 								animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-								exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
 								transition={{ duration: 0.3, ease: "easeOut" }}
 							>
 								<FilterList
@@ -380,6 +394,29 @@ export default function AppointmentIndex() {
 						)}
 					</AnimatePresence>
 				</div>
+
+				{isShowAnnouncement && (
+					<AnimatePresence>
+						<motion.div
+							key="announcement"
+							initial={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+							animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+							exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+							transition={{ duration: 0.4, ease: "easeOut" }}
+							className="flex justify-center !mt-6"
+						>
+							<Announcement themed className="text-orange-700 bg-orange-100">
+								<AnnouncementTag className="flex items-center gap-1.5">
+									<AlarmClock className="shrink-0 size-4" />
+									<span>{t("announcement.warning.tag")}</span>
+								</AnnouncementTag>
+								<AnnouncementTitle>
+									{t("announcement.warning.title")}
+								</AnnouncementTitle>
+							</Announcement>
+						</motion.div>
+					</AnimatePresence>
+				)}
 
 				<Deferred
 					data={["appointments"]}

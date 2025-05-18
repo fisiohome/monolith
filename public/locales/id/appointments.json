@@ -2,6 +2,12 @@
 	"head_title": "Manajemen Kunjungan Janji Temu",
 	"page_title": "Kunjungan Janji Temu",
 	"page_description": "Mengelola kunjungan janji temu dengan mudah. Pesan, ubah, dan pantau setiap kunjungan untuk memastikan koordinasi yang lancar dan tepat waktu",
+	"announcement": {
+		"warning": {
+			"tag": "Peringatan",
+			"title": "Janji temu yang belum dikonfirmasi setelah tanggal yang dijadwalkan akan dibatalkan secara otomatis."
+		}
+	},
 	"statuses": {
 		"pending_therapist_assignment": "PENUGASAN TERAPIS TERTUNDA",
 		"pending_patient_approval": "MENUNGGU PERSETUJUAN PASIEN",

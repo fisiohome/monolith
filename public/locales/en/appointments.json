@@ -2,6 +2,12 @@
 	"head_title": "Appointment Visit Management",
 	"page_title": "Appointment Visit",
 	"page_description": "Easily manage appointment visits. Book, modify, and monitor each visit to ensure smooth coordination and timely care.",
+	"announcement": {
+		"warning": {
+			"tag": "Warning",
+			"title": "Appointments that remained unconfirmed after the scheduled date were auto-cancelled."
+		}
+	},
 	"statuses": {
 		"pending_therapist_assignment": "PENDING THERAPIST ASSIGNMENT",
 		"pending_patient_approval": "PENDING PATIENT APPROVAL",
