@@ -388,7 +388,7 @@ export default function PatientDetailsSection({
 									</p>
 								</div>
 
-								<div className="mt-2 font-light uppercase text-[10px] tracking-wider col-span-full">
+								<div className="mt-2 uppercase text-[10px] tracking-wider col-span-full">
 									{t("list.contact_details")}
 								</div>
 								<div className="grid grid-cols-3 gap-4">
@@ -416,7 +416,7 @@ export default function PatientDetailsSection({
 									</p>
 								</div>
 
-								<div className="mt-2 font-light uppercase text-[10px] tracking-wider col-span-full">
+								<div className="mt-2 uppercase text-[10px] tracking-wider col-span-full">
 									{t("list.patient_medical_record")}
 								</div>
 								<div className="grid grid-cols-3 gap-4">

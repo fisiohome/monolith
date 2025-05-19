@@ -85,7 +85,25 @@
 		"series": "Series",
 		"contact_details": "Contact Details",
 		"patient_medical_record": "Patient Medical Record",
-		"today": "Today"
+		"today": "Today",
+		"empty": {
+			"no_admins_assigned": "No admins have been assigned yet",
+			"no_therapist_assigned": "No therapist have been assigned yet"
+		},
+		"status_histories": {
+			"title": "Status Histories",
+			"by": "By",
+			"reason": "Reason",
+			"created": "Appointment created with status",
+			"updated": "Status changed to",
+			"reapplied": "Status re-applied",
+			"cancelled": "Appointment cancelled",
+			"completed": "Appointment marked completed",
+			"empty": "No status history records available"
+		},
+		"created_at": "An appointment has been made at",
+		"updated_at": "Appointment was last updated at",
+		"recently_added": "Recently added"
 	},
 	"filter": {
 		"status": {

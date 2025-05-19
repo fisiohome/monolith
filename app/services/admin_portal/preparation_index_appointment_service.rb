@@ -85,7 +85,8 @@ module AdminPortal
                 {
                   include_all_visits: true,
                   all_visits_only: [:id, :visit_progress, :appointment_date_time, :status, :registration_number],
-                  all_visits_methods: [:visit_progress]
+                  all_visits_methods: [:visit_progress],
+                  include_status_history: true
                 }
               )
             }

@@ -85,7 +85,25 @@
 		"series": "Series",
 		"contact_details": "Detil Kontak",
 		"patient_medical_record": "Rekam Medis Pasien",
-		"today": "Hari Ini"
+		"today": "Hari Ini",
+		"empty": {
+			"no_admins_assigned": "Belum ada admin yang ditugaskan",
+			"no_therapist_assigned": "Belum ada terapis yang ditugaskan"
+		},
+		"status_histories": {
+			"title": "Riwayat Status",
+			"by": "Oleh",
+			"reason": "Alasan",
+			"created": "Janji temu yang dibuat dengan status",
+			"updated": "Status diubah menjadi",
+			"reapplied": "Status diterapkan kembali",
+			"cancelled": "Janji temu dibatalkan",
+			"completed": "Janji temu ditandai selesai",
+			"empty": "Tidak ada catatan riwayat status yang tersedia"
+		},
+		"created_at": "Janji temu telah dibuat pada",
+		"updated_at": "Janji temu terakhir kali diperbarui pada",
+		"recently_added": "Baru saja ditambahkan"
 	},
 	"filter": {
 		"status": {

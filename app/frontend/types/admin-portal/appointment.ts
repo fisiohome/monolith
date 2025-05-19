@@ -9,6 +9,7 @@ import type { Package } from "./package";
 import type { Patient, PatientMedicalRecord } from "./patient";
 import type { Service } from "./service";
 import type { Therapist } from "./therapist";
+import type { User } from "../auth";
 
 export enum AppointmentStatuses {
 	unscheduled = "UNSCHEDULED",
@@ -19,52 +20,26 @@ export enum AppointmentStatuses {
 	paid = "PAID",
 }
 
-export interface AppointmentPayload {
-	serviceId: string;
-	packageId: string;
-	locationId: string;
-	therapistId: string | null;
-	adminIds: string;
-	referenceAppointmentId: string | null;
-	patientContact: {
-		contactName: string;
-		contactPhone: string;
-		email?: string;
-		miitelLink?: string;
-	};
-	patientAddress: {
-		locationId: string;
-		latitude: number;
-		longitude: number;
-		postalCode: string;
-		address: string;
-		notes?: string;
-	};
-	patient: {
-		name: string;
-		gender: (typeof GENDERS)[number];
-		dateOfBirth: Date;
-		age?: number;
-	};
-	appointment: {
-		patientIllnessOnsetDate?: string;
-		patientComplaintDescription: string;
-		patientCondition: (typeof PATIENT_CONDITIONS)[number];
-		patientMedicalHistory?: string;
+type ProfileTypeMap = {
+	admin: Admin;
+	therapist: Therapist;
+	patient: Patient;
+	unknown: Record<any, any>;
+};
 
-		// appointment scheduling
-		appointmentDateTime: Date;
-		preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
+export type StatusHistoryChangedBy = {
+	[K in keyof ProfileTypeMap]: {
+		profileType: K;
+		profile: ProfileTypeMap[K];
+	} & Pick<User, "id" | "email">;
+}[keyof ProfileTypeMap];
 
-		//  additional settings
-		referralSource?: string;
-		otherReferralSource?: string;
-		fisiohomePartnerBooking: boolean;
-		fisiohomePartnerName?: string;
-		otherFisiohomePartnerName?: string;
-		voucherCode?: string;
-		notes?: string;
-	};
+export interface StatusHistory {
+	oldStatus: string;
+	newStatus: string;
+	reason: string;
+	changedAt: string;
+	changedBy: StatusHistoryChangedBy;
 }
 
 export interface Appointment {
@@ -122,6 +97,55 @@ export interface Appointment {
 	totalPackageVisits: number;
 	seriesAppointments: Appointment[];
 	allVisits?: Appointment[];
+	statusHistories: StatusHistory[];
 	createdAt: string;
 	updatedAt: string;
+}
+
+export interface AppointmentPayload {
+	serviceId: string;
+	packageId: string;
+	locationId: string;
+	therapistId: string | null;
+	adminIds: string;
+	referenceAppointmentId: string | null;
+	patientContact: {
+		contactName: string;
+		contactPhone: string;
+		email?: string;
+		miitelLink?: string;
+	};
+	patientAddress: {
+		locationId: string;
+		latitude: number;
+		longitude: number;
+		postalCode: string;
+		address: string;
+		notes?: string;
+	};
+	patient: {
+		name: string;
+		gender: (typeof GENDERS)[number];
+		dateOfBirth: Date;
+		age?: number;
+	};
+	appointment: {
+		patientIllnessOnsetDate?: string;
+		patientComplaintDescription: string;
+		patientCondition: (typeof PATIENT_CONDITIONS)[number];
+		patientMedicalHistory?: string;
+
+		// appointment scheduling
+		appointmentDateTime: Date;
+		preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
+
+		//  additional settings
+		referralSource?: string;
+		otherReferralSource?: string;
+		fisiohomePartnerBooking: boolean;
+		fisiohomePartnerName?: string;
+		otherFisiohomePartnerName?: string;
+		voucherCode?: string;
+		notes?: string;
+	};
 }

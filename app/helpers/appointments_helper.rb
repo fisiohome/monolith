@@ -69,6 +69,11 @@ module AppointmentsHelper
         )
       end
 
+      # Add status history
+      if options.fetch(:include_status_history, false)
+        serialized["status_histories"] = serialize_status_history(appointment)
+      end
+
       serialized.merge!(
         voucher_discount: appointment.voucher_discount,
         formatted_discount: appointment.formatted_discount,
@@ -89,6 +94,48 @@ module AppointmentsHelper
       # if options.fetch(:include_appointment_admins, true)
       #   serialized["appointment_admins"] = appointment.appointment_admins.as_json(only: options[:appointment_admins_only])
       # end
+    end
+  end
+
+  def serialize_status_history(appointment)
+    appointment.status_histories.order(:created_at).map do |history|
+      user = User.find_by(id: history.changed_by)
+      profile = nil
+      profile_type = nil
+
+      if user
+        # Detect profile type and serialize accordingly
+        if user.admin.present?
+          profile = serialize_admin(user.admin)
+          profile_type = "admin"
+        elsif user.therapist.present?
+          profile = serialize_therapist(
+            user.therapist,
+            {include_service: false, include_bank_details: false, include_addresses: false}
+          )
+          profile_type = "therapist"
+        elsif user.patient.present?
+          profile = serialize_patient(
+            user.patient,
+            {include_patient_contact: false, include_active_address: false}
+          )
+          profile_type = "patient"
+        else
+          profile = nil
+          profile_type = "unknown"
+        end
+      end
+
+      {
+        old_status: history.old_status,
+        new_status: history.new_status,
+        reason: history.reason,
+        changed_at: history.created_at,
+        changed_by: user&.as_json(only: [:id, :email, :full_name])&.merge(
+          profile_type: profile_type,
+          profile: profile
+        )
+      }
     end
   end
 end
