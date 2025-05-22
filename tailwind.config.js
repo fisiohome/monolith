@@ -17,9 +17,11 @@ module.exports = {
 				sans: ['Inter var', ...defaultTheme.fontFamily.sans]
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				xl: 'min(calc(var(--radius) + 4px), var(--radius))',
+				lg: 'min(calc(var(--radius) + 2px), var(--radius))',
+				md: 'min(calc(var(--radius) - 2px), var(--radius))',
+				DEFAULT: 'var(--radius)',
+				sm: 'min(calc(var(--radius) - 4px), var(--radius))'
 			},
 			colors: {
 				background: 'hsl(var(--background))',
@@ -63,7 +65,7 @@ module.exports = {
 					'5': 'hsl(var(--chart-5))'
 				},
 				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
+					DEFAULT: 'hsl(var(--sidebar))',
 					foreground: 'hsl(var(--sidebar-foreground))',
 					primary: 'hsl(var(--sidebar-primary))',
 					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',

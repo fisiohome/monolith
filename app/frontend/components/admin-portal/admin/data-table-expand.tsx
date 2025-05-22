@@ -108,7 +108,7 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 				{cards.map((card) => (
 					<div
 						key={card.title}
-						className="p-2 space-y-1 rounded-md bg-background"
+						className="p-2 space-y-1 border bg-background border-border"
 					>
 						<p className="text-xs text-muted-foreground">{card.title}</p>
 						<p className="font-semibold">{card.value}</p>
