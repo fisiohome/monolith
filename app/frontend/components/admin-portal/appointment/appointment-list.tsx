@@ -315,6 +315,10 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 		() => !!globalProps.auth.currentUser?.["isSuperAdmin?"],
 		[globalProps.auth.currentUser?.["isSuperAdmin?"]],
 	);
+	const isAdminSupervisor = useMemo(
+		() => !!globalProps.auth.currentUser?.["isAdminSupervisor?"],
+		[globalProps.auth.currentUser?.["isAdminSupervisor?"]],
+	);
 	const isFreshAppt = useMemo(
 		() =>
 			differenceInHours(new Date(), parseISO(schedule.createdAt), {
@@ -987,6 +991,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 								isExpanded={isExpanded}
 								isSuperAdmin={isSuperAdmin}
 								isAdminPIC={isAdminPIC}
+								isAdminSupervisor={isAdminSupervisor}
 								isPastFromToday={isPastFromToday}
 							/>
 						</ExpandableCard>
@@ -1003,6 +1008,7 @@ interface AppointmentActionButtonsProps {
 	isExpanded: boolean;
 	isSuperAdmin: boolean;
 	isAdminPIC: boolean;
+	isAdminSupervisor: boolean;
 	isPastFromToday: boolean;
 }
 
@@ -1010,6 +1016,7 @@ const AppointmentActionButtons = memo(function Component({
 	schedule,
 	isExpanded: _isExpanded,
 	isAdminPIC,
+	isAdminSupervisor,
 	isPastFromToday,
 	isSuperAdmin,
 }: AppointmentActionButtonsProps) {
@@ -1107,9 +1114,10 @@ const AppointmentActionButtons = memo(function Component({
 		<ExpandableContent preset="slide-up">
 			<ExpandableCardFooter className="p-4 md:p-6">
 				<div className="flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end">
-					{(isSuperAdmin || isAdminPIC) && schedule.status !== "cancelled" && (
-						<>
-							{/* {isShow.createSeries && (
+					{(isSuperAdmin || isAdminPIC || isAdminSupervisor) &&
+						schedule.status !== "cancelled" && (
+							<>
+								{/* {isShow.createSeries && (
 								<Button
 									variant="primary-outline"
 									className="w-full lg:w-auto"
@@ -1125,23 +1133,8 @@ const AppointmentActionButtons = memo(function Component({
 								</Button>
 							)} */}
 
-							{!isPastFromToday && (
-								<>
-									<Button
-										variant="primary-outline"
-										className="w-full lg:w-auto"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
-
-											routeTo.reschedule(String(schedule.id));
-										}}
-									>
-										<Clock3 />
-										{t("button.reschedule")}
-									</Button>
-
-									{isShow.updateStatus && (
+								{!isPastFromToday && (
+									<>
 										<Button
 											variant="primary-outline"
 											className="w-full lg:w-auto"
@@ -1149,47 +1142,64 @@ const AppointmentActionButtons = memo(function Component({
 												event.preventDefault();
 												event.stopPropagation();
 
-												routeTo.updateStatus(String(schedule.id));
+												routeTo.reschedule(String(schedule.id));
 											}}
 										>
-											<Activity />
-											{t("button.update_status")}
+											<Clock3 />
+											{t("button.reschedule")}
 										</Button>
-									)}
 
-									<Button
-										variant="primary-outline"
-										className="w-full lg:w-auto"
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
+										{isShow.updateStatus && (
+											<Button
+												variant="primary-outline"
+												className="w-full lg:w-auto"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
 
-											routeTo.updatePic(String(schedule.id));
-										}}
-									>
-										<Cctv />
-										{t("button.update_pic")}
-									</Button>
+													routeTo.updateStatus(String(schedule.id));
+												}}
+											>
+												<Activity />
+												{t("button.update_status")}
+											</Button>
+										)}
 
-									{isShow.cancel && (
-										<Button
-											variant="destructive"
-											className="w-full lg:w-auto"
-											onClick={(event) => {
-												event.preventDefault();
-												event.stopPropagation();
+										{(isAdminSupervisor || isSuperAdmin) && (
+											<Button
+												variant="primary-outline"
+												className="w-full lg:w-auto"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
 
-												routeTo.cancel(String(schedule.id));
-											}}
-										>
-											<Ban />
-											{t("button.cancel_booking")}
-										</Button>
-									)}
-								</>
-							)}
-						</>
-					)}
+													routeTo.updatePic(String(schedule.id));
+												}}
+											>
+												<Cctv />
+												{t("button.update_pic")}
+											</Button>
+										)}
+
+										{isShow.cancel && (
+											<Button
+												variant="destructive"
+												className="w-full lg:w-auto"
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+
+													routeTo.cancel(String(schedule.id));
+												}}
+											>
+												<Ban />
+												{t("button.cancel_booking")}
+											</Button>
+										)}
+									</>
+								)}
+							</>
+						)}
 				</div>
 			</ExpandableCardFooter>
 		</ExpandableContent>
