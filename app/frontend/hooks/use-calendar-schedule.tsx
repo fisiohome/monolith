@@ -7,10 +7,12 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import {
 	type ContextFn,
 	type Locale,
+	differenceInCalendarDays,
 	differenceInMinutes,
 	format,
 	isPast,
 	parse,
+	startOfDay,
 } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 
@@ -168,6 +170,20 @@ export const getTherapistAvailabilityForDate = ({
 	};
 }) => {
 	const { availability } = therapist;
+
+	// Check maximum booking availability for the given date
+	const maxAdvance = availability?.maxAdvanceBookingInDays;
+	if (typeof maxAdvance === "number") {
+		const today = startOfDay(new Date(), { in: dateOpt.in });
+		const targetDate = startOfDay(date, { in: dateOpt.in });
+		const diff = differenceInCalendarDays(targetDate, today, {
+			in: dateOpt.in,
+		});
+		if (diff > maxAdvance) {
+			return null;
+		}
+	}
+
 	// Check adjusted availabilities first
 	const adjusted = availability?.adjustedAvailabilities.find(
 		(a) =>

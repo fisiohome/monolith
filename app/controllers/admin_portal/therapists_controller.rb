@@ -203,10 +203,17 @@ module AdminPortal
         .by_city(city_params)
         .by_employment_type(employment_type)
         .employment_status_ACTIVE
-        # Order: therapists with schedule first (non-null therapist_appointment_schedule.id)
+        .where(
+          # Filter therapists based on appointment date and allowed advance booking days.
+          # Include therapists without a defined limit or within allowed booking window.
+          "therapist_appointment_schedules.max_advance_booking_in_days IS NULL OR
+     DATE(:appointment_date) <= CURRENT_DATE + INTERVAL '1 day' * therapist_appointment_schedules.max_advance_booking_in_days",
+          appointment_date: date_params
+        )
         .order(
+          # Sort therapists, prioritizing those with a defined appointment schedule (non-null).
           Arel.sql("therapist_appointment_schedules.id IS NULL ASC"),
-          :id  # Add secondary sort by therapist ID
+          :id  # Secondary sort: Therapist ID for consistent ordering
         )
 
       # pagination

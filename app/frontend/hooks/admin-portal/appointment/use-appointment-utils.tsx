@@ -439,8 +439,8 @@ export const useAppointmentDateTime = ({
 	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
 		// Define the range of years to be displayed in the calendar
 		const currentYear = new Date().getFullYear();
-		const threeMonthsFromToday = new Date();
-		threeMonthsFromToday.setMonth(threeMonthsFromToday.getMonth() + 3);
+		const twoMonthsFromToday = new Date();
+		twoMonthsFromToday.setMonth(twoMonthsFromToday.getMonth() + 2);
 
 		return {
 			// Close the calendar popover when a day is clicked
@@ -451,7 +451,7 @@ export const useAppointmentDateTime = ({
 			// Disable dates that are in the past or more than 3 months in the future
 			disabled: (date) => {
 				const today = new Date();
-				return date <= today || date > threeMonthsFromToday;
+				return date <= today || date > twoMonthsFromToday;
 			},
 		};
 	}, []);
