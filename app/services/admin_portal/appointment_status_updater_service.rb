@@ -37,9 +37,6 @@ module AdminPortal
     rescue ActiveRecord::RecordInvalid => e
       @errors += e.record.errors.full_messages
       false
-    rescue StateMachines::InvalidTransition => e
-      @errors << e.message
-      false
     end
   end
 end

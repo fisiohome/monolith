@@ -443,7 +443,7 @@ class Appointment < ApplicationRecord
   def cancel!
     unless cancellable?
       base_message = "Cannot cancel series appointment"
-      error_message = (series? && !reference_appointment.cancelled?) ? "#{base_message}. First visit has not been cancelled (current status: #{status_human_readable[:name]})" : "#{base_message}, #{status_human_readable[:description]}"
+      error_message = (series? && !reference_appointment.status_cancelled?) ? "#{base_message}. First visit has not been cancelled (current status: #{status_human_readable[:name]})" : "#{base_message}, #{status_human_readable[:description]}"
       errors.add(:base, error_message)
       return false
     end
