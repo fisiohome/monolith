@@ -1,13 +1,14 @@
-import { createContext, useContext, useEffect, useState } from "react";
-
-export const STORAGE_KEY = "portal-ui-theme";
-
-export type Theme = "dark" | "light" | "system";
+import {
+	DEFAULT_THEME,
+	DEFAULT_USER_PREFERENCES,
+	USER_PREF_STORAGE_KEY,
+	type Theme,
+} from "@/lib/constants";
+import { useLocalStorage } from "@uidotdev/usehooks";
+import { createContext, useContext, useEffect, useMemo } from "react";
 
 type ThemeProviderProps = {
 	children: React.ReactNode;
-	defaultTheme?: Theme;
-	storageKey?: string;
 };
 
 type ThemeProviderState = {
@@ -16,21 +17,20 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-	theme: "system",
+	theme: DEFAULT_THEME,
 	setTheme: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
-export function ThemeProvider({
-	children,
-	defaultTheme = "system",
-	storageKey = STORAGE_KEY,
-	...props
-}: ThemeProviderProps) {
-	const [theme, setTheme] = useState<Theme>(
-		() => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+	const [userPreferences, setUserPreferences] = useLocalStorage(
+		USER_PREF_STORAGE_KEY,
+		{
+			...DEFAULT_USER_PREFERENCES,
+		},
 	);
+	const theme = useMemo(() => userPreferences.theme, [userPreferences.theme]);
 
 	useEffect(() => {
 		const root = window.document.documentElement;
@@ -53,8 +53,7 @@ export function ThemeProvider({
 	const value = {
 		theme,
 		setTheme: (theme: Theme) => {
-			localStorage.setItem(storageKey, theme);
-			setTheme(theme);
+			setUserPreferences((prev) => ({ ...prev, theme }));
 		},
 	};
 

@@ -63,6 +63,14 @@
         "on": "Aktifkan",
         "off": "Non-Aktifkan"
       }
+    },
+    "timeFormat": {
+      "title": "Format Waktu",
+      "description": "Pilih bagaimana waktu ditampilkan di seluruh aplikasi.",
+      "choice": {
+        "12": "12 jam (AM/PM)",
+        "24": "24 jam"
+      }
     }
   }
 }

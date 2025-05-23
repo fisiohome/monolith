@@ -2,12 +2,19 @@ import {
 	SettingLayout,
 	SettingSectionLayout,
 } from "@/components/admin-portal/settings/layout";
+import { useDateContext } from "@/components/providers/date-provider";
 import { useMotion } from "@/components/providers/motion-provider";
-import { type Theme, useTheme } from "@/components/providers/theme-provider";
+import { useTheme } from "@/components/providers/theme-provider";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import {
+	DEFAULT_TIME_FORMAT_12,
+	DEFAULT_TIME_FORMAT_24,
+	type Theme,
+	type TimeFormat,
+} from "@/lib/constants";
 import { Head } from "@inertiajs/react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,6 +37,9 @@ export default function SettingsAppearance() {
 	// * motion context
 	const { motion, setMotion } = useMotion();
 
+	// * date context
+	const { timeFormat, setTimeFormat } = useDateContext();
+
 	return (
 		<>
 			<Head title={t("title")} />
@@ -45,6 +55,9 @@ export default function SettingsAppearance() {
 							className="flex flex-col gap-4 md:flex-row"
 							onValueChange={(value) => {
 								i18n.changeLanguage(value);
+
+								// if using bahasa, change the time format to using 24-hours
+								setTimeFormat(value === "id" ? "24-hours" : "12-hours");
 							}}
 						>
 							<div className="flex items-center space-x-2">
@@ -59,10 +72,45 @@ export default function SettingsAppearance() {
 					</SettingSectionLayout>
 
 					<SettingSectionLayout
+						title={t("timeFormat.title", "Time Format")}
+						description={t(
+							"timeFormat.description",
+							"Choose how time is displayed throughout the application.",
+						)}
+					>
+						<RadioGroup
+							value={timeFormat}
+							className="flex flex-col gap-4 md:flex-row"
+							onValueChange={(value) => {
+								setTimeFormat(value as TimeFormat);
+							}}
+						>
+							<div className="flex items-center space-x-2">
+								<RadioGroupItem
+									value={DEFAULT_TIME_FORMAT_12}
+									id={DEFAULT_TIME_FORMAT_12}
+								/>
+								<Label htmlFor={DEFAULT_TIME_FORMAT_12}>
+									{t("timeFormat.choice.12", "12-hour (AM/PM)")}
+								</Label>
+							</div>
+							<div className="flex items-center space-x-2">
+								<RadioGroupItem
+									value={DEFAULT_TIME_FORMAT_24}
+									id={DEFAULT_TIME_FORMAT_24}
+								/>
+								<Label htmlFor={DEFAULT_TIME_FORMAT_24}>
+									{t("timeFormat.choice.24", "24-hour")}
+								</Label>
+							</div>
+						</RadioGroup>
+					</SettingSectionLayout>
+
+					<SettingSectionLayout
 						title={t("motion.title")}
 						description={t("motion.description")}
 					>
-						<div className="flex flex-row items-center justify-between w-8/12 gap-6 p-4 border rounded-lg">
+						<div className="flex flex-row items-center justify-between w-8/12 gap-6 p-4 border rounded-lg bg-card">
 							<div className="space-y-0.5 text-sm">
 								<p className="font-semibold">{t("motion.choice.title")}</p>
 								<p className="text-muted-foreground">

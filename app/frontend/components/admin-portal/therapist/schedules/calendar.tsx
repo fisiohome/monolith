@@ -608,7 +608,7 @@ export function CalendarTimeSlot({
 	timeSlots,
 	currentTimeSlot,
 }: CalendarTimeSlotProps) {
-	const { locale, tzDate } = useDateContext();
+	const { locale, tzDate, timeFormatDateFns, timeFormat } = useDateContext();
 
 	return (
 		<div className={cn("flex flex-col w-16 md:w-24 bg-background", className)}>
@@ -620,14 +620,20 @@ export function CalendarTimeSlot({
 						selectedDate={selectedDate}
 						label={formatTimeLabel({
 							time,
-							locale,
-							tzDate,
+							dateOpt: {
+								locale,
+								in: tzDate,
+								timeFormat,
+								timeFormatDateFns,
+							},
 						})}
 						isPastTime={checkPastTimeSlot({
 							time,
 							date: selectedDate,
-							locale,
-							tzDate,
+							dateOpt: {
+								locale,
+								in: tzDate,
+							},
 						})}
 						isCurrentTime={time.includes(currentTimeSlot)}
 					/>
@@ -656,21 +662,29 @@ function TherapistSlot({
 		const list = therapist?.activeAppointments?.filter((a) => {
 			if (!a?.startTime) return;
 
-			const startTimeParsed = parse(a?.startTime, "HH:mm", new Date());
-			const timeSlotParsed = parse(time, "HH:mm", new Date());
+			const startTimeParsed = parse(a?.startTime, "HH:mm", new Date(), {
+				locale,
+				in: tzDate,
+			});
+			const timeSlotParsed = parse(time, "HH:mm", new Date(), {
+				locale,
+				in: tzDate,
+			});
 
 			return isSameHour(startTimeParsed, timeSlotParsed);
 		});
 
 		return list;
-	}, [therapist, time]);
+	}, [therapist, time, locale, tzDate]);
 	const isPastTime = useMemo(
 		() =>
 			checkPastTimeSlot({
 				time,
 				date: selectedDate,
-				locale,
-				tzDate,
+				dateOpt: {
+					locale,
+					in: tzDate,
+				},
 			}),
 		[locale, tzDate, time, selectedDate],
 	);
@@ -708,15 +722,18 @@ export function CalendarTherapistSlot({
 	timeSlots,
 	selectedDate,
 }: CalendarTherapistSlotProps) {
+	const { locale, tzDate } = useDateContext();
+
 	return (
 		<div className={cn("flex-1 overflow-x-auto", className)}>
 			<div className="grid grid-flow-col auto-cols-[minmax(200px,1fr)] min-w-max">
 				{therapists?.map((therapist) => {
 					// Determine the availability block for this therapist and selected date.
-					const availabilities = getTherapistAvailabilityForDate(
+					const availabilities = getTherapistAvailabilityForDate({
 						therapist,
-						selectedDate,
-					);
+						date: selectedDate,
+						dateOpt: { locale, in: tzDate },
+					});
 
 					return (
 						<div key={therapist.id} className="relative">
@@ -764,25 +781,40 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 	className,
 }) => {
 	const isMobile = useIsMobile();
-	const { locale, tzDate } = useDateContext();
+	const { locale, tzDate, timeFormatDateFns, timeFormat } = useDateContext();
 	const appointmentTime = useMemo(() => {
 		if (!appointment?.startTime || !appointment?.endTime) return "";
 
 		const startTime = formatTimeLabel({
 			time: appointment.startTime,
 			type: "appointment-block",
-			locale,
-			tzDate,
+			dateOpt: {
+				locale,
+				in: tzDate,
+				timeFormat,
+				timeFormatDateFns,
+			},
 		});
 		const endTime = formatTimeLabel({
 			time: appointment.endTime,
 			type: "appointment-block",
-			locale,
-			tzDate,
+			dateOpt: {
+				locale,
+				in: tzDate,
+				timeFormat,
+				timeFormatDateFns,
+			},
 		});
 
 		return `${startTime} — ${endTime}`;
-	}, [appointment.startTime, appointment.endTime, locale, tzDate]);
+	}, [
+		appointment.startTime,
+		appointment.endTime,
+		locale,
+		tzDate,
+		timeFormatDateFns,
+		timeFormat,
+	]);
 	// calculate the height of the component
 	const heightBlock = useMemo(() => {
 		if (!appointment?.startTime || !appointment?.endTime) return 0;
@@ -946,7 +978,7 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 }) => {
 	const [ref, hovering] = useHover();
 	const { t } = useTranslation("therapist-schedules");
-	const { locale, tzDate } = useDateContext();
+	const { locale, tzDate, timeFormatDateFns, timeFormat } = useDateContext();
 	const heightBlock = useMemo(() => {
 		const [startH, startM] = startTime.split(":").map(Number);
 		const [endH, endM] = endTime.split(":").map(Number);
@@ -970,31 +1002,46 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 		const start = formatTimeLabel({
 			time: startTime,
 			type: "appointment-block",
-			locale,
-			tzDate,
+			dateOpt: {
+				locale,
+				in: tzDate,
+				timeFormat,
+				timeFormatDateFns,
+			},
 		});
 		const end = formatTimeLabel({
 			time: endTime,
 			type: "appointment-block",
-			locale,
-			tzDate,
+			dateOpt: {
+				locale,
+				in: tzDate,
+				timeFormat,
+				timeFormatDateFns,
+			},
 		});
 
 		return `${start} — ${end}`;
-	}, [startTime, endTime, locale, tzDate]);
+	}, [startTime, endTime, locale, tzDate, timeFormatDateFns, timeFormat]);
 	const isPastTime = useMemo(
 		() =>
 			checkPastTimeSlot({
 				time: startTime,
 				date: selectedDate,
-				locale,
-				tzDate,
+				dateOpt: {
+					locale,
+					in: tzDate,
+				},
 			}),
 		[locale, tzDate, startTime, selectedDate],
 	);
 	const isUnder2Hours = useMemo(
-		() => checkUnder2Hours(startTime, endTime),
-		[startTime, endTime],
+		() =>
+			checkUnder2Hours({
+				startTimeStr: startTime,
+				endTimeStr: endTime,
+				dateOpt: { locale, in: tzDate },
+			}),
+		[startTime, endTime, locale, tzDate],
 	);
 
 	return (
@@ -1021,7 +1068,8 @@ const AvailabilityBlock: React.FC<AvailabilityBlockProps> = ({
 				</>
 			) : (
 				<p className="flex items-center font-medium truncate">
-					Available ({availableTime.toUpperCase()})
+					{t("calendar.block.availability.title")} (
+					{availableTime.toUpperCase()})
 				</p>
 			)}
 		</div>

@@ -1,3 +1,4 @@
+import { useDateContext } from "@/components/providers/date-provider";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,6 +20,7 @@ export default function DateTimePicker({
 	onChangeValue,
 	callbackOnChange,
 }: DateTimePickerProps) {
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
 	const {
 		appointmentDate,
 		appointmentDateCalendarProps,
@@ -84,8 +86,14 @@ export default function DateTimePicker({
 			>
 				{generateTimeSlots(15).map((time) => {
 					const isSelected = value && format(value, "HH:mm") === time;
-					const slotDate = parse(time, "HH:mm", new Date());
-					const displayTime = format(slotDate, "hh:mm a");
+					const slotDate = parse(time, "HH:mm", new Date(), {
+						locale,
+						in: tzDate,
+					});
+					const displayTime = format(slotDate, timeFormatDateFns, {
+						locale,
+						in: tzDate,
+					});
 
 					return (
 						<div key={time} className="flex flex-col">

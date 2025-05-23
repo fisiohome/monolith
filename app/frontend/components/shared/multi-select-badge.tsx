@@ -37,7 +37,7 @@ export default function MultiSelectBadges({
 									"px-1 rounded-sm flex items-center gap-1",
 									items?.length === index + maxShows && "mr-3",
 								)}
-								variant={"secondary"}
+								variant={"outline"}
 							>
 								<span className="text-xs">
 									+ {items.length - maxShows} items
@@ -71,7 +71,7 @@ export default function MultiSelectBadges({
 								"px-1 rounded-sm flex items-center gap-1",
 								items?.length === index + maxShows && "mr-3",
 							)}
-							variant={"secondary"}
+							variant={"outline"}
 						>
 							<span className="text-xs">{service.label}</span>
 

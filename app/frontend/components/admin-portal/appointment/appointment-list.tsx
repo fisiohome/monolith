@@ -70,7 +70,7 @@ interface HistoryListProps extends ComponentProps<"div"> {
 }
 
 const HistoryList: React.FC<HistoryListProps> = ({ className, histories }) => {
-	const { locale, tzDate } = useDateContext();
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
 	const { t } = useTranslation("appointments");
 
 	const { grouped, sortedDates } = useMemo(() => {
@@ -161,7 +161,7 @@ const HistoryList: React.FC<HistoryListProps> = ({ className, histories }) => {
 									<div className="flex-1 pb-4">
 										<div className="flex justify-between gap-2">
 											<p className="text-sm font-light">
-												{format(item.changedAt, "hh:mm aa", {
+												{format(item.changedAt, timeFormatDateFns, {
 													locale,
 													in: tzDate,
 												})}
@@ -259,7 +259,7 @@ interface ScheduleListProps {
 }
 
 function ScheduleList({ schedule }: ScheduleListProps) {
-	const { locale, tzDate } = useDateContext();
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
 	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
 	const isPastFromToday = useMemo(() => {
@@ -289,7 +289,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 				period: "--",
 			};
 		// Format it to 12-hour time with an AM/PM indicator.
-		const timePeriod = format(schedule.appointmentDateTime, "hh:mm a", {
+		const timePeriod = format(schedule.appointmentDateTime, timeFormatDateFns, {
 			locale,
 			in: tzDate,
 		});
@@ -305,7 +305,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 		});
 
 		return { time, period, distance };
-	}, [schedule.appointmentDateTime, locale, tzDate]);
+	}, [schedule.appointmentDateTime, locale, tzDate, timeFormatDateFns]);
 	const isAdminPIC = useMemo(() => {
 		const currentAccountId = globalProps.auth.currentUser?.id;
 
@@ -364,7 +364,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 												{startTimeLabel.period}
 											</p>
 											<Badge
-												variant="secondary"
+												variant="outline"
 												className="mt-3 text-xs font-semibold group-hover:text-primary"
 											>
 												Visit {schedule.visitProgress}
@@ -578,7 +578,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 															{schedule.appointmentDateTime
 																? format(
 																		schedule.appointmentDateTime,
-																		"hh:mm a",
+																		timeFormatDateFns,
 																		{
 																			locale,
 																			in: tzDate,
@@ -780,7 +780,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 																		<span>
 																			{format(
 																				visit.appointmentDateTime,
-																				"hh:mm a",
+																				timeFormatDateFns,
 																				{
 																					locale,
 																					in: tzDate,

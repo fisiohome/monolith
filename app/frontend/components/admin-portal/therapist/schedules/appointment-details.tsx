@@ -42,7 +42,7 @@ export function AppointmentDetailsSection({
 	className,
 	appointment,
 }: AppointmentDetailsSectionProps) {
-	const { locale, tzDate } = useDateContext();
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
 	const { t, ready } = useTranslation("appointments");
 
 	if (!ready) {
@@ -71,7 +71,7 @@ export function AppointmentDetailsSection({
 					</span>
 					<span className="mx-2">&bull;</span>
 					<span className="uppercase">
-						{format(appointment.appointmentDateTime, "hh:mm a", {
+						{format(appointment.appointmentDateTime, timeFormatDateFns, {
 							locale,
 							in: tzDate,
 						})}

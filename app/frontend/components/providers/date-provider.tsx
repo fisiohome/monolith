@@ -1,8 +1,19 @@
-import { LOCALES } from "@/lib/constants";
+import {
+	DEFAULT_TIME_FORMAT_12,
+	DEFAULT_TIME_FORMAT_12_DATE_FNS,
+	DEFAULT_TIME_FORMAT_24_DATE_FNS,
+	DEFAULT_TIMEZONE,
+	DEFAULT_USER_PREFERENCES,
+	LOCALES,
+	type TimeFormat,
+	type TimeFormatDateFns,
+	USER_PREF_STORAGE_KEY,
+} from "@/lib/constants";
 import i18n from "@/lib/i18n";
 import type { GlobalPageProps } from "@/types/globals";
 import { tz } from "@date-fns/tz";
 import { usePage } from "@inertiajs/react";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import type { ContextFn, Locale } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -15,12 +26,18 @@ type DateProviderState = {
 	locale: Locale;
 	timezone: string;
 	tzDate: ContextFn<Date>;
+	timeFormat: TimeFormat;
+	setTimeFormat: (value: TimeFormat) => void;
+	timeFormatDateFns: TimeFormatDateFns;
 };
 
 const DateProviderContext = createContext<DateProviderState>({
 	locale: enUS,
-	timezone: "Asia/Jakarta",
-	tzDate: tz("Asia/Jakarta"),
+	timezone: DEFAULT_TIMEZONE,
+	tzDate: tz(DEFAULT_TIMEZONE),
+	timeFormat: DEFAULT_TIME_FORMAT_12,
+	setTimeFormat: () => {},
+	timeFormatDateFns: DEFAULT_TIME_FORMAT_12_DATE_FNS,
 });
 
 export function DateProvider({ children }: DateProviderProps) {
@@ -44,6 +61,21 @@ export function DateProvider({ children }: DateProviderProps) {
 			i18n.off("languageChanged", handleLanguageChange);
 		};
 	}, []);
+
+	// * time preference toggler
+	const [userPreferences, setUserPreferences] = useLocalStorage(
+		USER_PREF_STORAGE_KEY,
+		{
+			...DEFAULT_USER_PREFERENCES,
+		},
+	);
+	const timeFormatDateFns = useMemo(
+		() =>
+			userPreferences.timeFormat === "12-hours"
+				? DEFAULT_TIME_FORMAT_12_DATE_FNS
+				: DEFAULT_TIME_FORMAT_24_DATE_FNS,
+		[userPreferences.timeFormat],
+	);
 
 	// * get the date-fns locale an timezone
 	const locale = useMemo(() => {
@@ -70,12 +102,19 @@ export function DateProvider({ children }: DateProviderProps) {
 		[globalProps.adminPortal.currentTimezone],
 	);
 
-	const contextValue = useMemo(() => {
-		return { locale, timezone, tzDate: tz(timezone) };
-	}, [locale, timezone]);
-
 	return (
-		<DateProviderContext.Provider value={contextValue}>
+		<DateProviderContext.Provider
+			value={{
+				locale,
+				timezone,
+				tzDate: tz(timezone),
+				timeFormat: userPreferences.timeFormat,
+				setTimeFormat: (timeFormat: TimeFormat) => {
+					setUserPreferences((prev) => ({ ...prev, timeFormat }));
+				},
+				timeFormatDateFns,
+			}}
+		>
 			{children}
 		</DateProviderContext.Provider>
 	);

@@ -1,14 +1,17 @@
+import {
+	DEFAULT_USER_PREFERENCES,
+	USER_PREF_STORAGE_KEY,
+	type MotionPreference,
+} from "@/lib/constants";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import { MotionGlobalConfig } from "framer-motion";
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 
 export const STORAGE_KEY = "portal-ui-motion";
-export type MotionPreference = "on" | "off" | "system";
 
 type MotionProviderProps = {
 	children: React.ReactNode;
-	defaultMotion?: MotionPreference;
-	storageKey?: string;
 };
 
 interface MotionContextProps {
@@ -22,17 +25,19 @@ const MotionProviderContext = createContext<MotionContextProps | undefined>(
 
 export const MotionProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
-	defaultMotion = "system",
-	storageKey = STORAGE_KEY,
 }: MotionProviderProps) => {
-	const [motion, setMotionState] = useState<MotionPreference>(
-		() =>
-			(localStorage.getItem(STORAGE_KEY) as MotionPreference) || defaultMotion,
+	const [userPreferences, setUserPreferences] = useLocalStorage(
+		USER_PREF_STORAGE_KEY,
+		{
+			...DEFAULT_USER_PREFERENCES,
+		},
+	);
+	const motion = useMemo(
+		() => userPreferences.motion,
+		[userPreferences.motion],
 	);
 
 	useEffect(() => {
-		localStorage.setItem(storageKey, motion);
-
 		// Optionally, check prefers-reduced-motion
 		const prefersReduced = window.matchMedia(
 			"(prefers-reduced-motion: reduce)",
@@ -45,9 +50,11 @@ export const MotionProvider: React.FC<{ children: React.ReactNode }> = ({
 
 		// skip animations the framer-motion if motion preference is off
 		MotionGlobalConfig.skipAnimations = shouldDisableMotion;
-	}, [motion, storageKey]);
+	}, [motion]);
 
-	const setMotion = (motion: MotionPreference) => setMotionState(motion);
+	const setMotion = (motion: MotionPreference) => {
+		setUserPreferences((prev) => ({ ...prev, motion }));
+	};
 
 	return (
 		<MotionProviderContext.Provider value={{ motion, setMotion }}>

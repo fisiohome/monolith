@@ -2,6 +2,34 @@ import { tz } from "@date-fns/tz";
 import { type ContextFn, format } from "date-fns";
 import { type Locale, enUS, id } from "date-fns/locale";
 
+// * for user preferencecs
+export const USER_PREF_STORAGE_KEY = "user-preferences";
+// the date provider
+export const DEFAULT_TIMEZONE = "Asia/Jakarta";
+export const DEFAULT_TIME_FORMAT_12 = "12-hours" as const;
+export const DEFAULT_TIME_FORMAT_24 = "24-hours" as const;
+export const DEFAULT_TIME_FORMAT_12_DATE_FNS = "hh:mm a";
+export const DEFAULT_TIME_FORMAT_24_DATE_FNS = "HH:mm";
+export type TimeFormat =
+	| typeof DEFAULT_TIME_FORMAT_12
+	| typeof DEFAULT_TIME_FORMAT_24;
+export type TimeFormatDateFns =
+	| typeof DEFAULT_TIME_FORMAT_12_DATE_FNS
+	| typeof DEFAULT_TIME_FORMAT_24_DATE_FNS;
+// the theme provider
+export const DEFAULT_THEME = "system";
+export type Theme = "dark" | "light" | "system";
+// the motion provider
+export const DEFAULT_MOTION = "system";
+export type MotionPreference = "on" | "off" | "system";
+// the local storage for user preferences
+export const DEFAULT_USER_PREFERENCES = {
+	theme: DEFAULT_THEME as Theme,
+	motion: DEFAULT_MOTION as MotionPreference,
+	timeFormat: DEFAULT_TIME_FORMAT_12 as TimeFormat,
+};
+export type UserPreferences = typeof DEFAULT_USER_PREFERENCES;
+
 export const SIDEBAR_WIDTH = "16rem";
 export const SIDEBAR_WIDTH_MOBILE = "18rem";
 
@@ -9,7 +37,7 @@ export const INTERVAL_TOPBAR_DATE = 1;
 export const LOCALES = { enUS, id };
 export const CURRENT_DATE_TOPBAR = ({
 	locale = enUS,
-	timezone = tz("Asia/Jakarta"),
+	timezone = tz(DEFAULT_TIMEZONE),
 }: { locale?: Locale; timezone?: ContextFn<Date> }) => {
 	const timeLabel = locale.code === "id" ? "pukul" : "at";
 

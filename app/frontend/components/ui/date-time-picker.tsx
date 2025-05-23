@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { TimePickerDemo } from "./time-picker/demo";
+import { useDateContext } from "../providers/date-provider";
 
 export function DateTimePicker() {
+	const { locale, tzDate } = useDateContext();
 	const [date, setDate] = React.useState<Date>();
 
 	/**
@@ -42,7 +44,11 @@ export function DateTimePicker() {
 					)}
 				>
 					<CalendarIcon className="w-4 h-4 mr-2" />
-					{date ? format(date, "PPP HH:mm:ss") : <span>Pick a date</span>}
+					{date ? (
+						format(date, "PPP HH:mm:ss", { locale, in: tzDate })
+					) : (
+						<span>Pick a date</span>
+					)}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-auto p-0">

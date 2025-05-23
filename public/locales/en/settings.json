@@ -63,6 +63,14 @@
         "on": "On",
         "off": "Off"
       }
+    },
+    "timeFormat": {
+      "title": "Time Format",
+      "description": "Choose how time is displayed throughout the application.",
+      "choice": {
+        "12": "12-hour (AM/PM)",
+        "24": "24-hour"
+      }
     }
   }
 }

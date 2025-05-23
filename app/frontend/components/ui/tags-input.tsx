@@ -282,7 +282,7 @@ export const TagsInput = React.forwardRef<HTMLDivElement, TagsInputProps>(
 							className={cn(
 								"relative px-1 rounded flex items-center gap-1 data-[active='true']:ring-2 data-[active='true']:ring-muted-foreground truncate aria-disabled:opacity-50 aria-disabled:cursor-not-allowed",
 							)}
-							variant={"secondary"}
+							variant={"outline"}
 						>
 							<span className="text-xs">{item}</span>
 							<button

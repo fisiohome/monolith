@@ -1,3 +1,8 @@
+import {
+	DEFAULT_TIME_FORMAT_24_DATE_FNS,
+	type TimeFormat,
+	type TimeFormatDateFns,
+} from "@/lib/constants";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import {
 	type ContextFn,
@@ -54,17 +59,18 @@ export const generateTimeSlots = (
 export const checkPastTimeSlot = ({
 	time,
 	date,
-	locale,
-	tzDate,
+	dateOpt,
 }: {
 	time: string;
 	date: Date;
-	locale: Locale;
-	tzDate: ContextFn<Date>;
+	dateOpt: {
+		locale: Locale;
+		in: ContextFn<Date>;
+	};
 }): boolean => {
 	const dateTimeParsed = parse(time, "HH:mm", date, {
-		locale,
-		in: tzDate,
+		locale: dateOpt.locale,
+		in: dateOpt.in,
 	});
 
 	return isPast(dateTimeParsed);
@@ -77,12 +83,29 @@ export const checkPastTimeSlot = ({
  * @param endTimeStr - End time string in "HH:mm"
  * @returns Boolean indicating if the time difference is 2 hours or less
  */
-export function checkUnder2Hours(startTimeStr: string, endTimeStr: string) {
+export function checkUnder2Hours({
+	startTimeStr,
+	endTimeStr,
+	dateOpt,
+}: {
+	startTimeStr: string;
+	endTimeStr: string;
+	dateOpt: {
+		locale: Locale;
+		in: ContextFn<Date>;
+	};
+}) {
 	const today = new Date();
 
 	// Parse time strings using 24-hour format
-	const startTime = parse(startTimeStr, "HH:mm", today);
-	const endTime = parse(endTimeStr, "HH:mm", today);
+	const startTime = parse(startTimeStr, "HH:mm", today, {
+		locale: dateOpt.locale,
+		in: dateOpt.in,
+	});
+	const endTime = parse(endTimeStr, "HH:mm", today, {
+		locale: dateOpt.locale,
+		in: dateOpt.in,
+	});
 
 	if (endTime < startTime) {
 		// Handle cases where endTime is after midnight (i.e. next day)
@@ -104,33 +127,55 @@ export function checkUnder2Hours(startTimeStr: string, endTimeStr: string) {
  */
 export const formatTimeLabel = ({
 	time,
-	type = "time-block",
-	locale,
-	tzDate,
+	type: _type = "time-block",
+	dateOpt,
 }: {
 	time: string;
 	type?: "time-block" | "appointment-block";
-	locale: Locale;
-	tzDate: ContextFn<Date>;
+	dateOpt: {
+		locale: Locale;
+		in: ContextFn<Date>;
+		timeFormat: TimeFormat;
+		timeFormatDateFns: TimeFormatDateFns;
+	};
 }) => {
 	// Parse the string into a Date object using the format "HH:mm"
-	const date = parse(time, "HH:mm", new Date(), { locale, in: tzDate });
+	const date = parse(time, "HH:mm", new Date(), {
+		locale: dateOpt.locale,
+		in: dateOpt.in,
+	});
 	// Format the Date object into "h aaa" where "h" is the hour (1-12) and "aaa" is the lowercase AM/PM.
-	const timeFormat = type === "time-block" ? "h aaa" : "hh:mm aaa";
-	return format(date, timeFormat, { locale, in: tzDate });
+	const timeFormat =
+		dateOpt.timeFormat === "12-hours"
+			? "h aaa"
+			: DEFAULT_TIME_FORMAT_24_DATE_FNS;
+	return format(date, timeFormat, { locale: dateOpt.locale, in: dateOpt.in });
 };
 
 // --- New: Helper to determine a therapist’s availability for a given date ---
 // This checks for an adjusted availability first (which can mark the therapist as unavailable),
 // and if none exists, falls back to the weekly availability (based on the day name).
-export const getTherapistAvailabilityForDate = (
-	therapist: Therapist,
-	date: Date,
-) => {
+export const getTherapistAvailabilityForDate = ({
+	therapist,
+	date,
+	dateOpt,
+}: {
+	therapist: Therapist;
+	date: Date;
+	dateOpt: {
+		locale: Locale;
+		in: ContextFn<Date>;
+	};
+}) => {
 	const { availability } = therapist;
 	// Check adjusted availabilities first
 	const adjusted = availability?.adjustedAvailabilities.find(
-		(a) => a.specificDate === format(date, "yyyy-MM-dd"),
+		(a) =>
+			a.specificDate ===
+			format(date, "yyyy-MM-dd", {
+				locale: dateOpt.locale,
+				in: dateOpt.in,
+			}),
 	);
 	if (adjusted) {
 		// If marked as unavailable, do not display an available block.

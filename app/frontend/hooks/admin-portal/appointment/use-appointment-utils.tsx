@@ -1,3 +1,4 @@
+import { useDateContext } from "@/components/providers/date-provider";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
 import type { MarkerData } from "@/hooks/here-maps";
@@ -414,12 +415,18 @@ export const usePreferredTherapistGender = ({
 export const useAppointmentDateTime = ({
 	sourceValue,
 }: { sourceValue?: Date }) => {
+	const { locale, tzDate } = useDateContext();
 	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
 	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
 		sourceValue ? new Date(sourceValue.toString()) : null,
 	);
 	const [appointmentTime, setAppointmentTime] = useState<string>(
-		sourceValue ? format(sourceValue.toString(), "HH:mm") : "",
+		sourceValue
+			? format(sourceValue.toString(), "HH:mm", {
+					locale,
+					in: tzDate,
+				})
+			: "",
 	);
 	// Memoized calendar properties for the appointment date field
 	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
@@ -453,10 +460,15 @@ export const useAppointmentDateTime = ({
 			setAppointmentDate(date || null);
 
 			// update state for appointment time
-			const time = date ? format(date.toString(), "HH:mm") : "";
+			const time = date
+				? format(date.toString(), "HH:mm", {
+						locale,
+						in: tzDate,
+					})
+				: "";
 			setAppointmentTime(time);
 		},
-		[appointmentTime],
+		[appointmentTime, locale, tzDate],
 	);
 	const onSelectAppointmentTime = useCallback(
 		(time: string) => {

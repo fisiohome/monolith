@@ -23,6 +23,7 @@ import {
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
+import { useDateContext } from "@/components/providers/date-provider";
 
 export const SESSION_STORAGE_FORM_KEY = "appointment-form";
 
@@ -163,6 +164,7 @@ export const useStepButtons = ({
 };
 
 export const useReviewForm = () => {
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const errorsServerValidation = useMemo(
 		() => (globalProps?.errors?.fullMessages as unknown as string[]) || null,
@@ -226,7 +228,7 @@ export const useReviewForm = () => {
 					{
 						title: "Gender",
 						value: patientDetails.gender ? (
-							<Badge variant="secondary">
+							<Badge variant="outline">
 								<span className="flex items-center justify-end gap-1">
 									{getGenderIcon(patientDetails.gender.toLowerCase())}
 									{patientDetails.gender}
@@ -311,7 +313,7 @@ export const useReviewForm = () => {
 					{
 						title: "Preferred Therapist Gender",
 						value: (
-							<Badge variant="secondary">
+							<Badge variant="outline">
 								<span className="flex items-center justify-end gap-1">
 									{getGenderIcon(
 										appointmentScheduling.preferredTherapistGender.toLowerCase(),
@@ -325,7 +327,8 @@ export const useReviewForm = () => {
 						title: "Appointment Date & Time",
 						value: format(
 							appointmentScheduling.appointmentDateTime,
-							"PPP, hh:mm a",
+							`PPP, ${timeFormatDateFns}`,
+							{ locale, in: tzDate },
 						),
 					},
 					{
@@ -362,7 +365,7 @@ export const useReviewForm = () => {
 				],
 			},
 		];
-	}, [review]);
+	}, [review, locale, tzDate, timeFormatDateFns]);
 	const onEdit = useCallback(
 		(value: (typeof sections)[number]["stepValue"]) => {
 			setStep(value);

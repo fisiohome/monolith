@@ -149,20 +149,17 @@ export default function FilterList({
 		[locations],
 	);
 	const assignedToList = useMemo(() => {
-		const valueMe = taf("assigned_to.items.me");
-		const valueAnyone = taf("assigned_to.items.anyone");
-
 		return [
 			{
-				value: valueMe,
-				label: valueMe.toUpperCase(),
+				value: "me",
+				label: taf("assigned_to.items.me").toUpperCase(),
 				icon: (
 					<User className="flex-shrink-0 text-muted-foreground/75 size-4" />
 				),
 			},
 			{
-				value: valueAnyone,
-				label: valueAnyone.toUpperCase(),
+				value: "anyone",
+				label: taf("assigned_to.items.anyone").toUpperCase(),
 				icon: (
 					<Users className="flex-shrink-0 text-muted-foreground/75 size-4" />
 				),

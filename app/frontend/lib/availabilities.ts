@@ -1,6 +1,6 @@
 import type { Therapist } from "@/types/admin-portal/therapist";
 import { z } from "zod";
-import { DAY_NAMES } from "./constants";
+import { DAY_NAMES, DEFAULT_TIMEZONE } from "./constants";
 import { timeSchema } from "./validation";
 
 // the start and end time form schema
@@ -126,7 +126,7 @@ export const getDefaultValues = ({
 	// Extracting values with proper typings and default values
 	// * all of the default values based on the database default
 	const {
-		timeZone = serverTimezone || "Asia/Jakarta",
+		timeZone = serverTimezone || DEFAULT_TIMEZONE,
 		appointmentDurationInMinutes = 90,
 		bufferTimeInMinutes = 30,
 		maxAdvanceBookingInDays = 60,
