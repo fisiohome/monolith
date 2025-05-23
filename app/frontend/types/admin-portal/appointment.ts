@@ -3,13 +3,13 @@ import type {
 	PATIENT_CONDITIONS,
 	PREFERRED_THERAPIST_GENDER,
 } from "@/lib/constants";
+import type { User } from "../auth";
 import type { Admin } from "./admin";
 import type { Location } from "./location";
 import type { Package } from "./package";
 import type { Patient, PatientMedicalRecord } from "./patient";
 import type { Service } from "./service";
 import type { Therapist } from "./therapist";
-import type { User } from "../auth";
 
 export enum AppointmentStatuses {
 	unscheduled = "UNSCHEDULED",

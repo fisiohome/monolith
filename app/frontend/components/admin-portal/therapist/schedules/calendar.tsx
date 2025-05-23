@@ -12,11 +12,20 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	Sheet,
 	SheetClose,
@@ -26,14 +35,6 @@ import {
 	SheetTitle,
 	SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectSeparator,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	INTERVAL_MINUTES,
@@ -84,7 +85,6 @@ import PatientDetailsSection, {
 	PICDetailsSection,
 	TherapistDetailsSection,
 } from "./appointment-details";
-import { Input } from "@/components/ui/input";
 
 type GeneralProps = {
 	selectedDate: Date;

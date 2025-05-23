@@ -1,7 +1,7 @@
-import type { ComponentProps } from "react";
-import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import type { ComponentProps } from "react";
+import { Badge } from "../ui/badge";
 
 type WithLabel = {
 	label: string;

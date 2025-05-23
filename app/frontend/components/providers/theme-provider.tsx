@@ -1,8 +1,8 @@
 import {
 	DEFAULT_THEME,
 	DEFAULT_USER_PREFERENCES,
-	USER_PREF_STORAGE_KEY,
 	type Theme,
+	USER_PREF_STORAGE_KEY,
 } from "@/lib/constants";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { createContext, useContext, useEffect, useMemo } from "react";

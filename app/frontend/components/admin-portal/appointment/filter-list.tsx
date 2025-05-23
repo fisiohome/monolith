@@ -1,3 +1,7 @@
+import DotBadgeWithLabel from "@/components/shared/dot-badge";
+import MultiSelectBadges, {
+	type MultiSelectBadgesProps,
+} from "@/components/shared/multi-select-badge";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -8,6 +12,12 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -17,12 +27,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { groupLocationsByCountry } from "@/lib/locations";
@@ -38,10 +42,6 @@ import {
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import DotBadgeWithLabel from "@/components/shared/dot-badge";
-import MultiSelectBadges, {
-	type MultiSelectBadgesProps,
-} from "@/components/shared/multi-select-badge";
 
 export interface FilterListProps extends ComponentProps<"section"> {
 	isShow: boolean;

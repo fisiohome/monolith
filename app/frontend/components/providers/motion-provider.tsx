@@ -1,7 +1,7 @@
 import {
 	DEFAULT_USER_PREFERENCES,
-	USER_PREF_STORAGE_KEY,
 	type MotionPreference,
+	USER_PREF_STORAGE_KEY,
 } from "@/lib/constants";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { MotionGlobalConfig } from "framer-motion";

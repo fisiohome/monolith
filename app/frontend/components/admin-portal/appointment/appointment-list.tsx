@@ -1,4 +1,3 @@
-import type React from "react";
 import { useDateContext } from "@/components/providers/date-provider";
 import DotBadgeWithLabel, {
 	type VariantDotBadge,
@@ -61,6 +60,7 @@ import {
 	TicketPercent,
 	User,
 } from "lucide-react";
+import type React from "react";
 import { type ComponentProps, memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 

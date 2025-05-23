@@ -1,3 +1,4 @@
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { humanize, populateQueryParams } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
@@ -14,7 +15,6 @@ import { createContext, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { NavMainProps } from "../admin-portal/sidebar/nav-main";
 import type { NavUserProps } from "../admin-portal/sidebar/nav-user";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 
 type NavigationProviderProps = {
 	children: React.ReactNode;

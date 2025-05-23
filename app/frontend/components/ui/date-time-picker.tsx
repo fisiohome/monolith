@@ -10,8 +10,8 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { TimePickerDemo } from "./time-picker/demo";
 import { useDateContext } from "../providers/date-provider";
+import { TimePickerDemo } from "./time-picker/demo";
 
 export function DateTimePicker() {
 	const { locale, tzDate } = useDateContext();
