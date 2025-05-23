@@ -15,7 +15,10 @@ import {
 } from "@/components/admin-portal/shared/page-layout";
 import { Step, type StepItem, Stepper } from "@/components/shared/stepper";
 import { Form } from "@/components/ui/form";
-import { SESSION_STORAGE_FORM_KEY } from "@/hooks/admin-portal/appointment/use-appointment-form";
+import {
+	SESSION_STORAGE_FORM_KEY,
+	SESSION_STORAGE_FORM_SELECTIONS_KEY,
+} from "@/hooks/admin-portal/appointment/use-appointment-form";
 import type {
 	LocationOption,
 	TherapistOption,
@@ -24,7 +27,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
 	APPOINTMENT_BOOKING_SCHEMA,
 	type AppointmentBookingSchema,
-	defineAppointmentFormDefaultValues,
 } from "@/lib/appointments/form";
 import { buildAppointmentPayload } from "@/lib/appointments/form";
 import type {
@@ -34,6 +36,7 @@ import type {
 	PATIENT_REFERRAL_OPTIONS,
 	PREFERRED_THERAPIST_GENDER,
 } from "@/lib/constants";
+import { SESSION_ISOLINE_KEY, SESSION_MARKERS_KEY } from "@/lib/here-maps";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Package } from "@/types/admin-portal/package";
 import type { Patient } from "@/types/admin-portal/patient";
@@ -41,7 +44,6 @@ import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Head, router, usePage } from "@inertiajs/react";
-import { useSessionStorage } from "@uidotdev/usehooks";
 import {
 	type ReactElement,
 	useCallback,
@@ -88,7 +90,7 @@ function FormComponent() {
 		usePage<AppointmentNewGlobalPageProps>();
 	const isMobile = useIsMobile();
 	const { t: taf } = useTranslation("appointments-form");
-	const { isSuccessBooked, mode } = useFormProvider();
+	const { isSuccessBooked, mode, formStorage } = useFormProvider();
 	const [isLoading, setIsLoading] = useState(false);
 
 	// stepper management state
@@ -139,22 +141,6 @@ function FormComponent() {
 				mode === "series" ? `Visit ${currentVisit}/${maxVisit}` : undefined,
 		};
 	}, [mode, globalProps?.appointmentReference, taf]);
-	const formDefaultvalues = useMemo(
-		() =>
-			defineAppointmentFormDefaultValues({
-				mode,
-				user: globalProps.auth.currentUser,
-				apptRef: globalProps.appointmentReference,
-			}),
-		[globalProps.auth.currentUser, globalProps.appointmentReference, mode],
-	);
-	const [formStorage, setFormStorage] =
-		useSessionStorage<null | AppointmentBookingSchema>(
-			SESSION_STORAGE_FORM_KEY,
-			{
-				...formDefaultvalues,
-			},
-		);
 	const form = useForm<AppointmentBookingSchema>({
 		resolver: zodResolver(APPOINTMENT_BOOKING_SCHEMA),
 		defaultValues: {
@@ -202,6 +188,12 @@ function FormComponent() {
 	 * ? isNavigateConfirm is required to prevent the confirmation modal from appearing twice.
 	 */
 	const [isNavigateConfirm, setIsNavigateConfirm] = useState(false);
+	const removeStorage = useCallback(() => {
+		window.sessionStorage.removeItem(SESSION_STORAGE_FORM_KEY);
+		window.sessionStorage.removeItem(SESSION_STORAGE_FORM_SELECTIONS_KEY);
+		window.sessionStorage.removeItem(SESSION_ISOLINE_KEY);
+		window.sessionStorage.removeItem(SESSION_MARKERS_KEY);
+	}, []);
 	useEffect(() => {
 		// Add a listener for route changes
 		return router.on("before", (event) => {
@@ -233,7 +225,7 @@ function FormComponent() {
 				// Confirm navigation away from the current page
 				setIsNavigateConfirm(true);
 				// Remove the appointment form data from session storage
-				window.sessionStorage.removeItem(SESSION_STORAGE_FORM_KEY);
+				removeStorage();
 			} else {
 				event?.preventDefault();
 			}
@@ -244,6 +236,7 @@ function FormComponent() {
 		isSuccessBooked,
 		isNavigateConfirm,
 		taf,
+		removeStorage,
 	]);
 	/**
 	 * * watching the success of route navigation
@@ -261,11 +254,11 @@ function FormComponent() {
 			if (isCurrentRoot || isBookPath) return;
 
 			// Remove the appointment form data from session storage
-			window.sessionStorage.removeItem(SESSION_STORAGE_FORM_KEY);
+			removeStorage();
 
 			console.log(`Navigated to ${event.detail.page.url}`);
 		});
-	}, []);
+	}, [removeStorage]);
 
 	return (
 		<section className="flex flex-col justify-center gap-4 mx-auto md:gap-6 w-12/12 xl:w-8/12">
@@ -286,10 +279,7 @@ function FormComponent() {
 								<FormContainer>
 									{stepProps.component}
 
-									<StepButtons
-										setFormStorage={setFormStorage}
-										isFormLoading={isLoading}
-									/>
+									<StepButtons isFormLoading={isLoading} />
 								</FormContainer>
 							</Step>
 						))}

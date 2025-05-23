@@ -6,14 +6,17 @@ import {
 	defineFormDefaultValues,
 } from "@/lib/appointments/form-reschedule";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
+import { SESSION_ISOLINE_KEY, SESSION_MARKERS_KEY } from "@/lib/here-maps";
 import { goBackHandler, populateQueryParams } from "@/lib/utils";
 import type { AppointmentRescheduleGlobalPageProps } from "@/pages/AdminPortal/Appointment/Reschedule";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
+import { useMediaQuery, useSessionStorage } from "@uidotdev/usehooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
+import { SESSION_STORAGE_FORM_SELECTIONS_KEY } from "./use-appointment-form";
 import {
+	type TherapistOption,
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
@@ -82,6 +85,10 @@ export const useRescheduleForm = () => {
 	 * ? isNavigateConfirm is required to prevent the confirmation modal from appearing twice.
 	 */
 	const [isNavigateConfirm, setIsNavigateConfirm] = useState(false);
+	const removeStorage = useCallback(() => {
+		window.sessionStorage.removeItem(SESSION_ISOLINE_KEY);
+		window.sessionStorage.removeItem(SESSION_MARKERS_KEY);
+	}, []);
 	useEffect(() => {
 		// Add a listener for route changes
 		return router.on("before", (event) => {
@@ -114,7 +121,10 @@ export const useRescheduleForm = () => {
 
 			// Confirm navigation away from the current page
 			if (confirm("Are you sure you want to navigate away?")) {
+				// Confirm navigation away from the current page
 				setIsNavigateConfirm(true);
+				// Remove the appointment form data from session storage
+				removeStorage();
 			} else {
 				event?.preventDefault();
 			}
@@ -123,7 +133,29 @@ export const useRescheduleForm = () => {
 		globalProps.adminPortal.router.adminPortal.appointment.index,
 		pageURL,
 		isNavigateConfirm,
+		removeStorage,
 	]);
+	/**
+	 * * watching the success of route navigation
+	 * * then we delete the form data stored in the session storage
+	 * * this side effect is useful because after we book an appointment then the form will be calculated to redirect the user
+	 * * also useful if the user clicks the redirect button now
+	 */
+	useEffect(() => {
+		return router.on("navigate", (event) => {
+			// Determine if the path is the current root (user on reload)
+			const isCurrentRoot = event.detail.page.url.includes("reschedule_page");
+			const isReschedulePath = event.detail.page.url.includes("reschedule");
+
+			// If the path is current root (user on reload), or is the book path (book path mean to POST to save the appointment) do nothing
+			if (isCurrentRoot || isReschedulePath) return;
+
+			// Remove the appointment form data from session storage
+			removeStorage();
+
+			console.log(`Navigated to ${event.detail.page.url}`);
+		});
+	}, [removeStorage]);
 
 	return { form, isLoading, onSubmit };
 };
@@ -183,6 +215,11 @@ export const useRescheduleFields = () => {
 	);
 
 	// * for therapist availability and isoline maps
+	const [formSelections, setFormSelections] = useSessionStorage<{
+		therapist: null | TherapistOption;
+	}>(SESSION_STORAGE_FORM_SELECTIONS_KEY, {
+		therapist: null,
+	});
 	const coordinate = useMemo(
 		() => [patientDetails.latitude, patientDetails.longitude],
 		[patientDetails.latitude, patientDetails.longitude],
@@ -247,6 +284,8 @@ export const useRescheduleFields = () => {
 		mapAddress,
 		onSelectTherapist,
 		onResetAllTherapistState,
+		formSelections,
+		setFormSelections,
 	};
 
 	// * for preferred therapist gender field

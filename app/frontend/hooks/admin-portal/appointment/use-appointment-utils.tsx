@@ -13,13 +13,20 @@ import {
 	checkIsCustomReferral,
 } from "@/lib/appointments/form";
 import type { PREFERRED_THERAPIST_GENDER } from "@/lib/constants";
+import {
+	ISOLINE_CONSTRAINTS,
+	SESSION_ISOLINE_KEY,
+	SESSION_MARKERS_KEY,
+} from "@/lib/here-maps";
 import { groupLocationsByCountry } from "@/lib/locations";
 import { calculateAge, populateQueryParams } from "@/lib/utils";
 import { boolSchema } from "@/lib/validation";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import type { Location } from "@/types/admin-portal/location";
 import type { Therapist } from "@/types/admin-portal/therapist";
+import type { Coordinate, IsolineResult } from "@/types/here-maps";
 import { router, usePage } from "@inertiajs/react";
+import { useSessionStorage } from "@uidotdev/usehooks";
 import { format } from "date-fns";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -501,6 +508,13 @@ export const useAppointmentDateTime = ({
 };
 
 // * hooks about assigning the therapist field and the here map isoline
+export interface PatientValues {
+	fullName: string;
+	latitude: number;
+	longitude: number;
+	address: string;
+	locationId: string | number;
+}
 export const useTherapistAvailability = ({
 	serviceIdValue,
 	preferredTherapistGenderValue,
@@ -514,17 +528,11 @@ export const useTherapistAvailability = ({
 	serviceIdValue: string | number;
 	preferredTherapistGenderValue: (typeof PREFERRED_THERAPIST_GENDER)[number];
 	appointmentDateTImeValue: Date | null;
-	patientValues: {
-		fullName: string;
-		latitude: number;
-		longitude: number;
-		address: string;
-		locationId: string | number;
-	};
+	patientValues: PatientValues;
 	fetchURL: string;
+	formType?: "create" | "reschedule";
 	onChangeTherapistLoading: (value: boolean) => void;
 	onResetTherapistFormValue: () => void;
-	formType?: "create" | "reschedule";
 }) => {
 	// * for assigning the therapist
 	const [isTherapistFound, setIsTherapistFound] = useState(false);
@@ -638,12 +646,69 @@ export const useTherapistAvailability = ({
 	]);
 
 	// * state group for isolane therapist
+	const [markerStorage, setMarkerStorage] = useSessionStorage<null | {
+		patient: MarkerData[];
+	}>(SESSION_MARKERS_KEY, null);
+	const [isolineStorage, setIsolineStorage] = useSessionStorage<
+		null | IsolineResult["isolines"]
+	>(SESSION_ISOLINE_KEY, null);
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
 	const isMapLoading = useMemo(
 		() => mapRef.current?.isLoading.value || false,
 		[],
 	);
-	const marker = useTherapistMarker();
+	const markerIcon = useTherapistMarker();
+	const generateMarkerDataPatient = useCallback(
+		({
+			address,
+			position,
+			patient,
+		}: {
+			address: string;
+			position: Coordinate;
+			patient: PatientValues;
+		}) => {
+			return {
+				address,
+				position,
+				bubbleContent: `
+					<div class="w-[180px] text-xs flex flex-col">
+						<span class="font-bold text-sm">${patient.fullName}</span>
+						<span class="font-light text-[10px]">${patient.address}</span>
+					</div>
+				`,
+				additional: {
+					patient: patient,
+				},
+			};
+		},
+		[],
+	);
+	const generateMarkerDataTherapist = useCallback(
+		({
+			address,
+			position,
+			therapist,
+		}: {
+			address: string;
+			position: Coordinate;
+			therapist: TherapistOption;
+		}) => {
+			return {
+				position,
+				address,
+				bubbleContent: `
+			<div class="w-[180px] text-xs flex flex-col">
+				<span class="font-bold text-sm">${therapist.name}</span>
+				<span class="font-light text-[10px]">#${therapist.registrationNumber}</span>
+			</div>
+		`,
+				customIcon: markerIcon[therapist.employmentType],
+				additional: { therapist },
+			};
+		},
+		[markerIcon],
+	);
 	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
 	// reset the isoline calculated and marker printed
 	const onResetIsoline = useCallback(() => {
@@ -661,16 +726,14 @@ export const useTherapistAvailability = ({
 		async (therapists: NonNullable<TherapistOption[]>) => {
 			if (!mapRef.current) return;
 
-			// calculate the isoline
+			// calculate the isoline and store the result to the session storage
 			const { latitude, longitude, address: patientAddress } = patientValues;
 			const patientCoords = { lat: latitude, lng: longitude };
-			await mapRef.current.isoline.onCalculate.both({
+			const result = await mapRef.current.isoline.onCalculate.both({
 				coord: patientCoords,
-				constraints: [
-					{ type: "distance", value: 1000 * 25 }, // 25 km
-					{ type: "time", value: 60 * 50 }, // 50 minutes
-				],
+				constraints: ISOLINE_CONSTRAINTS,
 			});
+			setIsolineStorage(result);
 
 			// Map therapists to MarkerData
 			const therapistCoords: MarkerData[] =
@@ -701,18 +764,11 @@ export const useTherapistAvailability = ({
 							return null;
 						}
 
-						return {
-							position: { lat, lng },
+						return generateMarkerDataTherapist({
 							address,
-							bubbleContent: `
-            <div class="w-[180px] text-xs flex flex-col">
-              <span class="font-bold text-sm">${therapist.name}</span>
-              <span class="font-light text-[10px]">#${therapist.registrationNumber}</span>
-            </div>
-          `,
-							customIcon: marker[therapist.employmentType],
-							additional: { therapist },
-						} satisfies MarkerData;
+							position: { lat, lng },
+							therapist,
+						});
 					})
 					.filter((coord) => coord !== null) || [];
 
@@ -735,21 +791,14 @@ export const useTherapistAvailability = ({
 			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
 			setIsTherapistFound(true);
 
-			// Add markers for the patient position
-			const markerPatientData: MarkerData = {
+			// Add markers for the patient position and store to the storage
+			const markerPatientData: MarkerData = generateMarkerDataPatient({
 				address: patientAddress,
 				position: patientCoords,
-				bubbleContent: `
-            <div class="w-[180px] text-xs flex flex-col">
-              <span class="font-bold text-sm">${patientValues.fullName}</span>
-              <span class="font-light text-[10px]">${patientValues.address}</span>
-            </div>
-          `,
-				additional: {
-					patient: { fullName: patientValues.fullName },
-				},
-			};
+				patient: patientValues,
+			});
 			mapRef.current.marker.onAdd([markerPatientData]);
+			setMarkerStorage({ patient: [markerPatientData] });
 
 			// Add markers for feasible therapists
 			const markerTherapistFeasibleData: MarkerData[] =
@@ -770,7 +819,13 @@ export const useTherapistAvailability = ({
 			// Mark isoline as calculated
 			setIsIsolineCalculated(true);
 		},
-		[patientValues, marker],
+		[
+			patientValues,
+			setIsolineStorage,
+			setMarkerStorage,
+			generateMarkerDataPatient,
+			generateMarkerDataTherapist,
+		],
 	);
 
 	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
@@ -802,5 +857,9 @@ export const useTherapistAvailability = ({
 		onResetTherapistOptions,
 		onResetIsoline,
 		onFindTherapists,
+		markerStorage,
+		isolineStorage,
+		generateMarkerDataPatient,
+		generateMarkerDataTherapist,
 	};
 };

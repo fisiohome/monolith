@@ -41,6 +41,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	SESSION_STORAGE_FORM_KEY,
+	SESSION_STORAGE_FORM_SELECTIONS_KEY,
 	useAdditionalSettingsForm,
 	useAppointmentSchedulingForm,
 	useFinalStep,
@@ -49,19 +51,23 @@ import {
 	useStepButtons,
 } from "@/hooks/admin-portal/appointment/use-appointment-form";
 import {
+	type TherapistOption,
 	usePartnerBookingSelection,
 	usePartnerNameSelection,
 	usePatientReferralSource,
 	usePatientRegion,
 } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { getGenderIcon } from "@/hooks/use-gender";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
 	type AppointmentBookingSchema,
 	DEFAULT_VALUES_SERVICE,
+	defineAppointmentFormDefaultValues,
 } from "@/lib/appointments/form";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { Deferred, Link, usePage } from "@inertiajs/react";
+import { useIsFirstRender, useSessionStorage } from "@uidotdev/usehooks";
 import {
 	AlertCircle,
 	Check,
@@ -74,10 +80,13 @@ import {
 } from "lucide-react";
 import {
 	type ComponentProps,
+	type Dispatch,
 	Fragment,
+	type SetStateAction,
 	createContext,
 	memo,
 	useContext,
+	useEffect,
 	useMemo,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -88,9 +97,12 @@ import PatientContactForm from "./form/patient-contact";
 import PatientMedicalForm from "./form/patient-medical";
 import PatientRegionForm from "./form/patient-region";
 import TherapistSelection from "./form/therapist-selection";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export type FormMode = "new" | "series";
+type FormStorage = AppointmentBookingSchema | null;
+type FormStorageSelection = {
+	therapist: null | TherapistOption;
+};
 
 // * form provider props
 interface FormProviderProps {
@@ -100,11 +112,21 @@ interface FormProviderProps {
 interface FormProviderState {
 	mode: FormMode;
 	isSuccessBooked: boolean;
+	formStorage: FormStorage;
+	setFormStorage: Dispatch<SetStateAction<FormStorage>>;
+	formSelections: FormStorageSelection;
+	setFormSelections: Dispatch<SetStateAction<FormStorageSelection>>;
 }
 
 const FormProviderContext = createContext<FormProviderState>({
 	mode: "new",
 	isSuccessBooked: false,
+	formStorage: null,
+	formSelections: {
+		therapist: null,
+	},
+	setFormStorage: () => {},
+	setFormSelections: () => {},
 });
 
 export function FormProvider({ children }: FormProviderProps) {
@@ -121,12 +143,39 @@ export function FormProvider({ children }: FormProviderProps) {
 
 		return !!queryParams?.created && !!appointmentId;
 	}, [globalProps?.appointment?.id, pageURL]);
-	const contextValue = useMemo(() => {
-		return { mode: formMode, isSuccessBooked };
-	}, [formMode, isSuccessBooked]);
+
+	// define the form default values and the selections storage
+	const formDefaultvalues = useMemo(
+		() =>
+			defineAppointmentFormDefaultValues({
+				mode: formMode,
+				user: globalProps.auth.currentUser,
+				apptRef: globalProps.appointmentReference,
+			}),
+		[globalProps.auth.currentUser, globalProps.appointmentReference, formMode],
+	);
+	const [formStorage, setFormStorage] = useSessionStorage<
+		FormProviderState["formStorage"]
+	>(SESSION_STORAGE_FORM_KEY, {
+		...formDefaultvalues,
+	});
+	const [formSelections, setFormSelections] = useSessionStorage<
+		FormProviderState["formSelections"]
+	>(SESSION_STORAGE_FORM_SELECTIONS_KEY, {
+		therapist: null,
+	});
 
 	return (
-		<FormProviderContext.Provider value={contextValue}>
+		<FormProviderContext.Provider
+			value={{
+				mode: formMode,
+				isSuccessBooked,
+				formStorage,
+				setFormStorage,
+				formSelections,
+				setFormSelections,
+			}}
+		>
 			{children}
 		</FormProviderContext.Provider>
 	);
@@ -172,16 +221,10 @@ export function FormStepItemContainer({
 // * component step button for next step, prev step, and submit
 export interface StepButtonsProps extends ComponentProps<"div"> {
 	isFormLoading: boolean;
-	setFormStorage: React.Dispatch<
-		React.SetStateAction<AppointmentBookingSchema | null>
-	>;
 }
 
-export function StepButtons({
-	className,
-	isFormLoading,
-	setFormStorage,
-}: StepButtonsProps) {
+export function StepButtons({ className, isFormLoading }: StepButtonsProps) {
+	const { setFormStorage } = useFormProvider();
 	const {
 		isDekstop,
 		isDisabledStep,
@@ -194,9 +237,7 @@ export function StepButtons({
 		onPrevStep,
 		onBack,
 		setIsOpenTherapistAlert,
-	} = useStepButtons({
-		setFormStorage,
-	});
+	} = useStepButtons({ setFormStorage });
 	const { t: taf } = useTranslation("appointments-form");
 
 	return (
@@ -376,8 +417,9 @@ export const PatientDetailsForm = memo(function Component() {
 });
 
 export function AppointmentSchedulingForm() {
+	const isFirstRender = useIsFirstRender();
 	const isMobile = useIsMobile();
-	const { mode } = useFormProvider();
+	const { mode, formSelections, setFormSelections } = useFormProvider();
 	const { coordinate, mapAddress } = usePatientRegion();
 	const {
 		form,
@@ -397,8 +439,11 @@ export function AppointmentSchedulingForm() {
 	} = restSchedulingHooks;
 	const {
 		mapRef,
-		isIsolineCalculated: _isIsolineCalculated,
+		isIsolineCalculated,
 		isMapLoading,
+		markerStorage,
+		isolineStorage,
+		generateMarkerDataTherapist,
 	} = restSchedulingHooks;
 	const {
 		isTherapistFound,
@@ -407,6 +452,56 @@ export function AppointmentSchedulingForm() {
 		onSelectTherapist,
 		onResetAllTherapistState,
 	} = restSchedulingHooks;
+
+	// * side effect to add isoline calculated and stored isoline and the marker marked to the map
+	useEffect(() => {
+		// Ensure the map is initialized and isolane not calculated, therapist selected not changed, and restrict to the first render
+		if (
+			!mapRef?.current ||
+			isIsolineCalculated ||
+			watchAppointmentSchedulingValue?.therapist?.id !==
+				formSelections?.therapist?.id ||
+			!isFirstRender
+		)
+			return;
+
+		// Add previously stored isolines to the map, if available
+		if (isolineStorage) {
+			mapRef.current.isoline.onAddAll(isolineStorage);
+		}
+
+		// Add previously stored patient markers to the map, if available
+		if (markerStorage) {
+			mapRef.current.marker.onAdd(markerStorage.patient);
+		}
+
+		// Check if therapist information is selected and add therapist marker
+		if (formSelections.therapist) {
+			// Prepare therapist marker data with fallback defaults
+			const therapistMarkerData = generateMarkerDataTherapist({
+				address: formSelections.therapist.activeAddress?.address || "",
+				position: {
+					lat: formSelections.therapist.activeAddress?.latitude || 0,
+					lng: formSelections.therapist.activeAddress?.longitude || 0,
+				},
+				therapist: formSelections.therapist,
+			});
+			// Add therapist marker to the map as a secondary marker with routing enabled
+			mapRef.current.marker.onAdd([therapistMarkerData], {
+				isSecondary: true,
+				useRouting: true,
+			});
+		}
+	}, [
+		mapRef?.current,
+		isolineStorage,
+		isIsolineCalculated,
+		markerStorage,
+		formSelections.therapist,
+		generateMarkerDataTherapist,
+		watchAppointmentSchedulingValue?.therapist,
+		isFirstRender,
+	]);
 
 	return (
 		<FormStepItemContainer>
@@ -771,19 +866,24 @@ export function AppointmentSchedulingForm() {
 							<FormControl>
 								<TherapistSelection
 									value={field.value}
-									isLoading={isLoading.therapists || isMapLoading}
-									therapists={therapistsOptions.feasible}
 									height={isMobile ? undefined : 600}
-									isDisabledFind={
-										!watchAppointmentSchedulingValue.appointmentDateTime
-									}
-									onFindTherapists={async () => {
-										const isError = onCheckServiceError();
-										if (isError) return;
+									isLoading={isLoading.therapists || isMapLoading}
+									items={therapistsOptions.feasible}
+									selectedTherapist={formSelections?.therapist || undefined}
+									find={{
+										isDisabled:
+											!watchAppointmentSchedulingValue.appointmentDateTime,
+										handler: async () => {
+											const isError = onCheckServiceError();
+											if (isError) return;
 
-										onFindTherapists();
+											onFindTherapists();
+										},
 									}}
 									onSelectTherapist={(value) => onSelectTherapist(value)}
+									onPersist={(value) => {
+										setFormSelections({ ...formSelections, therapist: value });
+									}}
 								/>
 							</FormControl>
 						</FormItem>

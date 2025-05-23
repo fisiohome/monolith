@@ -19,8 +19,9 @@ import {
 import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
 import { Deferred } from "@inertiajs/react";
+import { useIsFirstRender } from "@uidotdev/usehooks";
 import { AlertCircle, Hospital, LoaderIcon } from "lucide-react";
-import { type ComponentProps, memo } from "react";
+import { type ComponentProps, memo, useEffect } from "react";
 import DateTimePicker from "./form/date-time";
 import TherapistSelection from "./form/therapist-selection";
 
@@ -79,6 +80,7 @@ export interface RescheduleFieldsProps extends ComponentProps<"div"> {}
 export const RescheduleFields = memo(function Component({
 	className,
 }: RescheduleFieldsProps) {
+	const isFirstRender = useIsFirstRender();
 	const {
 		form,
 		preferredTherapistGenderOption,
@@ -96,7 +98,71 @@ export const RescheduleFields = memo(function Component({
 		onFindTherapists,
 		onSelectTherapist,
 		onResetAllTherapistState,
+		generateMarkerDataTherapist,
+		generateMarkerDataPatient,
+		isIsolineCalculated,
+		formSelections,
+		setFormSelections,
 	} = useRescheduleFields();
+
+	// * side effect to add isoline calculated and stored isoline and the marker marked to the map
+	useEffect(() => {
+		// Ensure the map is initialized, isoline not calculated, and restrict to first render
+		if (!mapRef?.current || isIsolineCalculated || !isFirstRender) return;
+
+		// Add Therapist marker to the map if appointment includes therapist details
+		if (appointment?.therapist) {
+			const therapistMarkerData = generateMarkerDataTherapist({
+				address: appointment.therapist.activeAddress?.address || "",
+				position: {
+					lat: appointment.therapist.activeAddress?.latitude || 0,
+					lng: appointment.therapist.activeAddress?.longitude || 0,
+				},
+				therapist: appointment.therapist,
+			});
+
+			// Add therapist marker as a secondary marker, routing and map-view adjustment disabled
+			mapRef.current.marker.onAdd([therapistMarkerData], {
+				isSecondary: true,
+				useRouting: false,
+				changeMapView: false,
+			});
+		}
+
+		// Add Patient marker to the map if appointment includes patient details
+		if (appointment?.patient) {
+			const patientMarkerData = generateMarkerDataPatient({
+				address: appointment.patient.activeAddress?.address || "",
+				position: {
+					lat: appointment.patient.activeAddress?.latitude || 0,
+					lng: appointment.patient.activeAddress?.longitude || 0,
+				},
+				patient: {
+					address: appointment.patient.activeAddress?.address || "",
+					latitude: appointment.patient.activeAddress?.latitude || 0,
+					longitude: appointment.patient.activeAddress?.longitude || 0,
+					fullName: appointment.patient.name,
+					locationId: appointment.patient.activeAddress?.locationId || "",
+				},
+			});
+
+			// Add patient marker to the map
+			mapRef.current.marker.onAdd([patientMarkerData]);
+		}
+
+		// Adjust map view to fit markers if either therapist or patient markers are added
+		if (appointment?.therapist || appointment?.patient) {
+			mapRef.current.mapControl.getCameraBound({ expandCount: 0.3 });
+		}
+	}, [
+		mapRef?.current,
+		isIsolineCalculated,
+		appointment?.patient,
+		appointment?.therapist,
+		generateMarkerDataPatient,
+		generateMarkerDataTherapist,
+		isFirstRender,
+	]);
 
 	return (
 		<div
@@ -237,10 +303,15 @@ export const RescheduleFields = memo(function Component({
 									value={field.value}
 									isLoading={isLoading.therapists || isMapLoading}
 									appt={appointment}
-									therapists={therapistsOptions.feasible}
-									isDisabledFind={!watchAppointmentDateTimeValue}
-									onFindTherapists={onFindTherapists}
+									items={therapistsOptions.feasible}
+									find={{
+										isDisabled: !watchAppointmentDateTimeValue,
+										handler: async () => await onFindTherapists(),
+									}}
 									onSelectTherapist={(value) => onSelectTherapist(value)}
+									onPersist={(value) => {
+										setFormSelections({ ...formSelections, therapist: value });
+									}}
 								/>
 							</FormControl>
 						</FormItem>

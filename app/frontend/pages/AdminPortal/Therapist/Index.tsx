@@ -280,7 +280,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 					return (
 						<>
 							<div className="flex items-center gap-2 text-sm text-left">
-								<Avatar className="w-8 h-8 border rounded-lg">
+								<Avatar className="w-8 h-8 border rounded-lg bg-muted">
 									<AvatarImage src="#" alt={name} />
 									<AvatarFallback
 										className={cn(
@@ -291,7 +291,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 													? "bg-primary text-primary-foreground"
 													: isOnline
 														? "bg-emerald-700 text-white"
-														: "",
+														: "bg-muted",
 										)}
 									>
 										{initials}

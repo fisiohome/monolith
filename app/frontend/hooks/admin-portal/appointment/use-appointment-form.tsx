@@ -1,4 +1,5 @@
 import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
+import { useDateContext } from "@/components/providers/date-provider";
 import { useStepper } from "@/components/shared/stepper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,9 +24,10 @@ import {
 	usePreferredTherapistGender,
 	useTherapistAvailability,
 } from "./use-appointment-utils";
-import { useDateContext } from "@/components/providers/date-provider";
 
 export const SESSION_STORAGE_FORM_KEY = "appointment-form";
+export const SESSION_STORAGE_FORM_SELECTIONS_KEY =
+	"appointment-form-selections";
 
 export const useFinalStep = () => {
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();

@@ -187,88 +187,87 @@ export default function useHereMap(
 	 */
 	const initialize = useCallback(
 		(options?: { disabledEvent?: boolean }) => {
-			if (!mapRef.current && containerRef.current) {
-				console.group();
-				console.info("=== Start process to initializing the HERE Map ===");
-				console.info("Proceed the initialization");
-				const { disabledEvent = false } = options || {};
-				const [lat, lng] = coordinate;
+			try {
+				if (!mapRef.current && containerRef.current) {
+					console.group();
+					console.info("=== Start process to initializing the HERE Map ===");
+					console.info("Proceed the initialization");
+					const { disabledEvent = false } = options || {};
+					const [lat, lng] = coordinate;
 
-				// Create platform, default layers, and the map instance
-				platformRef.current = new H.service.Platform({ apikey: apiKey });
-				const defaultLayers = platformRef.current.createDefaultLayers({
-					pois: true,
-				}) as any;
+					// Create platform, default layers, and the map instance
+					platformRef.current = new H.service.Platform({ apikey: apiKey });
+					const defaultLayers = platformRef.current.createDefaultLayers({
+						pois: true,
+					}) as any;
 
-				const map = new H.Map(
-					containerRef.current,
-					defaultLayers.vector.normal.map,
-					{
-						zoom: 14,
-						center: { lat, lng },
-						pixelRatio: window.devicePixelRatio || 1,
-						padding: { top: 16, right: 16, bottom: 16, left: 16 },
-					},
-				);
-
-				mapRef.current = map;
-				removeCopyrights();
-
-				// Add traffic layer
-				map.addLayer(defaultLayers.vector.traffic.map);
-
-				// Set up map behavior (pan, zoom, etc.)
-				const mapEvents = new H.mapevents.MapEvents(map);
-				behaviorRef.current = new H.mapevents.Behavior(mapEvents);
-				// disabled the map behaviour
-				if (disabledEvent) {
-					behaviorRef.current.disable();
-				}
-
-				// Add default UI components (UI zooming control, and another UI map settings)
-				uiRef.current = H.ui.UI.createDefault(map, defaultLayers);
-				uiRef.current.getControl("mapsettings")?.setVisibility(false);
-				uiRef.current
-					.getControl("zoom")
-					?.setAlignment("bottom-left" as Alignment);
-
-				// If the coordinate is valid (not 0,0), add a default marker
-				if (lat && lng && !isDefaultCoordinate(coordinate)) {
-					console.info("Add the default markers");
-					marker.onAdd(
-						[
-							{
-								position: { lat, lng },
-								address: address.address,
-							},
-						],
-						{ isSecondary: false, changeMapView: true },
+					const map = new H.Map(
+						containerRef.current,
+						defaultLayers.vector.normal.map,
+						{
+							zoom: 14,
+							center: { lat, lng },
+							pixelRatio: window.devicePixelRatio || 1,
+							padding: { top: 16, right: 16, bottom: 16, left: 16 },
+						},
 					);
-					setCenterMap({ lat, lng });
+
+					mapRef.current = map;
+					removeCopyrights();
+
+					// Add traffic layer
+					map.addLayer(defaultLayers.vector.traffic.map);
+
+					// Set up map behavior (pan, zoom, etc.)
+					const mapEvents = new H.mapevents.MapEvents(map);
+					behaviorRef.current = new H.mapevents.Behavior(mapEvents);
+					// disabled the map behaviour
+					if (disabledEvent) {
+						behaviorRef.current.disable();
+					}
+
+					// Add default UI components (UI zooming control, and another UI map settings)
+					uiRef.current = H.ui.UI.createDefault(map, defaultLayers);
+					uiRef.current.getControl("mapsettings")?.setVisibility(false);
+					uiRef.current
+						.getControl("zoom")
+						?.setAlignment("bottom-left" as Alignment);
+
+					// If the coordinate is valid (not 0,0), add a default marker
+					if (lat && lng && !isDefaultCoordinate(coordinate)) {
+						console.info("Add the default markers");
+						marker.onAdd(
+							[
+								{
+									position: { lat, lng },
+									address: address.address,
+								},
+							],
+							{ isSecondary: false, changeMapView: true },
+						);
+						setCenterMap({ lat, lng });
+					}
+					console.info("=== Process to initializing the HERE Map Finished ===");
+					console.groupEnd();
 				}
-				console.info("=== Process to initializing the HERE Map Finished ===");
-				console.groupEnd();
+			} catch (err) {
+				console.error("initialize", err);
 			}
 		},
 		[containerRef, coordinate, apiKey, address.address, removeCopyrights],
 	);
 
 	// * marker function group
-	const marker = {
-		/**
-		 * @function onAdd
-		 * @description flexible for primary or secondary markers,
-		 * to adds a set of markers to the map based on the provided locations.
-		 */
-		onAdd: useCallback(
-			(
-				locations: MarkerData[],
-				options?: {
-					isSecondary?: boolean;
-					changeMapView?: boolean;
-					useRouting?: boolean;
-				},
-			) => {
+	const onAddMarker = useCallback(
+		(
+			locations: MarkerData[],
+			options?: {
+				isSecondary?: boolean;
+				changeMapView?: boolean;
+				useRouting?: boolean;
+			},
+		) => {
+			try {
 				if (!mapRef.current) return;
 
 				const {
@@ -281,9 +280,7 @@ export default function useHereMap(
 					? secondaryMarkerGroupRef
 					: primaryMarkerGroupRef;
 				// Remove existing group if it exists
-				if (groupRef.current) {
-					mapRef.current.removeObject(groupRef.current);
-				}
+				onRemoveMarker({ isSecondary });
 
 				// Create a new group for the markers and save it in the ref.
 				const group = new H.map.Group();
@@ -365,16 +362,14 @@ export default function useHereMap(
 						});
 					}
 				}
-			},
-			[primaryIcon, secondaryIcon],
-		),
-		/**
-		 * @function onRemove
-		 * @description Removes the  markers from the map by removing the marker group object.
-		 * This function uses the `useCallback` hook to memoize the callback, ensuring
-		 * that the function is not recreated on every render.
-		 */
-		onRemove: useCallback((options?: { isSecondary?: boolean }) => {
+			} catch (err) {
+				console.error("marker.onAdd", err);
+			}
+		},
+		[primaryIcon, secondaryIcon],
+	);
+	const onRemoveMarker = useCallback((options?: { isSecondary?: boolean }) => {
+		try {
 			if (!mapRef.current) return;
 
 			// remove mark bubble ui
@@ -397,7 +392,24 @@ export default function useHereMap(
 
 			// reset the center of map data
 			setCenterMap({ lat: 0, lng: 0 });
-		}, []),
+		} catch (err) {
+			console.error("marker.onRemove", err);
+		}
+	}, []);
+	const marker = {
+		/**
+		 * @function onAdd
+		 * @description flexible for primary or secondary markers,
+		 * to adds a set of markers to the map based on the provided locations.
+		 */
+		onAdd: onAddMarker,
+		/**
+		 * @function onRemove
+		 * @description Removes the  markers from the map by removing the marker group object.
+		 * This function uses the `useCallback` hook to memoize the callback, ensuring
+		 * that the function is not recreated on every render.
+		 */
+		onRemove: onRemoveMarker,
 	};
 
 	// * geocoding function group
@@ -461,6 +473,9 @@ export default function useHereMap(
 						},
 					);
 				});
+			} catch (err) {
+				console.error("geocode.onCalculate", err);
+				return null;
 			} finally {
 				setTimeout(() => {
 					setIsLoading(false);
@@ -490,104 +505,149 @@ export default function useHereMap(
 			constraint: IsolineConstraint,
 			autoZoom = true,
 		) => {
-			if (!mapRef.current) return;
-			const rangeType = constraint.type;
+			try {
+				if (!mapRef.current) return;
+				const rangeType = constraint.type;
 
-			// Clear previous isolines of the same type
-			const prevGroup =
-				constraint.type === "time"
-					? timeIsolineGroupRef.current
-					: distanceIsolineGroupRef.current;
-			if (prevGroup) {
-				mapRef.current.removeObject(prevGroup);
-			}
+				// clear the calculated routes
+				removeRouting();
 
-			// Create new group with appropriate styling
-			const group = new H.map.Group();
-
-			// Store coordinates and build the polygons
-			const style = isolineLib.LABEL_UI_STYLE[rangeType];
-			let firstSectionCoordinates: H.geo.Point[] | null = null;
-			isolineCoordinatesRef.current[rangeType] = [];
-			for (const section of isoline.polygons) {
-				const lineString = H.geo.LineString.fromFlexiblePolyline(section.outer);
-				const points = lineString.getLatLngAltArray();
-				const coordinates: H.geo.Point[] = [];
-
-				for (let i = 0; i < points.length; i += 3) {
-					coordinates.push(new H.geo.Point(points[i], points[i + 1]));
+				// Clear previous isolines of the same type
+				const prevGroup =
+					constraint.type === "time"
+						? timeIsolineGroupRef.current
+						: distanceIsolineGroupRef.current;
+				if (prevGroup) {
+					mapRef.current.removeObject(prevGroup);
 				}
 
-				isolineCoordinatesRef.current[rangeType].push(coordinates);
+				// Create new group with appropriate styling
+				const group = new H.map.Group();
 
-				const polygon = new H.map.Polygon(lineString, {
-					style: { lineWidth: 2, ...style },
-					data: section,
-				});
-				group.addObject(polygon);
+				// Store coordinates and build the polygons
+				const style = isolineLib.LABEL_UI_STYLE[rangeType];
+				let firstSectionCoordinates: H.geo.Point[] | null = null;
+				isolineCoordinatesRef.current[rangeType] = [];
+				for (const section of isoline.polygons) {
+					const lineString = H.geo.LineString.fromFlexiblePolyline(
+						section.outer,
+					);
+					const points = lineString.getLatLngAltArray();
+					const coordinates: H.geo.Point[] = [];
 
-				// Store first section's coordinates for label placement
-				if (!firstSectionCoordinates) {
-					firstSectionCoordinates = coordinates;
-				}
-			}
+					for (let i = 0; i < points.length; i += 3) {
+						coordinates.push(new H.geo.Point(points[i], points[i + 1]));
+					}
 
-			// Add label to the first polygon section
-			if (firstSectionCoordinates && firstSectionCoordinates.length > 0) {
-				const { labelElement, labelLat, labelLng, labelText } =
-					isolineLib.computedLabelElement({
-						firstSectionCoordinates,
-						constraint,
+					isolineCoordinatesRef.current[rangeType].push(coordinates);
+
+					const polygon = new H.map.Polygon(lineString, {
+						style: { lineWidth: 2, ...style },
+						data: section,
 					});
+					group.addObject(polygon);
 
-				// Create and add the DomMarker
-				const domIcon = new H.map.DomIcon(labelElement);
-				const labelMarker = new H.map.DomMarker(
-					{ lat: labelLat, lng: labelLng },
-					{
-						icon: domIcon,
-						data: { lat: labelLat, lng: labelLng, label: labelText },
-					},
-				);
-				group.addObject(labelMarker);
+					// Store first section's coordinates for label placement
+					if (!firstSectionCoordinates) {
+						firstSectionCoordinates = coordinates;
+					}
+				}
+
+				if (firstSectionCoordinates && firstSectionCoordinates.length > 0) {
+					// Add label to the first polygon section
+					const { labelElement, labelLat, labelLng, labelText } =
+						isolineLib.computedLabelElement({
+							firstSectionCoordinates,
+							constraint,
+						});
+
+					// Create and add the DomMarker
+					const domIcon = new H.map.DomIcon(labelElement);
+					const labelMarker = new H.map.DomMarker(
+						{ lat: labelLat, lng: labelLng },
+						{
+							icon: domIcon,
+							data: { lat: labelLat, lng: labelLng, label: labelText },
+						},
+					);
+					group.addObject(labelMarker);
+				}
+
+				if (rangeType === "time")
+					// Save group reference
+					timeIsolineGroupRef.current = group;
+				else distanceIsolineGroupRef.current = group;
+
+				// show the polygons to the map
+				mapRef.current.addObject(group);
+
+				if (autoZoom) {
+					// zoom the map to the bounding reactangle
+					mapRef.current.getViewModel().setLookAtData({
+						bounds: group.getBoundingBox(),
+					});
+				}
+
+				return group;
+			} catch (err) {
+				console.error("isoline.addIsolineToMap", err);
 			}
-
-			// Save group reference
-			if (rangeType === "time") timeIsolineGroupRef.current = group;
-			else distanceIsolineGroupRef.current = group;
-
-			// show the polygons to the map
-			mapRef.current.addObject(group);
-
-			// zoom the map to the bounding reactangle
-			if (autoZoom) {
-				mapRef.current.getViewModel().setLookAtData({
-					bounds: group.getBoundingBox(),
-				});
-			}
-
-			return group;
 		},
 		[],
 	);
+	const addAllIsolineToMap = useCallback(
+		(values: IsolineResult["isolines"]) => {
+			try {
+				if (!mapRef.current) return;
+
+				const boundingBoxes: H.geo.Rect[] = [];
+				for (const isoline of values) {
+					const group = addIsolineToMap(isoline, isoline.range, false);
+					if (group) boundingBoxes.push(group.getBoundingBox());
+				}
+
+				if (boundingBoxes.length > 0 && mapRef?.current) {
+					// Merge bounding boxes and adjust map view
+					const mergedBox = mergeAllRectangles(boundingBoxes);
+					if (mergedBox) {
+						mapRef?.current
+							?.getViewModel()
+							?.setLookAtData({ bounds: mergedBox });
+					}
+				} else {
+					console.error("No bounding boxes found for constraints.");
+					return null;
+				}
+
+				return boundingBoxes;
+			} catch (err) {
+				console.error("isoline.addAllIsolineToMap", err);
+			}
+		},
+		[addIsolineToMap],
+	);
 	const removeIsolines = useCallback(() => {
-		if (!mapRef.current) return;
+		try {
+			if (!mapRef.current) return;
 
-		// Remove time isoline
-		if (timeIsolineGroupRef.current) {
-			mapRef.current.removeObject(timeIsolineGroupRef.current);
-			timeIsolineGroupRef.current = null;
+			// Remove time isoline
+			if (timeIsolineGroupRef.current) {
+				mapRef.current.removeObject(timeIsolineGroupRef.current);
+				timeIsolineGroupRef.current = null;
+			}
+
+			// Remove distance isoline
+			if (distanceIsolineGroupRef.current) {
+				mapRef.current.removeObject(distanceIsolineGroupRef.current);
+				distanceIsolineGroupRef.current = null;
+			}
+
+			// Clear stored coordinates
+			isolineCoordinatesRef.current.time = [];
+			isolineCoordinatesRef.current.distance = [];
+		} catch (err) {
+			console.error("isoline.removeIsolines", err);
 		}
-
-		// Remove distance isoline
-		if (distanceIsolineGroupRef.current) {
-			mapRef.current.removeObject(distanceIsolineGroupRef.current);
-			distanceIsolineGroupRef.current = null;
-		}
-
-		// Clear stored coordinates
-		isolineCoordinatesRef.current.time = [];
-		isolineCoordinatesRef.current.distance = [];
 	}, []);
 	/**
 	 * @function calculateIsolineSingleContrainst
@@ -664,6 +724,9 @@ export default function useHereMap(
 						);
 					},
 				);
+			} catch (err) {
+				console.error("isoline.calculateIsolineSingleContrainst", err);
+				return null;
 			} finally {
 				setTimeout(() => {
 					setIsLoading(false);
@@ -744,6 +807,9 @@ export default function useHereMap(
 
 				// Return the array of successful isolines
 				return allIsolines;
+			} catch (err) {
+				console.error("isoline.calculateIsolineBothConstraints", err);
+				return null;
 			} finally {
 				setTimeout(() => {
 					setIsLoading(false);
@@ -760,28 +826,33 @@ export default function useHereMap(
 	 * @returns A new H.geo.Rect covering all input rectangles, or null if none
 	 */
 	function mergeAllRectangles(rects: H.geo.Rect[]): H.geo.Rect | null {
-		if (!rects || rects.length === 0) {
+		try {
+			if (!rects || rects.length === 0) {
+				return null;
+			}
+
+			// Initialize min/max values
+			let top = Number.NEGATIVE_INFINITY; // "top" in HERE means the higher latitude value
+			let bottom = Number.POSITIVE_INFINITY; // lower latitude value
+			let left = Number.POSITIVE_INFINITY; // smaller longitude
+			let right = Number.NEGATIVE_INFINITY; // bigger longitude
+
+			for (const r of rects) {
+				// HERE's Lat/Lng bounding box:
+				//   top (max lat), left (min lng), bottom (min lat), right (max lng)
+				top = Math.max(top, r.getTop());
+				bottom = Math.min(bottom, r.getBottom());
+				left = Math.min(left, r.getLeft());
+				right = Math.max(right, r.getRight());
+			}
+
+			// Construct the merged rectangle
+			// new H.geo.Rect(top, left, bottom, right)
+			return new H.geo.Rect(top, left, bottom, right);
+		} catch (err) {
+			console.error("isoline.mergeAllRectangles", err);
 			return null;
 		}
-
-		// Initialize min/max values
-		let top = Number.NEGATIVE_INFINITY; // "top" in HERE means the higher latitude value
-		let bottom = Number.POSITIVE_INFINITY; // lower latitude value
-		let left = Number.POSITIVE_INFINITY; // smaller longitude
-		let right = Number.NEGATIVE_INFINITY; // bigger longitude
-
-		for (const r of rects) {
-			// HERE's Lat/Lng bounding box:
-			//   top (max lat), left (min lng), bottom (min lat), right (max lng)
-			top = Math.max(top, r.getTop());
-			bottom = Math.min(bottom, r.getBottom());
-			left = Math.min(left, r.getLeft());
-			right = Math.max(right, r.getRight());
-		}
-
-		// Construct the merged rectangle
-		// new H.geo.Rect(top, left, bottom, right)
-		return new H.geo.Rect(top, left, bottom, right);
 	}
 
 	const isoline = {
@@ -791,23 +862,34 @@ export default function useHereMap(
 		},
 		onRemove: removeIsolines,
 		onAdd: addIsolineToMap,
+		onAddAll: addAllIsolineToMap,
 	};
 
 	// * routing
+	const removeRouting = useCallback(() => {
+		try {
+			// Remove route line from map
+			if (routeLineRef.current) {
+				mapRef.current?.removeObject(routeLineRef.current);
+				routeLineRef.current = null;
+			}
+
+			// Remove tooltip bubble from UI
+			if (routeTooltipRef.current) {
+				uiRef.current?.removeBubble(routeTooltipRef.current);
+				routeTooltipRef.current = null;
+			}
+		} catch (err) {
+			console.error("routing.removeRouting", err);
+		}
+	}, []);
 	const calculateRouting = useCallback(
 		async ({
 			destination,
 			origin,
 		}: { destination: MarkerData; origin: MarkerData }) => {
 			// Remove previous route and tooltip
-			if (routeLineRef.current) {
-				mapRef?.current?.removeObject(routeLineRef.current);
-				routeLineRef.current = null;
-			}
-			if (routeTooltipRef.current) {
-				uiRef.current?.removeBubble(routeTooltipRef.current);
-				routeTooltipRef.current = null;
-			}
+			removeRouting();
 
 			setIsLoading(true);
 			setIsLoadingType("routing");
@@ -909,7 +991,7 @@ export default function useHereMap(
 				}, 250);
 			}
 		},
-		[],
+		[removeRouting],
 	);
 
 	// * geometry utils group
@@ -1033,6 +1115,50 @@ export default function useHereMap(
 			return mapRef.current?.getZoom() || null;
 		}, []),
 		centerMap,
+		getCameraBound: useCallback(
+			({
+				// default 0.1 means 10% expand bounds for padding effect
+				expandCount = 0.1,
+			}: { expandCount?: number } = {}) => {
+				if (!mapRef.current) return;
+
+				const groups = [
+					primaryMarkerGroupRef.current,
+					secondaryMarkerGroupRef.current,
+				].filter((group): group is H.map.Group => !!group);
+
+				if (groups.length === 0) return;
+
+				let boundingBox = groups.reduce<H.geo.Rect | null>(
+					(mergedBounds, group) => {
+						const groupBounds = group.getBoundingBox();
+						return mergedBounds
+							? mergedBounds.mergeRect(groupBounds)
+							: groupBounds;
+					},
+					null,
+				);
+
+				if (boundingBox) {
+					// Manually expand bounds by the specified padding percentage
+					const latPadding =
+						(boundingBox.getTop() - boundingBox.getBottom()) * expandCount;
+					const lngPadding =
+						(boundingBox.getRight() - boundingBox.getLeft()) * expandCount;
+					boundingBox = new H.geo.Rect(
+						boundingBox.getTop() + latPadding, // top
+						boundingBox.getLeft() - lngPadding, // left
+						boundingBox.getBottom() - latPadding, // bottom
+						boundingBox.getRight() + lngPadding, // right
+					);
+
+					mapRef.current
+						.getViewModel()
+						.setLookAtData({ bounds: boundingBox }, true);
+				}
+			},
+			[],
+		),
 	};
 
 	return {

@@ -1,5 +1,5 @@
 import useHereMap, { type HereMapHooks } from "@/hooks/here-maps";
-import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
+import { MAP_DEFAULT_COORDINATE, TRAFFIC_INTERVAL } from "@/lib/here-maps";
 import { cn } from "@/lib/utils";
 import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
@@ -19,7 +19,7 @@ import {
 interface HereMaphandler {
 	mapControl: Pick<
 		HereMapHooks["mapControl"],
-		"setZoom" | "setCenter" | "getCenterPosition" | "getZoom"
+		"setZoom" | "setCenter" | "getCenterPosition" | "getZoom" | "getCameraBound"
 	>;
 	marker: HereMapHooks["marker"];
 	geocode: HereMapHooks["geocode"];
@@ -107,6 +107,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 				setCenter: mapControl.setCenter,
 				getCenterPosition: mapControl.getCenterPosition,
 				getZoom: mapControl.getZoom,
+				getCameraBound: mapControl.getCameraBound,
 			},
 			marker: {
 				onAdd: marker.onAdd,
@@ -122,6 +123,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 				},
 				onRemove: isoline.onRemove,
 				onAdd: isoline.onAdd,
+				onAddAll: isoline.onAddAll,
 			},
 			isLocationFeasible,
 			isLoading: { value: isLoading, type: isLoadingType },
@@ -134,7 +136,7 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 			// for update traffic map layer every ten-minute
 			const trafficInterval = setInterval(
 				mapControl.updateLayer.traffic,
-				60000 * 10,
+				TRAFFIC_INTERVAL,
 			);
 			return () => {
 				clearInterval(trafficInterval);

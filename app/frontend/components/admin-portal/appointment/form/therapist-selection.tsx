@@ -19,14 +19,15 @@ import {
 	User,
 } from "lucide-react";
 import {
-	forwardRef,
+	type ComponentProps,
 	Fragment,
+	forwardRef,
 	memo,
 	useCallback,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
-	type ComponentProps,
 } from "react";
 
 // * button selection list
@@ -158,29 +159,34 @@ function EmptyTherapists() {
 export interface TherapistSelectionProps extends ComponentProps<"div"> {
 	value: string | undefined;
 	isLoading: boolean;
-	therapists: TherapistOption[];
-	isDisabledFind: boolean;
+	items: TherapistOption[];
 	appt?: Appointment;
+	selectedTherapist?: TherapistOption;
 	height?: number;
-	onFindTherapists: () => void;
+	find: {
+		isDisabled: boolean;
+		handler: () => Promise<void>;
+	};
 	onSelectTherapist: (value: { id: string; name: string }) => void;
+	onPersist: (value: TherapistOption | null) => void;
 }
 
 const TherapistSelection = memo(function Component({
 	className,
 	value,
 	isLoading,
-	therapists,
-	isDisabledFind,
+	items,
+	find,
+	selectedTherapist,
 	appt,
 	height = 430,
-	onFindTherapists,
 	onSelectTherapist,
+	onPersist,
 }: TherapistSelectionProps) {
 	const [search, setSearch] = useState("");
 	const debouncedSearchTerm = useDebounce(search, 300);
 	// Filter by search term first
-	const filteredTherapists = therapists.filter((t) => {
+	const filteredTherapists = items.filter((t) => {
 		if (debouncedSearchTerm) {
 			return t.name.includes(debouncedSearchTerm);
 		}
@@ -230,14 +236,35 @@ const TherapistSelection = memo(function Component({
 	useEffect(() => {
 		if (!value) return;
 		// Find the therapist by name
-		const therapist = therapists.find((t) => t.name === value);
+		const therapist = items.find((t) => t.name === value);
 		if (therapist && therapistRefs.current[therapist.id]) {
 			therapistRefs.current[therapist.id]?.scrollIntoView({
 				block: "nearest",
 				behavior: "smooth",
 			});
 		}
-	}, [value, therapists]);
+	}, [value, items]);
+
+	// therapist reference for selected therapist (new form) or existing therapist (reschedule-form)
+	const therapistReference = useMemo<
+		null | CardTherapistProps["therapist"]
+	>(() => {
+		if (!appt?.therapist && !selectedTherapist) return null;
+
+		return {
+			id: appt?.therapist?.id || selectedTherapist?.id || "",
+			name: appt?.therapist?.name || selectedTherapist?.name || "",
+			gender: appt?.therapist?.gender || selectedTherapist?.gender || "MALE",
+			registrationNumber:
+				appt?.therapist?.registrationNumber ||
+				selectedTherapist?.registrationNumber ||
+				"",
+			employmentType:
+				appt?.therapist?.employmentType ||
+				selectedTherapist?.employmentType ||
+				"KARPIS",
+		};
+	}, [appt?.therapist, selectedTherapist]);
 
 	return (
 		<div className={cn("flex flex-col gap-6", className)}>
@@ -247,10 +274,11 @@ const TherapistSelection = memo(function Component({
 				iconPlacement="right"
 				className="w-full"
 				icon={ChevronsRight}
-				disabled={isDisabledFind}
-				onClick={(event) => {
+				disabled={find.isDisabled}
+				onClick={async (event) => {
 					event.preventDefault();
-					onFindTherapists();
+
+					await find.handler();
 				}}
 			>
 				Find the Available Therapists
@@ -260,7 +288,7 @@ const TherapistSelection = memo(function Component({
 				className="relative p-3 text-sm border rounded-md border-borderder bg-sidebar text-muted-foreground"
 				style={{ height: height }}
 			>
-				{!isLoading && therapists?.length > 0 && (
+				{!isLoading && items?.length > 0 && (
 					<div className="sticky top-0 z-10 pb-2 bg-sidebar mb-[0.5rem]">
 						<Input
 							value={search}
@@ -281,7 +309,7 @@ const TherapistSelection = memo(function Component({
 				<div className="grid gap-2 ">
 					{isLoading ? (
 						<LoadingBasic columnBased />
-					) : therapists?.length ? (
+					) : items?.length ? (
 						<Fragment>
 							{suggestedTherapists.length > 0 && (
 								<div>
@@ -303,11 +331,17 @@ const TherapistSelection = memo(function Component({
 														therapistRefs.current[t.id] = el;
 													}}
 													selected={value === t.name}
-													onSelect={() =>
-														value === t.name
-															? onSelectTherapist(DEFAULT_VALUES_THERAPIST)
-															: onSelectTherapist({ id: t.id, name: t.name })
-													}
+													onSelect={() => {
+														// save values for react-hook-form
+														onSelectTherapist(
+															value === t.name
+																? DEFAULT_VALUES_THERAPIST
+																: { id: t.id, name: t.name },
+														);
+
+														// save values for session-storage form-selection object
+														onPersist(value === t.name ? null : t);
+													}}
 													regNumbers={regNumbers}
 												>
 													<CardTherapist
@@ -343,11 +377,17 @@ const TherapistSelection = memo(function Component({
 													therapistRefs.current[t.id] = el;
 												}}
 												selected={value === t.name}
-												onSelect={() =>
-													value === t.name
-														? onSelectTherapist(DEFAULT_VALUES_THERAPIST)
-														: onSelectTherapist({ id: t.id, name: t.name })
-												}
+												onSelect={() => {
+													// save values for react-hook-form
+													onSelectTherapist(
+														value === t.name
+															? DEFAULT_VALUES_THERAPIST
+															: { id: t.id, name: t.name },
+													);
+
+													// save values for session-storage form-selection object
+													onPersist(value === t.name ? null : t);
+												}}
 											>
 												<CardTherapist
 													therapist={{
@@ -364,19 +404,9 @@ const TherapistSelection = memo(function Component({
 								</div>
 							)}
 						</Fragment>
-					) : value ? (
+					) : therapistReference && therapistReference?.name === value ? (
 						<div className="p-2 border rounded-lg border-primary-foreground bg-primary text-primary-foreground">
-							{appt?.therapist && (
-								<CardTherapist
-									therapist={{
-										name: appt.therapist.name,
-										gender: appt.therapist.gender,
-										id: appt.therapist.id,
-										registrationNumber: appt.therapist.registrationNumber,
-										employmentType: appt.therapist.employmentType,
-									}}
-								/>
-							)}
+							<CardTherapist therapist={therapistReference} />
 						</div>
 					) : (
 						<EmptyTherapists />
