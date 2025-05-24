@@ -17,6 +17,15 @@ import {
 	AnnouncementTag,
 	AnnouncementTitle,
 } from "@/components/ui/kibo-ui/announcement";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GENDERS } from "@/lib/constants";
@@ -34,15 +43,24 @@ import type { Metadata } from "@/types/pagy";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlarmClock, ListFilter, Plus } from "lucide-react";
+import {
+	AlarmClock,
+	ArrowDownUp,
+	ListFilter,
+	LoaderCircle,
+	Plus,
+} from "lucide-react";
 import {
 	type ReactNode,
 	createContext,
 	useCallback,
 	useContext,
 	useMemo,
+	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { Badge } from "@/components/ui/badge";
 
 export const PREFERENCES_STORAGE_KEY = "appointment-index-preferences";
 
@@ -197,6 +215,7 @@ export interface AppointmentIndexProps {
 		locations: Location[];
 		services: ServicePick[];
 		patientGenders: typeof GENDERS;
+		sortList: ["newest", "oldest", "upcoming_visit", "furthest_visit"];
 	};
 }
 
@@ -207,7 +226,8 @@ export interface AppointmentIndexGlobalPageProps
 }
 
 export default function AppointmentIndex() {
-	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
 
 	const appointments = useMemo(() => {
@@ -327,6 +347,45 @@ export default function AppointmentIndex() {
 		savePreferences((prev) => ({ ...prev, isShowFilter: !prev.isShowFilter }));
 	};
 
+	// * sort management state with animation
+	const [isSorting, setIsSorting] = useState(false);
+	const sortBy = useMemo(() => {
+		const currentQuery = globalProps?.adminPortal?.currentQuery;
+
+		return currentQuery?.sort || "";
+	}, [globalProps?.adminPortal?.currentQuery]);
+	const sortList = useMemo(
+		() => globalProps.filterOptionsData?.sortList || [],
+		[globalProps.filterOptionsData?.sortList],
+	);
+	const onChangeSort = useCallback(
+		(value: string) => {
+			const { fullUrl } = populateQueryParams(
+				pageURL,
+				deepTransformKeysToSnakeCase({
+					sort: value === "clear" ? null : value,
+				}),
+			);
+			router.get(
+				fullUrl,
+				{},
+				{
+					preserveState: true,
+					only: ["adminPortal", "flash", "errors", "appointments"],
+					onStart: () => {
+						setIsSorting(true);
+					},
+					onFinish: () => {
+						setTimeout(() => {
+							setIsSorting(false);
+						}, 250);
+					},
+				},
+			);
+		},
+		[pageURL],
+	);
+
 	return (
 		<PageProvider>
 			<Head title={t("head_title")} />
@@ -348,6 +407,63 @@ export default function AppointmentIndex() {
 
 				<div className="grid gap-4">
 					<div className="z-10 flex flex-col justify-end gap-2 md:flex-row">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									disabled={isSorting}
+									type="button"
+									variant="outline"
+									className="w-full md:w-fit"
+								>
+									{isSorting ? (
+										<LoaderCircle className="animate-spin" />
+									) : (
+										<ArrowDownUp />
+									)}
+									{isSorting ? t("button.sort.loading") : t("button.sort.base")}
+									{sortBy && (
+										<>
+											<Separator orientation="vertical" />
+											<Badge className="uppercase text-[10px] p-0 px-1">
+												{sortBy?.replaceAll("_", " ")}
+											</Badge>
+										</>
+									)}
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="start"
+								side="bottom"
+								className="w-fit"
+							>
+								<DropdownMenuLabel>{t("button.sort.label")}</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<Deferred
+									data={["filterOptionsData"]}
+									fallback={<Skeleton className="w-full h-8" />}
+								>
+									<DropdownMenuRadioGroup
+										value={sortBy}
+										onValueChange={onChangeSort}
+									>
+										{sortList.map((item) => (
+											<DropdownMenuRadioItem
+												key={item}
+												value={item}
+												className="uppercase"
+											>
+												{item?.replaceAll("_", " ")}
+											</DropdownMenuRadioItem>
+										))}
+										<DropdownMenuSeparator />
+										<DropdownMenuRadioItem value="clear" className="uppercase">
+											{t("button.sort.clear")}
+										</DropdownMenuRadioItem>
+									</DropdownMenuRadioGroup>
+								</Deferred>
+							</DropdownMenuContent>
+						</DropdownMenu>
+
 						<Button
 							type="button"
 							variant={preferences.isShowFilter ? "default" : "outline"}

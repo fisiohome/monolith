@@ -5,6 +5,13 @@ module AdminPortal
     include AppointmentsHelper
     include ServicesHelper
 
+    SORT_MAPPINGS = {
+      "newest" => {sort_by: "created_at", sort_order: "desc"},
+      "oldest" => {sort_by: "created_at", sort_order: "asc"},
+      "upcoming_visit" => {sort_by: "appointment_date_time", sort_order: "asc"},
+      "furthest_visit" => {sort_by: "appointment_date_time", sort_order: "desc"}
+    }.freeze
+
     def initialize(params, current_user)
       @params = params
       @current_user = (@params[:assigned_to] == "me") ? current_user : nil
@@ -35,8 +42,9 @@ module AdminPortal
         end
       end
       patient_genders = Patient.genders.map { |key, value| value }
+      sort_list = SORT_MAPPINGS.keys
 
-      deep_transform_keys_to_camel_case({locations:, services:, patient_genders:})
+      deep_transform_keys_to_camel_case({locations:, services:, patient_genders:, sort_list:})
     end
 
     def fetch_selected_appointment
@@ -65,14 +73,36 @@ module AdminPortal
         # apply the filter
         .apply_filters(@params, @current_user)
         # sorting, ensure everything is sorted by the full date - time
-        .order(appointment_date_time: :asc)
+        .then { |relation| apply_sorting(relation) }
+    end
+
+    # Apply sorting based on params
+    def apply_sorting(relation)
+      mapping = SORT_MAPPINGS[@params[:sort]] || SORT_MAPPINGS["upcoming_visit"]
+      sort_by = mapping[:sort_by]
+      sort_order = mapping[:sort_order]
+
+      relation.order(sort_by => sort_order.to_sym)
     end
 
     # group appointments by the date part of appointment_date_time, sort them by date and serialize after pagination.
     def group_and_serialize(appointments)
-      grouped = appointments
-        .group_by { |a| a.appointment_date_time.to_date if a.appointment_date_time.present? }
-        .sort_by { |date, _| [date.nil? ? 1 : 0, date || Date.new(0)] }
+      mapping = SORT_MAPPINGS[@params[:sort]] || SORT_MAPPINGS["upcoming_visit"]
+      sort_by = mapping[:sort_by]
+      sort_order = mapping[:sort_order]
+
+      # Group by appointment_date_time's date regardless of sort, but adjust group sorting
+      grouped = appointments.group_by { |a| a.appointment_date_time.to_date if a.appointment_date_time.present? }
+
+      # Sort groups based on the current sort parameters
+      if sort_by == "appointment_date_time"
+        grouped = grouped.sort_by { |date, _| [date.nil? ? 1 : 0, date || Date.new(0)] }
+        grouped = grouped.reverse if sort_order == "desc"
+      else
+        # Maintain the order from the database, group hash keys are in insertion order (Ruby >= 2.0)
+        grouped = grouped.to_a
+      end
+
       grouped = reverse_groups_if_needed(grouped)
 
       grouped.map do |date, apps|

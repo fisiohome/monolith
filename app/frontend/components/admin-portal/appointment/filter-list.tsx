@@ -91,7 +91,7 @@ export default function FilterList({
 					},
 				},
 			);
-		}, 500),
+		}, 250),
 		[],
 	);
 	const handleFilterBy = useCallback(

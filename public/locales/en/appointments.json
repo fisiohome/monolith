@@ -25,7 +25,13 @@
 		"update_status": "Update Status",
 		"filter": "Filter",
 		"clear_all_filters": "Clear All",
-		"close_filter": "Close"
+		"close_filter": "Close",
+		"sort": {
+			"base": "Sort",
+			"label": "Sort By",
+			"loading": "Sorting...",
+			"clear": "Clear"
+		}
 	},
 	"tab": {
 		"title": {

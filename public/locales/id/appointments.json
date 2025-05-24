@@ -23,9 +23,15 @@
 		"series": "Buat Series",
 		"update_pic": "Perbarui Penanggung Jawab (PIC)",
 		"update_status": "Perbarui Status",
-		"filter": "Filter",
+		"filter": "Saring",
 		"clear_all_filters": "Hapus Semua",
-		"close_filter": "Tutup"
+		"close_filter": "Tutup",
+		"sort": {
+			"base": "Urutkan",
+			"label": "Urut Berdasarkan",
+			"loading": "Mengurutkan...",
+			"clear": "Bersihkan"
+		}
 	},
 	"tab": {
 		"title": {
