@@ -23,6 +23,7 @@
 		"series": "Create Series",
 		"update_pic": "Update PIC(s)",
 		"update_status": "Update Status",
+		"detail": "Detail",
 		"filter": "Filter",
 		"clear_all_filters": "Clear All",
 		"close_filter": "Close",

@@ -168,8 +168,13 @@ class Appointment < ApplicationRecord
   scope :scheduled, -> { where.not(status: "UNSCHEDULED") }
 
   scope :apply_filters, ->(params, current_user = nil) {
+    other_filters_blank = [
+      params[:registration_number], params[:therapist], params[:patient],
+      params[:city], params[:patient_genders], params[:service_ids], params[:package_ids]
+    ].all?(&:blank?)
+
     # Chain scopes based on parameters
-    filter_by_name(params[:therapist], :therapist)
+    filtered = filter_by_name(params[:therapist], :therapist)
       .filter_by_name(params[:patient], :patient)
       .filter_by_registration(params[:registration_number])
       .filter_by_city(params[:city])
@@ -177,7 +182,12 @@ class Appointment < ApplicationRecord
       .filter_by_service_ids(params[:service_ids])
       .filter_by_package_ids(params[:package_ids])
       .assigned_to(current_user)
-      .apply_status_filter(params[:status])
+
+    if params[:status].present? || other_filters_blank
+      filtered = filtered.apply_status_filter(params[:status])
+    end
+
+    filtered
   }
   scope :filter_by_name, ->(name, association) {
     return self if name.blank?

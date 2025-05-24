@@ -21,7 +21,9 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { getGenderIcon } from "@/hooks/use-gender";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { getbadgeVariantStatus } from "@/lib/appointments/utils";
 import { getBrandBadgeVariant } from "@/lib/services";
 import { cn, generateInitials, populateQueryParams } from "@/lib/utils";
@@ -29,6 +31,7 @@ import type {
 	AppointmentIndexGlobalPageProps,
 	AppointmentIndexProps,
 } from "@/pages/AdminPortal/Appointment/Index";
+import type { Appointment } from "@/types/admin-portal/appointment";
 import { router, usePage } from "@inertiajs/react";
 import {
 	compareDesc,
@@ -259,13 +262,11 @@ interface ScheduleListProps {
 }
 
 function ScheduleList({ schedule }: ScheduleListProps) {
+	const isMobile = useIsMobile();
 	const { locale, tzDate, timeFormatDateFns } = useDateContext();
-	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
+	const { props: globalProps, url: pageURL } =
+		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
-	const isPastFromToday = useMemo(() => {
-		if (!schedule.appointmentDateTime) return false;
-		return isBefore(schedule.appointmentDateTime, startOfToday());
-	}, [schedule.appointmentDateTime]);
 	const distanceBadgeVariant = useMemo(
 		() => getbadgeVariantStatus(schedule.status),
 		[schedule.status],
@@ -325,6 +326,20 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 				in: tzDate,
 			}) <= 24,
 		[schedule.createdAt, tzDate],
+	);
+	const seeDetailVisitSeries = useCallback(
+		(registrationNumber: string) => {
+			router.get(
+				pageURL,
+				deepTransformKeysToSnakeCase({ registrationNumber }),
+				{
+					only: ["adminPortal", "flash", "errors", "appointments"],
+					preserveState: true,
+					replace: true,
+				},
+			);
+		},
+		[pageURL],
 	);
 
 	return (
@@ -735,81 +750,41 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 													</h4>
 
 													{schedule?.allVisits?.map((visit) => (
-														<div
+														<SeriesItem
 															key={visit.id}
-															className={cn(
-																"grid gap-1 p-3 border rounded-lg border-border bg-input",
-																visit.registrationNumber ===
-																	schedule.registrationNumber &&
-																	"border-primary/50 text-primary",
-															)}
+															parentAppt={schedule}
+															appointment={visit}
 														>
-															<div className="flex items-center justify-between">
-																<div className="flex-none mb-1">
-																	<Badge
-																		variant="outline"
-																		className={cn(
-																			"text-pretty font-bold !text-[10px] px-1",
-																			schedule?.service?.code &&
-																				getBrandBadgeVariant(
-																					schedule.service.code,
-																				),
-																		)}
+															<div className="flex mt-2">
+																{visit.registrationNumber !==
+																	schedule.registrationNumber && (
+																	<Button
+																		size={isMobile ? "sm" : "xs"}
+																		type="button"
+																		variant="primary-outline"
+																		onClick={(event) => {
+																			event.preventDefault();
+																			event.stopPropagation();
+
+																			seeDetailVisitSeries(
+																				visit.registrationNumber,
+																			);
+																		}}
 																	>
-																		<Hash className="size-2.5" />
-																		<span>{visit.registrationNumber}</span>
-																	</Badge>
-																</div>
-
-																<div>
-																	<Badge
-																		variant="outline"
-																		className={cn(
-																			"mb-1 text-center text-pretty !text-[10px]",
-																			getbadgeVariantStatus(visit.status),
-																		)}
-																	>
-																		{t(`statuses.${visit.status}`)}
-																	</Badge>
-																</div>
-															</div>
-
-															<div className="flex flex-col flex-1">
-																<p className="font-bold">
-																	Visit {visit.visitProgress}
-																</p>
-
-																{visit.appointmentDateTime ? (
-																	<p className="text-xs font-light">
-																		<span>
-																			{format(
-																				visit.appointmentDateTime,
-																				timeFormatDateFns,
-																				{
-																					locale,
-																					in: tzDate,
-																				},
-																			)}
-																		</span>
-
-																		<span className="mx-1">&bull;</span>
-
-																		<span>
-																			{format(
-																				visit.appointmentDateTime,
-																				"PPPP",
-																				{
-																					locale,
-																					in: tzDate,
-																				},
-																			)}
-																		</span>
-																	</p>
-																) : (
-																	<p className="text-xs font-light">N/A</p>
+																		{t("button.detail")}
+																	</Button>
 																)}
 															</div>
-														</div>
+															{/* <AppointmentActionButtons
+																schedule={visit}
+																isExpanded={isExpanded}
+																isSuperAdmin={isSuperAdmin}
+																isAdminPIC={isAdminPIC}
+																isAdminSupervisor={isAdminSupervisor}
+																buttonSize={isMobile ? "sm" : "xs"}
+																className="mt-4"
+															/> */}
+														</SeriesItem>
 													))}
 												</div>
 
@@ -986,14 +961,17 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 								</ExpandableContent>
 							</ExpandableCardContent>
 
-							<AppointmentActionButtons
-								schedule={schedule}
-								isExpanded={isExpanded}
-								isSuperAdmin={isSuperAdmin}
-								isAdminPIC={isAdminPIC}
-								isAdminSupervisor={isAdminSupervisor}
-								isPastFromToday={isPastFromToday}
-							/>
+							<ExpandableContent preset="slide-up">
+								<ExpandableCardFooter className="p-4 md:p-6 bg-background">
+									<AppointmentActionButtons
+										schedule={schedule}
+										isExpanded={isExpanded}
+										isSuperAdmin={isSuperAdmin}
+										isAdminPIC={isAdminPIC}
+										isAdminSupervisor={isAdminSupervisor}
+									/>
+								</ExpandableCardFooter>
+							</ExpandableContent>
 						</ExpandableCard>
 					</ExpandableTrigger>
 				);
@@ -1003,26 +981,32 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 }
 
 // * appointment schedule component
-interface AppointmentActionButtonsProps {
+interface AppointmentActionButtonsProps extends ComponentProps<"div"> {
 	schedule: ScheduleListProps["schedule"];
 	isExpanded: boolean;
 	isSuperAdmin: boolean;
 	isAdminPIC: boolean;
 	isAdminSupervisor: boolean;
-	isPastFromToday: boolean;
+	buttonSize?: "xs" | "sm" | "default" | "lg" | "xl";
 }
 
 const AppointmentActionButtons = memo(function Component({
+	className,
 	schedule,
 	isExpanded: _isExpanded,
 	isAdminPIC,
 	isAdminSupervisor,
-	isPastFromToday,
 	isSuperAdmin,
+	buttonSize = "default",
 }: AppointmentActionButtonsProps) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
+
+	const isPastFromToday = useMemo(() => {
+		if (!schedule.appointmentDateTime) return false;
+		return isBefore(schedule.appointmentDateTime, startOfToday());
+	}, [schedule.appointmentDateTime]);
 	const isShow = useMemo(() => {
 		const updateStatus =
 			schedule.status !== "paid" &&
@@ -1111,13 +1095,16 @@ const AppointmentActionButtons = memo(function Component({
 	};
 
 	return (
-		<ExpandableContent preset="slide-up">
-			<ExpandableCardFooter className="p-4 md:p-6">
-				<div className="flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end">
-					{(isSuperAdmin || isAdminPIC || isAdminSupervisor) &&
-						schedule.status !== "cancelled" && (
-							<>
-								{/* {isShow.createSeries && (
+		<div
+			className={cn(
+				"flex flex-col items-center w-full gap-3 lg:flex-row lg:justify-end",
+				className,
+			)}
+		>
+			{(isSuperAdmin || isAdminPIC || isAdminSupervisor) &&
+				schedule.status !== "cancelled" && (
+					<>
+						{/* {isShow.createSeries && (
 								<Button
 									variant="primary-outline"
 									className="w-full lg:w-auto"
@@ -1133,76 +1120,78 @@ const AppointmentActionButtons = memo(function Component({
 								</Button>
 							)} */}
 
-								{!isPastFromToday && (
-									<>
-										<Button
-											variant="primary-outline"
-											className="w-full lg:w-auto"
-											onClick={(event) => {
-												event.preventDefault();
-												event.stopPropagation();
+						{!isPastFromToday && (
+							<>
+								<Button
+									variant="primary-outline"
+									className="w-full lg:w-auto"
+									size={buttonSize}
+									onClick={(event) => {
+										event.preventDefault();
+										event.stopPropagation();
 
-												routeTo.reschedule(String(schedule.id));
-											}}
-										>
-											<Clock3 />
-											{t("button.reschedule")}
-										</Button>
+										routeTo.reschedule(String(schedule.id));
+									}}
+								>
+									<Clock3 />
+									{t("button.reschedule")}
+								</Button>
 
-										{isShow.updateStatus && (
-											<Button
-												variant="primary-outline"
-												className="w-full lg:w-auto"
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
+								{isShow.updateStatus && (
+									<Button
+										variant="primary-outline"
+										className="w-full lg:w-auto"
+										size={buttonSize}
+										onClick={(event) => {
+											event.preventDefault();
+											event.stopPropagation();
 
-													routeTo.updateStatus(String(schedule.id));
-												}}
-											>
-												<Activity />
-												{t("button.update_status")}
-											</Button>
-										)}
+											routeTo.updateStatus(String(schedule.id));
+										}}
+									>
+										<Activity />
+										{t("button.update_status")}
+									</Button>
+								)}
 
-										{(isAdminSupervisor || isSuperAdmin) && (
-											<Button
-												variant="primary-outline"
-												className="w-full lg:w-auto"
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
+								{(isAdminSupervisor || isSuperAdmin) && (
+									<Button
+										variant="primary-outline"
+										className="w-full lg:w-auto"
+										size={buttonSize}
+										onClick={(event) => {
+											event.preventDefault();
+											event.stopPropagation();
 
-													routeTo.updatePic(String(schedule.id));
-												}}
-											>
-												<Cctv />
-												{t("button.update_pic")}
-											</Button>
-										)}
+											routeTo.updatePic(String(schedule.id));
+										}}
+									>
+										<Cctv />
+										{t("button.update_pic")}
+									</Button>
+								)}
 
-										{isShow.cancel && (
-											<Button
-												variant="destructive"
-												className="w-full lg:w-auto"
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
+								{isShow.cancel && (
+									<Button
+										variant="destructive"
+										className="w-full lg:w-auto"
+										size={buttonSize}
+										onClick={(event) => {
+											event.preventDefault();
+											event.stopPropagation();
 
-													routeTo.cancel(String(schedule.id));
-												}}
-											>
-												<Ban />
-												{t("button.cancel_booking")}
-											</Button>
-										)}
-									</>
+											routeTo.cancel(String(schedule.id));
+										}}
+									>
+										<Ban />
+										{t("button.cancel_booking")}
+									</Button>
 								)}
 							</>
 						)}
-				</div>
-			</ExpandableCardFooter>
-		</ExpandableContent>
+					</>
+				)}
+		</div>
 	);
 });
 
@@ -1562,3 +1551,93 @@ function PatientCard({
 		</div>
 	);
 }
+
+// * series list
+interface SeriesItemProps extends ComponentProps<"div"> {
+	parentAppt: NonNullable<ScheduleListProps["schedule"]>;
+	appointment: Pick<
+		Appointment,
+		| "id"
+		| "registrationNumber"
+		| "status"
+		| "visitProgress"
+		| "appointmentDateTime"
+	>;
+}
+
+const SeriesItem = memo(function Component({
+	children,
+	className,
+	parentAppt,
+	appointment,
+}: SeriesItemProps) {
+	const { t } = useTranslation("appointments");
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
+
+	return (
+		<div
+			className={cn(
+				"grid gap-1 p-3 border rounded-lg border-border bg-input",
+				className,
+				appointment.registrationNumber === parentAppt.registrationNumber &&
+					"ring-1 ring-primary text-primary",
+			)}
+		>
+			<div className="flex items-center justify-between">
+				<div className="flex-none mb-1">
+					<Badge
+						variant="outline"
+						className={cn(
+							"text-pretty font-bold !text-[10px] px-1",
+							parentAppt?.service?.code &&
+								getBrandBadgeVariant(parentAppt.service.code),
+						)}
+					>
+						<Hash className="size-2.5" />
+						<span>{appointment.registrationNumber}</span>
+					</Badge>
+				</div>
+
+				<div>
+					<Badge
+						variant="outline"
+						className={cn(
+							"mb-1 text-center text-pretty !text-[10px]",
+							getbadgeVariantStatus(appointment.status),
+						)}
+					>
+						{t(`statuses.${appointment.status}`)}
+					</Badge>
+				</div>
+			</div>
+
+			<div className="flex flex-col flex-1">
+				<p className="font-bold">Visit {appointment.visitProgress}</p>
+
+				{appointment.appointmentDateTime ? (
+					<p className="text-xs font-light">
+						<span>
+							{format(appointment.appointmentDateTime, timeFormatDateFns, {
+								locale,
+								in: tzDate,
+							})}
+						</span>
+
+						<span className="mx-1">&bull;</span>
+
+						<span>
+							{format(appointment.appointmentDateTime, "PPPP", {
+								locale,
+								in: tzDate,
+							})}
+						</span>
+					</p>
+				) : (
+					<p className="text-xs font-light">N/A</p>
+				)}
+			</div>
+
+			{children}
+		</div>
+	);
+});

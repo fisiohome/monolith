@@ -62,6 +62,8 @@ const buttonVariants = cva(
 	},
 );
 
+export type ButtonVariant = VariantProps<typeof buttonVariants>;
+
 interface IconProps {
 	icon: React.ElementType;
 	iconPlacement: "left" | "right";
@@ -74,7 +76,7 @@ interface IconRefProps {
 
 export interface ButtonProps
 	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-		VariantProps<typeof buttonVariants> {
+		ButtonVariant {
 	asChild?: boolean;
 }
 
