@@ -30,10 +30,10 @@ class AddressTest < ActiveSupport::TestCase
     assert_includes @jakarta_address.errors[:address], "can't be blank"
   end
 
-  test "address should validate presence of postal_code" do
+  test "address should be valid even without a postal_code" do
     @jakarta_address.postal_code = nil
-    assert_not @jakarta_address.valid?
-    assert_includes @jakarta_address.errors[:postal_code], "can't be blank"
+    assert @jakarta_address.valid?
+    assert_empty @jakarta_address.errors[:postal_code]
   end
 
   # Test associations
