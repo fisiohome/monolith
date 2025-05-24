@@ -391,7 +391,7 @@ class Appointment < ApplicationRecord
       return false
     end
 
-    unless schedulable?
+    if !schedulable? && !(updater_is_super_admin? || updater_is_admin_supervisor?)
       errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
       return false
     end
@@ -460,6 +460,15 @@ class Appointment < ApplicationRecord
   end
 
   private
+
+  # ! To bypass the validation if updater is SUPER_ADMIN
+  def updater_is_super_admin?
+    updater&.admin&.is_super_admin?
+  end
+
+  def updater_is_admin_supervisor?
+    updater&.admin&.is_admin_supervisor?
+  end
 
   # * define the validation methods
   # Validation: Ensure appointment time is in the future
@@ -680,7 +689,11 @@ class Appointment < ApplicationRecord
   end
 
   def valid_status_transition
-    return if status_was.nil? || status_cancelled? # Skip for new records or cancellation
+    # Skip for new records or cancellation
+    return if status_was.nil? || status_cancelled?
+
+    # ! SUPER_ADMIN can do anything about the status update
+    return if updater_is_super_admin? || updater_is_admin_supervisor?
 
     previous_status = status_was
     new_status = status
