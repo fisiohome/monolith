@@ -1,6 +1,7 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "simplecov"
 
 module ActiveSupport
   class TestCase
@@ -12,5 +13,6 @@ module ActiveSupport
     # fixtures :therapists, :addresses, :therapist_addresses, :users
 
     # Add more helper methods to be used by all tests here...
+    SimpleCov.start
   end
 end

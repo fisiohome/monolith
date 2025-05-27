@@ -85,3 +85,5 @@ gem "state_machines-activerecord", "~> 0.9.0"
 gem "open-uri", "~> 0.5.0"
 
 gem "csv", "~> 3.3"
+
+gem "simplecov", "~> 0.22.0"
