@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_16_062303) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_24_171251) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -271,6 +271,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_16_062303) do
     t.integer "min_booking_before_in_hours", default: 24, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "max_daily_appointments", default: 4, null: false
     t.index ["therapist_id"], name: "index_therapist_appointment_schedules_on_therapist_id"
   end
 

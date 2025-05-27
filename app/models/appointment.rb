@@ -159,6 +159,7 @@ class Appointment < ApplicationRecord
   validate :status_must_be_valid
   validate :valid_status_transition
   validate :series_status_cannot_outpace_root
+  validate :therapist_daily_limit
 
   validates_associated :address_history
 
@@ -379,7 +380,6 @@ class Appointment < ApplicationRecord
     STATUS_METADATA[status]
   end
 
-  # * define the state_machines methods
   def cascade_cancellation(updater: nil, reason: nil)
     return unless initial_visit?
 
@@ -721,6 +721,38 @@ class Appointment < ApplicationRecord
     new_status_name = STATUS_METADATA[new_status][:name]
     unless allowed_transitions[previous_status]&.include?(new_status)
       errors.add(:status, "invalid transition from #{previous_status_name} to #{new_status_name}")
+    end
+  end
+
+  def therapist_daily_limit
+    return if appointment_date_time.blank? || therapist_id.blank? || status_cancelled?
+
+    # Get the date part in the therapist's timezone if you have therapist time zones; otherwise, use Time.zone.
+    appt_date = appointment_date_time.in_time_zone(Time.zone.name).to_date
+    therapist = self.therapist
+    schedule = therapist&.therapist_appointment_schedule
+    max_appts = schedule&.max_daily_appointments
+
+    # Count non-cancelled appointments for this therapist on the same day, excluding this record if updating.
+    appointments_count = Appointment.where(
+      therapist_id: therapist_id,
+      appointment_date_time: appt_date.all_day # or appt_date.beginning_of_day..appt_date.end_of_day
+    ).where.not(status: "CANCELLED")
+      .where.not(id: id)
+      .count
+
+    # Add 1 if creating a new appointment or updating time/therapist
+    appointments_count += 1 unless persisted? && !will_save_change_to_appointment_date_time? && !will_save_change_to_therapist_id?
+
+    if appointments_count > max_appts
+      therapist_name = therapist&.name || "Therapist"
+      formatted_date = appt_date.strftime("%A, %B %d, %Y")
+      errors.add(
+        :base,
+        "#{therapist_name} is already assigned #{max_appts} appointments on #{formatted_date}. " \
+        "This would be the #{appointments_count.ordinalize} appointment. " \
+        "Please choose another day or therapist."
+      )
     end
   end
 
