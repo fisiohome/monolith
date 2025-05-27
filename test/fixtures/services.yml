@@ -1,5 +1,12 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
+fisiohome_special_tier:
+  name: "FISIOHOME_SPECIAL_TIER"
+  code: "FH"
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
 fisiohome:
   name: "FISIOHOME"
   code: "FH"
