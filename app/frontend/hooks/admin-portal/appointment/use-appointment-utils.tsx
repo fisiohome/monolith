@@ -88,7 +88,7 @@ export const usePatientRegion = () => {
 		[watchPatientDetailsValue.latitude, watchPatientDetailsValue.longitude],
 	);
 	const mapAddress = useMemo(() => {
-		const { address, postalCode } = watchPatientDetailsValue;
+		const { address, postalCode = "" } = watchPatientDetailsValue;
 
 		return {
 			country: selectedLocation?.country || "",

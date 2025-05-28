@@ -102,7 +102,7 @@ export const PATIENT_DETAILS_SCHEMA = z.object({
 			path: ["city"],
 			message: "Please select a location",
 		}),
-	postalCode: z.string().min(1, { message: "Postal code is required" }),
+	postalCode: z.string().optional(),
 	latitude: z.coerce
 		.number({ message: "Latitude must be a numerical value" })
 		.refine((value) => value !== 0, {
@@ -309,6 +309,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		patientContact: { ...contactInformation },
 		patientAddress: {
 			...restPatientDetails,
+			postalCode: restPatientDetails?.postalCode || "",
 			locationId: String(location.id),
 			notes: addressNotes,
 		},
