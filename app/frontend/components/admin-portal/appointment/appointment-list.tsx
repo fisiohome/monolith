@@ -329,8 +329,9 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 	);
 	const seeDetailVisitSeries = useCallback(
 		(registrationNumber: string) => {
+			const { baseUrl } = populateQueryParams(pageURL);
 			router.get(
-				pageURL,
+				baseUrl,
 				deepTransformKeysToSnakeCase({ registrationNumber }),
 				{
 					only: ["adminPortal", "flash", "errors", "appointments"],
