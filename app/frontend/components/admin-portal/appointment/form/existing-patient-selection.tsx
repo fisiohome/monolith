@@ -652,7 +652,7 @@ export default function ExistingPatientSelection() {
 									{isShow.patientSearch && (
 										<>
 											<Input
-												placeholder="Enter the patient name..."
+												placeholder="Enter patient name or contact number or email..."
 												className="shadow-inner bg-sidebar"
 												value={searchPatient}
 												StartIcon={{ icon: Search }}

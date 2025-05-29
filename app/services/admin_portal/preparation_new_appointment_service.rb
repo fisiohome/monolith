@@ -117,9 +117,15 @@ module AdminPortal
     def fetch_patient_list
       return if patient_search_param.blank?
 
+      term = "%#{patient_search_param.strip}%"
       Patient
-        .where(["name ILIKE ?", "%#{patient_search_param}%"])
-        .map { |patient| deep_transform_keys_to_camel_case(serialize_patient(patient).as_json) }
+        .joins(:patient_contact)
+        .where(
+          "patients.name ILIKE :t OR patient_contacts.email ILIKE :t OR patient_contacts.contact_phone ILIKE :t",
+          t: term
+        )
+        .distinct
+        .map { |p| deep_transform_keys_to_camel_case(serialize_patient(p).as_json) }
     end
 
     def fetch_appointment_reference
