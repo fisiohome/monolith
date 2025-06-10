@@ -452,6 +452,7 @@ export const useAppointmentDateTime = ({
 		twoMonthsFromToday.setMonth(today.getMonth() + 2);
 
 		// efective bounds
+		const isMinMaxExist = min || max;
 		const minDate = min
 			? isBefore(startOfDay(min), today)
 				? today
@@ -470,12 +471,16 @@ export const useAppointmentDateTime = ({
 			toYear: maxDate.getFullYear(),
 			// Disable dates that are in the past or more than 3 months in the future
 			disabled: (date) => date <= minDate || date > maxDate,
-			modifiers: {
-				booked: bookedDates,
-			},
-			modifiersClassNames: {
-				booked: "line-through",
-			},
+			modifiers: isMinMaxExist
+				? {
+						booked: bookedDates,
+					}
+				: undefined,
+			modifiersClassNames: isMinMaxExist
+				? {
+						booked: "line-through",
+					}
+				: undefined,
 		};
 	}, [max, min]);
 	const onSelectAppointmentDate = useCallback(
