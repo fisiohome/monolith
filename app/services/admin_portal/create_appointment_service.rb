@@ -42,33 +42,32 @@ module AdminPortal
       patient_params = @params[:patient].dup
 
       # Convert the date of birth using server's timezone, if present.
-      if patient_params[:date_of_birth].present?
-        date_of_birth_formatted = patient_params[:date_of_birth]&.in_time_zone(Time.zone.name)
-        patient_params[:date_of_birth] = date_of_birth_formatted
+      if (dob = patient_params[:date_of_birth])
+        patient_params[:date_of_birth] = dob&.in_time_zone(Time.zone.name)
       end
 
       # Find an existing patient by the given attributes or create a new one.
-      @patient = Patient.find_by(patient_params) || Patient.create!(patient_params)
+      @patient = Patient.find_by(patient_params) || Patient.new(patient_params)
     end
 
     def upsert_patient_contact
-      contact_params = @params[:patient_contact]
+      cp = @params[:patient_contact] || {}
 
-      # Find a patient contact based on unique identifiers such as contact name and phone.
-      existing_contact = PatientContact.find_by(
-        contact_name: contact_params[:contact_name],
-        contact_phone: contact_params[:contact_phone]
+      # find or initialize the PatientContact
+      contact = PatientContact.find_or_initialize_by(
+        contact_name: cp[:contact_name],
+        contact_phone: cp[:contact_phone]
       )
+      contact.assign_attributes(cp)
 
-      if existing_contact
-        # Merge patient association into the parameters (if applicable).
-        existing_contact.assign_attributes(contact_params.merge(patient: @patient))
-        existing_contact.save! if existing_contact.changed?
-        @patient_contact = existing_contact
-      else
-        # Create new contact with the patient association.
-        @patient_contact = PatientContact.create!(contact_params.merge(patient: @patient))
-      end
+      # save the contact if needed
+      contact.save! if contact.new_record? || contact.changed?
+
+      # now attach it to @patient and save the patient
+      @patient.patient_contact = contact
+      @patient.save! if @patient.new_record? || @patient.changed?
+
+      @patient_contact = contact
     end
 
     def upsert_patient_address

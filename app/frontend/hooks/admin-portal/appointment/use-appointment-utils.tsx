@@ -27,7 +27,7 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import type { Coordinate, IsolineResult } from "@/types/here-maps";
 import { router, usePage } from "@inertiajs/react";
 import { useSessionStorage } from "@uidotdev/usehooks";
-import { format } from "date-fns";
+import { add, format, isBefore, startOfDay, sub } from "date-fns";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -419,9 +419,16 @@ export const usePreferredTherapistGender = ({
 };
 
 // * hooks about appointment date time field
+export interface useAppointmentDateTimeProps {
+	sourceValue?: Date;
+	min: Date | null;
+	max: Date | null;
+}
 export const useAppointmentDateTime = ({
 	sourceValue,
-}: { sourceValue?: Date }) => {
+	min,
+	max,
+}: useAppointmentDateTimeProps) => {
 	const { locale, tzDate } = useDateContext();
 	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
 	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
@@ -437,24 +444,40 @@ export const useAppointmentDateTime = ({
 	);
 	// Memoized calendar properties for the appointment date field
 	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
+		// normalize “today” to midnight
+		const today = startOfDay(new Date());
+
 		// Define the range of years to be displayed in the calendar
-		const currentYear = new Date().getFullYear();
 		const twoMonthsFromToday = new Date();
-		twoMonthsFromToday.setMonth(twoMonthsFromToday.getMonth() + 2);
+		twoMonthsFromToday.setMonth(today.getMonth() + 2);
+
+		// efective bounds
+		const minDate = min
+			? isBefore(startOfDay(min), today)
+				? today
+				: min
+			: today;
+		const maxDate = max
+			? sub(startOfDay(max), { days: 1 })
+			: twoMonthsFromToday;
+		const bookedDates: Date[] = [minDate, add(maxDate, { days: 1 })];
 
 		return {
 			// Close the calendar popover when a day is clicked
 			onDayClick: () => setIsOpenAppointmentDate(false),
 			// Set the range of years to be displayed
-			fromYear: currentYear,
-			toYear: currentYear,
+			fromYear: minDate.getFullYear(),
+			toYear: maxDate.getFullYear(),
 			// Disable dates that are in the past or more than 3 months in the future
-			disabled: (date) => {
-				const today = new Date();
-				return date <= today || date > twoMonthsFromToday;
+			disabled: (date) => date <= minDate || date > maxDate,
+			modifiers: {
+				booked: bookedDates,
+			},
+			modifiersClassNames: {
+				booked: "line-through",
 			},
 		};
-	}, []);
+	}, [max, min]);
 	const onSelectAppointmentDate = useCallback(
 		(date?: Date) => {
 			if (appointmentTime) {

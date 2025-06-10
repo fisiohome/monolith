@@ -1,6 +1,6 @@
 class PatientContact < ApplicationRecord
   # * define the associations
-  belongs_to :patient
+  has_many :patients, inverse_of: :patient_contact, dependent: :restrict_with_error
 
   # * define the validations
   validates :contact_name, presence: true, length: {minimum: 3}

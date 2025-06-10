@@ -38,6 +38,7 @@ module AdminPortal
         services: InertiaRails.defer { preparation.fetch_services },
         therapists: -> { preparation.fetch_therapists },
         patient_list: InertiaRails.optional { preparation.fetch_patient_list },
+        patient_contact_list: InertiaRails.optional { preparation.fetch_patient_contact_list },
         appointment_reference: preparation.fetch_appointment_reference,
         options_data: InertiaRails.defer { preparation.fetch_options_data }
       })
@@ -75,7 +76,7 @@ module AdminPortal
         include_admins: false,
         include_patient_medical_record: false,
         include_all_visits: true,
-        all_visits_only: [:id, :visit_progress, :appointment_date_time, :status, :registration_number],
+        all_visits_only: [:id, :visit_progress, :visit_number, :appointment_date_time, :status, :registration_number],
         all_visits_methods: [:visit_progress]
       })
       preparation = PreparationRescheduleAppointmentService.new(@appointment, params)

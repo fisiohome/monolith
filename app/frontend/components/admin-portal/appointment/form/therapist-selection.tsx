@@ -29,6 +29,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 
 // * button selection list
 type TherapistSelectButtonProps = {
@@ -145,11 +146,15 @@ function CardTherapist({ className, therapist }: CardTherapistProps) {
 
 // * empty therapist component
 function EmptyTherapists() {
+	const { t: tasf } = useTranslation("appointments-form", {
+		keyPrefix: "appt_schedule.fields",
+	});
+
 	return (
 		<div>
 			<p className="flex items-center gap-1.5 justify-center">
 				<Stethoscope className="text-muted-foreground/75 size-4" />
-				There are no therapists available
+				{tasf("therapist.search.empty")}
 			</p>
 		</div>
 	);
@@ -179,39 +184,53 @@ const TherapistSelection = memo(function Component({
 	find,
 	selectedTherapist,
 	appt,
-	height = 430,
+	height = 525,
 	onSelectTherapist,
 	onPersist,
 }: TherapistSelectionProps) {
-	const [search, setSearch] = useState("");
-	const debouncedSearchTerm = useDebounce(search, 300);
-	// Filter by search term first
-	const filteredTherapists = items.filter((t) => {
-		if (debouncedSearchTerm) {
-			return t.name.includes(debouncedSearchTerm);
-		}
-		return true;
+	const { t: tasf } = useTranslation("appointments-form", {
+		keyPrefix: "appt_schedule.fields",
 	});
-	const allVisitIds = new Set(appt?.allVisits?.map((v) => v.id) || []);
+	const [search, setSearch] = useState("");
+	const debouncedSearchTerm = useDebounce(search, 250);
+	// Filter by search term first
+	const filteredTherapists = useMemo(
+		() =>
+			items.filter((t) => {
+				if (debouncedSearchTerm) {
+					return t.name.includes(debouncedSearchTerm);
+				}
+				return true;
+			}),
+		[items, debouncedSearchTerm],
+	);
+	const allVisitIds = useMemo(
+		() => new Set(appt?.allVisits?.map((v) => v.id) || []),
+		[appt?.allVisits],
+	);
 
 	// Use a single loop to split therapists into suggested (onSeries) and other
-	const { suggestedTherapists, otherTherapists } = filteredTherapists.reduce(
-		(acc, therapist) => {
-			const isSuggested = therapist.appointments?.some((ap) =>
-				allVisitIds.has(ap.id),
-			);
-			if (isSuggested) {
-				acc.suggestedTherapists.push(therapist);
-			} else {
-				acc.otherTherapists.push(therapist);
-			}
+	const { suggestedTherapists, otherTherapists } = useMemo(
+		() =>
+			filteredTherapists.reduce(
+				(acc, therapist) => {
+					const isSuggested = therapist.appointments?.some((ap) =>
+						allVisitIds.has(ap.id),
+					);
+					if (isSuggested) {
+						acc.suggestedTherapists.push(therapist);
+					} else {
+						acc.otherTherapists.push(therapist);
+					}
 
-			return acc;
-		},
-		{ suggestedTherapists: [], otherTherapists: [] } as {
-			suggestedTherapists: TherapistOption[];
-			otherTherapists: TherapistOption[];
-		},
+					return acc;
+				},
+				{ suggestedTherapists: [], otherTherapists: [] } as {
+					suggestedTherapists: TherapistOption[];
+					otherTherapists: TherapistOption[];
+				},
+			),
+		[filteredTherapists, allVisitIds],
 	);
 	// Helper to get appointemnt registration numbers for a therapist assigned in this appointment's series
 	const getAssignedRegistrationNumbers = useCallback(
@@ -281,7 +300,7 @@ const TherapistSelection = memo(function Component({
 					await find.handler();
 				}}
 			>
-				Find the Available Therapists
+				{tasf("therapist.button")}
 			</Button>
 
 			<ScrollArea
@@ -294,7 +313,7 @@ const TherapistSelection = memo(function Component({
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 							type="text"
-							placeholder="Search by name..."
+							placeholder={tasf("therapist.search.placeholder")}
 							className="mb-0 shadow-none"
 						>
 							<Input.Group>
@@ -314,7 +333,7 @@ const TherapistSelection = memo(function Component({
 							{suggestedTherapists.length > 0 && (
 								<div>
 									<p className="mb-1 text-xs font-semibold tracking-wide uppercase">
-										Suggested Therapist
+										{tasf("therapist.search.suggested_label")}
 									</p>
 
 									<div className="grid gap-2">
@@ -365,7 +384,7 @@ const TherapistSelection = memo(function Component({
 								<div className={cn(!!suggestedTherapists?.length && "mt-1")}>
 									{!!suggestedTherapists?.length && (
 										<p className="mb-1 text-xs font-semibold tracking-wide uppercase">
-											Other
+											{tasf("therapist.search.other_label")}
 										</p>
 									)}
 

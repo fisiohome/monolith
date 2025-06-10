@@ -247,6 +247,7 @@ export type AdditionalSettingsSchema = z.infer<
 // form options schema
 export const FORM_OPTIONS_SCHEMA = z.object({
 	patientRecordSource: z.enum(["existing", "add"]),
+	patientContactSource: z.enum(["existing", "new"]),
 	referenceAppointmentId: idSchema.optional(),
 });
 export type FormOptionsSchema = z.infer<typeof FORM_OPTIONS_SCHEMA>;
@@ -418,6 +419,9 @@ export const defineAppointmentFormDefaultValues = (
 	// for the patient record source
 	const patientRecordSource = "existing";
 
+	// for the patient contact source
+	const patientContactSource = "existing";
+
 	// for appointment references (needed for create a appointment series)
 	const referenceAppointmentId = props?.apptRef?.id;
 
@@ -500,7 +504,11 @@ export const defineAppointmentFormDefaultValues = (
 	};
 
 	return {
-		formOptions: { patientRecordSource, referenceAppointmentId },
+		formOptions: {
+			patientRecordSource,
+			referenceAppointmentId,
+			patientContactSource,
+		},
 		contactInformation,
 		patientDetails,
 		appointmentScheduling,

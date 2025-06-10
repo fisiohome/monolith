@@ -1,11 +1,11 @@
 class Patient < ApplicationRecord
   # * define the associations
+  belongs_to :patient_contact
+  accepts_nested_attributes_for :patient_contact
 
   has_many :appointments, dependent: :nullify
   has_many :therapists, through: :appointments
   has_many :patient_medical_records, through: :appointments
-
-  has_one :patient_contact, dependent: :destroy
 
   has_many :patient_addresses, -> { order(active: :desc) }
   has_many :addresses, through: :patient_addresses
@@ -34,6 +34,7 @@ class Patient < ApplicationRecord
     message: "Patient with these details already exists"
   }
 
+  # * define the helper methods
   def age
     ((Time.zone.now - date_of_birth.to_time) / 1.year.seconds).floor
   end

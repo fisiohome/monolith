@@ -26,8 +26,13 @@ import { Deferred, usePage } from "@inertiajs/react";
 import { AlertCircle, Pencil } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 export default function PatientMedicalForm() {
+	const { t } = useTranslation("appointments-form");
+	const { t: tpm } = useTranslation("appointments-form", {
+		keyPrefix: "patient_medical",
+	});
 	const isMobile = useIsMobile();
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const form = useFormContext<AppointmentBookingSchema>();
@@ -52,7 +57,7 @@ export default function PatientMedicalForm() {
 		<Fragment>
 			<div className="flex items-center justify-between col-span-full">
 				<p className="mb-2 text-xs tracking-wider uppercase text-muted-foreground col-span-full">
-					Patient Medical Record
+					{tpm("label")}
 				</p>
 
 				<Button
@@ -67,39 +72,43 @@ export default function PatientMedicalForm() {
 						setIsOpenSheet((prev) => !prev);
 					}}
 				>
-					Edit
+					{t("button.edit")}
 				</Button>
 			</div>
 
 			{!!hasErrorForm && (
 				<Alert variant="destructive" className="col-span-full">
 					<AlertCircle className="size-4" />
-					<AlertTitle className="text-xs">Error</AlertTitle>
+					<AlertTitle className="text-xs">
+						{tpm("alert_empty.title")}
+					</AlertTitle>
 					<AlertDescription className="text-xs">
-						There may be some data that is in need of correction.
+						{tpm("alert_empty.description")}
 					</AlertDescription>
 				</Alert>
 			)}
 
 			<div className="grid grid-cols-1 gap-4 p-3 text-sm border rounded-md shadow-inner md:grid-cols-2 border-input bg-sidebar col-span-full">
 				<div>
-					<p className="font-light">Current condition:</p>
+					<p className="font-light">{tpm("fields.condition.label")}:</p>
 					<p className="text-pretty">{watchPatientDetailsValue.condition}</p>
 				</div>
 				<div>
-					<p className="font-light">Complaint description:</p>
+					<p className="font-light">{tpm("fields.complaint.label")}:</p>
 					<p className="text-pretty">
 						{watchPatientDetailsValue.complaintDescription || "N/A"}
 					</p>
 				</div>
 				<div>
-					<p className="font-light">Illness onset date:</p>
+					<p className="font-light">
+						{tpm("fields.illness_onset_date.label")}:
+					</p>
 					<p className="text-pretty">
 						{watchPatientDetailsValue?.illnessOnsetDate || "N/A"}
 					</p>
 				</div>
 				<div>
-					<p className="font-light">Medical history:</p>
+					<p className="font-light">{tpm("fields.medical_history.label")}:</p>
 					<p className="text-pretty">
 						{watchPatientDetailsValue?.medicalHistory || "N/A"}
 					</p>
@@ -113,7 +122,7 @@ export default function PatientMedicalForm() {
 				>
 					<div className="flex flex-col w-full h-full px-6">
 						<SheetHeader className="flex-none py-6">
-							<SheetTitle>Edit Patient Medical Record</SheetTitle>
+							<SheetTitle>{tpm("modal.title")}</SheetTitle>
 						</SheetHeader>
 
 						<div className="grid content-start flex-1 gap-4 py-4 overflow-y-auto text-sm">
@@ -135,7 +144,9 @@ export default function PatientMedicalForm() {
 									name="patientDetails.condition"
 									render={({ field }) => (
 										<FormItem className="space-y-3 col-span-full">
-											<FormLabel>Current Condition</FormLabel>
+											<FormLabel className="capitalize">
+												{tpm("fields.condition.label")}
+											</FormLabel>
 											<FormControl>
 												<RadioGroup
 													onValueChange={field.onChange}
@@ -150,9 +161,15 @@ export default function PatientMedicalForm() {
 																	<RadioGroupItem value={condition.title} />
 																</FormControl>
 																<FormLabel className="w-full space-y-1 font-normal capitalize">
-																	<span>{condition.title.toLowerCase()}</span>
+																	<span>
+																		{tpm(
+																			`fields.condition.options.${condition.title.toLowerCase()}.label`,
+																		)}
+																	</span>
 																	<FormDescription>
-																		{condition.description}
+																		{tpm(
+																			`fields.condition.options.${condition.title.toLowerCase()}.description`,
+																		)}
 																	</FormDescription>
 																</FormLabel>
 															</FormItem>
@@ -172,11 +189,13 @@ export default function PatientMedicalForm() {
 								name="patientDetails.complaintDescription"
 								render={({ field }) => (
 									<FormItem className="col-span-full">
-										<FormLabel>Complaint Description</FormLabel>
+										<FormLabel className="capitalize">
+											{tpm("fields.complaint.label")}
+										</FormLabel>
 										<FormControl>
 											<Textarea
 												{...field}
-												placeholder="Enter the complaint description..."
+												placeholder={tpm("fields.complaint.placeholder")}
 												className="shadow-inner bg-sidebar"
 											/>
 										</FormControl>
@@ -191,8 +210,8 @@ export default function PatientMedicalForm() {
 								name="patientDetails.illnessOnsetDate"
 								render={({ field }) => (
 									<FormItem className="col-span-full">
-										<FormLabel>
-											Illness Onset Date{" "}
+										<FormLabel className="capitalize">
+											{tpm("fields.illness_onset_date.label")}{" "}
 											<span className="text-sm italic font-light">
 												- (optional)
 											</span>
@@ -200,14 +219,15 @@ export default function PatientMedicalForm() {
 										<FormControl>
 											<Textarea
 												{...field}
-												placeholder="Enter the illness onset date..."
+												placeholder={tpm(
+													"fields.illness_onset_date.placeholder",
+												)}
 												className="shadow-inner bg-sidebar"
 											/>
 										</FormControl>
 
 										<FormDescription>
-											Enter the date when the illness first began. You can use
-											an exact date if known, or an estimate if unsure.
+											{tpm("fields.illness_onset_date.description")}
 										</FormDescription>
 
 										<FormMessage />
@@ -220,8 +240,8 @@ export default function PatientMedicalForm() {
 								name="patientDetails.medicalHistory"
 								render={({ field }) => (
 									<FormItem className="col-span-full">
-										<FormLabel>
-											Medical History{" "}
+										<FormLabel className="capitalize">
+											{tpm("fields.medical_history.label")}{" "}
 											<span className="text-sm italic font-light">
 												- (optional)
 											</span>
@@ -229,16 +249,13 @@ export default function PatientMedicalForm() {
 										<FormControl>
 											<Textarea
 												{...field}
-												placeholder="Enter the medical history..."
+												placeholder={tpm("fields.medical_history.placeholder")}
 												className="shadow-inner bg-sidebar"
 											/>
 										</FormControl>
 
 										<FormDescription>
-											Provide an overview of the patient’s medical history
-											including allergies, chronic conditions, and any past
-											medical events or treatments relevant to the current
-											complaint.
+											{tpm("fields.medical_history.description")}
 										</FormDescription>
 
 										<FormMessage />
@@ -249,7 +266,9 @@ export default function PatientMedicalForm() {
 
 						<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-background">
 							<SheetClose asChild>
-								<Button variant="primary-outline">Save</Button>
+								<Button variant="primary-outline">
+									{t("button.save.label")}
+								</Button>
 							</SheetClose>
 						</SheetFooter>
 					</div>

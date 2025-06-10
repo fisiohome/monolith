@@ -58,7 +58,8 @@ import {
 	Phone,
 	Search,
 	User,
-	UserPlus,
+	UserRoundPlus,
+	X,
 } from "lucide-react";
 import {
 	type Dispatch,
@@ -73,6 +74,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useFormProvider } from "../new-appointment-form";
 import { CardPatientBasicInfoForm } from "./patient-basic-info";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface CardSelectionProps {
 	patient: Patient;
@@ -145,7 +147,7 @@ const CardSelection = memo(function Component({ patient }: CardSelectionProps) {
 
 			<div className="grid grid-cols-2 gap-4">
 				<p className="mb-2 text-xs tracking-wider uppercase text-muted-foreground col-span-full">
-					Contact
+					{t("list.contact")}
 				</p>
 
 				<div className="flex items-center gap-3 col-span-full">
@@ -201,7 +203,7 @@ const CardSelection = memo(function Component({ patient }: CardSelectionProps) {
 
 			<div className="grid grid-cols-2 gap-4">
 				<p className="mb-2 text-xs tracking-wider uppercase text-muted-foreground col-span-full">
-					Visit Location
+					{t("list.visit_location")}
 				</p>
 
 				<div className="flex items-center gap-3 col-span-full">
@@ -357,6 +359,10 @@ const HoverCardListItem = memo(function Component({
 });
 
 export default function ExistingPatientSelection() {
+	const { t } = useTranslation("appointments-form");
+	const { t: tpp } = useTranslation("appointments-form", {
+		keyPrefix: "patient_profile",
+	});
 	const isMobile = useIsMobile();
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const { mode } = useFormProvider();
@@ -373,12 +379,6 @@ export default function ExistingPatientSelection() {
 		const { fullName, age, dateOfBirth, gender } = watchPatientDetailsValue;
 		return !fullName || !age || !dateOfBirth || !gender;
 	}, [watchPatientDetailsValue]);
-	const hasErrorForm = useMemo(() => {
-		const hasPatientDetailsError = !!form?.formState?.errors?.patientDetails;
-		const hasContactInfoError = !!form?.formState?.errors?.contactInformation;
-
-		return hasPatientDetailsError || hasContactInfoError;
-	}, [form?.formState?.errors]);
 
 	// * manage the user selection to use existing patient data
 	const [isOpenSheet, setIsOpenSheet] = useState(false);
@@ -404,17 +404,17 @@ export default function ExistingPatientSelection() {
 	const patientSourceSelectionList = useMemo(() => {
 		return [
 			{
-				title: "Select existing patient",
+				title: tpp("fields.source_selection.options.existing.label"),
 				value:
 					"existing" satisfies AppointmentBookingSchema["formOptions"]["patientRecordSource"],
 			},
 			{
-				title: "Add new patient record",
+				title: tpp("fields.source_selection.options.new.label"),
 				value:
 					"add" satisfies AppointmentBookingSchema["formOptions"]["patientRecordSource"],
 			},
 		];
-	}, []);
+	}, [tpp]);
 	const isExistingPatientSource = useMemo(
 		() => watchPatientRecordSourceValue === "existing",
 		[watchPatientRecordSourceValue],
@@ -423,12 +423,10 @@ export default function ExistingPatientSelection() {
 		// reset the patient contact information and also the patient details
 		const { patientDetails, contactInformation } =
 			defineAppointmentFormDefaultValues();
-		form.resetField("contactInformation", {
-			defaultValue: { ...contactInformation },
-		});
-		form.resetField("patientDetails", {
-			defaultValue: { ...patientDetails },
-		});
+		form.setValue("patientDetails", { ...patientDetails });
+		form.resetField("patientDetails");
+		form.setValue("contactInformation", { ...contactInformation });
+		form.resetField("contactInformation");
 
 		// reset the data fetching of patient list
 		onHandleFetchPatientList("");
@@ -436,12 +434,12 @@ export default function ExistingPatientSelection() {
 		// reset the selected patient record data and the search patient state
 		setSelectedPatient(null);
 		setSearchPatient("");
-	}, [form.resetField]);
+	}, [form.resetField, form.setValue]);
 
 	// * for get the patient list
 	const [isLoading, setIsLoading] = useState({ patientList: false });
 	const [searchPatient, setSearchPatient] = useState(
-		globalProps?.adminPortal?.currentQuery?.patientName || "",
+		globalProps?.adminPortal?.currentQuery?.patientQuery || "",
 	);
 	const patients = useMemo(
 		() => globalProps?.patientList || [],
@@ -452,7 +450,7 @@ export default function ExistingPatientSelection() {
 			const { fullUrl } = populateQueryParams(
 				globalProps.adminPortal.router.adminPortal.appointment.new,
 				deepTransformKeysToSnakeCase({
-					patientName: value || null,
+					patientQuery: value || null,
 				}),
 			);
 			router.get(
@@ -546,16 +544,15 @@ export default function ExistingPatientSelection() {
 	// * show and hide components
 	const isShow = useMemo(() => {
 		return {
-			patienrRecordRadio: mode === "new",
-			formAlert: !!hasErrorForm && isExistingPatientSource && mode === "new",
+			patientRecordRadio: mode === "new",
 			existingPatientSource: isExistingPatientSource,
 			patientSearch: mode === "new",
 		};
-	}, [mode, hasErrorForm, isExistingPatientSource]);
+	}, [mode, isExistingPatientSource]);
 
 	return (
 		<Fragment>
-			{isShow.patienrRecordRadio && (
+			{isShow.patientRecordRadio && (
 				<FormField
 					control={form.control}
 					name="formOptions.patientRecordSource"
@@ -583,7 +580,7 @@ export default function ExistingPatientSelection() {
 												{index === 0 ? (
 													<MousePointerClick className="flex-shrink-0 text-muted-foreground size-5" />
 												) : (
-													<UserPlus className="flex-shrink-0 text-muted-foreground size-5" />
+													<UserRoundPlus className="flex-shrink-0 text-muted-foreground size-5" />
 												)}
 												{option.title}
 											</FormLabel>
@@ -598,16 +595,19 @@ export default function ExistingPatientSelection() {
 				/>
 			)}
 
-			{isShow.formAlert && (
-				<Alert variant="destructive" className="col-span-full">
-					<AlertCircle className="size-4" />
-					<AlertTitle className="text-xs">Error</AlertTitle>
-					<AlertDescription className="text-xs">
-						Hey, just a friendly reminder to search and select the patient in
-						the record first.
-					</AlertDescription>
-				</Alert>
-			)}
+			{(!!form?.formState?.errors?.patientDetails ||
+				!!form?.formState?.errors?.contactInformation) &&
+				isExistingPatientSource && (
+					<Alert variant="destructive" className="col-span-full">
+						<AlertCircle className="size-4" />
+						<AlertTitle className="text-xs">
+							{tpp("alert_empty.title")}
+						</AlertTitle>
+						<AlertDescription className="text-xs">
+							{tpp("alert_empty.description")}
+						</AlertDescription>
+					</Alert>
+				)}
 
 			{isShow.existingPatientSource && (
 				<Fragment>
@@ -619,7 +619,7 @@ export default function ExistingPatientSelection() {
 							dateOfBirth: watchPatientDetailsValue.dateOfBirth,
 							gender: watchPatientDetailsValue.gender,
 						}}
-						fallbackText="Select an existing patient in the record"
+						fallbackText={tpp("empty_card")}
 						className="flex items-center justify-between gap-4 col-span-full"
 					>
 						<Button
@@ -645,24 +645,48 @@ export default function ExistingPatientSelection() {
 						>
 							<div className="flex flex-col w-full h-full px-6 mx-auto">
 								<SheetHeader className="flex-none py-6">
-									<SheetTitle>Select Existing Patient</SheetTitle>
+									<SheetTitle>{tpp("modal.title")}</SheetTitle>
 								</SheetHeader>
 
-								<div className="grid content-start flex-1 gap-4 py-4 overflow-y-auto text-sm">
+								<div className="grid content-start flex-1 gap-4 py-4 overflow-y-auto text-sm px-0.5">
 									{isShow.patientSearch && (
 										<>
-											<Input
-												placeholder="Enter patient name or contact number or email..."
-												className="shadow-inner bg-sidebar"
-												value={searchPatient}
-												StartIcon={{ icon: Search }}
-												onChange={(event) => {
-													const value = event.target.value;
+											<div className="grid gap-2">
+												<Input
+													placeholder={tpp(
+														"fields.existing_selection.placeholder",
+													)}
+													className="shadow-inner bg-sidebar"
+													value={searchPatient}
+													StartIcon={{ icon: Search }}
+													EndIcon={
+														searchPatient
+															? {
+																	isButton: true,
+																	icon: X,
+																	handleOnClick: (event) => {
+																		event.preventDefault();
 
-													setSearchPatient(value);
-													onHandleFetchPatientList(value);
-												}}
-											/>
+																		setSearchPatient("");
+																		setSelectedPatient(null);
+																		onHandleFetchPatientList("");
+																	},
+																}
+															: undefined
+													}
+													onChange={(event) => {
+														const value = event.target.value;
+
+														setSearchPatient(value);
+														setSelectedPatient(null);
+														onHandleFetchPatientList(value);
+													}}
+												/>
+
+												<p className="text-[0.8rem] text-pretty text-muted-foreground">
+													{tpp("fields.existing_selection.description")}
+												</p>
+											</div>
 
 											<ScrollArea
 												className={cn(
@@ -672,13 +696,13 @@ export default function ExistingPatientSelection() {
 											>
 												<div className="p-4">
 													<h4 className="mb-4 text-xs leading-none tracking-wider uppercase text-muted-foreground">
-														Patient list
+														{tpp("fields.existing_selection.list.label")}
 													</h4>
 
 													{isLoading.patientList ? (
 														<div className="flex flex-col items-center gap-2.5 text-muted-foreground">
 															<LoaderIcon className="animate-spin" />
-															<span>Please wait...</span>
+															<span>{tpp("loading")}</span>
 														</div>
 													) : patients?.length ? (
 														patients?.map((patient) => (
@@ -691,10 +715,9 @@ export default function ExistingPatientSelection() {
 														))
 													) : (
 														<div className="grid gap-4">
-															<Search className="mx-auto text-muted-foreground/75 size-6" />
-															<p className="text-center text-pretty text-muted-foreground w-[75%] mx-auto">
-																Let's start by searching for patients by name in
-																the search above.
+															<Search className="mx-auto text-muted size-6" />
+															<p className="text-center text-pretty text-muted w-[75%] mx-auto">
+																{tpp("fields.existing_selection.list.empty")}
 															</p>
 														</div>
 													)}
@@ -703,15 +726,25 @@ export default function ExistingPatientSelection() {
 										</>
 									)}
 
-									{!!selectedPatient && (
-										<CardSelection patient={selectedPatient} />
-									)}
+									<AnimatePresence mode="sync">
+										{!!selectedPatient && (
+											<motion.div
+												key="selected-patient"
+												initial={{ opacity: 0, y: -10 }}
+												animate={{ opacity: 1, y: 0 }}
+												exit={{ opacity: 0, y: 10 }}
+												transition={{ duration: 0.05 }}
+											>
+												<CardSelection patient={selectedPatient} />
+											</motion.div>
+										)}
+									</AnimatePresence>
 								</div>
 
 								<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-background">
 									<SheetClose asChild>
 										<Button variant="primary-outline" className="mt-6 sm:mt-0">
-											Close
+											{t("button.close")}
 										</Button>
 									</SheetClose>
 
@@ -724,7 +757,7 @@ export default function ExistingPatientSelection() {
 												setIsOpenSheet((prev) => !prev);
 											}}
 										>
-											Select Patient
+											{tpp("button.select")}
 										</Button>
 									)}
 								</SheetFooter>

@@ -1342,7 +1342,7 @@ function TherapistCard({ className, therapist }: TherapistCardProps) {
 							</AvatarFallback>
 						</Avatar>
 						<div>
-							<p className="font-semibold line-clamp-1">
+							<p className="font-semibold uppercase line-clamp-1">
 								{therapist?.name || "N/A"}
 							</p>
 						</div>
@@ -1438,7 +1438,7 @@ function PatientCard({
 						</AvatarFallback>
 					</Avatar>
 					<div>
-						<p className="font-semibold capitalize line-clamp-1">
+						<p className="font-semibold uppercase line-clamp-1">
 							{patient?.name || "N/A"}
 						</p>
 					</div>

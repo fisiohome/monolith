@@ -15,11 +15,17 @@ import { Form } from "@/components/ui/form";
 import { useRescheduleForm } from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import type { AppointmentRescheduleSchema } from "@/lib/appointments/form-reschedule";
 import type { PREFERRED_THERAPIST_GENDER } from "@/lib/constants";
+import { useTranslation } from "react-i18next";
 
 export interface AppointmentReschedulePageProps {
 	appointment: Appointment;
 	optionsData?: {
 		preferredTherapistGender: typeof PREFERRED_THERAPIST_GENDER;
+		apptDateTime: {
+			max: string | null;
+			min: string | null;
+			message: string | null;
+		};
 	};
 }
 
@@ -35,12 +41,13 @@ export interface AppointmentRescheduleGlobalPageProps
 export default function AppointmentReschedulePage({
 	appointment,
 }: AppointmentReschedulePageProps) {
+	const { t } = useTranslation("appointments-form");
 	const { form, isLoading, onSubmit } = useRescheduleForm();
 	const headTitle = useMemo(() => {
 		const registrationNumber = appointment.registrationNumber;
 
-		return `Reschedule ${registrationNumber}`;
-	}, [appointment.registrationNumber]);
+		return t("page_title.reschedule", { regNumber: registrationNumber });
+	}, [appointment.registrationNumber, t]);
 
 	return (
 		<Fragment>
@@ -56,7 +63,7 @@ export default function AppointmentReschedulePage({
 				<section className="flex flex-col justify-center gap-4 mx-auto md:gap-6 w-12/12 xl:w-8/12">
 					<FormPageHeaderGridPattern
 						title={headTitle}
-						description="Find another suitable time for an existing appointment session."
+						description={t("page_description.reschedule")}
 					/>
 
 					<Form {...form}>

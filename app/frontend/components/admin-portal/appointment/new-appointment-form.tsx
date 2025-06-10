@@ -347,7 +347,7 @@ export function StepButtons({ className, isFormLoading }: StepButtonsProps) {
 
 export function FinalStep() {
 	const { t: taf } = useTranslation("appointments-form", {
-		keyPrefix: "final-step",
+		keyPrefix: "final_step",
 	});
 	const { count, hasCompletedAllSteps, redirectURL } = useFinalStep();
 
@@ -392,9 +392,7 @@ export const PatientDetailsForm = memo(function Component() {
 			<Separator className="mt-3 col-span-full" />
 
 			{isExistingPatientSource ? (
-				<Fragment>
-					<PatientMedicalForm />
-				</Fragment>
+				<PatientMedicalForm />
 			) : (
 				<Fragment>
 					<PatientContactForm />
@@ -417,6 +415,12 @@ export const PatientDetailsForm = memo(function Component() {
 });
 
 export function AppointmentSchedulingForm() {
+	const { t: tas } = useTranslation("appointments-form", {
+		keyPrefix: "appt_schedule",
+	});
+	const { t: tasf } = useTranslation("appointments-form", {
+		keyPrefix: "appt_schedule.fields",
+	});
 	const isFirstRender = useIsFirstRender();
 	const isMobile = useIsMobile();
 	const { mode, formSelections, setFormSelections } = useFormProvider();
@@ -549,11 +553,10 @@ export function AppointmentSchedulingForm() {
 				>
 					<AlertCircle className="w-4 h-4" />
 					<AlertTitle>
-						{alertService?.title || "Therapist not found"}
+						{alertService?.title || tas("alert_therapist.title")}
 					</AlertTitle>
 					<AlertDescription>
-						{alertService?.description ||
-							"There are no therapists available for the selected appointment date and time. Please choose a different date or time."}
+						{alertService?.description || tas("alert_therapist.description")}
 					</AlertDescription>
 				</Alert>
 			)}
@@ -576,7 +579,9 @@ export function AppointmentSchedulingForm() {
 									name="appointmentScheduling.service.name"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel className="text-nowrap">Service</FormLabel>
+											<FormLabel className="text-nowrap">
+												{tasf("service.label")}
+											</FormLabel>
 											<Popover>
 												<PopoverTrigger asChild>
 													<FormControl>
@@ -597,7 +602,7 @@ export function AppointmentSchedulingForm() {
 																			)
 																			?.name?.replaceAll("_", " ") ||
 																		field.value.replaceAll("_", " ")
-																	: "Select service"}
+																	: tasf("service.placeholder")}
 															</p>
 															{field.value ? (
 																// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -625,17 +630,21 @@ export function AppointmentSchedulingForm() {
 												>
 													<Command>
 														<CommandInput
-															placeholder="Search service..."
+															placeholder={tasf("service.search.placeholder")}
 															className="h-9"
 															disabled={isLoading.services}
 														/>
 														<CommandList>
-															<CommandEmpty>No service found.</CommandEmpty>
+															<CommandEmpty>
+																{tasf("service.search.empty")}
+															</CommandEmpty>
 															<CommandGroup>
 																{isLoading.services ? (
 																	<CommandItem value={undefined} disabled>
 																		<LoaderIcon className="animate-spin" />
-																		<span>Please wait...</span>
+																		<span>
+																			{tasf("service.search.loading")}
+																		</span>
 																	</CommandItem>
 																) : (
 																	servicesOption?.map((service) => (
@@ -700,7 +709,9 @@ export function AppointmentSchedulingForm() {
 
 										return (
 											<FormItem>
-												<FormLabel className="text-nowrap">Package</FormLabel>
+												<FormLabel className="text-nowrap">
+													{tasf("package.label")}
+												</FormLabel>
 												<Popover>
 													<PopoverTrigger asChild>
 														<FormControl>
@@ -719,7 +730,7 @@ export function AppointmentSchedulingForm() {
 																		<span className="italic font-light">{`(${selectedPackage?.numberOfVisit || watchAppointmentSchedulingValue?.package?.numberOfVisit} visit(s))`}</span>
 																	</p>
 																) : (
-																	<span>Select package</span>
+																	<span>{tasf("package.placeholder")}</span>
 																)}
 																<ChevronsUpDown className="opacity-50" />
 															</Button>
@@ -732,11 +743,13 @@ export function AppointmentSchedulingForm() {
 													>
 														<Command>
 															<CommandInput
-																placeholder="Search package..."
+																placeholder={tasf("package.search.placeholder")}
 																className="h-9"
 															/>
 															<CommandList>
-																<CommandEmpty>No package found.</CommandEmpty>
+																<CommandEmpty>
+																	{tasf("package.search.empty")}
+																</CommandEmpty>
 																<CommandGroup>
 																	{packagesOption?.map((packageItem) => (
 																		<CommandItem
@@ -799,7 +812,7 @@ export function AppointmentSchedulingForm() {
 							name="appointmentScheduling.preferredTherapistGender"
 							render={({ field }) => (
 								<FormItem className="space-y-3">
-									<FormLabel>Preferred Therapist Gender</FormLabel>
+									<FormLabel>{tasf("pref_therapist_gender.label")}</FormLabel>
 									<FormControl>
 										<RadioGroup
 											onValueChange={(value) => {
@@ -820,7 +833,11 @@ export function AppointmentSchedulingForm() {
 													</FormControl>
 													<FormLabel className="flex items-center gap-1 font-normal capitalize">
 														{getGenderIcon(gender)}
-														<span>{gender.toLowerCase()}</span>
+														<span>
+															{tasf(
+																`pref_therapist_gender.options.${gender.toLowerCase()}`,
+															)}
+														</span>
 													</FormLabel>
 												</FormItem>
 											))}
@@ -837,7 +854,7 @@ export function AppointmentSchedulingForm() {
 						name="appointmentScheduling.appointmentDateTime"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Appointment Date</FormLabel>
+								<FormLabel>{tasf("appt_date.label")}</FormLabel>
 
 								<FormControl>
 									<DateTimePicker
@@ -861,7 +878,7 @@ export function AppointmentSchedulingForm() {
 					name="appointmentScheduling.therapist.name"
 					render={({ field }) => (
 						<FormItem className="flex-1">
-							<FormLabel>Therapist</FormLabel>
+							<FormLabel>{tasf("therapist.label")}</FormLabel>
 
 							<FormControl>
 								<TherapistSelection

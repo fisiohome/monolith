@@ -20,10 +20,11 @@ import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
 import { Deferred } from "@inertiajs/react";
 import { useIsFirstRender } from "@uidotdev/usehooks";
-import { AlertCircle, Hospital, LoaderIcon } from "lucide-react";
+import { AlertCircle, Hospital, Info, LoaderIcon } from "lucide-react";
 import { type ComponentProps, memo, useEffect } from "react";
 import DateTimePicker from "./form/date-time";
 import TherapistSelection from "./form/therapist-selection";
+import { useTranslation } from "react-i18next";
 
 export interface FormActionButtonsprops extends ComponentProps<"div"> {
 	isLoading: boolean;
@@ -33,6 +34,7 @@ export const FormActionButtons = memo(function Component({
 	className,
 	isLoading,
 }: FormActionButtonsprops) {
+	const { t: taf } = useTranslation("appointments-form");
 	const { isDekstop, onBackRoute } = useFormActionButtons();
 
 	return (
@@ -52,7 +54,7 @@ export const FormActionButtons = memo(function Component({
 					onBackRoute();
 				}}
 			>
-				Back
+				{taf("button.back")}
 			</Button>
 
 			<Button
@@ -64,10 +66,10 @@ export const FormActionButtons = memo(function Component({
 				{isLoading ? (
 					<>
 						<LoaderIcon className="animate-spin" />
-						<span>Saving...</span>
+						<span>{taf("button.save.loading")}</span>
 					</>
 				) : (
-					<span>Save</span>
+					<span>{taf("button.save.label")}</span>
 				)}
 			</Button>
 		</div>
@@ -80,6 +82,12 @@ export interface RescheduleFieldsProps extends ComponentProps<"div"> {}
 export const RescheduleFields = memo(function Component({
 	className,
 }: RescheduleFieldsProps) {
+	const { t: tas } = useTranslation("appointments-form", {
+		keyPrefix: "appt_schedule",
+	});
+	const { t: tasf } = useTranslation("appointments-form", {
+		keyPrefix: "appt_schedule.fields",
+	});
 	const isFirstRender = useIsFirstRender();
 	const {
 		form,
@@ -103,6 +111,7 @@ export const RescheduleFields = memo(function Component({
 		isIsolineCalculated,
 		formSelections,
 		setFormSelections,
+		apptDateTime,
 	} = useRescheduleFields();
 
 	// * side effect to add isoline calculated and stored isoline and the marker marked to the map
@@ -206,22 +215,21 @@ export const RescheduleFields = memo(function Component({
 					className="col-span-full motion-preset-rebound-down"
 				>
 					<AlertCircle className="w-4 h-4" />
-					<AlertTitle>Therapist not found</AlertTitle>
+					<AlertTitle>{tas("alert_therapist.title")}</AlertTitle>
 					<AlertDescription>
-						There are no therapists available for the selected appointment date
-						and time. Please choose a different date or time.
+						{tas("alert_therapist.description")}
 					</AlertDescription>
 				</Alert>
 			)}
 
-			<div className="flex flex-col items-stretch gap-4 col-span-full lg:flex-row">
+			<div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 col-span-full">
 				<div className="grid gap-4">
 					<Deferred
 						data={["optionsData"]}
 						fallback={
 							<div className="flex flex-col self-end gap-3 col-span-full">
 								<Skeleton className="w-10 h-4 rounded-md" />
-								<div className="grid grid-cols-1 gap-4">
+								<div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-1">
 									<Skeleton className="relative w-full rounded-md h-9" />
 									<Skeleton className="relative w-full rounded-md h-9" />
 									<Skeleton className="relative w-full rounded-md h-9" />
@@ -234,7 +242,7 @@ export const RescheduleFields = memo(function Component({
 							name="preferredTherapistGender"
 							render={({ field }) => (
 								<FormItem className="space-y-3">
-									<FormLabel>Preferred Therapist Gender</FormLabel>
+									<FormLabel>{tasf("pref_therapist_gender.label")}</FormLabel>
 									<FormControl>
 										<RadioGroup
 											onValueChange={(value) => {
@@ -243,7 +251,7 @@ export const RescheduleFields = memo(function Component({
 											}}
 											defaultValue={field.value}
 											orientation="horizontal"
-											className="grid grid-cols-1 gap-4"
+											className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-1"
 										>
 											{preferredTherapistGenderOption.map((gender) => (
 												<FormItem
@@ -253,9 +261,13 @@ export const RescheduleFields = memo(function Component({
 													<FormControl>
 														<RadioGroupItem value={gender} />
 													</FormControl>
-													<FormLabel className="flex items-center gap-1 font-normal capitalize">
-														{getGenderIcon(gender)}
-														<span>{gender.toLowerCase()}</span>
+													<FormLabel className="flex items-center gap-1 font-normal capitalize truncate">
+														{getGenderIcon(gender, "shrink-0")}
+														<span className="truncate text-nowrap">
+															{tasf(
+																`pref_therapist_gender.options.${gender.toLowerCase()}`,
+															)}
+														</span>
 													</FormLabel>
 												</FormItem>
 											))}
@@ -272,11 +284,23 @@ export const RescheduleFields = memo(function Component({
 						name="appointmentDateTime"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Appointment Date</FormLabel>
+								<FormLabel>{tasf("appt_date.label")}</FormLabel>
+
+								{apptDateTime?.message && (
+									<Alert className="text-xs">
+										<Info className="size-3.5 shrink-0" />
+										<AlertTitle>Info</AlertTitle>
+										<AlertDescription className="text-xs">
+											{apptDateTime.message}
+										</AlertDescription>
+									</Alert>
+								)}
 
 								<FormControl>
 									<DateTimePicker
 										value={field.value}
+										min={apptDateTime.min}
+										max={apptDateTime.max}
 										onChangeValue={field.onChange}
 										callbackOnChange={() => {
 											// reset all therapist and isoline maps state
@@ -295,8 +319,8 @@ export const RescheduleFields = memo(function Component({
 					control={form.control}
 					name="therapist.name"
 					render={({ field }) => (
-						<FormItem className="flex-1">
-							<FormLabel>Therapist</FormLabel>
+						<FormItem className="w-full">
+							<FormLabel>{tasf("therapist.label")}</FormLabel>
 
 							<FormControl>
 								<TherapistSelection
@@ -333,13 +357,13 @@ export const RescheduleFields = memo(function Component({
 				render={({ field }) => (
 					<FormItem className="col-span-full">
 						<FormLabel>
-							Reschedule Reason{" "}
+							{tasf("reschedule_reason.label")}{" "}
 							<span className="text-sm italic font-light">- (optional)</span>
 						</FormLabel>
 						<FormControl>
 							<Textarea
 								{...field}
-								placeholder="Enter the reschedule reason..."
+								placeholder={tasf("reschedule_reason.placeholder")}
 								rows={3}
 								className="shadow-inner bg-sidebar"
 							/>

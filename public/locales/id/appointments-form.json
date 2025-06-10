@@ -2,11 +2,13 @@
 	"head_title": "Pemesanan Janji Temu",
 	"page_title": {
 		"new": "Buat Janji Temu Baru",
-		"series": "Seri Jadwalkan Janji Temu"
+		"series": "Seri Jadwalkan Janji Temu",
+		"reschedule": "Penjadwalan Ulang {{regNumber}}"
 	},
 	"page_description": {
 		"new": "Jadwalkan sesi janji temu antara terapis dan pasien.",
-		"series": "Mengatur kunjungan berikutnya sebagai bagian dari rencana perawatan yang sedang berlangsung antara terapis dan pasien."
+		"series": "Mengatur kunjungan berikutnya sebagai bagian dari rencana perawatan yang sedang berlangsung antara terapis dan pasien.",
+		"reschedule": "Temukan waktu lain yang sesuai untuk sesi janji temu yang sudah ada."
 	},
 	"navigate_away": "Apakah Anda yakin ingin menavigasi jauh?",
 	"button": {
@@ -20,7 +22,9 @@
 			"label": "Berikutnya",
 			"loading": "Mohon Tunggu..."
 		},
-		"skip": "Lewati"
+		"skip": "Lewati",
+		"edit": "Edit",
+		"close": "Tutup"
 	},
 	"stepper": {
 		"patient_profile": {
@@ -52,9 +56,186 @@
 			}
 		}
 	},
-	"final-step": {
+	"final_step": {
 		"title": "Janji temu sudah dipesan!",
 		"description": "Janji temu telah berhasil dibuat. Anda dapat mulai memberi tahu terapis dan pasien yang bersangkutan. Dan Anda akan diarahkan dalam beberapa detik.",
 		"button": "Alihkan sekarang"
+	},
+	"appt_schedule": {
+		"alert_therapist": {
+			"title": "Terapis tidak ditemukan",
+			"description": "Tidak ada terapis yang tersedia untuk tanggal dan waktu janji temu yang dipilih. Silakan pilih tanggal atau waktu yang berbeda."
+		},
+		"fields": {
+			"service": {
+				"label": "Layanan Kesehatan",
+				"placeholder": "Pilih layanan kesehatan",
+				"search": {
+					"placeholder": "Cari layanan kesehatan...",
+					"empty": "Tidak ada layanan kesehatan yang ditemukan.",
+					"loading": "Silahkan Tunggu..."
+				}
+			},
+			"package": {
+				"label": "Paket",
+				"placeholder": "Pilih paket",
+				"search": {
+					"placeholder": "Cari paket...",
+					"empty": "Tidak ada paket yang ditemukan."
+				}
+			},
+			"pref_therapist_gender": {
+				"label": "Pilihan Jenis Kelamin Terapis",
+				"options": {
+					"male": "Laki-Laki",
+					"female": "Perempuan",
+					"no preference": "Tidak ada preferensi"
+				}
+			},
+			"appt_date": {
+				"label": "Tanggal"
+			},
+			"therapist": {
+				"label": "Terapis",
+				"button": "Temukan Terapis yang Tersedia",
+				"search": {
+					"placeholder": "Cari berdasarkan nama...",
+					"suggested_label": "Disarankan",
+					"other_label": "Lainnya",
+					"empty": "Tidak ada terapis yang tersedia"
+				}
+			},
+			"reschedule_reason": {
+				"label": "Alasan Penjadwalan Ulang",
+				"placeholder": "Masukkan alasan penjadwalan ulang..."
+			}
+		}
+	},
+	"patient_profile": {
+		"empty_card": "Pilih pasien yang sudah ada dalam catatan",
+		"loading": "Mohon Tunggu...",
+		"modal": {
+			"title": "Pilih Pasien yang Sudah Ada"
+		},
+		"alert_empty": {
+			"title": "Error",
+			"description": "Hei, hanya pengingat untuk mencari dan memilih pasien dalam catatan terlebih dahulu."
+		},
+		"fields": {
+			"source_selection": {
+				"options": {
+					"existing": {
+						"label": "Pilih pasien yang sudah ada"
+					},
+					"new": {
+						"label": "Tambahkan catatan pasien baru"
+					}
+				}
+			},
+			"existing_selection": {
+				"placeholder": "Cari pasien...",
+				"description": "Anda dapat mencari berdasarkan nama pasien, nomor kontak, atau email.",
+				"list": {
+					"label": "Daftar pasien",
+					"empty": "Mari kita mulai dengan mencari pasien dalam pencarian di atas."
+				}
+			}
+		},
+		"button": {
+			"select": "Pilih Pasien"
+		}
+	},
+	"patient_contact": {
+		"label": "Kontak Pasien",
+		"empty_card": "Isi kontak pasien",
+		"button": {
+			"select": "Pilih Kontak"
+		},
+		"modal": {
+			"title": "Edit Kontak Pasien"
+		},
+		"alert_empty": {
+			"title": "Error",
+			"description": "Mungkin ada beberapa data yang perlu dikoreksi."
+		},
+		"fields": {
+			"name": {
+				"label": "Nama Kontak",
+				"placeholder": "Masukkan nama kontak..."
+			},
+			"contact_number": {
+				"label": "Nomor Telepon",
+				"placeholder": "Masukan nomor telepon..."
+			},
+			"email": {
+				"label": "Email",
+				"placeholder": "Masukan e-mail..."
+			},
+			"miitel_link": {
+				"label": "Link MiiTel",
+				"placeholder": "Masukan link MiiTel..."
+			},
+			"source_selection": {
+				"options": {
+					"existing": {
+						"label": "Gunakan yang sudah ada"
+					},
+					"new": {
+						"label": "Tambahkan yang baru"
+					}
+				}
+			},
+			"existing_selection": {
+				"placeholder": "Cari kontak...",
+				"description": "Anda dapat mencari berdasarkan nama kontak, nomor telepon, atau email.",
+				"list": {
+					"label": "Daftar Kontak",
+					"empty": "Mari kita mulai dengan mencari kontak dalam pencarian di atas."
+				}
+			}
+		}
+	},
+	"patient_medical": {
+		"label": "Rekam Medis Pasien",
+		"modal": {
+			"title": "Edit Rekam Medis Pasien"
+		},
+		"alert_empty": {
+			"title": "Error",
+			"description": "Mungkin ada beberapa data yang perlu dikoreksi."
+		},
+		"fields": {
+			"condition": {
+				"label": "Kondisi saat ini",
+				"options": {
+					"normal": {
+						"label": "Normal",
+						"description": "Sepenuhnya mobile tanpa batasan."
+					},
+					"only able to sit": {
+						"label": "Hanya bisa duduk",
+						"description": "Mobilitas terbatas, pasien dapat duduk tetapi tidak dapat berdiri atau berjalan."
+					},
+					"bedridden": {
+						"label": "Terbaring di tempat tidur",
+						"description": "Pasien dibatasi di tempat tidur."
+					}
+				}
+			},
+			"complaint": {
+				"label": "Keluhan",
+				"placeholder": "Masukkan keluhan..."
+			},
+			"illness_onset_date": {
+				"label": "Kapan sakit mulai dirasakan/muncul",
+				"placeholder": "Masukkan tanggal kapan sakit mulai dirasakan/muncul...",
+				"description": "Masukkan tanggal ketika penyakit pertama kali dimulai. Anda dapat menggunakan tanggal pasti jika diketahui, atau perkiraan jika tidak yakin."
+			},
+			"medical_history": {
+				"label": "Riwayat medis",
+				"placeholder": "Masukkan riwayat kesehatan...",
+				"description": "Memberikan gambaran umum mengenai riwayat kesehatan pasien, termasuk alergi, kondisi kronis, dan kejadian atau perawatan medis di masa lalu yang relevan dengan keluhan saat ini."
+			}
+		}
 	}
 }

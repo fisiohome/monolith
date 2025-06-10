@@ -293,6 +293,21 @@ export const useRescheduleFields = () => {
 		sourceOptions: globalProps.optionsData?.preferredTherapistGender,
 	});
 
+	// * for appointment date time min max values
+	const apptDateTime = useMemo(() => {
+		const {
+			min: minIso,
+			max: maxIso,
+			message = null,
+		} = globalProps.optionsData?.apptDateTime ?? {};
+
+		return {
+			min: minIso ? new Date(minIso) : null,
+			max: maxIso ? new Date(maxIso) : null,
+			message,
+		};
+	}, [globalProps.optionsData?.apptDateTime]);
+
 	return {
 		...prefGenderHooks,
 		...therapistAvailabilityHooks,
@@ -302,5 +317,6 @@ export const useRescheduleFields = () => {
 		watchAppointmentDateTimeValue,
 		errorsServerValidation,
 		brandPackagesSource,
+		apptDateTime,
 	};
 };

@@ -2,11 +2,13 @@
 	"head_title": "Appointment Booking",
 	"page_title": {
 		"new": "Book a New Appointment",
-		"series": "Schedule Appointment Series"
+		"series": "Schedule Appointment Series",
+		"reschedule": "Reschedule {{regNumber}}"
 	},
 	"page_description": {
 		"new": "Schedule a appointment session between therapist and patient.",
-		"series": "Arrange the next visit as part of an ongoing treatment plan between therapist and patient."
+		"series": "Arrange the next visit as part of an ongoing treatment plan between therapist and patient.",
+		"reschedule": "Find another suitable time for an existing appointment session."
 	},
 	"navigate_away": "Are you sure you want to navigate away?",
 	"button": {
@@ -20,7 +22,9 @@
 			"label": "Next",
 			"loading": "Please Wait..."
 		},
-		"skip": "Skip"
+		"skip": "Skip",
+		"edit": "Edit",
+		"close": "Close"
 	},
 	"stepper": {
 		"patient_profile": {
@@ -52,9 +56,186 @@
 			}
 		}
 	},
-	"final-step": {
+	"final_step": {
 		"title": "Appointments are Booked!",
 		"description": "The appointment has been successfully created. You can start to inform the therapist and patient concerned. And you will be redirected in a few seconds.",
 		"button": "Redirect now"
+	},
+	"appt_schedule": {
+		"alert_therapist": {
+			"title": "Therapist not found",
+			"description": "There are no therapists available for the selected appointment date and time. Please choose a different date or time."
+		},
+		"fields": {
+			"service": {
+				"label": "Service",
+				"placeholder": "Select service",
+				"search": {
+					"placeholder": "Search service...",
+					"empty": "No service found.",
+					"loading": "Please wait..."
+				}
+			},
+			"package": {
+				"label": "Package",
+				"placeholder": "Select package",
+				"search": {
+					"placeholder": "Search package...",
+					"empty": "No package found."
+				}
+			},
+			"pref_therapist_gender": {
+				"label": "Preferred Therapist Gender",
+				"options": {
+					"male": "Male",
+					"female": "Female",
+					"no preference": "No Preference"
+				}
+			},
+			"appt_date": {
+				"label": "Appointment Date"
+			},
+			"therapist": {
+				"label": "Therapist",
+				"button": "Find the Available Therapists",
+				"search": {
+					"placeholder": "Search by name...",
+					"suggested_label": "Suggested Therapist",
+					"other_label": "Other",
+					"empty": "There are no therapists available"
+				}
+			},
+			"reschedule_reason": {
+				"label": "Reschedule Reason",
+				"placeholder": "Enter the reschedule reason..."
+			}
+		}
+	},
+	"patient_profile": {
+		"empty_card": "Select an existing patient in the record",
+		"loading": "Please Wait...",
+		"modal": {
+			"title": "Select Existing Patient"
+		},
+		"alert_empty": {
+			"title": "Error",
+			"description": "Hey, just a friendly reminder to search and select the patient in the record first."
+		},
+		"fields": {
+			"source_selection": {
+				"options": {
+					"existing": {
+						"label": "Select existing patient"
+					},
+					"new": {
+						"label": "Add new patient record"
+					}
+				}
+			},
+			"existing_selection": {
+				"placeholder": "Search patient...",
+				"description": "You can search by patient name, contact number, or email.",
+				"list": {
+					"label": "Patient list",
+					"empty": "Let's start by searching for patients in the search above."
+				}
+			}
+		},
+		"button": {
+			"select": "Select Patient"
+		}
+	},
+	"patient_contact": {
+		"label": "Patient Contact",
+		"empty_card": "Fill in patient contact",
+		"button": {
+			"select": "Select Contact"
+		},
+		"modal": {
+			"title": "Edit Patient Contact"
+		},
+		"alert_empty": {
+			"title": "Error",
+			"description": "There may be some data that is in need of correction."
+		},
+		"fields": {
+			"name": {
+				"label": "Contact Name",
+				"placeholder": "Enter the contact name..."
+			},
+			"contact_number": {
+				"label": "Contact Phone Number",
+				"placeholder": "Enter the contact phone number..."
+			},
+			"email": {
+				"label": "Email",
+				"placeholder": "Enter the email..."
+			},
+			"miitel_link": {
+				"label": "MiiTel Link",
+				"placeholder": "Enter the MiiTel link..."
+			},
+			"source_selection": {
+				"options": {
+					"existing": {
+						"label": "Use existing"
+					},
+					"new": {
+						"label": "Add a new"
+					}
+				}
+			},
+			"existing_selection": {
+				"placeholder": "Search contact...",
+				"description": "You can search by contact name, phone number, or email.",
+				"list": {
+					"label": "Contacts",
+					"empty": "Let's start by searching for contacts in the search above."
+				}
+			}
+		}
+	},
+	"patient_medical": {
+		"label": "Patient Medical Record",
+		"modal": {
+			"title": "Edit Patient Medical Record"
+		},
+		"alert_empty": {
+			"title": "Error",
+			"description": "There may be some data that is in need of correction."
+		},
+		"fields": {
+			"condition": {
+				"label": "Current Condition",
+				"options": {
+					"normal": {
+						"label": "Normal",
+						"description": "Fully mobile with no restrictions."
+					},
+					"only able to sit": {
+						"label": "Only able to sit",
+						"description": "Limited mobility, the patient can sit but not stand or walk."
+					},
+					"bedridden": {
+						"label": "Bedridden",
+						"description": "The patient is confined to bed."
+					}
+				}
+			},
+			"complaint": {
+				"label": "Complaint Description",
+				"placeholder": "Enter the complaint description..."
+			},
+			"illness_onset_date": {
+				"label": "Illness Onset Date",
+				"placeholder": "Enter the illness onset date...",
+				"description": "Enter the date when the illness first began. You can use an exact date if known, or an estimate if unsure."
+			},
+			"medical_history": {
+				"label": "Medical History",
+				"placeholder": "Enter the medical history...",
+				"description": "Provide an overview of the patient’s medical history including allergies, chronic conditions, and any past medical events or treatments relevant to the current complaint."
+			}
+		}
 	}
 }

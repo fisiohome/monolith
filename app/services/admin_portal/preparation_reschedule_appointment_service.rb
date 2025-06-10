@@ -60,7 +60,33 @@ module AdminPortal
     def fetch_options_data
       preferred_therapist_gender = Appointment::PREFERRED_THERAPIST_GENDER
 
-      deep_transform_keys_to_camel_case({preferred_therapist_gender:})
+      min_date = @appointment&.min_datetime
+      max_date = @appointment&.max_datetime
+
+      # find the nearest visits with a datetime (backwards & forwards)
+      prev_appt = safe_nearest_with_datetime(@appointment&.previous_visit, :previous_visit)
+      next_appt = safe_nearest_with_datetime(@appointment&.next_visit, :next_visit)
+
+      # bump them by ±1 minute
+      min_dt = prev_appt&.appointment_date_time&.advance(minutes: 1) # +1 minute so you can’t pick the same minute as the previous appt
+      max_dt = next_appt&.appointment_date_time&.advance(minutes: -1) # –1 minute so you finish before the next appt
+
+      # build human-readable reasons
+      parts = []
+      if prev_appt && min_dt
+        parts << "after #{min_dt.strftime("%B %d, %Y")} – visit #{prev_appt.visit_number}/#{prev_appt.total_package_visits} (##{prev_appt.registration_number})"
+      end
+      if next_appt && max_dt
+        parts << "before #{max_dt.strftime("%B %d, %Y")} – visit #{next_appt.visit_number}/#{next_appt.total_package_visits} (##{next_appt.registration_number})"
+      end
+      message = parts.any? ? "Schedule available #{parts.join(" and ")}." : nil
+
+      deep_transform_keys_to_camel_case(
+        {
+          preferred_therapist_gender:,
+          appt_date_time: {min: min_date, max: max_date, message:}
+        }
+      )
     end
 
     private
@@ -101,6 +127,24 @@ module AdminPortal
         formatted_therapists(therapist, details)
         # end
       end
+    end
+
+    # Walks from `start_appt` following `method` (either :previous_visit or :next_visit)
+    # until it finds an appointment with #appointment_date_time, or returns nil.
+    # Uses a Set to avoid infinite loops if the chain ever loops back.
+    def safe_nearest_with_datetime(start_appt, method)
+      return nil unless start_appt
+
+      seen = Set.new
+      current = start_appt
+
+      while current && !seen.include?(current.id)
+        return current if current.appointment_date_time.present?
+        seen << current.id
+        current = current.send(method)
+      end
+
+      nil
     end
   end
 end

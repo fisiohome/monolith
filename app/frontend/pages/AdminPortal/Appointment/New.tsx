@@ -75,6 +75,7 @@ export interface AppointmentNewProps {
 		fisiohomePartnerNames: typeof FISIOHOME_PARTNER;
 	};
 	patientList?: Patient[];
+	patientContactList?: NonNullable<Patient["contact"]>[];
 	appointment: Appointment;
 	appointmentReference: Appointment | null;
 }

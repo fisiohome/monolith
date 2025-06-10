@@ -128,6 +128,19 @@ module AdminPortal
         .map { |p| deep_transform_keys_to_camel_case(serialize_patient(p).as_json) }
     end
 
+    def fetch_patient_contact_list
+      return if patient_contact_search_param.blank?
+
+      term = "%#{patient_contact_search_param.strip}%"
+      PatientContact
+        .where(
+          "contact_name ILIKE :t OR email ILIKE :t OR contact_phone ILIKE :t",
+          t: term
+        )
+        .distinct
+        .map { |p| deep_transform_keys_to_camel_case(p.as_json) }
+    end
+
     def fetch_appointment_reference
       return if appointment_reference_id.blank?
 
@@ -147,7 +160,11 @@ module AdminPortal
     end
 
     def patient_search_param
-      @params[:patient_name]
+      @params[:patient_query]
+    end
+
+    def patient_contact_search_param
+      @params[:patient_contact_query]
     end
 
     def appointment_reference_id

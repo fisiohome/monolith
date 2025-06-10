@@ -27,7 +27,7 @@ module TherapistsHelper
 
       # serialize just active address
       if options.fetch(:include_active_address, true)
-        therapist_serialize["active_address"] = therapist.active_address.attributes.merge(
+        therapist_serialize["active_address"] = therapist&.active_address&.attributes&.merge(
           location: therapist.active_address.location.attributes
         )
       end

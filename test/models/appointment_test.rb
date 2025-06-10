@@ -5,10 +5,16 @@ class AppointmentTest < ActiveSupport::TestCase
     @service = services(:fisiohome_special_tier)
     @user = User.create!(email: "rina@example.com", password: "password")
     @therapist = therapists(:therapist_one)
+    @patient_contact = PatientContact.create!(
+      contact_name: "Budi",
+      contact_phone: "6289172818",
+      email: "budi@yopmail.com"
+    )
     @patient = Patient.create!(
       name: "Budi",
       date_of_birth: "2000-01-01",
-      gender: "MALE"
+      gender: "MALE",
+      patient_contact: @patient_contact
     )
     @package = Package.create!(
       service: @service,
@@ -44,13 +50,12 @@ class AppointmentTest < ActiveSupport::TestCase
   end
 
   test "blocks a 5th appointment for a therapist with informative error, about max_daily_appointments" do
+    @patient_contacts = []
     @patients = []
     4.times do |i|
-      @patients << Patient.create!(
-        name: "Patient#{i}",
-        date_of_birth: "2000-01-01",
-        gender: "MALE"
-      )
+      contact = PatientContact.create!(contact_name: "Patient#{i}", contact_phone: "6289172123#{i}", email: "patient#{i}@yopmail.com")
+      @patient_contacts << contact
+      @patients << Patient.create!(name: "Patient#{i}", date_of_birth: "2000-01-01", gender: "MALE", patient_contact: contact)
     end
 
     4.times do |i|
@@ -66,11 +71,8 @@ class AppointmentTest < ActiveSupport::TestCase
     end
 
     # 5th appointment, another patient
-    new_patient = Patient.create!(
-      name: "Overflow",
-      date_of_birth: "2000-01-01",
-      gender: "MALE"
-    )
+    new_patient_contact = PatientContact.create!(contact_name: "Overflow", contact_phone: "628917212321", email: "overflow@yopmail.com")
+    new_patient = Patient.create!(name: "Overflow", date_of_birth: "2000-01-01", gender: "MALE", patient_contact: new_patient_contact)
     appt = Appointment.new(
       therapist: @therapist,
       patient: new_patient,
@@ -784,7 +786,8 @@ class AppointmentTest < ActiveSupport::TestCase
     )
 
     # Different package & patient
-    other_patient = Patient.create!(name: "Other", date_of_birth: "2000-01-01", gender: "FEMALE")
+    other_patient_contact = PatientContact.create!(contact_name: "Other", contact_phone: "62891721231", email: "other@yopmail.com")
+    other_patient = Patient.create!(name: "Other", date_of_birth: "2000-01-01", gender: "FEMALE", patient_contact: other_patient_contact)
     other_package = Package.create!(
       service: @service, name: "Different", currency: "IDR", number_of_visit: 1,
       price_per_visit: 100_000, total_price: 100_000, fee_per_visit: 70_000, total_fee: 70_000, active: true
@@ -934,5 +937,63 @@ class AppointmentTest < ActiveSupport::TestCase
 
     assert_not second.valid?
     assert_includes second.errors[:appointment_date_time].join, "must be before visit 3"
+  end
+
+  test "min_datetime and max_datetime return correct bounds for series visits, about min_datetime and max_datetime" do
+    # ─── Setup a 3-visit package ────────────────────────────────────────────────
+    triple_pkg = Package.create!(
+      service: @service,
+      name: "3-Visit Series",
+      currency: "IDR",
+      number_of_visit: 3,
+      price_per_visit: 100_000,
+      total_price: 300_000,
+      fee_per_visit: 70_000,
+      total_fee: 210_000,
+      active: true
+    )
+
+    # ─── Create the FIRST visit at a known time ─────────────────────────────────
+    t0 = @future_time.change(hour: 9)
+    first = Appointment.create!(
+      patient: @patient,
+      service: @service,
+      package: triple_pkg,
+      location: @location,
+      therapist: @therapist,
+      appointment_date_time: t0,
+      preferred_therapist_gender: "NO PREFERENCE",
+      patient_medical_record_attributes: @patient_medical_record
+    )
+
+    # ─── Grab the auto-built series appointments ────────────────────────────────
+    second = first.series_appointments.find_by(visit_number: 2)
+    third = first.series_appointments.find_by(visit_number: 3)
+
+    # ─── Schedule them at t1 = t0 + 1.day, t2 = t0 + 2.days ────────────────────
+    t1 = t0 + 1.day
+    t2 = t0 + 2.days
+
+    [second, third].each do |appt|
+      appt.update!(
+        therapist: @therapist,
+        appointment_date_time: ((appt.visit_number == 2) ? t1 : t2),
+        status: :pending_patient_approval,
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
+    end
+
+    # ─── Assertions for the model helpers ───────────────────────────────────────
+    # First visit: no previous, next is the 2nd
+    assert_nil first.min_datetime
+    assert_equal t1, first.max_datetime
+
+    # Second visit: prev is first, next is third
+    assert_equal t0, second.min_datetime
+    assert_equal t2, second.max_datetime
+
+    # Third visit: prev is second, no next
+    assert_equal t1, third.min_datetime
+    assert_nil third.max_datetime
   end
 end

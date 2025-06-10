@@ -99,7 +99,7 @@ const CountrySelect = ({
 	onChange,
 }: CountrySelectProps) => {
 	return (
-		<Popover>
+		<Popover modal>
 			<PopoverTrigger asChild>
 				<Button
 					type="button"

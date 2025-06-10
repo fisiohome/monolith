@@ -81,7 +81,7 @@ export function AppointmentDetailsSection({
 
 			<Separator />
 
-			<p className="font-light uppercase text-[10px] tracking-wider">
+			<p className="text-xs font-light tracking-wider uppercase">
 				{t("list.visit_service")}
 			</p>
 
@@ -100,7 +100,7 @@ export function AppointmentDetailsSection({
 
 			<Separator />
 
-			<p className="font-light uppercase text-[10px] tracking-wider">
+			<p className="text-xs font-light tracking-wider uppercase">
 				{t("list.visit_region")}
 			</p>
 
@@ -172,7 +172,7 @@ export function AppointmentDetailsSection({
 
 			<Separator />
 
-			<p className="font-light uppercase text-[10px] tracking-wider">
+			<p className="text-xs font-light tracking-wider uppercase">
 				{t("list.series")}
 			</p>
 
@@ -180,9 +180,9 @@ export function AppointmentDetailsSection({
 				<div
 					key={visit.id}
 					className={cn(
-						"grid gap-1 p-3 border rounded-lg border-border bg-muted",
+						"grid gap-1 p-3 border rounded-lg border-border bg-input",
 						visit.registrationNumber === appointment.registrationNumber &&
-							"border-primary/50 text-primary",
+							"ring-1 ring-primary text-primary",
 					)}
 				>
 					<div className="flex items-center justify-between">
@@ -217,10 +217,12 @@ export function AppointmentDetailsSection({
 						<p className="font-bold">Visit {visit.visitProgress}</p>
 
 						<p className="text-xs font-light">
-							{format(visit.appointmentDateTime, "PPPP", {
-								locale,
-								in: tzDate,
-							})}
+							{visit.appointmentDateTime
+								? format(visit.appointmentDateTime, "PPPP", {
+										locale,
+										in: tzDate,
+									})
+								: "N/A"}
 						</p>
 					</div>
 				</div>
@@ -228,13 +230,13 @@ export function AppointmentDetailsSection({
 
 			<Separator />
 
-			<p className="font-light uppercase text-[10px] tracking-wider">
+			<p className="text-xs font-light tracking-wider uppercase">
 				{t("list.payment_details")}
 			</p>
 
-			<div className="grid gap-4 p-3 border rounded-lg md:grid-cols-2 border-border bg-muted">
+			<div className="grid gap-4 p-3 border rounded-lg md:grid-cols-2 border-border bg-input">
 				<div className="flex gap-2">
-					<Building className="mt-0.5 size-4 text-muted-foreground/75" />
+					<Building className="mt-0.5 size-4" />
 					<div>
 						<p className="font-light">{t("list.booking_partner")}:</p>
 						<p className="font-semibold capitalize text-pretty">
@@ -246,7 +248,7 @@ export function AppointmentDetailsSection({
 				</div>
 
 				<div className="flex gap-2">
-					<TicketPercent className="mt-0.5 size-4 text-muted-foreground/75" />
+					<TicketPercent className="mt-0.5 size-4" />
 					<div>
 						<p className="font-light">{t("list.voucher")}:</p>
 						<p className="font-semibold capitalize text-pretty">
@@ -355,7 +357,7 @@ export default function PatientDetailsSection({
 						</AccordionTrigger>
 
 						<AccordionContent>
-							<div className="grid gap-3 text-xs">
+							<div className="grid gap-3 text-sm">
 								<div className="grid grid-cols-3 gap-4">
 									<p className="font-light">{t("list.gender")}</p>
 									<p className="col-span-2 font-semibold flex gap-1.5">
@@ -388,7 +390,7 @@ export default function PatientDetailsSection({
 									</p>
 								</div>
 
-								<div className="mt-2 uppercase text-[10px] tracking-wider col-span-full">
+								<div className="mt-2 text-xs tracking-wider uppercase col-span-full">
 									{t("list.contact_details")}
 								</div>
 								<div className="grid grid-cols-3 gap-4">
@@ -416,7 +418,7 @@ export default function PatientDetailsSection({
 									</p>
 								</div>
 
-								<div className="mt-2 uppercase text-[10px] tracking-wider col-span-full">
+								<div className="mt-2 text-xs tracking-wider uppercase col-span-full">
 									{t("list.patient_medical_record")}
 								</div>
 								<div className="grid grid-cols-3 gap-4">
@@ -496,7 +498,7 @@ export function TherapistDetailsSection({
 						</AccordionTrigger>
 
 						<AccordionContent>
-							<div className="grid gap-3 text-xs">
+							<div className="grid gap-3 text-sm">
 								<div className="grid grid-cols-3 gap-4">
 									<p className="font-light">REG ID</p>
 									<p className="col-span-2 font-semibold flex gap-1.5">
@@ -567,7 +569,7 @@ export function PICDetailsSection({
 			</h3>
 
 			<div className="grid w-full gap-2 p-2 border rounded-lg border-border bg-background">
-				<p className="text-[10px] tracking-wider font-light uppercase">
+				<p className="text-xs font-light tracking-wider uppercase">
 					{picList?.length || 0} {t("list.person_in_charge")}
 				</p>
 
@@ -590,7 +592,7 @@ export function PICDetailsSection({
 							</AccordionTrigger>
 
 							<AccordionContent>
-								<div className="grid gap-3 text-xs">
+								<div className="grid gap-3 text-sm">
 									<div className="grid grid-cols-3 gap-4">
 										<p className="font-light">{t("list.type")}</p>
 										<p className="col-span-2 font-semibold">

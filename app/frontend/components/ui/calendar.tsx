@@ -121,7 +121,7 @@ function Calendar({
 				months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
 				month: "space-y-4",
 				vhidden: "vhidden hidden",
-				caption: "flex justify-center pt-1 relative items-center",
+				caption: "flex justify-center relative items-center",
 				caption_label: "text-sm font-medium",
 				caption_dropdowns: cn(
 					"flex justify-between gap-2",
@@ -165,8 +165,8 @@ function Calendar({
 			}}
 			components={{
 				Dropdown: CustomDropdown,
-				IconLeft: () => <ChevronLeft className="w-4 h-4" />,
-				IconRight: () => <ChevronRight className="w-4 h-4" />,
+				IconLeft: () => <ChevronLeft className="size-4" />,
+				IconRight: () => <ChevronRight className="size-4" />,
 			}}
 			{...props}
 		/>

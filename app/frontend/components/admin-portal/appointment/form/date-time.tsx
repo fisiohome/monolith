@@ -2,6 +2,7 @@ import { useDateContext } from "@/components/providers/date-provider";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { useAppointmentDateTime } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { generateTimeSlots } from "@/hooks/use-calendar-schedule";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,8 @@ import { type ComponentProps, useEffect, useRef, useState } from "react";
 
 export interface DateTimePickerProps extends ComponentProps<"div"> {
 	value: Date | null;
+	min?: Date | null;
+	max?: Date | null;
 	onChangeValue: (...event: any[]) => void;
 	callbackOnChange: () => void;
 }
@@ -17,6 +20,8 @@ export interface DateTimePickerProps extends ComponentProps<"div"> {
 export default function DateTimePicker({
 	className,
 	value,
+	min = null,
+	max = null,
 	onChangeValue,
 	callbackOnChange,
 }: DateTimePickerProps) {
@@ -28,12 +33,17 @@ export default function DateTimePicker({
 		onSelectAppointmentTime,
 	} = useAppointmentDateTime({
 		sourceValue: value || undefined,
+		min,
+		max,
 	});
 	const calendarRef = useRef<HTMLDivElement>(null);
 	const selectedButtonRef = useRef<HTMLButtonElement>(null);
 	const [calendarHeight, setCalendarHeight] = useState<number>(0);
+	const [timeGroupType, setTimeGroupType] = useState<"unique" | "basic">(
+		"basic",
+	);
 
-	// Measure calendar height whenever it renders or resizes
+	// * measure calendar height whenever it renders or resizes
 	useEffect(() => {
 		if (!calendarRef.current) return;
 		const el = calendarRef.current;
@@ -51,13 +61,15 @@ export default function DateTimePicker({
 
 	// * auto-scroll selected time into center
 	useEffect(() => {
+		if (timeGroupType === "unique") return;
+
 		if (selectedButtonRef?.current && value && calendarHeight) {
 			selectedButtonRef.current.scrollIntoView({
 				behavior: "smooth",
 				block: "center",
 			});
 		}
-	}, [value, calendarHeight]);
+	}, [value, calendarHeight, timeGroupType]);
 
 	return (
 		<div ref={calendarRef} className={cn("flex w-full gap-2", className)}>
@@ -84,6 +96,41 @@ export default function DateTimePicker({
 				style={{ height: calendarHeight }}
 				className="w-full h-64 gap-4 py-1 md:w-auto"
 			>
+				{["09:00", "11:00", "13:00", "16:00", "18:00"].map((time) => {
+					const isSelected = value && format(value, "HH:mm") === time;
+					const slotDate = parse(time, "HH:mm", new Date(), {
+						locale,
+						in: tzDate,
+					});
+					const displayTime = format(slotDate, timeFormatDateFns, {
+						locale,
+						in: tzDate,
+					});
+
+					return (
+						<div key={`${time}-unique`} className="flex flex-col">
+							<Button
+								variant={isSelected ? "default" : "primary-outline"}
+								className={cn("w-full mb-1", !isSelected && "bg-sidebar")}
+								onClick={(event) => {
+									event.preventDefault();
+
+									const date = onSelectAppointmentTime(time);
+									if (date) {
+										onChangeValue(date);
+										callbackOnChange();
+										setTimeGroupType("unique");
+									}
+								}}
+							>
+								{displayTime}
+							</Button>
+						</div>
+					);
+				})}
+
+				<Separator className="my-4" />
+
 				{generateTimeSlots(15).map((time) => {
 					const isSelected = value && format(value, "HH:mm") === time;
 					const slotDate = parse(time, "HH:mm", new Date(), {
@@ -100,7 +147,7 @@ export default function DateTimePicker({
 							<Button
 								ref={isSelected ? selectedButtonRef : null}
 								variant={isSelected ? "default" : "primary-outline"}
-								className="w-full mb-1"
+								className={cn("w-full mb-1", !isSelected && "bg-sidebar")}
 								onClick={(event) => {
 									event.preventDefault();
 
@@ -108,6 +155,7 @@ export default function DateTimePicker({
 									if (date) {
 										onChangeValue(date);
 										callbackOnChange();
+										setTimeGroupType("basic");
 									}
 								}}
 							>

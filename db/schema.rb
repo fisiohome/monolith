@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_24_171251) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_10_082159) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -198,12 +198,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_24_171251) do
     t.string "contact_phone", null: false
     t.string "email"
     t.string "miitel_link"
-    t.uuid "patient_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["contact_phone"], name: "index_patient_contacts_on_contact_phone", unique: true
     t.index ["email"], name: "index_patient_contacts_on_email", unique: true
-    t.index ["patient_id"], name: "index_patient_contacts_on_patient_id"
   end
 
   create_table "patient_medical_records", force: :cascade do |t|
@@ -223,7 +221,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_24_171251) do
     t.enum "gender", null: false, enum_type: "gender_enum"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "patient_contact_id"
     t.index ["name", "date_of_birth", "gender"], name: "index_patients_on_name_and_date_of_birth_and_gender", unique: true
+    t.index ["patient_contact_id"], name: "index_patients_on_patient_contact_id"
   end
 
   create_table "services", force: :cascade do |t|
@@ -381,7 +381,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_24_171251) do
   add_foreign_key "packages", "services"
   add_foreign_key "patient_addresses", "addresses"
   add_foreign_key "patient_addresses", "patients"
-  add_foreign_key "patient_contacts", "patients"
   add_foreign_key "patient_medical_records", "appointments"
   add_foreign_key "therapist_addresses", "addresses"
   add_foreign_key "therapist_addresses", "therapists"

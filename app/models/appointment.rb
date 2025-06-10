@@ -366,6 +366,50 @@ class Appointment < ApplicationRecord
     ([root] + root.series_appointments.order(:visit_number))
   end
 
+  # returns the immediately preceding appointment in the series (or nil)
+  def previous_visit
+    return nil if initial_visit?
+
+    # series visits: look up earlier-numbered series, falling back to the root
+    reference_appointment
+      .series_appointments
+      .where("visit_number < ?", visit_number)
+      .order(visit_number: :desc)
+      .first ||
+      reference_appointment
+  end
+
+  # returns the immediately following appointment in the series (or nil)
+  def next_visit
+    if initial_visit?
+      # first visit → first series appointment
+      series_appointments.order(visit_number: :asc).first
+    else
+      # series visit → next-numbered series
+      reference_appointment.series_appointments
+        .where("visit_number > ?", visit_number)
+        .order(visit_number: :asc)
+        .first
+    end
+  end
+
+  # helpers to expose min/max datetimes
+  def min_datetime
+    prev = previous_visit
+    while prev && prev.appointment_date_time.nil?
+      prev = prev.previous_visit
+    end
+    prev&.appointment_date_time
+  end
+
+  def max_datetime
+    nxt = next_visit
+    while nxt && nxt.appointment_date_time.nil?
+      nxt = nxt.next_visit
+    end
+    nxt&.appointment_date_time
+  end
+
   def cancellable?
     # Initial visits can always be cancelled
     # Series appointments can be cancelled if initial visit is cancelled

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { ComponentProps } from "react";
 import { Spinner } from "../ui/kibo-ui/spinner";
+import i18n from "@/lib/i18n";
 
 export interface LoadingBasicProps extends ComponentProps<"div"> {
 	text?: string;
@@ -8,7 +9,7 @@ export interface LoadingBasicProps extends ComponentProps<"div"> {
 }
 export function LoadingBasic({
 	className,
-	text = "Please wait...",
+	text = i18n.t("components.modal.wait"),
 	columnBased = false,
 }: LoadingBasicProps) {
 	return (
