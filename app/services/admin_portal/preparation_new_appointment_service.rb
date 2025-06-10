@@ -77,7 +77,7 @@ module AdminPortal
         .where(service: service)
         # * therapist from JAKARTA PUSAT, all booking come from Greater Jakarta can taken by therapist
         .where(
-          (location.state == "DKI JAKARTA") ? ["addresses.location_id IN (?) OR locations.city = ?", location_ids, "KOTA ADM. JAKARTA PUSAT"] : ["addresses.location_id IN ?", location_ids]
+          (location.state == "DKI JAKARTA") ? ["addresses.location_id IN (?) OR locations.city = ?", location_ids, "KOTA ADM. JAKARTA PUSAT"] : ["addresses.location_id IN (?)", location_ids]
         )
         .where(employment_status: "ACTIVE")
         # Exclude addresses with invalid lat/long
