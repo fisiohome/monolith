@@ -38,6 +38,9 @@ module InertiaAdminPortal
                 change_password: change_password_admin_portal_therapists_path,
                 schedules: admin_portal_therapist_schedules_path
               },
+              patient_management: {
+                index: admin_portal_patients_path
+              },
               service_management: {
                 index: admin_portal_services_path,
                 update_status: update_status_admin_portal_services_path

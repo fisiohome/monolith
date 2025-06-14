@@ -1,4 +1,21 @@
 class Patient < ApplicationRecord
+  # * define the scopes
+  scope :search, ->(search) {
+    return if search.blank?
+
+    joins(:patient_contact)
+      .where(
+        "patients.name ILIKE :t OR patient_contacts.contact_name ILIKE :t OR patient_contacts.email ILIKE :t OR patient_contacts.contact_phone ILIKE :t",
+        t: "%#{search.strip}%"
+      )
+  }
+  scope :by_city, ->(city) {
+    return if city.blank?
+
+    left_joins(patient_addresses: {address: :location})
+      .where(Location.arel_table[:city].matches("%#{city}%"))
+  }
+
   # * define the associations
   belongs_to :patient_contact
   accepts_nested_attributes_for :patient_contact

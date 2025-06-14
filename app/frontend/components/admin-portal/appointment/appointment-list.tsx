@@ -24,7 +24,10 @@ import {
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { getGenderIcon } from "@/hooks/use-gender";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getbadgeVariantStatus } from "@/lib/appointments/utils";
+import {
+	getBadgeVariantStatus,
+	getDotVariantStatus,
+} from "@/lib/appointments/utils";
 import { getBrandBadgeVariant } from "@/lib/services";
 import { cn, generateInitials, populateQueryParams } from "@/lib/utils";
 import type {
@@ -268,20 +271,13 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
 	const distanceBadgeVariant = useMemo(
-		() => getbadgeVariantStatus(schedule.status),
+		() => getBadgeVariantStatus(schedule.status),
 		[schedule.status],
 	);
-	const statusDotVariant = useMemo<VariantDotBadge["variant"]>(() => {
-		return schedule.status === "pending_patient_approval" ||
-			schedule.status === "pending_payment" ||
-			schedule.status === "pending_therapist_assignment"
-			? "warning"
-			: schedule.status === "unscheduled"
-				? "outline"
-				: schedule.status === "cancelled"
-					? "destructive"
-					: "success";
-	}, [schedule.status]);
+	const statusDotVariant = useMemo<VariantDotBadge["variant"]>(
+		() => getDotVariantStatus(schedule.status),
+		[schedule.status],
+	);
 	const startTimeLabel = useMemo(() => {
 		if (!schedule.appointmentDateTime)
 			return {
@@ -417,7 +413,7 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 														</TooltipTrigger>
 														<TooltipContent>
 															<p className="uppercase">
-																Status: {schedule.status}
+																Status: {t(`statuses.${schedule.status}`)}
 															</p>
 														</TooltipContent>
 													</Tooltip>
@@ -1604,7 +1600,7 @@ const SeriesItem = memo(function Component({
 						variant="outline"
 						className={cn(
 							"mb-1 text-center text-pretty !text-[10px]",
-							getbadgeVariantStatus(appointment.status),
+							getBadgeVariantStatus(appointment.status),
 						)}
 					>
 						{t(`statuses.${appointment.status}`)}

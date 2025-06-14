@@ -212,7 +212,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 						});
 
 						router.get(fullUrl, queryParams, {
-							only: ["flash"],
+							only: ["adminPortal", "flash"],
 							preserveScroll: true,
 							preserveState: true,
 							replace: true,

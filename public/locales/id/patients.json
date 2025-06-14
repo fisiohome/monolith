@@ -1,0 +1,58 @@
+{
+	"head_title": "Manajemen Pasien",
+	"page_title": "Manajemen Pasien",
+	"page_description": "Kelola akun dan profil pengguna pasien. Akses dan perbarui informasi pasien untuk merampingkan penjadwalan dan administrasi.",
+	"button": {
+		"add": "Tambahkan Pasien",
+		"detail": "Detil"
+	},
+	"filter": {
+		"search": {
+			"placeholder": "Cari pasien...",
+			"description": "Cari berdasarkan nama profil/kontak, telepon, dan email."
+		},
+		"region": {
+			"placeholder": "Berdasarkan wilayah",
+			"search": {
+				"placeholder": "Cari wilayah",
+				"empty": "Tidak ada wilayah ditemukan.",
+				"clear": "Bersihkan"
+			}
+		}
+	},
+	"list": {
+		"profile": "Profil",
+		"gender": {
+			"label": "Jenis Kelamin",
+			"male": "Laki-Laki",
+			"female": "Perempuan"
+		},
+		"dob": "TTL",
+		"age": {
+			"label": "Usia",
+			"years": "tahun"
+		},
+		"contact": "Kontak",
+		"actions": "Aksi",
+		"registered_at": "Terdaftar pada",
+		"contact_phone": "Nomor Telepon",
+		"addresses": {
+			"label": "Alamat",
+			"country": "Negara",
+			"state": "Provinsi",
+			"city": "Kota",
+			"postal": "Kode Pos",
+			"address_line": "Baris Alamat",
+			"notes": "Catatan",
+			"view_on_google_maps": "Lihat di Google Maps"
+		},
+		"appointments": {
+			"label": "Janji Temu",
+			"empty": "Belum ada janji temu yang dijadwalkan."
+		}
+	},
+	"details": {
+		"title": "Rincian Pasien",
+		"description": "Lihat profil pasien, info kontak, dan data medis penting-semuanya di satu tempat."
+	}
+}

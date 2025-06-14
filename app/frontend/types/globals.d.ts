@@ -63,6 +63,9 @@ export interface AdminPortal {
 				changePassword: string;
 				schedules: string;
 			};
+			patientManagement: {
+				index: string;
+			};
 			serviceManagement: {
 				index: string;
 				updateStatus: string;

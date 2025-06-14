@@ -2,6 +2,7 @@
 	"components": {
 		"modal": {
 			"cancel": "Cancel",
+			"close": "Close",
 			"wait": "Please wait",
 			"save": "Save"
 		},

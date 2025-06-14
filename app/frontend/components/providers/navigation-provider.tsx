@@ -142,6 +142,11 @@ export function NavigationProvider({
 				url: adminPortal.therapistManagement.index,
 				isActive: false,
 			},
+			{
+				title: t("patients"),
+				url: adminPortal.patientManagement.index,
+				isActive: false,
+			},
 		];
 		const filteredUserSubItems =
 			currentUserType === "THERAPIST"

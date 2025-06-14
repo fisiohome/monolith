@@ -22,7 +22,9 @@ module PatientsHelper
       if options.fetch(:include_patient_addresses, false) && patient.patient_addresses.present?
         patient_serialized["patient_addresses"] = patient.patient_addresses.map do |pa|
           pa.as_json(only: options[:patient_addresses_only]).merge(
-            "address" => pa.address.as_json(only: options[:address_only])
+            "address" => pa.address.as_json(only: options[:address_only]).merge(
+              "location" => serialize_location(pa.address.location, only: options[:location_only])
+            )
           )
         end
       end

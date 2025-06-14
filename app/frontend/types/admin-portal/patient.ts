@@ -41,6 +41,14 @@ export interface Patient {
 	gender: (typeof GENDERS)[number];
 	contact?: PatientContact;
 	activeAddress?: PatientActiveAddress;
+	patientAddresses?: {
+		active: boolean;
+		address: PatientActiveAddress;
+		addressId: number;
+		id: number;
+		patientId: number;
+		updatedAt: string;
+	}[];
 	createdAt: string;
 	updatedAt: string;
 }

@@ -436,7 +436,7 @@ export default function ExpandSubTable({ row, routeTo }: ExpandSubTableProps) {
 													</p>
 													{item.active && (
 														<Dot
-															className="flex-none mr-3 text-emerald-600"
+															className="ml-3 mr-1 shrink-0 text-emerald-600"
 															width={10}
 															height={10}
 															strokeWidth={20}

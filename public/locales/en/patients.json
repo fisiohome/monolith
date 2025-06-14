@@ -1,0 +1,58 @@
+{
+	"head_title": "Patient Management",
+	"page_title": "Patient Management",
+	"page_description": "Manage patient user account and profiles. Access and update patient information to streamline scheduling and administration.",
+	"button": {
+		"add": "Add Patient",
+		"detail": "Details"
+	},
+	"filter": {
+		"search": {
+			"placeholder": "Search patient...",
+			"description": "Search by name profile/contact, phone, and email"
+		},
+		"region": {
+			"placeholder": "By region",
+			"search": {
+				"placeholder": "Search region",
+				"empty": "No region found.",
+				"clear": "Clear"
+			}
+		}
+	},
+	"list": {
+		"profile": "Profile",
+		"gender": {
+			"label": "Gender",
+			"male": "Male",
+			"female": "Female"
+		},
+		"dob": "DOB",
+		"age": {
+			"label": "Age",
+			"years": "years"
+		},
+		"contact": "Contact",
+		"actions": "Actions",
+		"registered_at": "Registered at",
+		"contact_phone": "Phone Number",
+		"addresses": {
+			"label": "Addresses",
+			"country": "Country",
+			"state": "State",
+			"city": "City",
+			"postal": "Postal Code",
+			"address_line": "Address Line",
+			"notes": "Notes",
+			"view_on_google_maps": "View on Google Maps"
+		},
+		"appointments": {
+			"label": "Appointments",
+			"empty": "No appointments have been scheduled yet."
+		}
+	},
+	"details": {
+		"title": "Patient Details",
+		"description": "View the patient’s profile, contact info, and key medical data—all in one place."
+	}
+}

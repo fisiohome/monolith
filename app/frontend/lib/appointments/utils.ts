@@ -1,3 +1,4 @@
+import type { VariantDotBadge } from "@/components/shared/dot-badge";
 import type { Appointment } from "@/types/admin-portal/appointment";
 
 const BADGE_STYLES: Record<Appointment["status"], string> = {
@@ -13,5 +14,17 @@ const BADGE_STYLES: Record<Appointment["status"], string> = {
 		"text-gray-800 bg-gray-100 border-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-500",
 	paid: "text-emerald-800 bg-emerald-100 border-emerald-400 dark:bg-emerald-900 dark:text-emerald-100 dark:border-emerald-500",
 };
-export const getbadgeVariantStatus = (status: Appointment["status"]) =>
+export const getBadgeVariantStatus = (status: Appointment["status"]) =>
 	BADGE_STYLES[status] ?? "";
+
+const DOT_STYLES: Record<Appointment["status"], VariantDotBadge["variant"]> = {
+	pending_patient_approval: "warning",
+	pending_payment: "warning",
+	pending_therapist_assignment: "warning",
+	unscheduled: "outline",
+	cancelled: "destructive",
+	paid: "success",
+};
+export const getDotVariantStatus = (
+	status: Appointment["status"],
+): VariantDotBadge["variant"] => DOT_STYLES[status] ?? "default";

@@ -2,6 +2,7 @@
 	"components": {
 		"modal": {
 			"cancel": "Batalkan",
+			"close": "Tutup",
 			"wait": "Silakan tunggu.",
 			"save": "Simpan"
 		},

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getGenderIcon } from "@/hooks/use-gender";
-import { getbadgeVariantStatus } from "@/lib/appointments/utils";
+import { getBadgeVariantStatus } from "@/lib/appointments/utils";
 import { getBrandBadgeVariant } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
@@ -205,7 +205,7 @@ export function AppointmentDetailsSection({
 								variant="outline"
 								className={cn(
 									"mb-1 text-center text-pretty !text-[10px]",
-									getbadgeVariantStatus(visit.status),
+									getBadgeVariantStatus(visit.status),
 								)}
 							>
 								{t(`statuses.${visit.status}`)}
