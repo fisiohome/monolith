@@ -47,7 +47,11 @@ module PatientsHelper
         end
       end
 
-      patient_serialized.merge!(age: patient.age)
+      patient_serialized[:age] = patient.age
+
+      if options.fetch(:include_patient_location, false)
+        patient_serialized.merge!(location: patient.location)
+      end
     end
   end
 end

@@ -76,7 +76,7 @@ Rails.application.routes.draw do
           end
         end
 
-        resources :patients, path: "patient-management", only: [:index]
+        resources :patients, path: "patient-management", only: [:index, :update]
 
         resources :services, only: [:index, :create, :update, :edit, :destroy] do
           collection do

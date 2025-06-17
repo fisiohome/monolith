@@ -55,7 +55,7 @@ module AdminPortal
 
       # find or initialize the PatientContact
       contact = PatientContact.find_or_initialize_by(
-        contact_name: cp[:contact_name],
+        email: cp[:email],
         contact_phone: cp[:contact_phone]
       )
       contact.assign_attributes(cp)

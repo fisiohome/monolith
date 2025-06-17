@@ -49,6 +49,7 @@ export interface Patient {
 		patientId: number;
 		updatedAt: string;
 	}[];
+	location?: Pick<Location, "country" | "state" | "city">;
 	createdAt: string;
 	updatedAt: string;
 }

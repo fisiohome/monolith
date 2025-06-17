@@ -42,6 +42,9 @@ const InputComponent = React.forwardRef<
 		if (pageURL.includes("/appointments/new")) {
 			return "bg-sidebar shadow-inner";
 		}
+		if (pageURL.includes("/patient-management")) {
+			return "bg-input shadow-inner";
+		}
 
 		return "";
 	}, [pageURL]);

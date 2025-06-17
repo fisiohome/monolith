@@ -4,7 +4,8 @@
 	"page_description": "Kelola akun dan profil pengguna pasien. Akses dan perbarui informasi pasien untuk merampingkan penjadwalan dan administrasi.",
 	"button": {
 		"add": "Tambahkan Pasien",
-		"detail": "Detil"
+		"detail": "Detil",
+		"edit": "Sunting"
 	},
 	"filter": {
 		"search": {
@@ -49,10 +50,20 @@
 		"appointments": {
 			"label": "Janji Temu",
 			"empty": "Belum ada janji temu yang dijadwalkan."
+		},
+		"location": {
+			"label": "Lokasi"
 		}
 	},
 	"details": {
 		"title": "Rincian Pasien",
 		"description": "Lihat profil pasien, info kontak, dan data medis penting-semuanya di satu tempat."
+	},
+	"edit_form": {
+		"title": "Sunting Data Pasien",
+		"description": "Perbarui profil pasien, dan rincian kontak.",
+		"contact": {
+			"title": "Sunting Kontak"
+		}
 	}
 }

@@ -112,14 +112,21 @@
 		}
 	},
 	"patient_profile": {
+		"label": "Informasi Dasar",
 		"empty_card": "Pilih pasien yang sudah ada dalam catatan",
+		"empty_card_basic": "Pilih pasien yang sudah ada dalam catatan",
 		"loading": "Mohon Tunggu...",
 		"modal": {
-			"title": "Pilih Pasien yang Sudah Ada"
+			"title": "Pilih Pasien yang Sudah Ada",
+			"title_basic": "Sunting Informasi Pasien"
 		},
 		"alert_empty": {
 			"title": "Error",
 			"description": "Hei, hanya pengingat untuk mencari dan memilih pasien dalam catatan terlebih dahulu."
+		},
+		"alert_empty_basic": {
+			"title": "Error",
+			"description": "Mungkin ada beberapa data yang perlu dikoreksi."
 		},
 		"fields": {
 			"source_selection": {
@@ -138,6 +145,26 @@
 				"list": {
 					"label": "Daftar pasien",
 					"empty": "Mari kita mulai dengan mencari pasien dalam pencarian di atas."
+				}
+			},
+			"name": {
+				"label": "Nama Lengkap",
+				"placeholder": "Masukan nama lengkap..."
+			},
+			"dob": {
+				"label": "Tanggal Lahir",
+				"placeholder": "Pilih tanggal lahir"
+			},
+			"age": {
+				"label": "Usia",
+				"placeholder": "Masukan usia...",
+				"description": "Tanggal lahir Anda digunakan untuk menghitung usia Anda."
+			},
+			"gender": {
+				"label": "Gender",
+				"options": {
+					"male": "Laki-Laki",
+					"female": "Perempuan"
 				}
 			}
 		},

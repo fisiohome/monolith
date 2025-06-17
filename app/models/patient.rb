@@ -56,6 +56,10 @@ class Patient < ApplicationRecord
     ((Time.zone.now - date_of_birth.to_time) / 1.year.seconds).floor
   end
 
+  def location
+    active_address.location.attributes.slice("country", "state", "city")
+  end
+
   private
 
   def date_of_birth_in_the_past

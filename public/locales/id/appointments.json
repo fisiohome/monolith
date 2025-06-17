@@ -60,6 +60,8 @@
 		"contact_name": "Nama Kontak",
 		"contact_phone": "Kontak Telepon",
 		"gender": "Jenis Kelamin",
+		"gender_male": "Laki-Laki",
+		"gender_female": "Perempuan",
 		"age": "Usia",
 		"years": "tahun",
 		"current_condition": "Kondisi saat ini",

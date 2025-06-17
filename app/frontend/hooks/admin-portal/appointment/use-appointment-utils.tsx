@@ -271,10 +271,6 @@ export const useMapRegion = ({
 // * hooks about date of birth patient form value
 export const usePatientDateOfBirth = () => {
 	const form = useFormContext<AppointmentBookingSchema>();
-	const watchPatientDetailsValue = useWatch({
-		control: form.control,
-		name: "patientDetails",
-	});
 	const dateOfBirthCalendarProps = useMemo<CalendarProps>(() => {
 		return {
 			// Show 100 years range
@@ -284,26 +280,23 @@ export const usePatientDateOfBirth = () => {
 			disabled: (date) => date >= new Date(),
 		};
 	}, []);
-	// automatically calculate the age from date of birth changes
-	useEffect(() => {
-		const value =
-			typeof watchPatientDetailsValue.dateOfBirth === "string"
-				? new Date(watchPatientDetailsValue.dateOfBirth)
-				: watchPatientDetailsValue.dateOfBirth;
-		if (value !== null && value instanceof Date) {
-			// Calculate age using your custom function
-			const age = calculateAge(value);
-			// Update the age field in the form
-			form.setValue("patientDetails.age", age);
-			form.trigger("patientDetails.age");
-		} else {
-			form.setValue("patientDetails.age", 0);
-		}
+	// * automatically calculate the age from date of birth changes
+	const doUpdateAge = useCallback(
+		(value: Date | null | undefined) => {
+			if (value) {
+				// Calculate age using your custom function
+				const age = calculateAge(value);
+				// Update the age field in the form
+				form.setValue("patientDetails.age", age);
+				form.trigger("patientDetails.age");
+			} else {
+				form.setValue("patientDetails.age", 0);
+			}
+		},
+		[form.setValue, form.trigger],
+	);
 
-		return () => {};
-	}, [watchPatientDetailsValue.dateOfBirth, form.setValue, form.trigger]);
-
-	return { dateOfBirthCalendarProps };
+	return { dateOfBirthCalendarProps, doUpdateAge };
 };
 
 // * hooks about partner booking form value

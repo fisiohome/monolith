@@ -60,6 +60,8 @@
 		"contact_name": "Contact Name",
 		"contact_phone": "Contact Phone",
 		"gender": "Gender",
+		"gender_male": "Male",
+		"gender_female": "Female",
 		"age": "Age",
 		"years": "years",
 		"current_condition": "Current condition",

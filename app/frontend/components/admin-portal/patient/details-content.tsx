@@ -61,7 +61,7 @@ export interface DetailsContentProps {
 	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
 	appts: PatientIndexGlobalPageProps["selectedPatientAppts"];
 	open: boolean;
-	onOpenChange?: ((open: boolean) => void) | undefined;
+	onOpenChange?: (open: boolean) => void;
 }
 
 const DetailsContent = memo(function Component({
@@ -131,7 +131,7 @@ const DetailsContent = memo(function Component({
 
 						<DrawerFooter>
 							<DrawerClose asChild>
-								<Button variant="outline" className="bg-card">
+								<Button variant="outline" className="shadow-none bg-card">
 									{td("modal.close")}
 								</Button>
 							</DrawerClose>
@@ -178,7 +178,7 @@ const ProfileCard = memo(function Component({
 
 							<dd className="sm:col-span-2">
 								<Badge variant="outline">
-									<span className="flex items-center gap-1 text-xs">
+									<span className="flex items-center gap-1 text-xs uppercase">
 										{getGenderIcon(patient.gender, "size-3.5")}
 										{tpl(`gender.${patient.gender.toLowerCase()}`)}
 									</span>

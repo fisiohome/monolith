@@ -1,7 +1,7 @@
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import { Button } from "@/components/ui/button";
 import { Head, router, usePage } from "@inertiajs/react";
-import { Ellipsis, IdCard, Info } from "lucide-react";
+import { Ellipsis, IdCard, Info, SquarePen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
@@ -33,6 +33,10 @@ import DetailsContent from "@/components/admin-portal/patient/details-content";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import ToolbarTable from "@/components/admin-portal/patient/data-table-toolbar";
 import type { Location } from "@/types/admin-portal/location";
+import FormEdit from "@/components/admin-portal/patient/form-edit";
+import { Badge } from "@/components/ui/badge";
+import { getGenderIcon } from "@/hooks/use-gender";
+import type { GENDERS } from "@/lib/constants";
 
 interface PageProps {
 	patients: {
@@ -43,6 +47,9 @@ interface PageProps {
 	selectedPatientAppts: null | Appointment[];
 	filterOptions?: {
 		locations: Location[];
+	};
+	optionsData?: {
+		patientGenders: typeof GENDERS;
 	};
 }
 export interface PatientIndexGlobalPageProps
@@ -104,16 +111,31 @@ export default function Index({
 			},
 			[pageURL],
 		),
+		edit: useCallback(
+			(id: string) => {
+				router.get(
+					pageURL,
+					{ edit: id },
+					{
+						preserveScroll: true,
+						preserveState: true,
+						only: ["flash", "adminPortal", "selectedPatient", "optionsData"],
+					},
+				);
+			},
+			[pageURL],
+		),
 	};
-	const formDialog = useMemo(() => {
+	const dialog = useMemo(() => {
 		const currentQuery = globalProps.adminPortal?.currentQuery;
 		const isDetailsMode = !!currentQuery?.details;
-		const isOpen = isDetailsMode;
-		const mode = { details: isDetailsMode };
+		const isEditMode = !!currentQuery?.edit;
+		const isOpen = isDetailsMode || isEditMode;
+		const mode = isDetailsMode ? "details" : isEditMode ? "edit" : "";
 		const onOpenChange = (value: boolean) => {
 			if (value) return;
 
-			const objQueryParams = { details: null };
+			const objQueryParams = { details: null, edit: null };
 			const { fullUrl } = populateQueryParams(pageURL, objQueryParams);
 			router.get(
 				fullUrl,
@@ -126,6 +148,7 @@ export default function Index({
 						"adminPortal",
 						"selectedPatient",
 						"selectedPatientAppts",
+						"optionsData",
 					],
 				},
 			);
@@ -133,6 +156,35 @@ export default function Index({
 
 		return { isOpen, mode, onOpenChange };
 	}, [globalProps.adminPortal?.currentQuery, pageURL]);
+	const dialogComponent = useMemo<Record<
+		typeof dialog.mode,
+		JSX.Element
+	> | null>(() => {
+		if (!selectedPatient) return null;
+
+		return {
+			details: (
+				<DetailsContent
+					open={dialog.isOpen}
+					onOpenChange={dialog.onOpenChange}
+					patient={selectedPatient}
+					appts={selectedPatientAppts}
+				/>
+			),
+			edit: (
+				<FormEdit
+					open={dialog.isOpen}
+					onOpenChange={dialog.onOpenChange}
+					patient={selectedPatient}
+				/>
+			),
+		};
+	}, [
+		dialog.isOpen,
+		dialog.onOpenChange,
+		selectedPatient,
+		selectedPatientAppts,
+	]);
 	const columns = useMemo<TableColumnDef>(() => {
 		const items: TableColumnDef = [
 			{
@@ -164,71 +216,136 @@ export default function Index({
 		];
 
 		if (!isMobile) {
+			items.push(
+				{
+					accessorKey: "contact",
+					enableSorting: false,
+					enableHiding: false,
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title={t("list.contact")} />
+					),
+					cell: ({ row }) => {
+						const contact = row.original.contact;
+
+						return (
+							<div className="flex items-center gap-2 text-sm text-left">
+								<Avatar className="border rounded-lg size-8 bg-muted">
+									<AvatarImage src="#" alt={contact?.contactName} />
+									<AvatarFallback className="text-xs rounded-lg bg-muted">
+										<IdCard className="size-4 text-muted-foreground" />
+									</AvatarFallback>
+								</Avatar>
+								<div className="flex-1 text-sm leading-tight text-left">
+									<p className="font-bold uppercase truncate">
+										{contact?.contactName || "N/A"}
+									</p>
+								</div>
+							</div>
+						);
+					},
+				},
+				{
+					accessorKey: "gender",
+					enableSorting: false,
+					enableHiding: false,
+					header: ({ column }) => (
+						<DataTableColumnHeader
+							column={column}
+							title={t("list.gender.label")}
+						/>
+					),
+					cell: ({ row }) => {
+						const gender = row.original.gender;
+
+						return (
+							<div>
+								<Badge variant="outline">
+									<span className="flex items-center gap-1 text-xs uppercase">
+										{getGenderIcon(gender, "size-3.5")}
+										{t(`list.gender.${gender.toLowerCase()}`)}
+									</span>
+								</Badge>
+							</div>
+						);
+					},
+				},
+				{
+					accessorKey: "location",
+					enableSorting: false,
+					enableHiding: false,
+					header: ({ column }) => (
+						<DataTableColumnHeader
+							column={column}
+							title={t("list.location.label")}
+						/>
+					),
+					cell: ({ row }) => {
+						const location = row.original.location;
+
+						if (!location) return <span>N/A</span>;
+
+						return (
+							<div>
+								<span>
+									{[location.city, location.state, location.country].join(", ")}
+								</span>
+							</div>
+						);
+					},
+				},
+			);
+		}
+
+		if (globalProps?.auth?.currentUser?.["isSuperAdmin?"]) {
 			items.push({
-				accessorKey: "contact",
+				accessorKey: "actions",
 				enableSorting: false,
 				enableHiding: false,
 				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title={t("list.contact")} />
+					<DataTableColumnHeader column={column} title={t("list.actions")} />
 				),
 				cell: ({ row }) => {
-					const contact = row.original.contact;
-
 					return (
-						<div className="flex items-center gap-2 text-sm text-left">
-							<Avatar className="border rounded-lg size-8 bg-muted">
-								<AvatarImage src="#" alt={contact?.contactName} />
-								<AvatarFallback className="text-xs rounded-lg bg-muted">
-									<IdCard className="size-4 text-muted-foreground" />
-								</AvatarFallback>
-							</Avatar>
-							<div className="flex-1 text-sm leading-tight text-left">
-								<p className="font-bold uppercase truncate">
-									{contact?.contactName || "N/A"}
-								</p>
-							</div>
-						</div>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="icon">
+									<Ellipsis />
+								</Button>
+							</DropdownMenuTrigger>
+
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>{t("list.actions")}</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+
+								<DropdownMenuGroup>
+									<DropdownMenuItem
+										onSelect={() => routeTo.detail(row.original.id)}
+									>
+										<Info />
+										{t("button.detail")}
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onSelect={() => routeTo.edit(row.original.id)}
+									>
+										<SquarePen />
+										{t("button.edit")}
+									</DropdownMenuItem>
+								</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
 					);
 				},
 			});
 		}
 
-		items.push({
-			accessorKey: "actions",
-			enableSorting: false,
-			enableHiding: false,
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title={t("list.actions")} />
-			),
-			cell: ({ row }) => {
-				return (
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline" size="icon">
-								<Ellipsis />
-							</Button>
-						</DropdownMenuTrigger>
-
-						<DropdownMenuContent align="end">
-							<DropdownMenuLabel>{t("list.actions")}</DropdownMenuLabel>
-							<DropdownMenuSeparator />
-
-							<DropdownMenuGroup>
-								<DropdownMenuItem
-									onSelect={() => routeTo.detail(row.original.id)}
-								>
-									<Info />
-									{t("button.detail")}
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				);
-			},
-		});
-
 		return items;
-	}, [isMobile, t, routeTo.detail]);
+	}, [
+		isMobile,
+		t,
+		routeTo.detail,
+		routeTo.edit,
+		globalProps?.auth?.currentUser?.["isSuperAdmin?"],
+	]);
 
 	return (
 		<>
@@ -259,14 +376,7 @@ export default function Index({
 					currentExpanded={currentExpanded}
 				/>
 
-				{selectedPatient && (
-					<DetailsContent
-						open={formDialog.isOpen}
-						onOpenChange={formDialog.onOpenChange}
-						patient={selectedPatient}
-						appts={selectedPatientAppts}
-					/>
-				)}
+				{dialogComponent?.[dialog.mode]}
 			</PageContainer>
 		</>
 	);

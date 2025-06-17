@@ -34,6 +34,7 @@ import { getGenderIcon } from "@/hooks/use-gender";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import type { GENDERS } from "@/lib/constants";
+import i18n from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { Deferred, usePage } from "@inertiajs/react";
@@ -57,7 +58,7 @@ export interface CardPatientBasicInfoFormProps extends ComponentProps<"div"> {
 export const CardPatientBasicInfoForm = memo(function Component({
 	isNotCompletedForm,
 	details: { fullName, age, dateOfBirth, gender },
-	fallbackText = "Fill in the patient basic information",
+	fallbackText = i18n.t("appointments-form:patient_profile.empty_card_basic"),
 	className,
 	children,
 }: CardPatientBasicInfoFormProps) {
@@ -116,7 +117,9 @@ export const CardPatientBasicInfoForm = memo(function Component({
 								>
 									{gender &&
 										getGenderIcon(gender, "size-3 text-muted-foreground")}
-									<p className="font-light">{gender || "N/A"}</p>
+									<p className="font-light uppercase">
+										{t(`list.gender_${gender.toLowerCase()}`) || "N/A"}
+									</p>
 								</Badge>
 							</div>
 						</div>
@@ -130,10 +133,14 @@ export const CardPatientBasicInfoForm = memo(function Component({
 });
 
 export default function PatientBasicInfoForm() {
+	const { t: taf } = useTranslation("appointments-form");
+	const { t: tpp } = useTranslation("appointments-form", {
+		keyPrefix: "patient_profile",
+	});
 	const isMobile = useIsMobile();
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const form = useFormContext<AppointmentBookingSchema>();
-	const { dateOfBirthCalendarProps } = usePatientDateOfBirth();
+	const { dateOfBirthCalendarProps, doUpdateAge } = usePatientDateOfBirth();
 	const watchPatientDetailsValue = useWatch({
 		control: form.control,
 		name: "patientDetails",
@@ -163,7 +170,7 @@ export default function PatientBasicInfoForm() {
 		<Fragment>
 			<div className="flex items-center justify-between col-span-full">
 				<p className="mb-2 text-xs tracking-wider uppercase text-muted-foreground col-span-full">
-					Basic Information
+					{tpp("label")}
 				</p>
 
 				<Button
@@ -178,16 +185,18 @@ export default function PatientBasicInfoForm() {
 						setIsOpenSheet((prev) => !prev);
 					}}
 				>
-					Edit
+					{taf("button.edit")}
 				</Button>
 			</div>
 
 			{!!hasErrorForm && (
 				<Alert variant="destructive" className="col-span-full">
 					<AlertCircle className="size-4" />
-					<AlertTitle className="text-xs">Error</AlertTitle>
+					<AlertTitle className="text-xs">
+						{tpp("alert_empty_basic.title")}
+					</AlertTitle>
 					<AlertDescription className="text-xs">
-						There may be some data that is in need of correction.
+						{tpp("alert_empty_basic.description")}
 					</AlertDescription>
 				</Alert>
 			)}
@@ -210,22 +219,22 @@ export default function PatientBasicInfoForm() {
 				>
 					<div className="flex flex-col w-full h-full px-6">
 						<SheetHeader className="flex-none py-6">
-							<SheetTitle>Edit Patient Information</SheetTitle>
+							<SheetTitle>{tpp("modal.title_basic")}</SheetTitle>
 						</SheetHeader>
 
-						<div className="grid content-start flex-1 gap-4 py-4 overflow-y-auto text-sm">
+						<div className="grid content-start flex-1 gap-4 py-4 overflow-y-auto text-sm px-0.5">
 							<FormField
 								control={form.control}
 								name="patientDetails.fullName"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Full Name</FormLabel>
+										<FormLabel>{tpp("fields.name.label")}</FormLabel>
 										<FormControl>
 											<Input
 												{...field}
 												type="text"
 												autoComplete="name"
-												placeholder="Enter the full name..."
+												placeholder={tpp("fields.name.placeholder")}
 												className="shadow-inner bg-sidebar"
 											/>
 										</FormControl>
@@ -241,7 +250,7 @@ export default function PatientBasicInfoForm() {
 									name="patientDetails.dateOfBirth"
 									render={({ field }) => (
 										<FormItem className="flex-1">
-											<FormLabel>Date of birth</FormLabel>
+											<FormLabel>{tpp("fields.dob.label")}</FormLabel>
 											<Popover modal>
 												<PopoverTrigger asChild>
 													<FormControl>
@@ -255,7 +264,7 @@ export default function PatientBasicInfoForm() {
 															<p>
 																{field.value
 																	? `${format(field.value, "PPP")}`
-																	: "Pick a date of birth"}
+																	: tpp("fields.dob.placeholder")}
 															</p>
 
 															{field.value ? (
@@ -270,6 +279,7 @@ export default function PatientBasicInfoForm() {
 																			"patientDetails.dateOfBirth",
 																			null as unknown as Date,
 																		);
+																		doUpdateAge(null);
 																	}}
 																>
 																	<X className="opacity-50" />
@@ -291,7 +301,10 @@ export default function PatientBasicInfoForm() {
 														mode="single"
 														captionLayout="dropdown"
 														selected={new Date(field.value)}
-														onSelect={field.onChange}
+														onSelect={(value) => {
+															field.onChange(value);
+															doUpdateAge(value);
+														}}
 														defaultMonth={field.value}
 													/>
 												</PopoverContent>
@@ -306,7 +319,7 @@ export default function PatientBasicInfoForm() {
 									name="patientDetails.age"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Age</FormLabel>
+											<FormLabel>{tpp("fields.age.label")}</FormLabel>
 											<FormControl>
 												<Input
 													{...field}
@@ -314,7 +327,7 @@ export default function PatientBasicInfoForm() {
 													type="number"
 													min={0}
 													value={field?.value || ""}
-													placeholder="Enter the age..."
+													placeholder={tpp("fields.age.placeholder")}
 													className="shadow-inner w-fit field-sizing-content bg-sidebar"
 												/>
 											</FormControl>
@@ -324,7 +337,7 @@ export default function PatientBasicInfoForm() {
 									)}
 								/>
 								<FormDescription className="flex-none">
-									Your date of birth is used to calculate your age.
+									{tpp("fields.age.description")}
 								</FormDescription>
 							</div>
 
@@ -345,7 +358,7 @@ export default function PatientBasicInfoForm() {
 									name="patientDetails.gender"
 									render={({ field }) => (
 										<FormItem className="space-y-3 col-span-full">
-											<FormLabel>Gender</FormLabel>
+											<FormLabel>{tpp("fields.gender.label")}</FormLabel>
 											<FormControl>
 												<RadioGroup
 													onValueChange={field.onChange}
@@ -361,7 +374,11 @@ export default function PatientBasicInfoForm() {
 																</FormControl>
 																<FormLabel className="flex items-center gap-1 font-normal capitalize">
 																	{getGenderIcon(gender)}
-																	<span>{gender.toLowerCase()}</span>
+																	<span className="uppercase">
+																		{tpp(
+																			`fields.gender.options.${gender.toLowerCase()}`,
+																		)}
+																	</span>
 																</FormLabel>
 															</FormItem>
 														</Fragment>
@@ -377,7 +394,9 @@ export default function PatientBasicInfoForm() {
 
 						<SheetFooter className="sticky bottom-0 left-0 flex-none py-6 bg-background">
 							<SheetClose asChild>
-								<Button variant="primary-outline">Save</Button>
+								<Button variant="primary-outline">
+									{taf("button.save.label")}
+								</Button>
 							</SheetClose>
 						</SheetFooter>
 					</div>

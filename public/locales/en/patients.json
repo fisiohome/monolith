@@ -4,7 +4,8 @@
 	"page_description": "Manage patient user account and profiles. Access and update patient information to streamline scheduling and administration.",
 	"button": {
 		"add": "Add Patient",
-		"detail": "Details"
+		"detail": "Details",
+		"edit": "Edit"
 	},
 	"filter": {
 		"search": {
@@ -49,10 +50,20 @@
 		"appointments": {
 			"label": "Appointments",
 			"empty": "No appointments have been scheduled yet."
+		},
+		"location": {
+			"label": "Location"
 		}
 	},
 	"details": {
 		"title": "Patient Details",
-		"description": "View the patient’s profile, contact info, and key medical data—all in one place."
+		"description": "View the patient’s profile, contact info, and patient appointment data—all in one place."
+	},
+	"edit_form": {
+		"title": "Edit Patient",
+		"description": "Update the patient profile, and contact details.",
+		"contact": {
+			"title": "Edit Contact"
+		}
 	}
 }

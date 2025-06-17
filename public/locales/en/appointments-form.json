@@ -112,14 +112,21 @@
 		}
 	},
 	"patient_profile": {
+		"label": "Basic Information",
 		"empty_card": "Select an existing patient in the record",
+		"empty_card_basic": "Select an existing patient in the record",
 		"loading": "Please Wait...",
 		"modal": {
-			"title": "Select Existing Patient"
+			"title": "Select Existing Patient",
+			"title_basic": "Edit Patient Information"
 		},
 		"alert_empty": {
 			"title": "Error",
 			"description": "Hey, just a friendly reminder to search and select the patient in the record first."
+		},
+		"alert_empty_basic": {
+			"title": "Error",
+			"description": "There may be some data that is in need of correction."
 		},
 		"fields": {
 			"source_selection": {
@@ -138,6 +145,26 @@
 				"list": {
 					"label": "Patient list",
 					"empty": "Let's start by searching for patients in the search above."
+				}
+			},
+			"name": {
+				"label": "Full Name",
+				"placeholder": "Enter the full name..."
+			},
+			"dob": {
+				"label": "Date of Birth",
+				"placeholder": "Pick a date of birth"
+			},
+			"age": {
+				"label": "Age",
+				"placeholder": "Enter the age...",
+				"description": "Your date of birth is used to calculate your age."
+			},
+			"gender": {
+				"label": "Gender",
+				"options": {
+					"male": "Male",
+					"female": "Female"
 				}
 			}
 		},
