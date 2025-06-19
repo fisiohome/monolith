@@ -87,6 +87,13 @@ export const usePatientRegion = () => {
 		],
 		[watchPatientDetailsValue.latitude, watchPatientDetailsValue.longitude],
 	);
+	const coordinateText = useMemo(() => {
+		const latitude = watchPatientDetailsValue.latitude;
+		const longitude = watchPatientDetailsValue.longitude;
+		if (!latitude || !longitude) return "";
+
+		return [latitude, longitude].join(",");
+	}, [watchPatientDetailsValue.latitude, watchPatientDetailsValue.longitude]);
 	const mapAddress = useMemo(() => {
 		const { address, postalCode = "" } = watchPatientDetailsValue;
 
@@ -155,6 +162,7 @@ export const usePatientRegion = () => {
 		groupedLocationsOption,
 		selectedLocation,
 		coordinate,
+		coordinateText,
 		mapAddress,
 		coordinateError,
 		isLoading,
@@ -176,6 +184,11 @@ export const useMapRegion = ({
 		control: form.control,
 		name: "patientDetails",
 	});
+	const [coordinateInput, setCoordinateInput] = useState(() =>
+		watchPatientDetailsValue.latitude || watchPatientDetailsValue.longitude
+			? coordinate.join(",")
+			: "",
+	);
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
 	const isMapButtonsDisabled = useMemo(() => {
 		const { latitude, longitude, address } = watchPatientDetailsValue;
@@ -197,6 +210,7 @@ export const useMapRegion = ({
 		// reset the lat, lng form values
 		form.setValue("patientDetails.latitude", 0);
 		form.setValue("patientDetails.longitude", 0);
+		setCoordinateInput("");
 
 		// remove the map markers
 		mapRef.current?.marker.onRemove();
@@ -206,15 +220,47 @@ export const useMapRegion = ({
 			`https://www.google.com/maps/search/?api=1&query=${coordinate.join(",")}`,
 		);
 	}, [coordinate]);
+	const setMapCoordinate = useCallback(
+		(lat: number, lng: number, address: string) => {
+			// Update form values with latitude and longitude
+			form.setValue("patientDetails.latitude", lat, { shouldValidate: true });
+			form.setValue("patientDetails.longitude", lng, { shouldValidate: true });
+
+			// Add markers to the map
+			mapRef.current?.marker.onAdd(
+				[
+					{
+						position: { lat, lng },
+						address,
+					},
+				] satisfies MarkerData[],
+				{ changeMapView: true },
+			);
+		},
+		[form.setValue],
+	);
 	const onCalculateCoordinate = useCallback(async () => {
+		const coordinateSource = form.getValues("formOptions.coordinateSource");
+
+		// Manually calculate the coordinate
+		if (coordinateSource === "manual") {
+			const [latitude, longitude] = coordinateInput.split(",");
+			const latNumber = Number(latitude || 0);
+			const lngNumber = Number(longitude || 0);
+			const address = watchPatientDetailsValue.address;
+
+			setMapCoordinate(latNumber, lngNumber, address);
+
+			return;
+		}
+
+		// Automatically calculate the coordinate using geocoding
 		try {
 			// Fetch geocode result
 			const geocodeResult = await mapRef.current?.geocode.onCalculate();
-			if (
-				!geocodeResult ||
-				!geocodeResult?.position?.lat ||
-				!geocodeResult?.position?.lng
-			) {
+			const { lat, lng } = geocodeResult?.position || {};
+			const label = geocodeResult?.address?.label || "";
+			if (!lat || !lng) {
 				// Validate geocode result
 				console.error("Address cannot be found!");
 
@@ -228,25 +274,7 @@ export const useMapRegion = ({
 				return;
 			}
 
-			// Update form values with latitude and longitude
-			const { lat, lng } = geocodeResult.position;
-			form.setValue("patientDetails.latitude", lat, {
-				shouldValidate: true,
-			});
-			form.setValue("patientDetails.longitude", lng, {
-				shouldValidate: true,
-			});
-
-			// Add markers to the map
-			mapRef.current?.marker.onAdd(
-				[
-					{
-						position: geocodeResult.position,
-						address: geocodeResult.address.label,
-					},
-				] satisfies MarkerData[],
-				{ changeMapView: true },
-			);
+			setMapCoordinate(lat, lng, label);
 		} catch (error) {
 			console.error("An unexpected error occurred:", error);
 
@@ -257,11 +285,18 @@ export const useMapRegion = ({
 				type: "custom",
 			});
 		}
-	}, [form.setError, form.setValue]);
+	}, [
+		form,
+		coordinateInput,
+		watchPatientDetailsValue.address,
+		setMapCoordinate,
+	]);
 
 	return {
 		mapRef,
 		isMapButtonsDisabled,
+		coordinateInput,
+		setCoordinateInput,
 		onCalculateCoordinate,
 		onClickGMaps,
 		onResetCoordinate,

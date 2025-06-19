@@ -25,6 +25,13 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -48,7 +55,7 @@ import {
 	X,
 } from "lucide-react";
 import { Fragment, useMemo } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 
 export default function PatientRegionForm() {
 	const {
@@ -56,6 +63,7 @@ export default function PatientRegionForm() {
 		groupedLocationsOption,
 		selectedLocation,
 		coordinate,
+		coordinateText,
 		mapAddress,
 		coordinateError,
 		isLoading,
@@ -65,6 +73,8 @@ export default function PatientRegionForm() {
 	const {
 		mapRef,
 		isMapButtonsDisabled,
+		coordinateInput,
+		setCoordinateInput,
 		onCalculateCoordinate,
 		onClickGMaps,
 		onResetCoordinate,
@@ -73,19 +83,20 @@ export default function PatientRegionForm() {
 	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
 
 	// * to check the coordinate state
-	const watchLatValue = useWatch({
-		control: form.control,
-		name: "patientDetails.latitude",
-	});
-	const watchLngValue = useWatch({
-		control: form.control,
-		name: "patientDetails.longitude",
-	});
-	const calculatedCoordinate = useMemo(() => {
-		if (!watchLatValue || !watchLngValue) return "";
-
-		return [watchLatValue, watchLngValue].join(",");
-	}, [watchLatValue, watchLngValue]);
+	const coordinateSource = useMemo(() => {
+		return [
+			{
+				value:
+					"manual" satisfies AppointmentBookingSchema["formOptions"]["coordinateSource"],
+				text: "Manual",
+			},
+			{
+				value:
+					"automatic" satisfies AppointmentBookingSchema["formOptions"]["coordinateSource"],
+				text: "Automatic",
+			},
+		];
+	}, []);
 
 	return (
 		<Fragment>
@@ -297,23 +308,72 @@ export default function PatientRegionForm() {
 				</Alert>
 			)}
 
-			<FormItem>
-				<FormLabel>Location Coordinate</FormLabel>
-				<FormControl>
-					<Input
-						readOnly
-						StartIcon={{
-							isButton: false,
-							icon: MapPin,
-						}}
-						value={calculatedCoordinate}
-						placeholder="Calculated coordinate..."
-						className="shadow-inner bg-sidebar"
-					/>
-				</FormControl>
+			<FormField
+				control={form.control}
+				name="formOptions.coordinateSource"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						<FormLabel>Location Coordinate</FormLabel>
+						<FormControl>
+							<div className="flex items-center">
+								<Select
+									defaultValue={field.value}
+									onValueChange={(value) => {
+										onResetCoordinate();
+										field.onChange(value);
+									}}
+								>
+									<SelectTrigger className="border-r-0 rounded-r-none shadow-inner w-fit field-sizing-content focus:outline-hidden focus:ring-0 bg-sidebar">
+										<SelectValue
+											placeholder={
+												coordinateSource?.find(
+													(source) => source.value === field.value,
+												)?.text || "Select coordinate source"
+											}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										{coordinateSource.map((source) => (
+											<SelectItem key={source.value} value={source.value}>
+												{source.text}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								{field.value === "automatic" ? (
+									<Input
+										readOnly
+										StartIcon={{
+											isButton: false,
+											icon: MapPin,
+										}}
+										value={coordinateText}
+										placeholder="Calculated coordinate..."
+										className="rounded-l-none shadow-inner grow -me-px focus-visible:rounded-l-none bg-sidebar"
+									/>
+								) : (
+									<Input
+										placeholder="e.g., -6.1944,106.8229"
+										className="rounded-l-none shadow-inner grow -me-px focus-visible:rounded-l-none bg-sidebar"
+										StartIcon={{
+											isButton: false,
+											icon: MapPin,
+										}}
+										value={coordinateInput}
+										onChange={(event) => {
+											const value =
+												event?.target?.value?.replaceAll(/\s+/g, "") || "";
+											setCoordinateInput(value);
+										}}
+									/>
+								)}
+							</div>
+						</FormControl>
 
-				<FormMessage />
-			</FormItem>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
 
 			<div className="grid gap-4 md:gap-2 md:grid-cols-3 col-span-full">
 				<PulsatingOutlineShadowButton

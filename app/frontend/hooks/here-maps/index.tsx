@@ -438,10 +438,9 @@ export default function useHereMap(
 				if (address?.postalCode) {
 					qqParts.push(`postalCode=${address.postalCode}`);
 				}
-				const params: H.service.ServiceParameters = {
-					qq: qqParts.join(";"),
-					// q: address.address,
-				};
+				const params: H.service.ServiceParameters = !address?.postalCode
+					? { q: address.address }
+					: { qq: qqParts.join(";") };
 
 				const searchService = platformRef.current.getSearchService();
 				if (!searchService) {
