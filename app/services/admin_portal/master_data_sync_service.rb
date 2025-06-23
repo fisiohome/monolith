@@ -179,7 +179,7 @@ module AdminPortal
     def therapists
       csv = fetch_and_parse_csv(gid: THERAPIST_GID)
       required_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
-      headers = required_headers.dup + ["Batch", "Modalities", "Specializations", "Bank Name", "Account Number", "Account Holder Name", "Latitude", "Longitude"] # standard:disable Lint/UselessAssignment
+      # headers = required_headers.dup + ["Batch", "Modalities", "Specializations", "Bank Name", "Account Number", "Account Holder Name", "Latitude", "Longitude"] # standard:disable Lint/UselessAssignment
 
       # Validate headers
       missing_headers = required_headers - csv.headers
@@ -271,13 +271,13 @@ module AdminPortal
             weekly_times = %w[Monday Tuesday Wednesday Thursday Friday].map do |day|
               {day_of_week: day, start_time: "09:00".in_time_zone(Time.zone), end_time: "18:00".in_time_zone(Time.zone)}
             end
-
-            weekly_times.each do |attrs|
-              TherapistWeeklyAvailability.find_or_initialize_by(therapist_appointment_schedule_id: schedule.id, day_of_week: attrs[:day_of_week]).tap do |availability|
-                availability.assign_attributes(start_time: attrs[:start_time], end_time: attrs[:end_time])
-                availability.save! if availability.changed?
-              end
-            end
+            # save weekly availability if only the schedule is a new record
+            weekly_times.each { |attrs|
+              TherapistWeeklyAvailability.find_or_initialize_by(therapist_appointment_schedule_id: schedule.id, day_of_week: attrs[:day_of_week]).tap { |a|
+                a.assign_attributes(start_time: attrs[:start_time], end_time: attrs[:end_time])
+                a.save! if a.new_record?
+              }
+            }
           end
         rescue => e
           Rails.logger.warn "Rolled back therapist #{name} due to error: #{e.message}"
