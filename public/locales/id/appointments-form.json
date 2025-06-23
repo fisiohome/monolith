@@ -13,6 +13,7 @@
 	"navigate_away": "Apakah Anda yakin ingin menavigasi jauh?",
 	"button": {
 		"back": "Kembali",
+		"cancel": "Batal",
 		"prev": "Sebelumnya",
 		"save": {
 			"label": "Simpan",

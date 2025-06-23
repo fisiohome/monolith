@@ -13,6 +13,7 @@
 	"navigate_away": "Are you sure you want to navigate away?",
 	"button": {
 		"back": "Back",
+		"cancel": "Cancel",
 		"prev": "Prev",
 		"save": {
 			"label": "Save",

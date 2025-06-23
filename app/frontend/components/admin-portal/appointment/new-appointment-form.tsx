@@ -259,7 +259,7 @@ export function StepButtons({ className, isFormLoading }: StepButtonsProps) {
 					isFirstStep ? onBack() : onPrevStep();
 				}}
 			>
-				{isFirstStep ? taf("button.back") : taf("button.prev")}
+				{isFirstStep ? taf("button.cancel") : taf("button.prev")}
 			</Button>
 
 			{isLastStep ? (
