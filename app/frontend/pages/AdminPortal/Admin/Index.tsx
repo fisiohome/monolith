@@ -637,9 +637,8 @@ export default function Index({
 						</p>
 					</div>
 
-					{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
-						globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) && (
-						<div className="flex flex-col gap-2 md:flex-row">
+					<div className="flex flex-col gap-2 md:flex-row">
+						{globalProps?.auth?.currentUser?.["isSuperAdmin?"] && (
 							<Button
 								variant="primary-outline"
 								disabled={isLoading.sync}
@@ -660,7 +659,10 @@ export default function Index({
 									</>
 								)}
 							</Button>
+						)}
 
+						{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
+							globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) && (
 							<Button asChild>
 								<Link
 									href={
@@ -672,8 +674,8 @@ export default function Index({
 									{ta("button.add")}
 								</Link>
 							</Button>
-						</div>
-					)}
+						)}
+					</div>
 				</div>
 
 				<Separator className="bg-border" />

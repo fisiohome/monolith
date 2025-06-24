@@ -70,7 +70,7 @@ export default function AvailabilityIndex({
 						</p>
 					</div>
 
-					{globalProps.auth.currentUserType === "ADMIN" && (
+					{globalProps?.auth?.currentUser?.["isSuperAdmin?"] && (
 						<div className="flex flex-col gap-2 md:flex-row">
 							<Button
 								variant="primary-outline"
