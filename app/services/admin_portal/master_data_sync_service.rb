@@ -211,6 +211,7 @@ module AdminPortal
           next
         end
 
+        # check the coordinate validity
         lat_raw = row["Latitude"]&.strip&.tr(",", ".")
         lng_raw = row["Longitude"]&.strip&.tr(",", ".")
         latitude = Float(lat_raw.presence || 0)
@@ -220,7 +221,7 @@ module AdminPortal
           Rails.logger.warn "Invalid coordinates for '#{name}' (lat: #{latitude}, lng: #{longitude})."
         end
 
-        phone_number = row["Phone Number"]&.strip&.to_s
+        phone_number = "+#{row["Phone Number"]&.strip&.to_s}"
         gender = (row["Gender"]&.strip&.upcase == "L") ? "MALE" : "FEMALE"
         postal_code = row["Postal Code"]&.strip&.to_s
         address_line = row["Address Line"]&.strip&.to_s
@@ -248,8 +249,8 @@ module AdminPortal
           bank_detail.save! if bank_detail.changed?
 
           # Create or update Therapist
-          therapist = Therapist.find_or_initialize_by(name:, phone_number:, gender:)
-          therapist.assign_attributes(employment_type:, employment_status:, batch:, modalities:, specializations:, service:, user:)
+          therapist = Therapist.find_or_initialize_by(name:, gender:)
+          therapist.assign_attributes(employment_type:, employment_status:, batch:, modalities:, specializations:, service:, user:, phone_number:)
           therapist.save! if therapist.changed?
 
           # Link or create TherapistAddress (one active per therapist)
