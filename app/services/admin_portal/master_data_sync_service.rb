@@ -9,6 +9,7 @@ module AdminPortal
     BRAND_GID = "2090364532"
     PACKAGE_GID = "872007576"
     THERAPIST_GID = "887408989"
+    THERAPIST_SCHEDULES_GID = "1843613331"
 
     def locations
       csv = fetch_and_parse_csv(gid: LOCATION_GID)
@@ -210,11 +211,13 @@ module AdminPortal
           next
         end
 
-        latitude = Float(row["Latitude"]&.strip || 0)
-        longitude = Float(row["Longitude"]&.strip || 0)
+        lat_raw = row["Latitude"]&.strip&.tr(",", ".")
+        lng_raw = row["Longitude"]&.strip&.tr(",", ".")
+        latitude = Float(lat_raw.presence || 0)
+        longitude = Float(lng_raw.presence || 0)
         invalid_coordinates = (latitude&.abs&.> 90) || (longitude&.abs&.> 180)
         if invalid_coordinates
-          Rails.logger.warn "Invalid coordinates for '#{name}' (lat: #{latitude}, long: #{longitude}), skipping."
+          Rails.logger.warn "Invalid coordinates for '#{name}' (lat: #{latitude}, lng: #{longitude})."
         end
 
         phone_number = row["Phone Number"]&.strip&.to_s
@@ -222,11 +225,12 @@ module AdminPortal
         postal_code = row["Postal Code"]&.strip&.to_s
         address_line = row["Address Line"]&.strip&.to_s
         batch = row["Batch"]&.strip&.to_i
-        modalities = row["Modalities"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank
-        specializations = row["Specializations"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank
+        modalities = row["Modalities"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
+        specializations = row["Specializations"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
         bank_name = row["Bank Name"]&.strip&.to_s
         account_number = row["Account Number"]&.strip&.to_s
         account_holder_name = row["Account Holder Name"]&.strip&.to_s&.upcase
+        employment_status = row["Status"]&.strip
 
         ActiveRecord::Base.transaction do
           # Create or update User
@@ -235,7 +239,8 @@ module AdminPortal
           user.save! if user.changed?
 
           # Create or update Address (by address_line + postal_code)
-          address = Address.find_or_initialize_by(location:, address: address_line, postal_code:, latitude:, longitude:)
+          address = Address.find_or_initialize_by(location:, address: address_line)
+          address.assign_attributes(postal_code:, latitude:, longitude:)
           address.save! if address.changed?
 
           # Create or update BankDetail (by account number)
@@ -244,7 +249,7 @@ module AdminPortal
 
           # Create or update Therapist
           therapist = Therapist.find_or_initialize_by(name:, phone_number:, gender:)
-          therapist.assign_attributes(employment_type:, employment_status: "ACTIVE", batch:, modalities:, specializations:, service:, user:) if therapist.new_record?
+          therapist.assign_attributes(employment_type:, employment_status:, batch:, modalities:, specializations:, service:, user:)
           therapist.save! if therapist.changed?
 
           # Link or create TherapistAddress (one active per therapist)
@@ -259,7 +264,8 @@ module AdminPortal
 
           # store the therapist availability
           if invalid_coordinates || latitude == 0 || longitude == 0
-            # Remove the schedule if it exists
+            # Remove the schedule if it exists but the coordinate are invalid
+            Rails.logger.warn "Removing schedule for therapist '#{name}' due to invalid coordinates."
             schedule = TherapistAppointmentSchedule.find_by(therapist:)
             schedule&.destroy
           else
@@ -288,9 +294,51 @@ module AdminPortal
       Rails.logger.info "Therapists sync successfully."
       {success: true, message: "Synchronized with master data successfully."}
     rescue => e
-      # Rails.logger.error
-      {success: false, error: "Error syncing data: #{e.class} - #{e.message}"}
+      message = "An error occurred while syncing therapists: #{e.class} - #{e.message}"
+      Rails.logger.error message
+      {success: false, error: message}
     end
+
+    # def therapist_schedules
+    #   csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
+    #   required_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
+
+    #   # Validate headers
+    #   missing_headers = required_headers - csv.headers
+    #   unless missing_headers.empty?
+    #     {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
+    #   end
+
+    #   csv.each do |row|
+    #     # check the therapist validity
+    #     therapist_name = row["Therapist"]&.strip
+    #     therapist = Therapist.find_by(name: therapist_name)
+    #     unless therapist
+    #       Rails.logger.warn { "Therapist for name '#{therapist_name}' not found, skipping schedule." }
+    #       next
+    #     end
+
+    #     # check therapist coordinate validity
+    #     active_address = therapist.active_address
+    #     invalid_coordinates = (active_address&.latitude&.abs&.> 90) || (active_address&.longitude&.abs&.> 180)
+    #     if active_address.nil? || invalid_coordinates
+    #       Rails.logger.warn { "Invalid coordinates for therapist '#{therapist_name}' (lat: #{active_address&.latitude}, lng: #{active_address&.longitude}), skipping schedule." }
+    #       next
+    #     end
+
+    #     ActiveRecord::Base.transaction do
+    #       schedule = TherapistAppointmentSchedule.find_by(therapist:)
+    #       day_of_week = row["Day of Week"]&.strip
+    #       weekly_availability = TherapistWeeklyAvailability.find_or_initialize_by(therapist_appointment_schedule_id: schedule.id, day_of_week:)
+    #     end
+    #   end
+
+    #   {success: true, message: "Synchronized with master data successfully."}
+    # rescue => e
+    #   message = "An error occurred while syncing therapist schedules: #{e.class} - #{e.message}"
+    #   Rails.logger.error message
+    #   {success: false, error: message}
+    # end
 
     private
 
