@@ -216,7 +216,7 @@ export default function ScheduleForm({
 
 	return (
 		<div className={cn("space-y-2 text-sm", className)}>
-			<h2 className="text-xs font-semibold tracking-wider uppercase">
+			<h2 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
 				Bookable Appointment schedule
 			</h2>
 

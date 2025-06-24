@@ -57,6 +57,7 @@ Rails.application.routes.draw do
         resources :availabilities, only: [:index] do
           collection do
             put "upsert" => "availabilities#upsert"
+            put "sync-data-master" => "availabilities#sync_data_master"
           end
         end
 

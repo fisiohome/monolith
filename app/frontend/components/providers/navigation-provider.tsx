@@ -5,8 +5,7 @@ import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import {
 	Calendar1,
-	CalendarDays,
-	CalendarRange,
+	CalendarCheck,
 	Hospital,
 	LayoutDashboard,
 	Users,
@@ -120,15 +119,23 @@ export function NavigationProvider({
 			fullUrl,
 			Calendar1,
 		);
-		const availabilityMenu = createMenuItem(
-			t("availability"),
-			adminPortal.availability.index,
-			CalendarRange,
-		);
-		const therapistScheduleMenu = createMenuItem(
-			t("therapist_schedules"),
+		const bookingsSubItems = [
+			{
+				title: t("therapist_calendar"),
+				url: adminPortal.therapistManagement.schedules,
+				isActive: false,
+			},
+			{
+				title: t("availability_settings"),
+				url: adminPortal.availability.index,
+				isActive: false,
+			},
+		];
+		const bookingsMenu = createMenuItem(
+			t("bookings"),
 			adminPortal.therapistManagement.schedules,
-			CalendarDays,
+			CalendarCheck,
+			bookingsSubItems,
 		);
 		// filter the sub items of user management for therapist user
 		const userManagementSubItems = [
@@ -179,7 +186,7 @@ export function NavigationProvider({
 		// * Construct menu based on user type
 		const allMenus = [dashboardMenu];
 		if (currentUserType === "ADMIN") {
-			allMenus.push(appointmentMenu, availabilityMenu, therapistScheduleMenu);
+			allMenus.push(appointmentMenu, bookingsMenu);
 		}
 		allMenus.push(userManagementMenu, serviceManagementMenu);
 

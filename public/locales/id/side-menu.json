@@ -1,7 +1,8 @@
 {
 	"appointment": "Janji temu",
-	"availability": "Waktu Ketersediaan",
-	"therapist_schedules": "Jadwal Terapis",
+	"bookings": "Pemesanan",
+	"availability_settings": "Pengaturan Ketersediaan",
+	"therapist_calendar": "Kalender Terapis",
 	"user_management": "Manajemen Pengguna",
 	"admins": "Admin",
 	"therapists": "Terapis",

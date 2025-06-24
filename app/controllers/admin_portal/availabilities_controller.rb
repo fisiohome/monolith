@@ -79,5 +79,15 @@ module AdminPortal
       end
       logger.info("The process to save the therapist appointment availability finished.")
     end
+
+    def sync_data_master
+      result = MasterDataSyncService.new.therapist_schedules
+
+      if result[:success]
+        redirect_to admin_portal_availabilities_path, notice: result[:message]
+      else
+        redirect_to admin_portal_availabilities_path, alert: result[:error]
+      end
+    end
   end
 end

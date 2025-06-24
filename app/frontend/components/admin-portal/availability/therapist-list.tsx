@@ -156,7 +156,7 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 	return (
 		<div className={cn("space-y-2", className)}>
 			<div className="flex gap-1.5">
-				<h2 className="text-xs font-semibold tracking-wider uppercase">
+				<h2 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
 					Therapists
 				</h2>
 				<TooltipProvider>

@@ -84,6 +84,7 @@ export interface AdminPortal {
 			availability: {
 				index: string;
 				upsert: string;
+				sync: string;
 			};
 			settings: {
 				accountSecurity: string;

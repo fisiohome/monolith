@@ -1,0 +1,8 @@
+{
+	"head_title": "Manajemen Jadwal Ketersediaan Terapis",
+	"page_title": "Pengaturan Ketersediaan & Jadwal Terapis",
+	"page_description": "Konfigurasikan ketersediaan terapis dengan jadwal berulang mingguan, pengecualian tanggal tertentu, pengaturan zona waktu, dan batas janji temu harian.",
+	"button": {
+		"sync": "Sync"
+	}
+}

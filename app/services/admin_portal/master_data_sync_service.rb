@@ -299,46 +299,95 @@ module AdminPortal
       {success: false, error: message}
     end
 
-    # def therapist_schedules
-    #   csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
-    #   required_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
+    def therapist_schedules
+      csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
+      required_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
 
-    #   # Validate headers
-    #   missing_headers = required_headers - csv.headers
-    #   unless missing_headers.empty?
-    #     {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
-    #   end
+      # Validate headers
+      missing_headers = required_headers - csv.headers
+      unless missing_headers.empty?
+        {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
+      end
 
-    #   csv.each do |row|
-    #     # check the therapist validity
-    #     therapist_name = row["Therapist"]&.strip
-    #     therapist = Therapist.find_by(name: therapist_name)
-    #     unless therapist
-    #       Rails.logger.warn { "Therapist for name '#{therapist_name}' not found, skipping schedule." }
-    #       next
-    #     end
+      grouped_rows = csv.group_by { |row| [row["Therapist"]&.strip, row["Day of Week"]&.strip] }
 
-    #     # check therapist coordinate validity
-    #     active_address = therapist.active_address
-    #     invalid_coordinates = (active_address&.latitude&.abs&.> 90) || (active_address&.longitude&.abs&.> 180)
-    #     if active_address.nil? || invalid_coordinates
-    #       Rails.logger.warn { "Invalid coordinates for therapist '#{therapist_name}' (lat: #{active_address&.latitude}, lng: #{active_address&.longitude}), skipping schedule." }
-    #       next
-    #     end
+      grouped_rows.each do |(therapist_name, day_of_week), rows|
+        therapist = Therapist.find_by(name: therapist_name)
+        unless therapist
+          Rails.logger.warn { "Therapist '#{therapist_name}' not found, skipping schedule." }
+          next
+        end
 
-    #     ActiveRecord::Base.transaction do
-    #       schedule = TherapistAppointmentSchedule.find_by(therapist:)
-    #       day_of_week = row["Day of Week"]&.strip
-    #       weekly_availability = TherapistWeeklyAvailability.find_or_initialize_by(therapist_appointment_schedule_id: schedule.id, day_of_week:)
-    #     end
-    #   end
+        active_address = therapist.active_address
+        invalid_coordinates = active_address.nil? || active_address.latitude.abs > 90 || active_address.longitude.abs > 180
+        if invalid_coordinates
+          Rails.logger.warn { "Invalid coordinates for therapist '#{therapist_name}', skipping schedule." }
+          next
+        end
 
-    #   {success: true, message: "Synchronized with master data successfully."}
-    # rescue => e
-    #   message = "An error occurred while syncing therapist schedules: #{e.class} - #{e.message}"
-    #   Rails.logger.error message
-    #   {success: false, error: message}
-    # end
+        schedule = TherapistAppointmentSchedule.find_by(therapist:)
+        unless schedule
+          Rails.logger.warn { "Schedule not found for therapist '#{therapist_name}', skipping." }
+          next
+        end
+
+        # Check if it's an OFF day
+        is_off_day = rows.any? { |row| row["Start Time"]&.strip&.upcase == "OFF" || row["End Time"]&.strip&.upcase == "OFF" }
+
+        ActiveRecord::Base.transaction do
+          if is_off_day
+            # If OFF, remove all existing availabilities for this day
+            TherapistWeeklyAvailability.where(
+              therapist_appointment_schedule_id: schedule.id,
+              day_of_week: day_of_week
+            ).delete_all
+            next
+          end
+
+          # Otherwise, prepare new availabilities
+          new_availabilities = rows.map do |row|
+            {
+              start_time: row["Start Time"]&.strip&.in_time_zone(Time.zone),
+              end_time: row["End Time"]&.strip&.in_time_zone(Time.zone)
+            }
+          end
+
+          # Fetch existing availabilities
+          existing = TherapistWeeklyAvailability.where(
+            therapist_appointment_schedule_id: schedule.id,
+            day_of_week: day_of_week
+          ).pluck(:start_time, :end_time)
+
+          # Convert times to string format for comparison (assuming stored as Time objects)
+          existing_set = existing.map { |start_time, end_time| [start_time.strftime("%H:%M").in_time_zone(Time.zone), end_time.strftime("%H:%M").in_time_zone(Time.zone)] }.to_set
+          new_set = new_availabilities.map { |a| [a[:start_time], a[:end_time]] }.to_set
+
+          # If identical, skip
+          next if existing_set == new_set
+
+          # If different, remove old and insert new
+          TherapistWeeklyAvailability.where(
+            therapist_appointment_schedule_id: schedule.id,
+            day_of_week: day_of_week
+          ).delete_all
+
+          new_availabilities.each do |avail|
+            TherapistWeeklyAvailability.create!(
+              therapist_appointment_schedule_id: schedule.id,
+              day_of_week: day_of_week,
+              start_time: avail[:start_time],
+              end_time: avail[:end_time]
+            )
+          end
+        end
+      end
+
+      {success: true, message: "Synchronized with master data successfully."}
+    rescue => e
+      message = "An error occurred while syncing therapist schedules: #{e.class} - #{e.message}"
+      Rails.logger.error message
+      {success: false, error: message}
+    end
 
     private
 

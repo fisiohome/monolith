@@ -1,0 +1,8 @@
+{
+	"head_title": "Manage Therapist Availability Schedule",
+	"page_title": "Therapist Availability & Schedule Settings",
+	"page_description": "Configure therapist availability with weekly recurring schedules, specific date exceptions, time zone settings, and daily appointment limits.",
+	"button": {
+		"sync": "Sync"
+	}
+}

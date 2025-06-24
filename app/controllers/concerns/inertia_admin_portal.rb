@@ -58,7 +58,8 @@ module InertiaAdminPortal
               },
               availability: {
                 index: admin_portal_availabilities_path,
-                upsert: upsert_admin_portal_availabilities_path
+                upsert: upsert_admin_portal_availabilities_path,
+                sync: sync_data_master_admin_portal_availabilities_path
               },
               settings: {
                 account_security: admin_portal_settings_account_security_path,

@@ -1,7 +1,8 @@
 {
 	"appointment": "Appointment",
-	"availability": "Availability Time",
-	"therapist_schedules": "Therapist Schedules",
+	"bookings": "Bookings",
+	"availability_settings": "Availability Settings",
+	"therapist_calendar": "Therapist Calendar",
 	"user_management": "User Management",
 	"admins": "Admins",
 	"therapists": "Therapists",
