@@ -255,12 +255,17 @@ module AdminPortal
     end
 
     def sync_data_master
-      result = MasterDataSyncService.new.therapists
+      sync_response = MasterDataSyncService.new.therapists_and_schedules
+      redirect_path = admin_portal_therapists_path
 
-      if result[:success]
-        redirect_to admin_portal_therapists_path, notice: result[:message]
+      if sync_response[:success]
+        results = sync_response[:results]
+        Rails.logger.debug do
+          "Sync Summary - Therapists: Created: #{results[:created]}, Updated: #{results[:updated]}, Skipped: #{results[:skipped]}, Failed: #{results[:failed]}, Schedule Updates: #{results[:schedule_updated]}"
+        end
+        redirect_to redirect_path, notice: sync_response[:message]
       else
-        redirect_to admin_portal_therapists_path, alert: result[:error]
+        redirect_to redirect_path, alert: sync_response[:error]
       end
     end
 

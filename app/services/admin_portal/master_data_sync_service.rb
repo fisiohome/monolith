@@ -177,6 +177,270 @@ module AdminPortal
       {success: false, error: "An error occurred while syncing data."}
     end
 
+    def therapists_and_schedules
+      # Process therapists CSV
+      therapists_csv = fetch_and_parse_csv(gid: THERAPIST_GID)
+      required_therapist_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
+      validate_headers(therapists_csv, required_therapist_headers)
+
+      # Process therapist_schedules CSV
+      schedules_csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
+      required_schedule_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
+      validate_headers(schedules_csv, required_schedule_headers)
+
+      # Pre-group schedules by therapist name for faster lookup
+      grouped_schedules = schedules_csv.group_by { |row| row["Therapist"]&.strip }
+
+      # Track results
+      results = {created: [], updated: [], skipped: [], skipped_flat: [], failed: [], schedule_updated: []}
+
+      # Process therapists
+      therapists_csv.each do |row|
+        # skipped for the FLAT employment type therapists
+        name = row["Name"]&.strip
+        email = row["Email"]&.strip&.downcase
+        employment_type = row["Employment Type"]&.strip&.upcase
+        if employment_type === "FLAT"
+          results[:skipped_flat] << {name:, email:, reason: "FLAT employment type"}
+          next
+        end
+
+        # validate the therapist basic information data
+        if [name, email].any?(&:blank?)
+          results[:skipped] << {name:, email:, reason: "Blank name and email"}
+          next
+        end
+
+        # validate the service and location
+        brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
+        service = Service.find_by(name: brand)
+        unless service
+          results[:skipped] << {name:, email:, reason: "Service for brand '#{brand}' not found"}
+          next
+        end
+        city = row["City"]&.strip
+        location = Location.find_by(city: city)
+        unless location
+          results[:skipped] << {name:, email:, reason: "Location for city '#{city}' not found"}
+          next
+        end
+
+        # define the coordinates
+        lat_raw = row["Latitude"]&.strip&.tr(",", ".")
+        lng_raw = row["Longitude"]&.strip&.tr(",", ".")
+        latitude = Float(lat_raw.presence || 0)
+        longitude = Float(lng_raw.presence || 0)
+        coordinates_valid = !(latitude.abs > 90 || longitude.abs > 180 || [latitude, longitude].all?(&:zero?))
+
+        begin
+          action = :updated
+          therapist = nil
+          schedule_updated = false
+
+          ActiveRecord::Base.transaction do
+            # Create or update User
+            user = User.find_or_initialize_by(email:)
+            if user.new_record?
+              user.password = "Fisiohome123!"
+              user.save!
+            end
+
+            # Create or update Address
+            address_line = row["Address Line"]&.strip&.to_s
+            postal_code = row["Postal Code"]&.strip&.to_s
+            address = Address.find_or_initialize_by(location:, address: address_line)
+            address.assign_attributes(postal_code:, latitude:, longitude:)
+            address.save! if address.changed? || address.new_record?
+
+            # Create or update BankDetail
+            bank_name = row["Bank Name"]&.strip&.to_s
+            account_number = row["Account Number"]&.strip&.to_s
+            account_holder_name = row["Account Holder Name"]&.strip&.to_s&.upcase
+            bank_detail = BankDetail.find_or_initialize_by(bank_name:, account_number:, account_holder_name:)
+            bank_detail.save! if bank_detail.changed? || bank_detail.new_record?
+
+            # Create or update Therapist
+            phone_number = "+#{row["Phone Number"]&.strip&.to_s}"
+            gender = (row["Gender"]&.strip&.upcase == "L") ? "MALE" : "FEMALE"
+            batch = row["Batch"]&.strip&.to_i
+            modalities = row["Modalities"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
+            specializations = row["Specializations"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
+            employment_status = row["Status"]&.strip
+            therapist = Therapist.find_or_initialize_by(name:, gender:)
+            therapist.assign_attributes(employment_type:, employment_status:, batch:, modalities:, specializations:, service:, user:, phone_number:)
+            if therapist.new_record?
+              action = :created
+              therapist.save!
+            elsif therapist.changed?
+              therapist.save!
+            else
+              action = :unchanged
+            end
+
+            # Link or create TherapistAddress (one active per therapist)
+            therapist_address = TherapistAddress.find_or_initialize_by(therapist:, address:)
+            therapist_address.active = true if therapist_address.new_record?
+            therapist_address.save! if therapist_address.changed?
+
+            # Link or create TherapistBankDetail (one active per therapist)
+            therapist_bank_detail = TherapistBankDetail.find_or_initialize_by(therapist:, bank_detail:)
+            therapist_bank_detail.active = true if therapist_bank_detail.new_record?
+            therapist_bank_detail.save! if therapist_bank_detail.changed?
+
+            # Track successful operations
+            if action == :created
+              results[:created] << {name:, email:}
+            elsif action == :updated
+              results[:updated] << {name:, email:}
+            end
+
+            # Determine reason for skipping schedule
+            skip_reason = if !coordinates_valid
+              # for invalid coordinates
+              "Invalid coordinates, schedule removed"
+            elsif therapist.employment_status == "INACTIVE"
+              # for the inactive therapists
+              "Inactive therapist, schedule removed"
+            end
+
+            if skip_reason
+              current_schedule = TherapistAppointmentSchedule.where(therapist:)
+              if current_schedule.exists?
+                current_schedule.destroy_all
+                results[:schedule_updated] << {name:, email:, reason: skip_reason}
+              end
+              next
+            end
+
+            schedule = TherapistAppointmentSchedule.find_or_initialize_by(therapist:)
+            # all of the default values based on the database default
+            schedule.assign_attributes(
+              appointment_duration_in_minutes: 90,
+              buffer_time_in_minutes: 30,
+              max_advance_booking_in_days: 60,
+              min_booking_before_in_hours: 24,
+              available_now: true
+            )
+            schedule.save! if schedule.new_record? || schedule.changed?
+
+            # Apply custom schedule or default
+            existing_availabilities_scope = TherapistWeeklyAvailability.where(therapist_appointment_schedule_id: schedule.id)
+            if grouped_schedules.key?(name)
+              # Group by day first
+              grouped_schedules[name].group_by { |r| r["Day of Week"]&.strip }.each do |day, rows|
+                # Get existing schedule for this day
+                day_scope = existing_availabilities_scope.where(day_of_week: day)
+
+                # Check for OFF day
+                is_off_day = rows.any? { |row| row["Start Time"]&.strip&.upcase == "OFF" || row["End Time"]&.strip&.upcase == "OFF" }
+                if is_off_day
+                  # Only destroy if slots exist
+                  if day_scope.exists?
+                    day_scope.destroy_all
+                    schedule_updated = true
+                  end
+                  next
+                end
+
+                # Prepare new schedule data
+                new_slots = rows.map do |row|
+                  start = row["Start Time"]&.strip
+                  end_time = row["End Time"]&.strip
+                  next if start.blank? || end_time.blank?
+                  next if start.casecmp("OFF").zero? || end_time.casecmp("OFF").zero?
+
+                  {
+                    start_time: start.in_time_zone(Time.zone),
+                    end_time: end_time.in_time_zone(Time.zone)
+                  }
+                end.compact
+
+                # Compare with existing schedule for comparing changes of the schedule
+                existing_set = day_scope.pluck(:start_time, :end_time).map { |start_time, end_time|
+                  [start_time.strftime("%H:%M").in_time_zone(Time.zone), end_time.strftime("%H:%M").in_time_zone(Time.zone)]
+                }.to_set
+                new_set = new_slots.map { |a| [a[:start_time], a[:end_time]] }.to_set
+
+                # Check if schedule has changed
+                if existing_set != new_set
+                  # Destroy existing and create new slots
+                  day_scope.destroy_all
+                  new_slots.each do |slot|
+                    TherapistWeeklyAvailability.create!(
+                      therapist_appointment_schedule_id: schedule.id,
+                      day_of_week: day,
+                      start_time: slot[:start_time],
+                      end_time: slot[:end_time]
+                    )
+                  end
+                  schedule_updated = true
+                end
+              end
+            else
+              # Reset existing weekday availabilities (if any)
+              weekdays = %w[Monday Tuesday Wednesday Thursday Friday]
+              default_start_time = "09:00".in_time_zone(Time.zone)
+              default_end_time = "18:00".in_time_zone(Time.zone)
+
+              # Fetch existing weekday availabilities
+              existing_weekday_availabilities = existing_availabilities_scope.where(day_of_week: weekdays)
+
+              # Build sets for comparison
+              existing_set = existing_weekday_availabilities.pluck(:day_of_week, :start_time, :end_time).map { |day, start_time, end_time|
+                [day, start_time.strftime("%H:%M"), end_time.strftime("%H:%M")]
+              }.to_set
+              default_set = weekdays.map { |day|
+                [day, default_start_time.strftime("%H:%M"), default_end_time.strftime("%H:%M")]
+              }.to_set
+
+              # Only reset if there's a difference
+              if existing_set != default_set
+                # Remove old records
+                existing_weekday_availabilities.destroy_all
+
+                # Create default records
+                weekdays.each do |day|
+                  TherapistWeeklyAvailability.create!(
+                    therapist_appointment_schedule_id: schedule.id,
+                    day_of_week: day,
+                    start_time: default_start_time,
+                    end_time: default_end_time
+                  )
+                end
+
+                schedule_updated = true
+              end
+            end
+          end
+
+          # Track schedule updates
+          results[:schedule_updated] << {name:, email:} if schedule_updated
+        rescue => e
+          Rails.logger.error "Failed therapist #{name}: #{e.message}\n#{e.backtrace.join("\n")}"
+          results[:failed] << {name:, email:, error: e.message}
+        end
+      end
+
+      # Return results
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      skipped_count = results[:skipped].count + results[:skipped_flat].count
+      failed_count = results[:failed].count
+      schedule_updated_count = results[:schedule_updated].count
+      message = "Processed #{created_count + updated_count + skipped_count + failed_count} therapists: " \
+      "#{created_count} created, " \
+      "#{updated_count} updated, " \
+      "#{skipped_count} skipped (#{results[:skipped_flat].count} FLAT), " \
+      "#{failed_count} failed, " \
+      "#{schedule_updated_count} schedule updates."
+      Rails.logger.info message
+      {success: true, message:, results:}
+    rescue => e
+      error_message = "Error syncing therapists and schedules: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, results:}
+    end
+
     def therapists
       csv = fetch_and_parse_csv(gid: THERAPIST_GID)
       required_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
@@ -239,12 +503,12 @@ module AdminPortal
           user.password ||= "Fisiohome123!" if user.new_record?
           user.save! if user.changed?
 
-          # Create or update Address (by address_line + postal_code)
+          # Create or update Address
           address = Address.find_or_initialize_by(location:, address: address_line)
           address.assign_attributes(postal_code:, latitude:, longitude:)
           address.save! if address.changed?
 
-          # Create or update BankDetail (by account number)
+          # Create or update BankDetail
           bank_detail = BankDetail.find_or_initialize_by(bank_name:, account_number:, account_holder_name:)
           bank_detail.save! if bank_detail.changed?
 
@@ -272,7 +536,13 @@ module AdminPortal
           else
             schedule = TherapistAppointmentSchedule.find_or_initialize_by(therapist:)
             # * all of the default values based on the database default
-            schedule.assign_attributes(appointment_duration_in_minutes: 90, buffer_time_in_minutes: 30, max_advance_booking_in_days: 60, min_booking_before_in_hours: 24, available_now: true)
+            schedule.assign_attributes(
+              appointment_duration_in_minutes: 90,
+              buffer_time_in_minutes: 30,
+              max_advance_booking_in_days: 60,
+              min_booking_before_in_hours: 24,
+              available_now: true
+            )
             schedule.save! if schedule.changed?
 
             weekly_times = %w[Monday Tuesday Wednesday Thursday Friday].map do |day|
@@ -280,7 +550,10 @@ module AdminPortal
             end
             # save weekly availability if only the schedule is a new record
             weekly_times.each { |attrs|
-              TherapistWeeklyAvailability.find_or_initialize_by(therapist_appointment_schedule_id: schedule.id, day_of_week: attrs[:day_of_week]).tap { |a|
+              TherapistWeeklyAvailability.find_or_initialize_by(
+                therapist_appointment_schedule_id: schedule.id,
+                day_of_week: attrs[:day_of_week]
+              ).tap { |a|
                 a.assign_attributes(start_time: attrs[:start_time], end_time: attrs[:end_time])
                 a.save! if a.new_record?
               }
@@ -399,6 +672,12 @@ module AdminPortal
     rescue OpenURI::HTTPError, CSV::MalformedCSVError => e
       Rails.logger.error "Failed to fetch or parse CSV: #{e.class} - #{e.message}"
       raise
+    end
+
+    def validate_headers(csv, required_headers)
+      missing = required_headers - csv.headers
+      return if missing.empty?
+      raise "CSV headers missing: #{missing.join(", ")}"
     end
   end
 end

@@ -1,15 +1,12 @@
 import ScheduleForm from "@/components/admin-portal/availability/schedule-form";
 import { TherapistList } from "@/components/admin-portal/availability/therapist-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DAY_NAMES } from "@/lib/constants";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
-import { Deferred, Head, router, usePage } from "@inertiajs/react";
-import { LoaderIcon, RefreshCcw } from "lucide-react";
-import { useCallback, useState } from "react";
+import { Deferred, Head } from "@inertiajs/react";
 import { useTranslation } from "react-i18next";
 
 export interface PageProps {
@@ -28,31 +25,30 @@ export default function AvailabilityIndex({
 	selectedTherapist,
 	dayNames,
 }: PageProps) {
-	const { t } = useTranslation("translation");
 	const { t: tta } = useTranslation("therapist-availability");
-	const { props: globalProps } = usePage<AvailabilityGlobalPageProps>();
-	const [isLoading, setIsLoading] = useState({ sync: false });
 
 	// for sync data
-	const doSync = useCallback(() => {
-		router.put(
-			globalProps.adminPortal.router.adminPortal.availability.sync,
-			{},
-			{
-				preserveScroll: true,
-				preserveState: true,
-				only: ["adminPortal", "flash", "errors", "selectedTherapist"],
-				onStart: () => {
-					setIsLoading((prev) => ({ ...prev, sync: true }));
-				},
-				onFinish: () => {
-					setTimeout(() => {
-						setIsLoading((prev) => ({ ...prev, sync: false }));
-					}, 250);
-				},
-			},
-		);
-	}, [globalProps.adminPortal.router.adminPortal.availability.sync]);
+	// const { props: globalProps } = usePage<AvailabilityGlobalPageProps>();
+	// const [isLoading, setIsLoading] = useState({ sync: false });
+	// const doSync = useCallback(() => {
+	// 	router.put(
+	// 		globalProps.adminPortal.router.adminPortal.availability.sync,
+	// 		{},
+	// 		{
+	// 			preserveScroll: true,
+	// 			preserveState: true,
+	// 			only: ["adminPortal", "flash", "errors", "selectedTherapist"],
+	// 			onStart: () => {
+	// 				setIsLoading((prev) => ({ ...prev, sync: true }));
+	// 			},
+	// 			onFinish: () => {
+	// 				setTimeout(() => {
+	// 					setIsLoading((prev) => ({ ...prev, sync: false }));
+	// 				}, 250);
+	// 			},
+	// 		},
+	// 	);
+	// }, [globalProps.adminPortal.router.adminPortal.availability.sync]);
 
 	return (
 		<>
@@ -70,7 +66,7 @@ export default function AvailabilityIndex({
 						</p>
 					</div>
 
-					{globalProps?.auth?.currentUser?.["isSuperAdmin?"] && (
+					{/* {globalProps?.auth?.currentUser?.["isSuperAdmin?"] && (
 						<div className="flex flex-col gap-2 md:flex-row">
 							<Button
 								variant="primary-outline"
@@ -93,7 +89,7 @@ export default function AvailabilityIndex({
 								)}
 							</Button>
 						</div>
-					)}
+					)} */}
 				</div>
 
 				<Separator className="bg-border" />
