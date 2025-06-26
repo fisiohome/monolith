@@ -298,7 +298,9 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 									</AvatarFallback>
 								</Avatar>
 								<div className="flex-1 space-y-0.5 text-sm leading-tight text-left">
-									<p className="font-bold uppercase truncate">{name}</p>
+									<p className="font-bold uppercase truncate max-w-52 md:max-w-full">
+										{name}
+									</p>
 									<p className="text-xs font-light">#{registrationNumber}</p>
 								</div>
 							</div>
