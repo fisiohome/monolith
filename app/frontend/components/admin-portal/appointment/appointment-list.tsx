@@ -1151,22 +1151,20 @@ const AppointmentActionButtons = memo(function Component({
 									</Button>
 								)}
 
-								{(isAdminSupervisor || isSuperAdmin) && (
-									<Button
-										variant="primary-outline"
-										className="w-full lg:w-auto"
-										size={buttonSize}
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
+								<Button
+									variant="primary-outline"
+									className="w-full lg:w-auto"
+									size={buttonSize}
+									onClick={(event) => {
+										event.preventDefault();
+										event.stopPropagation();
 
-											routeTo.updatePic(String(schedule.id));
-										}}
-									>
-										<Cctv />
-										{t("button.update_pic")}
-									</Button>
-								)}
+										routeTo.updatePic(String(schedule.id));
+									}}
+								>
+									<Cctv />
+									{t("button.update_pic")}
+								</Button>
 
 								{isShow.cancel && (
 									<Button
