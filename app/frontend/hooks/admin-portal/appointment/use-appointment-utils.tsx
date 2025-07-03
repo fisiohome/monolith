@@ -27,7 +27,7 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import type { Coordinate, IsolineResult } from "@/types/here-maps";
 import { router, usePage } from "@inertiajs/react";
 import { useSessionStorage } from "@uidotdev/usehooks";
-import { add, format, isBefore, startOfDay, sub } from "date-fns";
+import { format, isBefore, startOfDay, sub } from "date-fns";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
@@ -489,7 +489,7 @@ export const useAppointmentDateTime = ({
 		const maxDate = max
 			? sub(startOfDay(max), { days: 1 })
 			: twoMonthsFromToday;
-		const bookedDates: Date[] = [minDate, add(maxDate, { days: 1 })];
+		const bookedDates: Date[] = [min, max].filter((d): d is Date => d !== null);
 
 		return {
 			// Close the calendar popover when a day is clicked
