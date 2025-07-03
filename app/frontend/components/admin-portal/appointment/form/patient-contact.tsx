@@ -369,6 +369,11 @@ export default function PatientContactForm() {
 													<FormControl>
 														<Input
 															{...field}
+															onChange={(event) => {
+																const value = event.target.value;
+
+																field.onChange(value?.toLowerCase());
+															}}
 															type="email"
 															autoComplete="email"
 															placeholder={tpc("fields.email.placeholder")}
