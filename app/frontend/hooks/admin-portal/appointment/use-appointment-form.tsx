@@ -258,7 +258,7 @@ export const useReviewForm = () => {
 					},
 					{
 						title: "Postal Code",
-						value: patientDetails.postalCode,
+						value: patientDetails?.postalCode || "N/A",
 					},
 					{
 						title: "Address",

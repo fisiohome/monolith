@@ -76,7 +76,6 @@ module AdminPortal
       # Look up an existing Address record matching all address attributes.
       address = Address.find_by(
         location_id: address_params[:location_id],
-        postal_code: address_params[:postal_code],
         latitude: address_params[:latitude],
         longitude: address_params[:longitude]
       )
