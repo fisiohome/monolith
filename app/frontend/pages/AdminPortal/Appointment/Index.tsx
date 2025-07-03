@@ -436,29 +436,33 @@ export default function AppointmentIndex() {
 
 				<div className="grid gap-4">
 					<div className="z-10 flex flex-col justify-end gap-2 md:flex-row">
-						<Button
-							variant="primary-outline"
-							className="w-full md:w-fit"
-							disabled={isSynchronizing}
-							onClick={(event) => {
-								event.preventDefault();
-								doSync();
-							}}
-						>
-							{isSynchronizing ? (
-								<>
-									<LoaderIcon className="animate-spin" />
-									<span>{`${tbase("components.modal.wait")}...`}</span>
-								</>
-							) : (
-								<>
-									<RefreshCcw />
-									{t("button.sync")}
-								</>
-							)}
-						</Button>
+						{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+							<>
+								<Button
+									variant="primary-outline"
+									className="w-full md:w-fit"
+									disabled={isSynchronizing}
+									onClick={(event) => {
+										event.preventDefault();
+										doSync();
+									}}
+								>
+									{isSynchronizing ? (
+										<>
+											<LoaderIcon className="animate-spin" />
+											<span>{`${tbase("components.modal.wait")}...`}</span>
+										</>
+									) : (
+										<>
+											<RefreshCcw />
+											{t("button.sync")}
+										</>
+									)}
+								</Button>
 
-						<Separator orientation="vertical" />
+								<Separator orientation="vertical" />
+							</>
+						)}
 
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
