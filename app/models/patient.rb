@@ -43,9 +43,8 @@ class Patient < ApplicationRecord
   validate :date_of_birth_in_the_past
 
   validates :name, presence: true, length: {minimum: 3}
-  validates :age, presence: true, numericality: {only_integer: true, greater_than: 0}
 
-  # Ensure the combination of name, date_of_birth, age, and gender is unique
+  # Ensure the combination of name, date_of_birth, and gender is unique
   validates :name, uniqueness: {
     scope: [:date_of_birth, :gender],
     message: "Patient with these details already exists"
@@ -53,7 +52,7 @@ class Patient < ApplicationRecord
 
   # * define the helper methods
   def age
-    ((Time.zone.now - date_of_birth.to_time) / 1.year.seconds).floor
+    date_of_birth ? ((Time.zone.now - date_of_birth.to_time) / 1.year.seconds).floor : 0
   end
 
   def location

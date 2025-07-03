@@ -46,6 +46,7 @@ Rails.application.routes.draw do
             put ":id/update-status" => "appointments#update_status"
             get ":id/reschedule" => "appointments#reschedule_page", :as => :reschedule_page
             put ":id/reschedule" => "appointments#reschedule", :as => :reschedule
+            put "sync-data-master" => "appointments#sync_data_master"
           end
         end
 

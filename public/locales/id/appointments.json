@@ -32,7 +32,8 @@
 			"label": "Urut Berdasarkan",
 			"loading": "Mengurutkan...",
 			"clear": "Bersihkan"
-		}
+		},
+		"sync": "Sync"
 	},
 	"tab": {
 		"title": {

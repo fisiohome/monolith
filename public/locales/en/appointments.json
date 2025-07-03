@@ -32,7 +32,8 @@
 			"label": "Sort By",
 			"loading": "Sorting...",
 			"clear": "Clear"
-		}
+		},
+		"sync": "Sync"
 	},
 	"tab": {
 		"title": {

@@ -10,6 +10,11 @@ module AdminPortal
     PACKAGE_GID = "872007576"
     THERAPIST_GID = "887408989"
     THERAPIST_SCHEDULES_GID = "1843613331"
+    APPOINTMENT_GID = "350823925"
+
+    def initialize(user = nil)
+      @current_user = user
+    end
 
     def locations
       csv = fetch_and_parse_csv(gid: LOCATION_GID)
@@ -416,7 +421,6 @@ module AdminPortal
           # Track schedule updates
           results[:schedule_updated] << {name:, email:} if schedule_updated
         rescue => e
-          Rails.logger.error "Failed therapist #{name}: #{e.message}\n#{e.backtrace.join("\n")}"
           results[:failed] << {name:, email:, error: e.message}
         end
       end
@@ -433,6 +437,7 @@ module AdminPortal
       "#{skipped_count} skipped (#{results[:skipped_flat].count} FLAT), " \
       "#{failed_count} failed, " \
       "#{schedule_updated_count} schedule updates."
+
       Rails.logger.info message
       {success: true, message:, results:}
     rescue => e
@@ -661,6 +666,347 @@ module AdminPortal
       message = "An error occurred while syncing therapist schedules: #{e.class} - #{e.message}"
       Rails.logger.error message
       {success: false, error: message}
+    end
+
+    def appointments
+      # process appointments csv
+      csv = fetch_and_parse_csv(gid: APPOINTMENT_GID)
+      required_headers = [
+        "Contact Name", "Contact Number", "Email", "Patient Full Name", "DOB", "Age",
+        "Gender", "Condition", "Complaint Description", "Region", "Address Line", "Latitude",	"Longitude",
+        "Brand",	"Package",	"Preferred Therapist Gender", "Visit Date", "Visit Time",	"Therapist"
+      ]
+      validate_headers(csv, required_headers)
+
+      # Pre-load all lookup data to avoid N+1 queries
+      services = Service.all.index_by(&:name)
+      packages = Package.includes(:service).index_by { |p| "#{p.service.name}_#{p.name}" }
+      therapists = Therapist.all.index_by(&:name)
+      locations = Location.all.index_by(&:city)
+      existing_appointments = Appointment.where(registration_number: csv.map { |r| r["Reg Number"]&.strip }.compact)
+        .index_by(&:registration_number)
+
+      # track results
+      results = {created: [], updated: [], skipped: [], failed: [], unchanged: []}
+
+      # Group and sort once
+      grouped_batch = csv.group_by { |row| row["Batch Number"]&.strip }
+
+      batch_first_appointment_ids = {}
+      grouped_batch.each do |batch_number, rows|
+        sorted_rows = rows.sort_by { |r| r["Visit Number"]&.strip&.to_i || 0 }
+
+        sorted_rows.each do |row|
+          registration_number = row["Reg Number"]&.strip
+
+          # validate service
+          brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
+          service = services[brand]
+          unless service
+            results[:skipped] << {
+              registration_number: registration_number,
+              reason: "Service for brand '#{brand}' not found"
+            }
+            next
+          end
+
+          # validate package
+          package_key = "#{brand}_#{row["Package"]&.strip}"
+          package = packages[package_key]
+          unless package
+            results[:skipped] << {
+              registration_number: registration_number,
+              reason: "Package '#{row["Package"]&.strip}' not found for brand '#{brand}'"
+            }
+            next
+          end
+
+          # validate therapist
+          therapist_name = row["Therapist"]&.strip
+          therapist = therapists[therapist_name] if therapist_name.present?
+          if therapist.blank? && therapist_name.present?
+            results[:skipped] << {
+              registration_number: registration_number,
+              reason: "Therapist '#{therapist_name}' not found"
+            }
+            next
+          end
+
+          # validate location
+          city = row["Region"]&.strip
+          location = locations[city]
+          unless location
+            results[:skipped] << {
+              registration_number: registration_number,
+              reason: "Location for city '#{city}' not found"
+            }
+            next
+          end
+
+          # validate coordinates
+          lat_raw = row["Latitude"]&.strip&.tr(",", ".")
+          lng_raw = row["Longitude"]&.strip&.tr(",", ".")
+          latitude = Float(lat_raw.presence || 0)
+          longitude = Float(lng_raw.presence || 0)
+          coordinates_valid = !(latitude.abs > 90 || longitude.abs > 180 || [latitude, longitude].all?(&:zero?))
+          unless coordinates_valid
+            results[:skipped] << {
+              registration_number: registration_number,
+              reason: "Invalid coordinates"
+            }
+            next
+          end
+
+          # validate date/time
+          visit_date = row["Visit Date"]&.strip
+          visit_time = row["Visit Time"]&.strip
+          appointment_date_time = begin
+            Time.zone.strptime("#{visit_date} #{visit_time}", "%m/%d/%Y %H:%M:%S")
+          rescue
+            nil
+          end
+          unless appointment_date_time
+            results[:skipped] << {
+              registration_number:,
+              reason: "Invalid Visit Date or Visit Time format"
+            }
+            next
+          end
+
+          # parse DOB
+          dob_str = row["DOB"]&.strip
+          dob = dob_str.present? ? Date.strptime(dob_str, "%m-%d-%Y") : nil
+
+          visit_number = row["Visit Number"]&.strip&.to_i
+          fisiohome_partner_name = row["Partner Booking (Optional)"]&.strip
+          extracted_data = {
+            service:,
+            package:,
+            therapist:,
+            location:,
+            visit_number:,
+            contact_data: {
+              email: row["Email"]&.strip&.downcase,
+              contact_phone: row["Contact Number"]&.strip,
+              contact_name: row["Contact Name"]&.strip,
+              miitel_link: row["MiiTel Link (Optional)"]&.strip
+            },
+            patient_data: {
+              name: row["Patient Full Name"]&.strip,
+              date_of_birth: dob,
+              gender: row["Gender"]&.strip
+            },
+            address_data: {
+              location:,
+              latitude:,
+              longitude:,
+              postal_code: row["Postal Code (Optional)"]&.strip,
+              address: row["Address Line"]&.strip,
+              notes: row["Address Notes (Optional)"]&.strip
+            },
+            appointment_data: {
+              visit_number:,
+              appointment_date_time:,
+              # status: row["Status"]&.strip,
+              preferred_therapist_gender: row["Preferred Therapist Gender"]&.strip,
+              referral_source: row["Referral Source (Optional)"]&.strip,
+              fisiohome_partner_booking: fisiohome_partner_name.present?,
+              fisiohome_partner_name:,
+              voucher_code: row["Voucher Code (Optional)"]&.strip,
+              notes: row["Notes (Optional)"]&.strip,
+              status_reason: "FROM MATERI MITRA SPREADSHEET"
+            },
+            medical_data: {
+              condition: row["Condition"]&.strip,
+              complaint_description: row["Complaint Description"]&.strip,
+              illness_onset_date: row["Illness Onset Date (Optional)"]&.strip,
+              medical_history: row["Medical History (Optional)"]&.strip
+            }
+          }
+
+          begin
+            ActiveRecord::Base.transaction do
+              # * process patient contact
+              contact_data = extracted_data[:contact_data]
+              contact_attrs_prior = {email: contact_data[:email], contact_phone: contact_data[:contact_phone]}
+              contact_attrs = {contact_name: contact_data[:contact_name], miitel_link: contact_data[:miitel_link]}
+              contact = PatientContact.find_or_initialize_by(contact_attrs_prior)
+              contact.assign_attributes(contact_attrs)
+              unless contact.valid?
+                raise ActiveRecord::Rollback, contact.errors.full_messages.join(", ")
+              end
+              contact.save! if contact.new_record? || contact.changed?
+
+              # * process patient profile
+              patient_data = extracted_data[:patient_data].merge(patient_contact: contact)
+              patient_attrs_prior = {
+                name: patient_data[:name],
+                date_of_birth: patient_data[:date_of_birth],
+                gender: patient_data[:gender]
+              }
+              patient = Patient.find_or_initialize_by(patient_attrs_prior)
+              patient.assign_attributes(patient_contact: patient_data[:patient_contact])
+              unless patient.valid?
+                raise ActiveRecord::Rollback, patient.errors.full_messages.join(", ")
+              end
+              patient.save! if patient.new_record? || patient.changed?
+
+              # * process address
+              address_data = extracted_data[:address_data]
+              address = Address.find_or_initialize_by(
+                location: address_data[:location],
+                latitude: address_data[:latitude],
+                longitude: address_data[:longitude]
+              )
+              address.assign_attributes(
+                postal_code: address_data[:postal_code],
+                address: address_data[:address],
+                notes: address_data[:notes]
+              )
+              unless address.valid?
+                raise ActiveRecord::Rollback, address.errors.full_messages.join(", ")
+              end
+              address.save! if address.new_record? || address.changed?
+
+              # * process patient address
+              patient_address = patient.patient_addresses.find_or_initialize_by(address: address)
+              patient_address.assign_attributes(active: true) if patient_address.new_record?
+              patient_address.save! if patient_address.changed?
+
+              # * process appointment
+              appointment_data = extracted_data[:appointment_data].merge(
+                registration_number: registration_number,
+                patient_id: patient.id,
+                service_id: extracted_data[:service].id,
+                package_id: extracted_data[:package].id,
+                location_id: extracted_data[:location].id,
+                therapist_id: extracted_data[:therapist]&.id
+              )
+              existing_appointment = existing_appointments[registration_number]
+              visit_number = extracted_data[:visit_number]
+              # Add reference to first appointment in batch if needed
+              if visit_number > 1 && batch_first_appointment_ids[batch_number].present?
+                appointment_data[:appointment_reference_id] = batch_first_appointment_ids[batch_number]
+              end
+
+              if existing_appointment
+                # Update existing appointment
+                attrs_to_update = appointment_data.except(:registration_number)
+
+                # Check if any attributes actually changed
+                attributes_changed = attrs_to_update.any? do |key, value|
+                  value = value.downcase.tr(" ", "_") if key == :status
+                  existing_appointment.send(key) != value
+                end
+
+                if attributes_changed
+                  existing_appointment.update_columns(attrs_to_update.merge(updated_at: Time.current).compact!)
+                  appointment = existing_appointment
+                  action = :updated
+                else
+                  appointment = existing_appointment
+                  action = :unchanged
+                end
+              else
+                # Create new appointment
+                appointment = Appointment.new(appointment_data.merge(
+                  created_at: Time.current,
+                  updated_at: Time.current
+                ))
+
+                Appointment.insert_all([appointment.attributes.compact])
+                created_appointment = Appointment.find_by(registration_number: appointment_data[:registration_number])
+
+                appointment = created_appointment
+                action = :created
+              end
+
+              # Store first appointment ID for batch reference
+              if extracted_data[:visit_number] == 1
+                batch_first_appointment_ids[batch_number] = appointment.id
+              end
+
+              # * process medical records
+              medical_data = extracted_data[:medical_data]
+              patient_medical = PatientMedicalRecord.find_or_initialize_by(appointment: appointment)
+              patient_medical.assign_attributes(medical_data)
+              unless patient_medical.valid?
+                raise ActiveRecord::Rollback, patient_medical.errors.full_messages.join(", ")
+              end
+              patient_medical.save! if patient_medical.changed? || patient_medical.new_record?
+
+              # * process admin pics
+              admin = @current_user.admin
+              admin_pic = AppointmentAdmin.find_or_initialize_by(appointment: appointment)
+              admin_pic.assign_attributes(admin: admin)
+              admin_pic.save! if admin_pic.changed? || admin_pic.new_record?
+
+              # * snapshot the address history
+              appt_address_history = AppointmentAddressHistory.find_or_initialize_by(appointment:)
+              appt_address_history.assign_attributes(
+                location: address_data[:location],
+                latitude: address_data[:latitude],
+                longitude: address_data[:longitude],
+                address_line: address_data[:address],
+                postal_code: address_data[:postal_code],
+                notes: address_data[:notes]
+              )
+              appt_address_history.save! if appt_address_history.changed? || appt_address_history.new_record?
+
+              # * snapshot the package history
+              appt_package_history = AppointmentPackageHistory.find_or_initialize_by(appointment:)
+              appt_package_history.assign_attributes(
+                package:,
+                name: package.name,
+                currency: package.currency,
+                number_of_visit: package.number_of_visit,
+                price_per_visit: package.price_per_visit,
+                discount: package.discount,
+                total_price: package.total_price,
+                fee_per_visit: package.fee_per_visit,
+                total_fee: package.total_fee
+              )
+              appt_package_history.save! if appt_package_history.changed? || appt_package_history.new_record?
+
+              # * snapshot the status history
+              appointment.update_column(:status, row["Status"]&.strip)
+              appt_status_history = AppointmentStatusHistory.find_or_initialize_by(appointment:)
+              appt_status_history.assign_attributes(
+                old_status: "UNSCHEDULED",
+                new_status: row["Status"]&.strip,
+                reason: "FROM MATERI MITRA SPREADSHEET",
+                changed_by: @current_user.id
+              )
+              appt_status_history.save! if appt_status_history.changed? || appt_status_history.new_record?
+
+              results[action] << {registration_number: registration_number}
+            end
+          rescue => e
+            results[:failed] << {registration_number:, error: e.message}
+          end
+        end
+      end
+
+      # build results summary
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      skipped_count = results[:skipped].count
+      failed_count = results[:failed].count
+      unchanged_count = results[:unchanged].count
+      total_count = created_count + updated_count + skipped_count + failed_count + unchanged_count
+      message = "Processed #{total_count} appointments: " \
+      "#{created_count} created, " \
+      "#{updated_count} updated, " \
+      "#{skipped_count} skipped, " \
+      "#{failed_count} failed, " \
+      "#{unchanged_count} unchanged."
+
+      Rails.logger.info message
+      {success: true, message:, results:}
+    rescue => e
+      error_message = "Error syncing appointments: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, results:}
     end
 
     private

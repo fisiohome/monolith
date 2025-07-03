@@ -48,7 +48,9 @@ import {
 	ArrowDownUp,
 	ListFilter,
 	LoaderCircle,
+	LoaderIcon,
 	Plus,
+	RefreshCcw,
 } from "lucide-react";
 import {
 	type ReactNode,
@@ -228,6 +230,7 @@ export interface AppointmentIndexGlobalPageProps
 export default function AppointmentIndex() {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
+	const { t: tbase } = useTranslation("translation");
 	const { t } = useTranslation("appointments");
 
 	const appointments = useMemo(() => {
@@ -386,6 +389,32 @@ export default function AppointmentIndex() {
 		[pageURL],
 	);
 
+	// * sync management state
+	const [isSynchronizing, setIsSynchronizing] = useState(false);
+	const doSync = useCallback(() => {
+		const { queryParams } = populateQueryParams(pageURL);
+		const { fullUrl } = populateQueryParams(
+			globalProps.adminPortal.router.adminPortal.appointment.sync,
+			{ ...queryParams },
+		);
+
+		router.put(
+			fullUrl,
+			{},
+			{
+				preserveScroll: true,
+				preserveState: true,
+				only: ["adminPortal", "flash", "errors", "appointments"],
+				onStart: () => {
+					setIsSynchronizing(true);
+				},
+				onFinish: () => {
+					setTimeout(() => setIsSynchronizing(false), 250);
+				},
+			},
+		);
+	}, [pageURL, globalProps.adminPortal.router.adminPortal.appointment.sync]);
+
 	return (
 		<PageProvider>
 			<Head title={t("head_title")} />
@@ -407,6 +436,30 @@ export default function AppointmentIndex() {
 
 				<div className="grid gap-4">
 					<div className="z-10 flex flex-col justify-end gap-2 md:flex-row">
+						<Button
+							variant="primary-outline"
+							className="w-full md:w-fit"
+							disabled={isSynchronizing}
+							onClick={(event) => {
+								event.preventDefault();
+								doSync();
+							}}
+						>
+							{isSynchronizing ? (
+								<>
+									<LoaderIcon className="animate-spin" />
+									<span>{`${tbase("components.modal.wait")}...`}</span>
+								</>
+							) : (
+								<>
+									<RefreshCcw />
+									{t("button.sync")}
+								</>
+							)}
+						</Button>
+
+						<Separator orientation="vertical" />
+
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button

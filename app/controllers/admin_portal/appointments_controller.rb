@@ -208,6 +208,21 @@ module AdminPortal
       end
     end
 
+    def sync_data_master
+      sync_response = MasterDataSyncService.new(current_user).appointments
+      redirect_path = admin_portal_appointments_path(request.query_parameters)
+
+      if sync_response[:success]
+        results = sync_response[:results]
+        Rails.logger.debug do
+          "Sync Summary - Appointments: Created: #{results[:created]}, Updated: #{results[:updated]}, Skipped: #{results[:skipped]}, Failed: #{results[:failed]}, Unchanged: #{results[:unchanged]}"
+        end
+        redirect_to redirect_path, notice: sync_response[:message]
+      else
+        redirect_to redirect_path, alert: sync_response[:error]
+      end
+    end
+
     private
 
     def set_appointment

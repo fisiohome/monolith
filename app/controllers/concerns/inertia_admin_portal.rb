@@ -54,7 +54,8 @@ module InertiaAdminPortal
               appointment: {
                 index: admin_portal_appointments_path,
                 new: new_admin_portal_appointment_path,
-                book: book_admin_portal_appointments_path
+                book: book_admin_portal_appointments_path,
+                sync: sync_data_master_admin_portal_appointments_path
               },
               availability: {
                 index: admin_portal_availabilities_path,
