@@ -46,6 +46,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
 	AlarmClock,
 	ArrowDownUp,
+	Download,
 	ListFilter,
 	LoaderCircle,
 	LoaderIcon,
@@ -63,6 +64,14 @@ import {
 import { useTranslation } from "react-i18next";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { Badge } from "@/components/ui/badge";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import type { DateRange } from "react-day-picker";
+import { toast } from "sonner";
 
 export const PREFERENCES_STORAGE_KEY = "appointment-index-preferences";
 
@@ -415,6 +424,41 @@ export default function AppointmentIndex() {
 		);
 	}, [pageURL, globalProps.adminPortal.router.adminPortal.appointment.sync]);
 
+	// * export management state
+	const [isOpenReportModal, setIsOpenReportModal] = useState(false);
+	const [isGenerateReport, setIsGenerateReport] = useState(false);
+	const [reportDates, setReportDates] = useState<DateRange | undefined>(
+		undefined,
+	);
+	const doGenerateReport = useCallback(() => {
+		const { queryParams } = populateQueryParams(pageURL);
+		const { fullUrl } = populateQueryParams(
+			globalProps.adminPortal.router.adminPortal.appointment.export,
+			{
+				...queryParams,
+				report_from: reportDates?.from,
+				report_to: reportDates?.to,
+			},
+		);
+
+		// Force `.csv` format BEFORE the query string
+		const urlObj = new URL(fullUrl, window.location.origin);
+		const csvUrl = `${urlObj.pathname}.csv${urlObj.search}`;
+
+		window.location.href = csvUrl; // triggers the download
+
+		setIsGenerateReport(true);
+		setTimeout(() => {
+			setIsOpenReportModal(false);
+			setIsGenerateReport(false);
+			toast("Sucessfully generated report");
+		}, 250);
+	}, [
+		pageURL,
+		globalProps.adminPortal.router.adminPortal.appointment.export,
+		reportDates,
+	]);
+
 	return (
 		<PageProvider>
 			<Head title={t("head_title")} />
@@ -435,9 +479,93 @@ export default function AppointmentIndex() {
 				<Separator className="bg-border" />
 
 				<div className="grid gap-4">
-					<div className="z-10 flex flex-col justify-end gap-2 md:flex-row">
-						{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-							<>
+					<div className="z-10 flex flex-col gap-2 md:justify-between md:flex-row">
+						<div className="flex flex-col items-center gap-2 md:flex-row">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										disabled={isSorting}
+										type="button"
+										variant="outline"
+										className="w-full md:w-fit"
+									>
+										{isSorting ? (
+											<LoaderCircle className="animate-spin" />
+										) : (
+											<ArrowDownUp />
+										)}
+										{isSorting
+											? t("button.sort.loading")
+											: t("button.sort.base")}
+										{sortBy && (
+											<>
+												<Separator orientation="vertical" />
+												<Badge className="uppercase text-[10px] p-0 px-1">
+													{sortBy?.replaceAll("_", " ")}
+												</Badge>
+											</>
+										)}
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent
+									align="start"
+									side="bottom"
+									className="w-fit"
+								>
+									<DropdownMenuLabel>
+										{t("button.sort.label")}
+									</DropdownMenuLabel>
+									<DropdownMenuSeparator />
+									<Deferred
+										data={["filterOptionsData"]}
+										fallback={<Skeleton className="w-full h-8" />}
+									>
+										<DropdownMenuRadioGroup
+											value={sortBy}
+											onValueChange={onChangeSort}
+										>
+											{sortList.map((item) => (
+												<DropdownMenuRadioItem
+													key={item}
+													value={item}
+													className="uppercase"
+												>
+													{t(
+														`button.sort.options.${item?.replaceAll("_", " ")}`,
+													)}
+												</DropdownMenuRadioItem>
+											))}
+											<DropdownMenuSeparator />
+											<DropdownMenuRadioItem
+												value="clear"
+												className="uppercase"
+											>
+												{t("button.sort.clear")}
+											</DropdownMenuRadioItem>
+										</DropdownMenuRadioGroup>
+									</Deferred>
+								</DropdownMenuContent>
+							</DropdownMenu>
+
+							<Button
+								type="button"
+								variant={preferences.isShowFilter ? "default" : "outline"}
+								className="w-full md:w-fit"
+								onClick={(event) => {
+									event.preventDefault();
+
+									handleToggleFilter();
+								}}
+							>
+								<ListFilter />
+								{preferences.isShowFilter
+									? t("button.close_filter")
+									: t("button.filter")}
+							</Button>
+						</div>
+
+						<div className="flex flex-col items-center gap-2 md:flex-row">
+							{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
 								<Button
 									variant="primary-outline"
 									className="w-full md:w-fit"
@@ -459,94 +587,67 @@ export default function AppointmentIndex() {
 										</>
 									)}
 								</Button>
+							)}
 
-								<Separator orientation="vertical" />
-							</>
-						)}
-
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									disabled={isSorting}
-									type="button"
-									variant="outline"
-									className="w-full md:w-fit"
-								>
-									{isSorting ? (
-										<LoaderCircle className="animate-spin" />
-									) : (
-										<ArrowDownUp />
-									)}
-									{isSorting ? t("button.sort.loading") : t("button.sort.base")}
-									{sortBy && (
-										<>
-											<Separator orientation="vertical" />
-											<Badge className="uppercase text-[10px] p-0 px-1">
-												{sortBy?.replaceAll("_", " ")}
-											</Badge>
-										</>
-									)}
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="start"
-								side="bottom"
-								className="w-fit"
+							<Popover
+								open={isOpenReportModal}
+								onOpenChange={setIsOpenReportModal}
 							>
-								<DropdownMenuLabel>{t("button.sort.label")}</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-								<Deferred
-									data={["filterOptionsData"]}
-									fallback={<Skeleton className="w-full h-8" />}
-								>
-									<DropdownMenuRadioGroup
-										value={sortBy}
-										onValueChange={onChangeSort}
+								<PopoverTrigger asChild>
+									<Button
+										disabled={isGenerateReport}
+										variant="outline"
+										className="w-full md:w-fit"
 									>
-										{sortList.map((item) => (
-											<DropdownMenuRadioItem
-												key={item}
-												value={item}
-												className="uppercase"
-											>
-												{item?.replaceAll("_", " ")}
-											</DropdownMenuRadioItem>
-										))}
-										<DropdownMenuSeparator />
-										<DropdownMenuRadioItem value="clear" className="uppercase">
-											{t("button.sort.clear")}
-										</DropdownMenuRadioItem>
-									</DropdownMenuRadioGroup>
-								</Deferred>
-							</DropdownMenuContent>
-						</DropdownMenu>
+										{isGenerateReport ? (
+											<>
+												<LoaderCircle className="animate-spin" />
+												{t("button.export.loading")}
+											</>
+										) : (
+											<>
+												<Download />
+												{t("button.export.base")}
+											</>
+										)}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent
+									className="w-auto p-0 overflow-hidden"
+									align="start"
+								>
+									<Calendar
+										mode="range"
+										selected={reportDates}
+										captionLayout="dropdown"
+										onSelect={(dates) => {
+											setReportDates(dates);
+										}}
+									/>
 
-						<Button
-							type="button"
-							variant={preferences.isShowFilter ? "default" : "outline"}
-							className="w-full md:w-fit"
-							onClick={(event) => {
-								event.preventDefault();
+									<Button
+										className="w-full"
+										disabled={!reportDates?.to}
+										onClick={() => {
+											doGenerateReport();
+										}}
+									>
+										{t("button.export.generate")}
+									</Button>
+								</PopoverContent>
+							</Popover>
 
-								handleToggleFilter();
-							}}
-						>
-							<ListFilter />
-							{preferences.isShowFilter
-								? t("button.close_filter")
-								: t("button.filter")}
-						</Button>
-
-						<Button asChild className="w-full md:w-fit">
-							<Link
-								href={
-									globalProps.adminPortal.router.adminPortal.appointment.new
-								}
-							>
-								<Plus />
-								{t("button.create")}
-							</Link>
-						</Button>
+							<Button asChild className="w-full md:w-fit">
+								<Link
+									href={
+										globalProps.adminPortal.router.adminPortal.appointment.new
+									}
+								>
+									<Plus />
+									{t("button.create")}
+								</Link>
+							</Button>
+						</div>
 					</div>
 
 					<AnimatePresence initial={false}>

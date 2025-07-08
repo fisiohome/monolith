@@ -31,9 +31,21 @@
 			"base": "Urutkan",
 			"label": "Urut Berdasarkan",
 			"loading": "Mengurutkan...",
-			"clear": "Bersihkan"
+			"clear": "Bersihkan",
+			"options": {
+				"newest": "Terbaru",
+				"oldest": "Terlama",
+				"upcoming visit": "Kunjungan Mendatang",
+				"furthest visit": "Kunjungan Lama"
+			}
 		},
-		"sync": "Sync"
+		"sync": "Sync",
+		"export": {
+			"base": "Ekspor",
+			"loading": "Mengekspor...",
+			"clear": "Bersihkan",
+			"generate": "Proses"
+		}
 	},
 	"tab": {
 		"title": {

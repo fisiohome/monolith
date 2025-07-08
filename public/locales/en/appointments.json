@@ -31,9 +31,21 @@
 			"base": "Sort",
 			"label": "Sort By",
 			"loading": "Sorting...",
-			"clear": "Clear"
+			"clear": "Clear",
+			"options": {
+				"newest": "Newest",
+				"oldest": "Oldest",
+				"upcoming visit": "Upcoming Visit",
+				"furthest visit": "Furthest Visit"
+			}
 		},
-		"sync": "Sync"
+		"sync": "Sync",
+		"export": {
+			"base": "Export",
+			"loading": "Exporting...",
+			"clear": "Clear",
+			"generate": "Generate"
+		}
 	},
 	"tab": {
 		"title": {

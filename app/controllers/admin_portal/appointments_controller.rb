@@ -223,6 +223,48 @@ module AdminPortal
       end
     end
 
+    def export
+      from_date_param = params[:report_from]
+      to_date_param = params[:report_to]
+      redirect_path = admin_portal_appointments_path(request.query_parameters.except("report_from", "report_to"))
+
+      # Log the parameters for debugging
+      Rails.logger.info "Export params - from: #{from_date_param}, to: #{to_date_param}"
+      Rails.logger.info "Request format: #{request.format}"
+
+      begin
+        export_service = ExportAppointmentService.new(from_date_param:, to_date_param:)
+        result = export_service.call
+
+        Rails.logger.info "Export result: #{result.keys}"
+
+        if result[:success]
+          respond_to do |format|
+            format.csv do
+              Rails.logger.info "Sending CSV file: #{result[:filename]}"
+
+              send_data result[:data],
+                filename: result[:filename],
+                type: "text/csv; charset=utf-8; header=present",
+                disposition: "attachment"
+            end
+
+            Rails.logger.info "Successfully exported #{result[:count]} appointments."
+          end
+        else
+          Rails.logger.error "Export failed: #{result[:error]}"
+
+          redirect_to redirect_path, alert: result[:error]
+        end
+      rescue => e
+        error_message = "Export failed: #{e.message}"
+        Rails.logger.error error_message
+        Rails.logger.error e.backtrace.join("\n")
+
+        redirect_to redirect_path, alert: error_message
+      end
+    end
+
     private
 
     def set_appointment

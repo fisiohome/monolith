@@ -47,6 +47,7 @@ Rails.application.routes.draw do
             get ":id/reschedule" => "appointments#reschedule_page", :as => :reschedule_page
             put ":id/reschedule" => "appointments#reschedule", :as => :reschedule
             put "sync-data-master" => "appointments#sync_data_master"
+            get "export" => "appointments#export", :default => {format: :csv}
           end
         end
 

@@ -81,6 +81,7 @@ export interface AdminPortal {
 				new: string;
 				book: string;
 				sync: string;
+				export: string;
 			};
 			availability: {
 				index: string;
