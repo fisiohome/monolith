@@ -93,16 +93,15 @@ module AdminPortal
       package = appt.package
 
       # Get patient info
-      patient = appt.patient
-      patient_contact = patient.patient_contact
+      patient = appt&.patient
+      patient_contact = patient&.patient_contact
       contact_name = patient_contact&.contact_name
       contact_phone = patient_contact&.contact_phone
       contact_formatted = "#{contact_name} (+#{contact_phone})"
 
       # Get therapist info
-      therapist = appt.therapist
-      therapist_phone = therapist.phone_number
-      therapist_phone_formatted = "(#{therapist_phone})"
+      therapist = appt&.therapist
+      therapist_phone_formatted = therapist&.phone_number ? "(#{therapist&.phone_number})" : nil
 
       # Get visit address and location
       visit_location = "#{appt&.location&.city}, #{appt&.location&.state}, #{appt&.location&.country}"
@@ -116,22 +115,22 @@ module AdminPortal
       formatted_paid_at = paid_at&.strftime("%d %b %Y, %H:%M")
 
       [
-        appt.created_at&.strftime("%d %b %Y"),
-        appt.registration_number,
-        patient.name,
+        appt&.created_at&.strftime("%d %b %Y"),
+        appt&.registration_number,
+        patient&.name,
         contact_formatted,
-        package.number_of_visit,
-        service.name,
-        package.name,
-        appt.visit_number,
-        appt.appointment_date_time&.strftime("%d %b %Y"),
-        appt.appointment_date_time&.strftime("%H:%M"),
-        therapist.name,
-        therapist.registration_number,
+        package&.number_of_visit,
+        service&.name,
+        package&.name,
+        appt&.visit_number,
+        appt&.appointment_date_time&.strftime("%d %b %Y"),
+        appt&.appointment_date_time&.strftime("%H:%M"),
+        therapist&.name,
+        therapist&.registration_number,
         therapist_phone_formatted,
-        therapist.employment_type,
+        therapist&.employment_type,
         admin_pics,
-        appt.status&.humanize&.upcase,
+        appt&.status&.humanize&.upcase,
         formatted_paid_at,
         visit_location,
         visit_address
