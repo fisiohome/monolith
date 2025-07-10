@@ -250,7 +250,7 @@ export function StepButtons({ className, isFormLoading }: StepButtonsProps) {
 			<Button
 				type="button"
 				size={!isDekstop ? "default" : "sm"}
-				variant="accent-outline"
+				variant="ghost"
 				disabled={
 					(isDisabledStep && !isFirstStep) || isLoading || isFormLoading
 				}

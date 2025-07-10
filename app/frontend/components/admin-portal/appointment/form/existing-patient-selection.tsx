@@ -497,8 +497,8 @@ export default function ExistingPatientSelection() {
 				location: DEFAULT_VALUES_LOCATION,
 			},
 			contact = {
-				...selectedPatient.contact,
 				...DEFAULT_VALUES_PATIENT_CONTACT,
+				...selectedPatient.contact,
 			},
 		} = selectedPatient;
 		const {
@@ -516,7 +516,7 @@ export default function ExistingPatientSelection() {
 			dateOfBirth: new Date(dateOfBirth),
 			latitude,
 			longitude,
-			postalCode,
+			postalCode: postalCode || undefined,
 			addressNotes: addressNotes || DEFAULT_VALUES_PATIENT_ADDRESS.addressNotes,
 			address,
 			location: {
@@ -530,7 +530,9 @@ export default function ExistingPatientSelection() {
 		} satisfies AppointmentBookingSchema["patientDetails"];
 		const contactInformation = {
 			contactName: contact.contactName,
-			contactPhone: contact.contactPhone,
+			contactPhone: contact.contactPhone.includes("+")
+				? contact.contactPhone
+				: `+${contact.contactPhone}`,
 			email: contact.email || DEFAULT_VALUES_PATIENT_CONTACT.email,
 			miitelLink:
 				contact.miitelLink || DEFAULT_VALUES_PATIENT_CONTACT.miitelLink,

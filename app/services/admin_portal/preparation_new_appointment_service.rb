@@ -14,14 +14,7 @@ module AdminPortal
 
     # retrieves all active locations
     def fetch_locations
-      Location.all.map do |location|
-        deep_transform_keys_to_camel_case(
-          serialize_location(
-            location,
-            only: %i[id city country country_code state]
-          )
-        )
-      end
+      Location.cached_locations
     end
 
     # retrieves all active services join by the selected location

@@ -47,7 +47,7 @@ export const FormActionButtons = memo(function Component({
 			<Button
 				type="button"
 				size={!isDekstop ? "default" : "sm"}
-				variant="accent-outline"
+				variant="ghost"
 				disabled={isLoading}
 				onClick={(event) => {
 					event.preventDefault();
