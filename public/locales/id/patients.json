@@ -45,7 +45,8 @@
 			"postal": "Kode Pos",
 			"address_line": "Baris Alamat",
 			"notes": "Catatan",
-			"view_on_google_maps": "Lihat di Google Maps"
+			"view_on_google_maps": "Lihat di Google Maps",
+			"empty": "Tidak ada alamat yang tersedia, mari kita mulai dengan menambahkan data terlebih dahulu."
 		},
 		"appointments": {
 			"label": "Janji Temu",

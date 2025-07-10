@@ -45,7 +45,8 @@
 			"postal": "Postal Code",
 			"address_line": "Address Line",
 			"notes": "Notes",
-			"view_on_google_maps": "View on Google Maps"
+			"view_on_google_maps": "View on Google Maps",
+			"empty": "There's no addresses yet, let's get started by adding the data first."
 		},
 		"appointments": {
 			"label": "Appointments",
