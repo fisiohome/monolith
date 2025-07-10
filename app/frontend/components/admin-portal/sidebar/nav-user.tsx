@@ -1,5 +1,5 @@
 import { useNavigation } from "@/components/providers/navigation-provider";
-import { type Theme, useTheme } from "@/components/providers/theme-provider";
+import { useTheme } from "@/components/providers/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -22,6 +22,7 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
+import type { Theme } from "@/lib/constants";
 import { generateInitials } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import { Link } from "@inertiajs/react";
@@ -84,11 +85,11 @@ export function NavUser() {
 					<DropdownMenuTrigger asChild>
 						<SidebarMenuButton
 							size="lg"
-							className="data-[state=open]:bg-muted data-[state=open]:text-sidebar-accent-foreground data-[state=open]:border data-[state=open]:border-border h-full"
+							className="data-[state=open]:bg-accent data-[state=open]:text-accent-foreground data-[state=open]:border data-[state=open]:border-border h-full"
 						>
 							<Avatar className="self-start rounded-lg size-8">
 								<AvatarImage src={user.avatar} alt={user.name} />
-								<AvatarFallback className="self-start text-xs font-semibold border rounded-lg bg-background border-border">
+								<AvatarFallback className="self-start text-xs font-semibold border rounded-lg bg-background text-foreground border-border">
 									{generateInitials(user.name)}
 								</AvatarFallback>
 							</Avatar>
