@@ -1,6 +1,7 @@
 module AdminPortal
   class TherapistsController < ApplicationController
     include TherapistsHelper
+    include AppointmentsHelper
 
     before_action :set_therapist, only: %i[show edit update destroy]
 
@@ -14,7 +15,8 @@ module AdminPortal
       filter_by_employment_type = params[:employment_type]
       filter_by_employment_status = params[:employment_status]
       filter_by_city = params[:city]
-      selected_param = params[:change_password] || params[:delete]
+      details_param = params[:details]
+      selected_param = params[:change_password] || params[:delete] || details_param
 
       therapist_collections = Therapist
         .joins(:user)
@@ -51,16 +53,29 @@ module AdminPortal
 
       @pagy, @therapists = pagy_array(therapist_collections, page:, limit:)
 
-      # get the selected data admin for form
+      # get the selected data therapist
       selected_therapist_lambda = lambda do
         return nil unless selected_param
 
-        serialize_therapist(
-          Therapist.find_by(id: selected_param),
-          {
-            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
-          }
+        deep_transform_keys_to_camel_case(
+          serialize_therapist(
+            Therapist.find_by(id: selected_param),
+            {
+              only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+            }
+          )
         )
+      end
+
+      # get selected therapist appointments
+      selected_therapist_appts_lambda = lambda do
+        return nil unless details_param
+
+        Appointment
+          .includes(:therapist, :patient, :service, :package, :location, :admins)
+          .initial_visits
+          .where(therapist_id: details_param)
+          .map { |a| deep_transform_keys_to_camel_case(serialize_appointment(a)) }
       end
 
       # get the filter options data
@@ -79,12 +94,13 @@ module AdminPortal
             serialize_therapist(
               therapist,
               {
-                only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+                only: %i[id name registration_number employment_status employment_type gender], include_bank_details: false, include_active_address: false, include_addresses: false
               }
             )
           end
         },
-        selected_therapist: -> { selected_therapist_lambda.call },
+        selected_therapist: InertiaRails.defer(group: "selected") { selected_therapist_lambda.call },
+        selected_therapist_appts: InertiaRails.defer(group: "selected") { selected_therapist_appts_lambda.call },
         filter_options: InertiaRails.defer { filter_options_lambda.call }
       })
     end

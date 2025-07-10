@@ -20,10 +20,20 @@ export const useAuth = ({ user, auth }: UseAuthProps) => {
 		() => isAuthAdmin && auth.currentUser?.["isSuperAdmin?"],
 		[isAuthAdmin, auth.currentUser?.["isSuperAdmin?"]],
 	);
+	const isAuthAdminSupervisor = useMemo(
+		() => isAuthAdmin && auth.currentUser?.["isAdminSupervisor?"],
+		[isAuthAdmin, auth.currentUser?.["isAdminSupervisor?"]],
+	);
 	const isAuthTherapist = useMemo(
 		() => auth.currentUserType === "THERAPIST",
 		[auth.currentUserType],
 	);
 
-	return { isAuthCurrentUser, isAuthAdmin, isAuthTherapist, isAuthSuperAdmin };
+	return {
+		isAuthCurrentUser,
+		isAuthAdmin,
+		isAuthTherapist,
+		isAuthSuperAdmin,
+		isAuthAdminSupervisor,
+	};
 };

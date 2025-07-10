@@ -324,6 +324,7 @@ export default function Index({
 										<Info />
 										{t("button.detail")}
 									</DropdownMenuItem>
+
 									<DropdownMenuItem
 										onSelect={() => routeTo.edit(row.original.id)}
 									>

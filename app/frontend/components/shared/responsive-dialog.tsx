@@ -82,7 +82,7 @@ export const ResponsiveDialog = ({
 					{children}
 					<DrawerFooter className="px-0 pt-4">
 						<DrawerClose asChild className="p-0">
-							<Button variant="outline">
+							<Button variant="outline" className="shadow-none">
 								{i18n.t("components.modal.cancel")}
 							</Button>
 						</DrawerClose>

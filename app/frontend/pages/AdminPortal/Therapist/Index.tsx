@@ -1,12 +1,13 @@
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import ExpandSubTable from "@/components/admin-portal/therapist/data-table-expand";
 import ToolbarTable from "@/components/admin-portal/therapist/data-table-toolbar";
 import {
 	ChangePasswordContent,
 	DeleteTherapistAlert,
+	DetailsTherapistContent,
 } from "@/components/admin-portal/therapist/feature-actions";
 import DotBadgeWithLabel from "@/components/shared/dot-badge";
+import { LoadingBasic } from "@/components/shared/loading";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
@@ -33,6 +34,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useActionPermissions } from "@/hooks/admin-portal/use-therapist-utils";
+import { getGenderIcon } from "@/hooks/use-gender";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getBrandBadgeVariant } from "@/lib/services";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
@@ -42,6 +44,7 @@ import {
 	populateQueryParams,
 	removeWhiteSpaces,
 } from "@/lib/utils";
+import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Location } from "@/types/admin-portal/location";
 import type {
 	Therapist,
@@ -55,13 +58,15 @@ import type { Table as TableTanstack } from "@tanstack/react-table";
 import type { ColumnDef, ExpandedState, Row } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import {
-	ChevronDown,
-	ChevronUp,
 	Ellipsis,
 	InfinityIcon,
+	Info,
 	LoaderIcon,
 	PlusCircle,
 	RefreshCcw,
+	SquarePen,
+	Trash2,
+	LockIcon,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -71,7 +76,8 @@ export interface PageProps {
 		data: Therapist[];
 		metadata: Metadata;
 	};
-	selectedTherapist: Therapist | null;
+	selectedTherapist: null | Therapist;
+	selectedTherapistAppts: null | Appointment[];
 	filterOptions?: {
 		employmentStatuses: TherapistEmploymentStatus;
 		employmentTypes: TherapistEmploymentType;
@@ -88,7 +94,11 @@ export interface TherapistIndexGlobalPageProps
 	[key: string]: any;
 }
 
-export default function Index({ therapists, selectedTherapist }: PageProps) {
+export default function Index({
+	therapists,
+	selectedTherapist,
+	selectedTherapistAppts,
+}: PageProps) {
 	const { props: globalProps, url: pageURL } =
 		usePage<TherapistIndexGlobalPageProps>();
 	const isMobile = useIsMobile();
@@ -143,124 +153,6 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 	>(() => {
 		const items: ColumnDef<PageProps["therapists"]["data"][number]>[] = [
 			{
-				id: "select",
-				header: ({ table }) => {
-					// const isChecked = table.getIsAllPageRowsSelected() ||
-					//   (table.getIsSomePageRowsSelected() && "indeterminate")
-
-					return (
-						<div className="flex items-start space-x-2">
-							{/* <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Checkbox
-                    checked={isChecked}
-                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
-                    className="translate-y-[2px]"
-                  />
-                </TooltipTrigger>
-                <TooltipContent side='top'>
-                  <span>{isChecked ? 'Un-select all' : 'Select all'}</span>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider> */}
-
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="border shadow size-8 lg:size-5 border-primary/25"
-											onClick={() => table.toggleAllRowsExpanded()}
-										>
-											{table.getIsAllRowsExpanded() ? (
-												<ChevronUp />
-											) : (
-												<ChevronDown />
-											)}
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="top">
-										<span>
-											{table.getIsAllRowsExpanded()
-												? "Collapse all"
-												: "Expand all"}
-										</span>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						</div>
-					);
-				},
-				cell: ({ row }) => {
-					const toggleExpand = () => {
-						row.toggleExpanded();
-
-						const { queryParams: currentQuery } = populateQueryParams(pageURL);
-						const expandedList = removeWhiteSpaces(currentQuery?.expanded || "")
-							.split(",")
-							.filter(Boolean);
-						const id = String(row.original.id);
-						const updatedList = row.getIsExpanded()
-							? expandedList.filter((item) => item !== id)
-							: [...expandedList, id];
-
-						const { fullUrl, queryParams } = populateQueryParams(pageURL, {
-							expanded: updatedList.join(","),
-						});
-
-						router.get(fullUrl, queryParams, {
-							only: ["adminPortal", "flash"],
-							preserveScroll: true,
-							preserveState: true,
-							replace: true,
-						});
-					};
-
-					return (
-						<div className="flex items-start space-x-2">
-							{/* <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Checkbox
-                  checked={row.getIsSelected()}
-                  onCheckedChange={(value) => row.toggleSelected(!!value)}
-                  aria-label="Select row"
-                  className="translate-y-[2px]"
-                />
-              </TooltipTrigger>
-              <TooltipContent side='top'>
-                <span>{row.getIsSelected() ? 'Un-select' : 'Select'}</span>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider> */}
-
-							<TooltipProvider>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="border shadow size-8 lg:size-5 border-primary/25"
-											onClick={toggleExpand}
-										>
-											{row.getIsExpanded() ? <ChevronUp /> : <ChevronDown />}
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="top">
-										<span>{row.getIsExpanded() ? "Collapse" : "Expand"}</span>
-									</TooltipContent>
-								</Tooltip>
-							</TooltipProvider>
-						</div>
-					);
-				},
-				enableSorting: false,
-				enableHiding: false,
-			},
-			{
 				accessorKey: "profile",
 				header: ({ column }) => (
 					<DataTableColumnHeader column={column} title="Profile" />
@@ -313,16 +205,45 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 		if (!isMobile) {
 			items.push(
 				{
+					accessorKey: "gender",
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title="Gender" />
+					),
+					enableSorting: true,
+					enableHiding: false,
+					cell: ({ row }) => {
+						const gender = row.original.gender;
+
+						return (
+							<Badge variant="outline">
+								<div className="flex items-center gap-1">
+									{getGenderIcon(
+										gender,
+										"size-4 text-muted-foreground/75 shrink-0",
+									)}
+									<span>{gender}</span>
+								</div>
+							</Badge>
+						);
+					},
+				},
+				{
 					accessorKey: "type",
 					header: ({ column }) => (
 						<DataTableColumnHeader column={column} title="Type" />
 					),
-					enableSorting: false,
+					enableSorting: true,
 					enableHiding: false,
 					cell: ({ row }) => {
 						const employmentType = row.original.employmentType;
 
-						return <Badge variant="outline">{employmentType}</Badge>;
+						return (
+							<Badge
+								variant={employmentType === "KARPIS" ? "accent" : "secondary"}
+							>
+								{employmentType}
+							</Badge>
+						);
 					},
 				},
 				{
@@ -330,7 +251,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 					header: ({ column }) => (
 						<DataTableColumnHeader column={column} title="Service" />
 					),
-					enableSorting: false,
+					enableSorting: true,
 					enableHiding: false,
 					cell: ({ row }) => {
 						const serviceName = row.original.service.name.replaceAll("_", " ");
@@ -352,7 +273,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 					header: ({ column }) => (
 						<DataTableColumnHeader column={column} title="Status" />
 					),
-					enableSorting: false,
+					enableSorting: true,
 					enableHiding: false,
 					cell: ({ row }) => {
 						const variant = useMemo(
@@ -370,7 +291,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 					header: ({ column }) => (
 						<DataTableColumnHeader column={column} title="Activity" />
 					),
-					enableSorting: false,
+					enableSorting: true,
 					enableHiding: false,
 					cell: ({ row }) => {
 						const isOnline = row.original.user["isOnline?"];
@@ -489,18 +410,28 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 								<DropdownMenuSeparator />
 
 								<DropdownMenuGroup>
+									<DropdownMenuItem
+										onSelect={() => routeTo.detail(row.original.id)}
+									>
+										<Info />
+										<span>Details</span>
+									</DropdownMenuItem>
+
 									{isShowEdit && (
 										<DropdownMenuItem
 											onSelect={() => routeTo.edit(row.original.id)}
 										>
-											Edit
+											<SquarePen />
+											<span>Edit</span>
 										</DropdownMenuItem>
 									)}
+
 									{isShowChangePassword && (
 										<DropdownMenuItem
 											onSelect={() => routeTo.changePassword(row.original.id)}
 										>
-											Change Password
+											<LockIcon />
+											<span>Change Password</span>
 										</DropdownMenuItem>
 									)}
 								</DropdownMenuGroup>
@@ -511,7 +442,8 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 										<DropdownMenuItem
 											onSelect={() => routeTo.delete(row.original.id)}
 										>
-											Delete
+											<Trash2 />
+											<span>Delete</span>
 										</DropdownMenuItem>
 									</>
 								)}
@@ -523,7 +455,7 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 		});
 
 		return items;
-	}, [globalProps.auth, isMobile, pageURL]);
+	}, [globalProps.auth, isMobile]);
 
 	// * for table actions management state
 	const routeTo = {
@@ -539,8 +471,9 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 				url,
 				{ change_password: id },
 				{
-					only: ["selectedTherapist", "flash", "adminPortal"],
+					only: ["adminPortal", "flash", "errors", "selectedTherapist"],
 					preserveScroll: true,
+					preserveState: true,
 				},
 			);
 		},
@@ -551,55 +484,99 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 				url,
 				{ delete: id },
 				{
-					only: ["selectedTherapist", "flash", "adminPortal"],
+					only: ["adminPortal", "flash", "errors", "selectedTherapist"],
 					preserveScroll: true,
+					preserveState: true,
 				},
 			);
 		},
+		detail: useCallback(
+			(id: string) => {
+				router.get(
+					pageURL,
+					{ details: id },
+					{
+						only: [
+							"adminPortal",
+							"flash",
+							"errors",
+							"selectedTherapist",
+							"selectedTherapistAppts",
+						],
+						preserveScroll: true,
+						preserveState: true,
+					},
+				);
+			},
+			[pageURL],
+		),
 	};
-	const formDialogMode = useMemo(() => {
+	const formDialog = useMemo<
+		ResponsiveDialogProps & {
+			mode: {
+				isChangePasswordMode: boolean;
+				isDeleteMode: boolean;
+				isDetailsMode: boolean;
+			};
+		}
+	>(() => {
 		const currentQuery = globalProps.adminPortal?.currentQuery;
 		const isChangePasswordMode = !!currentQuery?.changePassword;
 		const isDeleteMode = !!currentQuery?.delete;
+		const isDetailsMode = !!currentQuery?.details;
+		const mode = {
+			isChangePasswordMode,
+			isDeleteMode,
+			isDetailsMode,
+		};
+		const isOpen = isChangePasswordMode || isDeleteMode || isDetailsMode;
+		let title = "";
+		let description = "";
 
-		return { isChangePasswordMode, isDeleteMode };
-	}, [globalProps.adminPortal?.currentQuery]);
-	const formDialog = useMemo<ResponsiveDialogProps>(() => {
-		const isOpen =
-			formDialogMode.isChangePasswordMode || formDialogMode.isDeleteMode;
-		let title = "Change Password";
-		let description =
-			"Make password changes using the generate the form link or via form.";
-
-		if (formDialogMode.isDeleteMode) {
+		if (isDeleteMode) {
 			title = "Are you absolutely sure?";
 			description =
 				"This action is irreversible. Deleting actions will permanently remove data from our servers and cannot be recovered.";
+		}
+
+		if (isChangePasswordMode) {
+			title = "Change Password";
+			description =
+				"Make password changes using the generate the form link or via form.";
+		}
+
+		if (isDetailsMode) {
+			title = "Therapist Details";
+			description =
+				"View therapist profile, contract, and assigned appointments data-all in one place.";
 		}
 
 		return {
 			title,
 			description,
 			isOpen,
+			mode,
 			onOpenChange: (value: boolean) => {
 				if (!value) {
-					const objQueryParams = formDialogMode.isChangePasswordMode
+					const objQueryParams = isChangePasswordMode
 						? { change_password: null }
-						: { delete: null };
+						: isDeleteMode
+							? { delete: null }
+							: { details: null };
 					const { fullUrl } = populateQueryParams(pageURL, objQueryParams);
 
 					router.get(
 						fullUrl,
 						{},
 						{
-							only: ["selectedTherapist", "flash", "adminPortal"],
+							only: ["selectedTherapist", "flash", "adminPortal", "errors"],
 							preserveScroll: true,
 						},
 					);
 				}
 			},
 		};
-	}, [pageURL, formDialogMode]);
+	}, [pageURL, globalProps.adminPortal?.currentQuery]);
 
 	return (
 		<>
@@ -664,37 +641,48 @@ export default function Index({ therapists, selectedTherapist }: PageProps) {
 					columns={columns}
 					data={therapists.data}
 					toolbar={(table) => <ToolbarTable table={table} />}
-					subComponent={(row) => <ExpandSubTable row={row} routeTo={routeTo} />}
 					customPagination={(table) => (
 						<PaginationTable table={table} metadata={therapists.metadata} />
 					)}
 					currentExpanded={currentExpanded}
 				/>
 
-				{selectedTherapist &&
-					formDialog.isOpen &&
-					formDialogMode.isChangePasswordMode && (
-						<ResponsiveDialog {...formDialog}>
-							<ChangePasswordContent
-								{...{
-									selectedTherapistAccount: selectedTherapist.user,
-									forceMode: formDialog.forceMode,
-									handleOpenChange: formDialog.onOpenChange,
-								}}
-							/>
-						</ResponsiveDialog>
-					)}
+				{formDialog.isOpen && (
+					<>
+						{selectedTherapist && formDialog.mode.isChangePasswordMode && (
+							<ResponsiveDialog {...formDialog}>
+								<ChangePasswordContent
+									selectedTherapistAccount={selectedTherapist.user}
+									forceMode={formDialog.forceMode}
+									handleOpenChange={formDialog.onOpenChange}
+								/>
+							</ResponsiveDialog>
+						)}
 
-				{selectedTherapist &&
-					formDialog.isOpen &&
-					formDialogMode.isDeleteMode && (
-						<DeleteTherapistAlert
-							{...{
-								...formDialog,
-								selectedTherapist: selectedTherapist,
-							}}
-						/>
-					)}
+						{selectedTherapist && formDialog.mode.isDeleteMode && (
+							<DeleteTherapistAlert
+								{...formDialog}
+								selectedTherapist={selectedTherapist}
+							/>
+						)}
+
+						{formDialog.mode.isDetailsMode && (
+							<ResponsiveDialog
+								{...formDialog}
+								dialogWidth={selectedTherapist ? "75%" : undefined}
+							>
+								{selectedTherapist ? (
+									<DetailsTherapistContent
+										therapist={selectedTherapist}
+										appts={selectedTherapistAppts}
+									/>
+								) : (
+									<LoadingBasic columnBased />
+								)}
+							</ResponsiveDialog>
+						)}
+					</>
+				)}
 			</PageContainer>
 		</>
 	);
