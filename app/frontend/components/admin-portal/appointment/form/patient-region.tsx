@@ -138,8 +138,8 @@ export default function PatientRegionForm() {
 													: "Select region"}
 											</p>
 											{field.value ? (
-												// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-												<div
+												<button
+													type="button"
 													className="cursor-pointer"
 													onClick={(event) => {
 														event.preventDefault();
@@ -149,7 +149,7 @@ export default function PatientRegionForm() {
 													}}
 												>
 													<X className="opacity-50" />
-												</div>
+												</button>
 											) : (
 												<ChevronsUpDown className="opacity-50" />
 											)}

@@ -55,14 +55,16 @@ export function FormPageHeader({
 }: FormPageHeaderProps) {
 	return (
 		<>
-			<div className={cn("flex flex-col space-y-1.5", className)}>
-				<h1 className="font-bold leading-none tracking-tight">{title}</h1>
+			<section className={cn("flex flex-col space-y-1.5", className)}>
+				<h1 className="font-bold leading-none tracking-tight uppercase">
+					{title}
+				</h1>
 				<span className="text-sm text-muted-foreground text-pretty">
 					{description}
 				</span>
-			</div>
+			</section>
 
-			{separator && <Separator />}
+			{separator && <Separator className="my-3" />}
 		</>
 	);
 }

@@ -437,7 +437,9 @@ export const usePatientReferralSource = () => {
 // * hooks about preferred therapist gender field
 export const usePreferredTherapistGender = ({
 	sourceOptions,
-}: { sourceOptions?: typeof PREFERRED_THERAPIST_GENDER }) => {
+}: {
+	sourceOptions?: typeof PREFERRED_THERAPIST_GENDER;
+}) => {
 	const preferredTherapistGenderOption = useMemo(
 		() => sourceOptions || [],
 		[sourceOptions],
@@ -590,117 +592,6 @@ export const useTherapistAvailability = ({
 	onChangeTherapistLoading: (value: boolean) => void;
 	onResetTherapistFormValue: () => void;
 }) => {
-	// * for assigning the therapist
-	const [isTherapistFound, setIsTherapistFound] = useState(false);
-	const [therapistsOptions, setTherapistsOptions] = useState({
-		available: [] as TherapistOption[],
-		unavailable: [] as TherapistOption[],
-		feasible: [] as TherapistOption[],
-		notFeasible: [] as TherapistOption[],
-	});
-	// reset the therapist all options
-	const onResetTherapistOptions = useCallback(() => {
-		setTherapistsOptions((prev) => ({
-			...prev,
-			notFeasible: [],
-			feasible: [],
-			available: [],
-			unavailable: [],
-		}));
-		setIsTherapistFound(false);
-	}, []);
-	// map the available and unavailable therapists, then also calculate the isoline
-	const mappingTherapists = useCallback(
-		(therapists: TherapistOption[] | undefined) => {
-			const therapistsAvailable =
-				therapists?.filter((t) => t.availabilityDetails?.available) || [];
-			const therapistsUnavailable =
-				therapists?.filter((t) => !t.availabilityDetails?.available) || [];
-			setTherapistsOptions((prev) => ({
-				...prev,
-				available: therapistsAvailable,
-				unavailable: therapistsUnavailable,
-			}));
-			if (therapistsAvailable?.length) {
-				onCalculateIsoline(therapistsAvailable);
-			} else {
-				setIsTherapistFound(true);
-			}
-		},
-		[],
-	);
-	const onFindTherapists = useCallback(() => {
-		// fetch the services options data
-		const { queryParams } = populateQueryParams(
-			fetchURL,
-			deepTransformKeysToSnakeCase(
-				formType === "create"
-					? {
-							locationId: patientValues.locationId,
-							serviceId: serviceIdValue,
-							preferredTherapistGender: preferredTherapistGenderValue,
-							appointmentDateTime: appointmentDateTImeValue,
-						}
-					: {
-							preferredTherapistGender: preferredTherapistGenderValue,
-							appointmentDateTime: appointmentDateTImeValue,
-						},
-			),
-		);
-		router.get(fetchURL, queryParams, {
-			preserveScroll: true,
-			preserveState: true,
-			replace: false,
-			/**
-			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
-			 * ? it's related to onSuccess callback error
-			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
-			 **/
-			// only:
-			// 	formType === "create"
-			// 		? []
-			// 		: ["adminPortal", "flash", "errors", "therapists"],
-			only: [],
-			onStart: () => {
-				onChangeTherapistLoading(true);
-				onResetTherapistOptions();
-				onResetIsoline();
-				// reset the therapist form values
-				onResetTherapistFormValue();
-			},
-			onFinish: () => {
-				setTimeout(() => {
-					onChangeTherapistLoading(false);
-				}, 250);
-			},
-			/**
-			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
-			 * ? This callback will not be called if there is a server error for example on the validation server.
-			 * ? And instead of calling the onSuccess callback it will call the onError callback. but this has been solved.
-			 * ? That is by not using the only option (for example only: [“props”]),
-			 * ? And also instead of using InertiaRails.defer use `->` or lazy data evaluation (https://inertia-rails.dev/guide/partial-reloads#lazy-data-evaluation).
-			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
-			 *
-			 **/
-			onSuccess: ({ props }) => {
-				const result = (props as unknown as AppointmentNewGlobalPageProps)
-					.therapists;
-				mappingTherapists(result);
-			},
-		});
-	}, [
-		fetchURL,
-		formType,
-		serviceIdValue,
-		preferredTherapistGenderValue,
-		appointmentDateTImeValue,
-		patientValues.locationId,
-		onResetTherapistOptions,
-		mappingTherapists,
-		onChangeTherapistLoading,
-		onResetTherapistFormValue,
-	]);
-
 	// * state group for isolane therapist
 	const [markerStorage, setMarkerStorage] = useSessionStorage<null | {
 		patient: MarkerData[];
@@ -883,6 +774,118 @@ export const useTherapistAvailability = ({
 			generateMarkerDataTherapist,
 		],
 	);
+
+	// * for assigning the therapist
+	const [isTherapistFound, setIsTherapistFound] = useState(false);
+	const [therapistsOptions, setTherapistsOptions] = useState({
+		available: [] as TherapistOption[],
+		unavailable: [] as TherapistOption[],
+		feasible: [] as TherapistOption[],
+		notFeasible: [] as TherapistOption[],
+	});
+	// reset the therapist all options
+	const onResetTherapistOptions = useCallback(() => {
+		setTherapistsOptions((prev) => ({
+			...prev,
+			notFeasible: [],
+			feasible: [],
+			available: [],
+			unavailable: [],
+		}));
+		setIsTherapistFound(false);
+	}, []);
+	// map the available and unavailable therapists, then also calculate the isoline
+	const mappingTherapists = useCallback(
+		(therapists: TherapistOption[] | undefined) => {
+			const therapistsAvailable =
+				therapists?.filter((t) => t.availabilityDetails?.available) || [];
+			const therapistsUnavailable =
+				therapists?.filter((t) => !t.availabilityDetails?.available) || [];
+			setTherapistsOptions((prev) => ({
+				...prev,
+				available: therapistsAvailable,
+				unavailable: therapistsUnavailable,
+			}));
+			if (therapistsAvailable?.length) {
+				onCalculateIsoline(therapistsAvailable);
+			} else {
+				setIsTherapistFound(true);
+			}
+		},
+		[onCalculateIsoline],
+	);
+	const onFindTherapists = useCallback(() => {
+		// fetch the services options data
+		const { queryParams } = populateQueryParams(
+			fetchURL,
+			deepTransformKeysToSnakeCase(
+				formType === "create"
+					? {
+							locationId: patientValues.locationId,
+							serviceId: serviceIdValue,
+							preferredTherapistGender: preferredTherapistGenderValue,
+							appointmentDateTime: appointmentDateTImeValue,
+						}
+					: {
+							preferredTherapistGender: preferredTherapistGenderValue,
+							appointmentDateTime: appointmentDateTImeValue,
+						},
+			),
+		);
+		router.get(fetchURL, queryParams, {
+			preserveScroll: true,
+			preserveState: true,
+			replace: false,
+			/**
+			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
+			 * ? it's related to onSuccess callback error
+			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
+			 **/
+			// only:
+			// 	formType === "create"
+			// 		? []
+			// 		: ["adminPortal", "flash", "errors", "therapists"],
+			only: [],
+			onStart: () => {
+				onChangeTherapistLoading(true);
+				onResetTherapistOptions();
+				onResetIsoline();
+				// reset the therapist form values
+				onResetTherapistFormValue();
+			},
+			onFinish: () => {
+				setTimeout(() => {
+					onChangeTherapistLoading(false);
+				}, 250);
+			},
+			/**
+			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
+			 * ? This callback will not be called if there is a server error for example on the validation server.
+			 * ? And instead of calling the onSuccess callback it will call the onError callback. but this has been solved.
+			 * ? That is by not using the only option (for example only: [“props”]),
+			 * ? And also instead of using InertiaRails.defer use `->` or lazy data evaluation (https://inertia-rails.dev/guide/partial-reloads#lazy-data-evaluation).
+			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
+			 *
+			 **/
+			onSuccess: ({ props }) => {
+				const result = (props as unknown as AppointmentNewGlobalPageProps)
+					.therapists;
+				mappingTherapists(result);
+			},
+		});
+	}, [
+		fetchURL,
+		formType,
+		serviceIdValue,
+		preferredTherapistGenderValue,
+		appointmentDateTImeValue,
+		patientValues.locationId,
+		onResetTherapistOptions,
+		mappingTherapists,
+		onChangeTherapistLoading,
+		onResetTherapistFormValue,
+		onResetIsoline,
+	]);
 
 	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
 	useEffect(() => {
