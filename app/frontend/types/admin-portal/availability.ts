@@ -34,6 +34,7 @@ export interface AdjustedAvailability {
 
 export interface AvailabilityDetail {
 	available: boolean;
+	availableSlots: string[];
 	locations: {
 		prevAppointment:
 			| null

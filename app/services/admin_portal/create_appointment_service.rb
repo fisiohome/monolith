@@ -50,22 +50,33 @@ module AdminPortal
       @patient = Patient.find_by(patient_params) || Patient.new(patient_params)
     end
 
+    # This method will update the existing patient contact if it exists,
+    # or create a new one if it doesn't, and always associate it with @patient.
     def upsert_patient_contact
       cp = @params[:patient_contact] || {}
 
-      # find or initialize the PatientContact
-      contact = PatientContact.find_or_initialize_by(
-        email: cp[:email],
-        contact_phone: cp[:contact_phone]
-      )
-      contact.assign_attributes(cp)
+      # Try to find an existing PatientContact for this patient
+      contact = @patient.patient_contact
 
-      # save the contact if needed
-      contact.save! if contact.new_record? || contact.changed?
+      if contact
+        # Update the existing contact with new attributes if changed
+        contact.assign_attributes(cp)
+        contact.save! if contact.changed?
+      else
+        # Try to find a PatientContact by email/contact_phone, or create a new one
+        contact = PatientContact.find_or_initialize_by(
+          email: cp[:email],
+          contact_phone: cp[:contact_phone]
+        )
+        contact.assign_attributes(cp)
+        contact.save! if contact.new_record? || contact.changed?
+      end
 
-      # now attach it to @patient and save the patient
-      @patient.patient_contact = contact
-      @patient.save! if @patient.new_record? || @patient.changed?
+      # Associate the contact with the patient if not already associated
+      if @patient.patient_contact != contact
+        @patient.patient_contact = contact
+        @patient.save! if @patient.changed?
+      end
 
       @patient_contact = contact
     end

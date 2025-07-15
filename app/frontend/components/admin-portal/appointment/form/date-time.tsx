@@ -1,3 +1,13 @@
+import { format, parse } from "date-fns";
+import {
+	type ComponentProps,
+	memo,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useDateContext } from "@/components/providers/date-provider";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -6,8 +16,58 @@ import { Separator } from "@/components/ui/separator";
 import { useAppointmentDateTime } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { generateTimeSlots } from "@/hooks/use-calendar-schedule";
 import { cn } from "@/lib/utils";
-import { format, parse } from "date-fns";
-import { type ComponentProps, useEffect, useRef, useState } from "react";
+
+const UNIQUE_TIME_SLOTS = ["09:00", "11:00", "13:00", "16:00", "18:00"];
+
+export const TimeSlotButton = memo(function TimeSlotButton({
+	time,
+	isSelected,
+	isDisabled = false,
+	isAllOfDay = false,
+	onSelect,
+	buttonRef,
+}: {
+	time: string;
+	isSelected: boolean;
+	isDisabled?: boolean;
+	isAllOfDay?: boolean;
+	onSelect?: () => void;
+	buttonRef?: React.Ref<HTMLButtonElement>;
+}) {
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
+
+	// Optimization: Memoize the formatted time string to avoid recalculation on every render.
+	const displayTime = useMemo(() => {
+		const slotDate = parse(time, "HH:mm", new Date(), {
+			locale,
+			in: tzDate,
+		});
+		return format(slotDate, timeFormatDateFns, {
+			locale,
+			in: tzDate,
+		});
+	}, [time, locale, tzDate, timeFormatDateFns]);
+
+	return (
+		<Button
+			ref={buttonRef}
+			type="button"
+			variant={isSelected ? "default" : "primary-outline"}
+			className={cn("w-full", !isSelected && "bg-sidebar shadow-inner")}
+			disabled={isAllOfDay || isDisabled}
+			onClick={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+
+				if (onSelect && typeof onSelect === "function") {
+					onSelect();
+				}
+			}}
+		>
+			{displayTime}
+		</Button>
+	);
+});
 
 export interface DateTimePickerProps extends ComponentProps<"div"> {
 	value: Date | null;
@@ -15,24 +75,24 @@ export interface DateTimePickerProps extends ComponentProps<"div"> {
 	max?: Date | null;
 	onChangeValue: (...event: any[]) => void;
 	callbackOnChange: () => void;
+	isAllOfDay?: boolean;
 }
-
 export default function DateTimePicker({
 	className,
 	value,
 	min = null,
 	max = null,
+	isAllOfDay = false,
 	onChangeValue,
 	callbackOnChange,
 }: DateTimePickerProps) {
-	const { locale, tzDate, timeFormatDateFns } = useDateContext();
 	const {
 		appointmentDate,
 		appointmentDateCalendarProps,
 		onSelectAppointmentDate,
 		onSelectAppointmentTime,
 	} = useAppointmentDateTime({
-		sourceValue: value || undefined,
+		sourceValue: { date: value || undefined, isAllOfDay },
 		min,
 		max,
 	});
@@ -42,6 +102,30 @@ export default function DateTimePicker({
 	const [timeGroupType, setTimeGroupType] = useState<"unique" | "basic">(
 		"basic",
 	);
+	const handleDateSelect = useCallback(
+		(date: Date | undefined) => {
+			onSelectAppointmentDate(date);
+			onChangeValue(date || null);
+			callbackOnChange();
+		},
+		[onSelectAppointmentDate, onChangeValue, callbackOnChange],
+	);
+	const handleTimeSelect = useCallback(
+		(time: string, type: "unique" | "basic") => {
+			const date = onSelectAppointmentTime(time);
+			if (date) {
+				onChangeValue(date);
+				callbackOnChange();
+				setTimeGroupType(type);
+			}
+		},
+		[onSelectAppointmentTime, onChangeValue, callbackOnChange],
+	);
+	const selectedTime = useMemo(
+		() => (value ? format(value, "HH:mm") : null),
+		[value],
+	);
+	const basicTimeSlots = useMemo(() => generateTimeSlots(30), []);
 
 	// * measure calendar height whenever it renders or resizes
 	useEffect(() => {
@@ -85,226 +169,40 @@ export default function DateTimePicker({
 						: undefined
 				}
 				defaultMonth={value || undefined}
-				onSelect={(date) => {
-					onSelectAppointmentDate(date);
-					onChangeValue(date || null);
-					callbackOnChange();
-				}}
+				onSelect={handleDateSelect}
 			/>
 
 			<ScrollArea
 				style={{ height: calendarHeight }}
 				className="w-full h-64 gap-4 py-1 md:w-auto"
 			>
-				{["09:00", "11:00", "13:00", "16:00", "18:00"].map((time) => {
-					const isSelected = value && format(value, "HH:mm") === time;
-					const slotDate = parse(time, "HH:mm", new Date(), {
-						locale,
-						in: tzDate,
-					});
-					const displayTime = format(slotDate, timeFormatDateFns, {
-						locale,
-						in: tzDate,
-					});
-
-					return (
-						<div key={`${time}-unique`} className="flex flex-col">
-							<Button
-								variant={isSelected ? "default" : "primary-outline"}
-								className={cn("w-full mb-1", !isSelected && "bg-sidebar")}
-								onClick={(event) => {
-									event.preventDefault();
-
-									const date = onSelectAppointmentTime(time);
-									if (date) {
-										onChangeValue(date);
-										callbackOnChange();
-										setTimeGroupType("unique");
-									}
-								}}
-							>
-								{displayTime}
-							</Button>
-						</div>
-					);
-				})}
+				<div className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-5">
+					{UNIQUE_TIME_SLOTS.map((time) => (
+						<TimeSlotButton
+							key={`${time}-unique`}
+							time={time}
+							isSelected={selectedTime === time}
+							isAllOfDay={isAllOfDay}
+							onSelect={() => handleTimeSelect(time, "unique")}
+						/>
+					))}
+				</div>
 
 				<Separator className="my-4" />
 
-				{generateTimeSlots(15).map((time) => {
-					const isSelected = value && format(value, "HH:mm") === time;
-					const slotDate = parse(time, "HH:mm", new Date(), {
-						locale,
-						in: tzDate,
-					});
-					const displayTime = format(slotDate, timeFormatDateFns, {
-						locale,
-						in: tzDate,
-					});
-
-					return (
-						<div key={time} className="flex flex-col">
-							<Button
-								ref={isSelected ? selectedButtonRef : null}
-								variant={isSelected ? "default" : "primary-outline"}
-								className={cn("w-full mb-1", !isSelected && "bg-sidebar")}
-								onClick={(event) => {
-									event.preventDefault();
-
-									const date = onSelectAppointmentTime(time);
-									if (date) {
-										onChangeValue(date);
-										callbackOnChange();
-										setTimeGroupType("basic");
-									}
-								}}
-							>
-								{displayTime}
-							</Button>
-						</div>
-					);
-				})}
+				<div className="grid grid-cols-1 gap-2 md:grid-cols-4 xl:grid-cols-5">
+					{basicTimeSlots.map((time) => (
+						<TimeSlotButton
+							key={time}
+							buttonRef={selectedTime === time ? selectedButtonRef : null}
+							time={time}
+							isSelected={selectedTime === time}
+							isAllOfDay={isAllOfDay}
+							onSelect={() => handleTimeSelect(time, "basic")}
+						/>
+					))}
+				</div>
 			</ScrollArea>
 		</div>
 	);
 }
-
-// export default function DateTimePicker() {
-// 	return (
-// 		<div className="grid w-full grid-cols-3 gap-4">
-// 			<FormField
-// 				control={form.control}
-// 				name="appointmentDateTime"
-// 				render={({ field }) => (
-// 					<FormItem className="col-span-2">
-// 						<FormLabel>Appointment Date</FormLabel>
-// 						<Popover
-// 							open={isOpenAppointmentDate}
-// 							onOpenChange={setIsOpenAppointmentDate}
-// 						>
-// 							<PopoverTrigger asChild>
-// 								<FormControl>
-// 									<Button
-// 										variant={"outline"}
-// 										className={cn(
-// 											"relative w-full pl-3 text-left font-normal shadow-inner bg-sidebar",
-// 											!field.value && "text-muted-foreground",
-// 										)}
-// 									>
-// 										<p className="truncate">
-// 											{field?.value
-// 												? format(field.value, "PPPP")
-// 												: "Pick a appointment date"}
-// 										</p>
-
-// 										{field.value ? (
-// 											// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-// 											<div
-// 												className="cursor-pointer"
-// 												onClick={(event) => {
-// 													event.preventDefault();
-// 													event.stopPropagation();
-
-// 													onSelectAppointmentDate(undefined);
-// 													field.onChange(null);
-// 												}}
-// 											>
-// 												<X className="opacity-50" />
-// 											</div>
-// 										) : (
-// 											<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
-// 										)}
-// 									</Button>
-// 								</FormControl>
-// 							</PopoverTrigger>
-// 							<PopoverContent
-// 								className="w-auto p-0"
-// 								align="start"
-// 								side="bottom"
-// 							>
-// 								<Calendar
-// 									{...appointmentDateCalendarProps}
-// 									initialFocus
-// 									mode="single"
-// 									captionLayout="dropdown"
-// 									selected={
-// 										(appointmentDate ?? field?.value) != null
-// 											? new Date(
-// 													(appointmentDate ?? field.value) as
-// 														| string
-// 														| number
-// 														| Date,
-// 												)
-// 											: undefined
-// 									}
-// 									defaultMonth={field?.value || undefined}
-// 									onSelect={(date) => {
-// 										onSelectAppointmentDate(date);
-// 										field.onChange(date || null);
-// 									}}
-// 								/>
-// 							</PopoverContent>
-// 						</Popover>
-
-// 						<FormMessage />
-// 					</FormItem>
-// 				)}
-// 			/>
-
-// 			<FormField
-// 				control={form.control}
-// 				name="appointmentDateTime"
-// 				render={({ field }) => (
-// 					<FormItem className="col-span-1">
-// 						<FormLabel className="invisible">Time</FormLabel>
-// 						<FormControl>
-// 							<Select
-// 								value={appointmentTime}
-// 								onValueChange={(time) => {
-// 									const date = onSelectAppointmentTime(time);
-// 									if (date) {
-// 										field.onChange(date);
-// 									}
-// 								}}
-// 							>
-// 								<SelectTrigger
-// 									className={cn(
-// 										"shadow-inner bg-sidebar focus:ring-0 w-[100px] focus:ring-offset-0",
-// 										!appointmentDate && "text-muted-foreground",
-// 									)}
-// 								>
-// 									<SelectValue placeholder="Time" />
-// 								</SelectTrigger>
-// 								<SelectContent>
-// 									<ScrollArea className="h-[15rem]">
-// 										{generateTimeSlots(15).map((time) => (
-// 											<SelectItem key={time} value={time}>
-// 												{time}
-// 											</SelectItem>
-// 										))}
-// 										{/* {Array.from({ length: 96 }).map((_, i) => {
-//                             const hour = Math.floor(i / 4)
-//                               .toString()
-//                               .padStart(2, "0");
-//                             const minute = ((i % 4) * 15)
-//                               .toString()
-//                               .padStart(2, "0");
-//                             return (
-//                               <SelectItem
-//                                 key={String(i)}
-//                                 value={`${hour}:${minute}`}
-//                               >
-//                                 {hour}:{minute}
-//                               </SelectItem>
-//                             );
-//                           })} */}
-// 									</ScrollArea>
-// 								</SelectContent>
-// 							</Select>
-// 						</FormControl>
-// 					</FormItem>
-// 				)}
-// 			/>
-// 		</div>
-// 	);
-// }

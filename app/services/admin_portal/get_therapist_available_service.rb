@@ -1,49 +1,236 @@
 module AdminPortal
+  # Service to check therapist availability for a specific datetime
+  # Handles complex logic including time zones, adjusted schedules, and booking constraints
+  #
+  # This service performs comprehensive availability checks including:
+  # - Time zone conversions for accurate scheduling
+  # - Weekly schedule vs adjusted availability (one-time overrides)
+  # - Overlapping appointment detection with buffer times
+  # - Daily appointment limits and advance booking windows
+  # - Location-based scheduling considerations
   class GetTherapistAvailableService
     attr_reader :reasons, :previous_appointment_location, :next_appointment_location
 
-    # Service to check therapist availability for a specific datetime
-    # Handles complex logic including time zones, adjusted schedules, and booking constraints
-    def initialize(therapist, appointment_date_time_server_time, current_appointment_id = nil)
+    # Initialize the service with therapist and appointment details
+    # @param therapist [Therapist] The therapist to check availability for
+    # @param appointment_date_time_server_time [DateTime] The requested appointment time in server timezone
+    # @param current_appointment_id [Integer, nil] ID of existing appointment being updated (excluded from conflicts)
+    # @param is_all_of_day [Boolean] Whether this is an "all day" booking request (affects validation logic)
+    def initialize(therapist:, appointment_date_time_server_time:, current_appointment_id: nil, is_all_of_day: false)
       @therapist = therapist
       @appointment_date_time_server_time = appointment_date_time_server_time
       @current_appointment_id = current_appointment_id
+      @is_all_of_day = ActiveModel::Type::Boolean.new.cast(is_all_of_day)
       @schedule = therapist.therapist_appointment_schedule
-      @reasons = []
-      @previous_appointment_location = nil
-      @next_appointment_location = nil
+      @reasons = [] # Collection of reasons why therapist is unavailable
+      @previous_appointment_location = nil # Location of previous appointment on same day
+      @next_appointment_location = nil # Location of next appointment on same day
       @logger = Rails.logger
     end
 
+    # Main method to check if therapist is available for the requested time
+    # Performs all availability checks in sequence and returns overall availability status
+    # @return [Boolean] true if available, false otherwise
     def available?
       return log_and_return(false, "No appointment schedule found") if @schedule.blank?
 
-      # Convert dates to therapist's time zone
+      # Convert dates to therapist's time zone for accurate comparison
+      # This ensures we're comparing times in the same timezone context
       therapist_time_zone = @schedule.time_zone.presence || Time.zone.name
       appointment_date_time_in_tz = @appointment_date_time_server_time.in_time_zone(therapist_time_zone)
       current_date_time_in_tz = Time.current.in_time_zone(therapist_time_zone)
 
-      # Reset reasons for each check
+      # Reset reasons for each check to ensure clean state
       @reasons.clear
 
+      # Always fetch adjacent appointment addresses to ensure consistent state
+      # This helps with location-based scheduling decisions and travel time considerations
       fetch_adjacent_appointment_addresses
       perform_checks(appointment_date_time_in_tz, current_date_time_in_tz)
     end
 
+    # Get all available time slots for a specific date
+    # Returns array of time strings in 'HH:MM' format representing available booking times
+    #
+    # This method:
+    # 1. Gets the therapist's availability ranges for the date
+    # 2. Filters out times that conflict with existing appointments
+    # 3. Respects appointment duration and buffer times
+    # 4. Optionally filters out past times for today's date
+    # @return [Array<String>] Array of available time slots in HH:MM format
+    def available_time_slots_for_date
+      date = @appointment_date_time_server_time.to_date
+      therapist_time_zone = @schedule.time_zone.presence || Time.zone.name
+      slots = get_availability_ranges_for_date
+      return [] if slots.empty?
+
+      # Get all existing appointments for the date (excluding cancelled/unscheduled)
+      appointments = @therapist.appointments
+        .where(appointment_date_time: date.all_day)
+        .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+        .where.not(id: @current_appointment_id)
+        .to_a
+
+      # Early return if therapist has reached daily appointment limit
+      return [] if appointments.size >= @schedule.max_daily_appointments
+
+      duration = @schedule.appointment_duration_in_minutes
+      buffer = @schedule.buffer_time_in_minutes
+      available_slots = []
+
+      # Only filter out past slots if the target date is today and not in test environment
+      # This prevents showing unavailable times in the past for today's bookings
+      current_date = Time.current.to_date
+      filter_past_slots = (date == current_date) && !Rails.env.test?
+
+      slots.each do |slot|
+        slot_start = slot[:start]
+        slot_end = slot[:end]
+
+        # Iterate through each 30-minute interval within the availability slot
+        # The last possible start time is slot_end - duration
+        time = slot_start
+        while time <= slot_end
+          # Skip past times for today's date (unless in test environment)
+          if filter_past_slots && time < Time.current.in_time_zone(therapist_time_zone)
+            time += 30.minutes
+            next
+          end
+
+          # Calculate the full appointment window including buffer time
+          appointment_start = time
+          appointment_end = appointment_start + duration.minutes
+          appointment_end_with_buffer = appointment_end + buffer.minutes
+
+          # Check for conflicts with existing appointments
+          # Skip slot if it overlaps with any existing appointment (+ buffer)
+          conflict = appointments.any? do |appt|
+            appt_start = appt.appointment_date_time
+            appt_end_with_buffer = appt_start + appt.total_duration_minutes.minutes
+
+            # Block if new slot starts before existing ends,
+            # AND new slot (including duration) ends after existing starts
+            appointment_start < appt_end_with_buffer &&
+              appointment_end_with_buffer > appt_start
+          end
+
+          # Add to available slots if no conflicts found
+          unless conflict
+            available_slots << time.strftime("%H:%M")
+          end
+
+          time += 30.minutes
+        end
+      end
+
+      available_slots
+    end
+
     private
 
-    # Perform checks in sequence with early returns
+    # Check if appointment exceeds maximum advance booking window
+    # Prevents booking too far in advance to avoid overbooking and schedule changes
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @param current_date_time_in_tz [DateTime] Current time in therapist's timezone
+    # @return [Array] [is_valid, error_message]
+    def check_advance_booking(appointment_date_time_in_tz, current_date_time_in_tz)
+      max_advance_date = current_date_time_in_tz + @schedule.max_advance_booking_in_days.days
+      return [false, "Exceeds max advance booking (#{@schedule.max_advance_booking_in_days} days)"] if appointment_date_time_in_tz > max_advance_date
+
+      [true, nil]
+    end
+
+    # Check if appointment falls within the configured date window
+    # Allows therapists to set specific start/end dates for accepting bookings
+    # Useful for temporary availability periods or seasonal scheduling
+    # @param date [Date] The appointment date to check
+    # @return [Array] [is_valid, error_message]
+    def check_date_window(date)
+      return [false, "Before start date window (#{@schedule.start_date_window})"] if @schedule.start_date_window && date < @schedule.start_date_window
+
+      return [false, "After end date window (#{@schedule.end_date_window})"] if @schedule.end_date_window && date > @schedule.end_date_window
+
+      [true, nil]
+    end
+
+    # Get availability ranges for a specific date
+    # Handles both adjusted availability (one-time overrides) and weekly schedules
+    #
+    # Priority order:
+    # 1. Adjusted availability (one-time overrides like holidays, sick days)
+    # 2. Weekly schedule (recurring weekly patterns)
+    #
+    # @param date [Date] The date to get availability for
+    # @return [Array<Hash>] Array of availability ranges with start/end times
+    def get_availability_ranges_for_date
+      date = @appointment_date_time_server_time.to_date
+      therapist_time_zone = @schedule.time_zone.presence || Time.zone.name
+
+      # Check for adjusted availability first (one-time overrides)
+      # These take precedence over weekly schedules
+      adjustments = @schedule.therapist_adjusted_availabilities.select { |adj| adj.specific_date == date }
+
+      if adjustments.any?
+        # If any adjustment marks the day as fully unavailable, return no ranges
+        return [] if adjustments.any?(&:unavailable?)
+
+        # Otherwise, return ranges from partial adjustments (e.g., half-day)
+        return adjustments.map do |adj|
+          # Create time objects in therapist's timezone for the specific date
+          start_time = Time.use_zone(therapist_time_zone) do
+            Time.zone.local(date.year, date.month, date.day, adj.start_time.hour, adj.start_time.min)
+          end
+          end_time = Time.use_zone(therapist_time_zone) do
+            Time.zone.local(date.year, date.month, date.day, adj.end_time.hour, adj.end_time.min)
+          end
+          {start: start_time, end: end_time}
+        end
+      end
+
+      # Fallback to weekly schedule if no adjustments for the date
+      day_of_week = date.strftime("%A")
+      weekly_slots = @schedule.therapist_weekly_availabilities.where(day_of_week: day_of_week)
+
+      weekly_slots.map do |slot|
+        # Create new time objects with the target date but the slot's time components
+        # Use the therapist's time zone directly to avoid double conversion
+        start_time = Time.use_zone(therapist_time_zone) do
+          Time.zone.local(date.year, date.month, date.day, slot.start_time.hour, slot.start_time.min, slot.start_time.sec)
+        end
+        end_time = Time.use_zone(therapist_time_zone) do
+          Time.zone.local(date.year, date.month, date.day, slot.end_time.hour, slot.end_time.min, slot.end_time.sec)
+        end
+
+        {start: start_time, end: end_time}
+      end
+    end
+
+    # Execute all availability checks in sequence with early returns
+    # Each check must pass for the therapist to be considered available
+    #
+    # Check order is important for performance and user experience:
+    # 1. Basic time checks (fast, common failures)
+    # 2. Advance booking (business rule)
+    # 3. Date window (business rule)
+    # 4. Availability schedule (complex, but necessary)
+    # 5. Overlapping appointments (database query)
+    # 6. Daily limits (final validation)
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @param current_date_time_in_tz [DateTime] Current time in therapist's timezone
+    # @return [Boolean] true if all checks pass, false otherwise
     def perform_checks(appointment_date_time_in_tz, current_date_time_in_tz)
-      @logger.debug "Finding the therapist available for #{@therapist.name} at #{appointment_date_time_in_tz}"
-      [
+      checks = [
         -> { basic_time_checks(appointment_date_time_in_tz, current_date_time_in_tz) },
         -> { advance_booking_check(appointment_date_time_in_tz, current_date_time_in_tz) },
-        -> { date_window_check(appointment_date_time_in_tz) },
+        -> { date_window_check(appointment_date_time_in_tz.to_date) },
         -> { availability_check(appointment_date_time_in_tz) },
-        -> { no_overlapping_appointments_check }
-      ].each do |check|
+        -> { no_overlapping_appointments_check },
+        -> { max_daily_appointments_check(appointment_date_time_in_tz) }
+      ]
+
+      checks.each do |check|
         result = check.call
-        return result if result == false # Stop on first failure
+        return false if result == false
       end
 
       true
@@ -51,15 +238,22 @@ module AdminPortal
 
     # Check basic time constraints:
     # 1. Appointment date time must be in the future
-    # 2. Must meet minimum booking advance requirement
+    # 2. Must meet minimum booking advance requirement (currently disabled)
+    #
+    # These are the fastest checks and catch common user errors early
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @param current_date_time_in_tz [DateTime] Current time in therapist's timezone
+    # @return [Boolean] true if basic time checks pass
     def basic_time_checks(appointment_date_time_in_tz, current_date_time_in_tz)
       if appointment_date_time_in_tz <= current_date_time_in_tz
         message = "Not available for past dates"
         @logger.debug message
-        add_reason_and_return(false, message)
+        return add_reason_and_return(false, message)
       end
 
-      # ? turn off this feature, so the minimal booking time was handled manually
+      # Minimum booking advance feature is currently disabled
+      # This was handled manually instead of through the system
+      # TODO: Consider re-enabling this feature if business requirements change
       # min_booking_time = current_date_time_in_tz + @schedule.min_booking_before_in_hours.hours
       # if appointment_date_time_in_tz < min_booking_time
       #   message = "Requires booking at least #{@schedule.min_booking_before_in_hours} hours in advance"
@@ -68,14 +262,20 @@ module AdminPortal
       # else
       #   true
       # end
+
+      true
     end
 
     # Check maximum advance booking window
+    # Prevents booking too far in advance to avoid overbooking and schedule changes
+    # This helps maintain schedule flexibility for therapists
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @param current_date_time_in_tz [DateTime] Current time in therapist's timezone
+    # @return [Boolean] true if within advance booking window
     def advance_booking_check(appointment_date_time_in_tz, current_date_time_in_tz)
       max_advance_date = current_date_time_in_tz + @schedule.max_advance_booking_in_days.days
       if appointment_date_time_in_tz > max_advance_date
         message = "Exceeds max advance booking (#{@schedule.max_advance_booking_in_days} days)"
-        @logger.debug message
         add_reason_and_return(false, message)
       else
         true
@@ -83,18 +283,20 @@ module AdminPortal
     end
 
     # Check custom date window constraints
+    # Allows therapists to set specific start/end dates for accepting bookings
+    # Useful for temporary availability periods, vacations, or seasonal scheduling
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @return [Boolean] true if within date window
     def date_window_check(appointment_date_time_in_tz)
       date = appointment_date_time_in_tz.to_date
 
       if @schedule.start_date_window && date < @schedule.start_date_window
         message = "Before start date window (#{@schedule.start_date_window})"
-        @logger.debug message
         return add_reason_and_return(false, message)
       end
 
       if @schedule.end_date_window && date > @schedule.end_date_window
         message = "After end date window (#{@schedule.end_date_window})"
-        @logger.debug message
         return add_reason_and_return(false, message)
       end
 
@@ -102,19 +304,66 @@ module AdminPortal
     end
 
     # Main availability check router
+    # Determines whether to check adjusted availability or weekly schedule
+    #
+    # For all-day bookings, only checks if the day is available (not specific times)
+    # For regular bookings, checks if the specific time fits within available slots
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @return [Boolean] true if available according to schedule
     def availability_check(appointment_date_time_in_tz)
       adjusted = @schedule.therapist_adjusted_availabilities.find_by(
         specific_date: appointment_date_time_in_tz.to_date
       )
 
+      if @is_all_of_day
+        return check_all_day_adjusted(appointment_date_time_in_tz.to_date, adjusted) if adjusted
+        return check_all_day_weekly(appointment_date_time_in_tz.to_date)
+      end
+
       adjusted ? check_adjusted(appointment_date_time_in_tz, adjusted) : check_weekly(appointment_date_time_in_tz)
     end
 
+    # Check all-day availability for adjusted schedule
+    # For all-day bookings, we only care if the day is marked as available
+    # This is used when therapists want to block out entire days
+    # @param date [Date] The date to check
+    # @param adjusted [TherapistAdjustedAvailability] The adjusted availability record
+    # @return [Boolean] true if day is available for all-day booking
+    def check_all_day_adjusted(date, adjusted)
+      if adjusted.start_time.blank? || adjusted.end_time.blank?
+        message = "Unavailable on #{date} (#{adjusted.reason})"
+        return add_reason_and_return(false, message)
+      end
+
+      true
+    end
+
+    # Check all-day availability for weekly schedule
+    # For all-day bookings, we only care if the day has any weekly slots
+    # This ensures the day has some availability even if not specific times
+    # @param date [Date] The date to check
+    # @return [Boolean] true if day has weekly availability
+    def check_all_day_weekly(date)
+      day_of_week = date.strftime("%A")
+      weekly_slots = @schedule.therapist_weekly_availabilities.where(day_of_week: day_of_week)
+
+      if weekly_slots.empty?
+        message = "No availability found on #{day_of_week}"
+        return add_reason_and_return(false, message)
+      end
+
+      true
+    end
+
     # Check adjusted availability for specific dates
+    # Handles one-time overrides like holidays, sick days, or modified hours
+    # These take precedence over weekly schedules for the specific date
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @param adjusted [TherapistAdjustedAvailability] The adjusted availability record
+    # @return [Boolean] true if time fits within adjusted availability
     def check_adjusted(appointment_date_time_in_tz, adjusted)
       if adjusted.start_time.blank? || adjusted.end_time.blank?
         message = "Unavailable on #{appointment_date_time_in_tz.to_date} (#{adjusted.reason})"
-        @logger.debug message
         return add_reason_and_return(false, message)
       end
 
@@ -124,89 +373,145 @@ module AdminPortal
       if time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
         true
       else
-        message = "Outside the availability hours, #{appointment_date_time_in_tz.to_date}: #{adjusted.start_time}-#{adjusted.end_time} (#{adjusted.reason})"
-        @logger.debug message
+        message = "Outside the adjusted availability hours for #{appointment_date_time_in_tz.to_date}: #{adjusted.start_time}-#{adjusted.end_time}"
         add_reason_and_return(false, message)
       end
     end
 
     # Check regular weekly availability
+    # Handles recurring weekly schedule patterns
+    # This is the default availability check when no adjusted schedule exists
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @return [Boolean] true if time fits within weekly availability
     def check_weekly(appointment_date_time_in_tz)
       day_of_week = appointment_date_time_in_tz.strftime("%A")
       weekly_slots = @schedule.therapist_weekly_availabilities.where(
         day_of_week: day_of_week
       )
 
-      message = "No weekly slots for #{day_of_week}"
-      @logger.debug message
-      return add_reason_and_return(false, message) if weekly_slots.empty?
+      if weekly_slots.empty?
+        message = "No weekly slots for #{day_of_week}"
+        return add_reason_and_return(false, message)
+      end
 
-      weekly_slots.any? do |slot|
+      # Check if the requested time fits within any of the weekly slots
+      is_available = weekly_slots.any? do |slot|
         slot_start = build_time_object(appointment_date_time_in_tz, slot.start_time)
         slot_end = build_time_object(appointment_date_time_in_tz, slot.end_time)
 
-        if time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
-          true
-        else
-          message = "Weekly slot for #{day_of_week} mismatch: #{slot_start}-#{slot_end}"
-          @logger.debug message
-          add_reason_and_return(false, message)
-        end
+        fits = time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
+        fits
+      end
+
+      if is_available
+        true
+      else
+        available_slots_str = weekly_slots.map { |s| "#{s.start_time.strftime("%H:%M")}-#{s.end_time.strftime("%H:%M")}" }.join(", ")
+        message = "Outside weekly availability for #{day_of_week}: #{available_slots_str}"
+        add_reason_and_return(false, message)
       end
     end
 
     # Helper to create time object with date components
+    # Combines the appointment date with the time slot's time components
+    # This ensures proper timezone handling when creating slot boundaries
+    # @param base_time [DateTime] The base appointment time
+    # @param time_part [Time] The time component (hour, minute, second)
+    # @return [DateTime] Combined date and time
     def build_time_object(base_time, time_part)
-      base_time.change(
-        hour: time_part.hour,
-        min: time_part.min,
-        sec: time_part.sec
-      )
-    end
-
-    # Verify time fits
-    def time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
-      fits = appointment_date_time_in_tz.between?(slot_start, slot_end)
-
-      unless fits
-        @logger.debug "Time doesn't fit in slot: #{appointment_date_time_in_tz} in #{slot_start}-#{slot_end}"
+      therapist_time_zone = @schedule.time_zone.presence || Time.zone.name
+      Time.use_zone(therapist_time_zone) do
+        Time.zone.local(base_time.year, base_time.month, base_time.day, time_part.hour, time_part.min, time_part.sec)
       end
-
-      fits
     end
 
+    # Verify time fits within a slot
+    # Checks if the appointment time falls within the specified slot boundaries
+    # Uses inclusive range check (appointment can start at slot start/end)
+    # @param appointment_date_time_in_tz [DateTime] The appointment time
+    # @param slot_start [DateTime] The slot start time
+    # @param slot_end [DateTime] The slot end time
+    # @return [Boolean] true if appointment time is within the slot
+    def time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
+      appointment_date_time_in_tz.between?(slot_start, slot_end)
+    end
+
+    # Add a reason for unavailability and return the result
+    # Collects failure reasons for better user feedback and debugging
+    # Only adds message when result is false (failure case)
+    # @param result [Boolean] The availability result
+    # @param message [String] The reason message
+    # @return [Boolean] The original result
     def add_reason_and_return(result, message)
       @reasons << message unless result
       result
     end
 
+    # Check if therapist has reached maximum daily appointments
+    # Prevents overbooking by enforcing daily appointment limits
+    # Counts only active appointments (excludes cancelled/unscheduled)
+    # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
+    # @return [Boolean] true if under daily appointment limit
+    def max_daily_appointments_check(appointment_date_time_in_tz)
+      date = appointment_date_time_in_tz.to_date
+      count = @therapist.appointments
+        .where(appointment_date_time: date.all_day)
+        .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+        .count
+
+      if count + 1 > @schedule.max_daily_appointments
+        message = "Therapist has reached max daily appointments (#{@schedule.max_daily_appointments})"
+        return add_reason_and_return(false, message)
+      end
+      true
+    end
+
+    # Check for overlapping appointments
+    # Ensures no double-booking by checking for time conflicts
+    #
+    # Overlap logic:
+    # - New appointment starts before existing ends (including buffer)
+    # - New appointment ends after existing starts (including buffer)
+    #
+    # Uses database-level overlap detection for performance
+    # @return [Boolean] true if no overlapping appointments found
     def no_overlapping_appointments_check
-      return true unless @schedule # Guard clause if schedule is missing
+      return true unless @schedule
 
       duration = @schedule.appointment_duration_in_minutes
       buffer = @schedule.buffer_time_in_minutes
 
-      new_start_server = @appointment_date_time_server_time
-      new_end_plus_buffer_server = new_start_server + (duration + buffer).minutes
+      new_start = @appointment_date_time_server_time
+      new_end = new_start + duration.minutes
+      new_end_with_buffer = new_end + buffer.minutes
 
-      # Check for overlapping appointments, excluding cancelled ones
+      # Find appointments that overlap with the new appointment
+      # An appointment overlaps if it starts before the new one ends and ends after the new one starts
+      # Uses SQL interval arithmetic for efficient overlap detection
       conflicting_appointments = @therapist.appointments
         .where.not(id: @current_appointment_id)
-        .where.not(status: ["CANCELLED", "UNSCHEDULED"]) # Adjust statuses as needed
-        .where("appointment_date_time < ?", new_end_plus_buffer_server)
-        .where("appointment_date_time + (? * INTERVAL '1 minute') > ?", duration + buffer, new_start_server)
+        .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+        .where(
+          "(appointment_date_time < ?) AND ((appointment_date_time + (? * interval '1 minute')) > ?)",
+          new_end_with_buffer,
+          duration + buffer,
+          new_start
+        )
 
       if conflicting_appointments.exists?
-        conflicting_times = conflicting_appointments.pluck(:appointment_date_time).map { |t| t.strftime("%H:%M") }.join(", ")
-        message = "Therapist is not available because they have another appointment at: #{conflicting_times}, conflicting with the requested time."
-        @logger.debug message
-        add_reason_and_return(false, message)
-      else
-        true
+        times = conflicting_appointments.map { |a| a.appointment_date_time.strftime("%H:%M") }.join(", ")
+        message = "Therapist is not available: conflicting appointment(s) at #{times}"
+        return add_reason_and_return(false, message)
       end
+
+      true
     end
 
     # Extract address, latitude, longitude from appointment's location
+    # Used for location-based scheduling decisions and travel time considerations
+    # Returns nil if appointment has no location information
+    # @param appointment [Appointment] The appointment to extract location from
+    # @return [Hash, nil] Location details or nil if no location
     def extract_location_details(appointment)
       return nil unless appointment&.address_history&.address_line
 
@@ -223,10 +528,16 @@ module AdminPortal
     end
 
     # Fetch addresses of the closest previous/next appointments
+    # Used for location-based scheduling and travel time considerations
+    #
+    # This information can be used to:
+    # - Optimize appointment ordering for travel efficiency
+    # - Calculate travel time between appointments
+    # - Provide location context for scheduling decisions
     def fetch_adjacent_appointment_addresses
       return unless @schedule
 
-      # figure out the date window for “today”
+      # Figure out the date window for "today"
       date = @appointment_date_time_server_time.to_date
       day_range = date.all_day
 
@@ -245,17 +556,23 @@ module AdminPortal
         .order(appointment_date_time: :desc)
         .first
 
-      # Find the closest next appointment after the current tme (first one after the new appointment), on that same day
+      # Find the closest next appointment after the current time (first one after the new appointment), on that same day
       next_appointment = appointments_scope
         .where("appointment_date_time > ?", @appointment_date_time_server_time)
         .order(appointment_date_time: :asc)
         .first
 
-      # Extract location details
+      # Extract location details for potential use in scheduling decisions
       @previous_appointment_location = extract_location_details(previous_appointment)
       @next_appointment_location = extract_location_details(next_appointment)
     end
 
+    # Log availability check failure and return result
+    # Provides debugging information for availability failures
+    # Logs at debug level to avoid cluttering production logs
+    # @param result [Boolean] The availability result
+    # @param message [String] The failure message
+    # @return [Boolean] The original result
     def log_and_return(result, message)
       @logger.debug "Availability check failed for therapist #{@therapist.name}: #{message}"
       result

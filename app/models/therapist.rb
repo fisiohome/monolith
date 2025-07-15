@@ -71,19 +71,25 @@ class Therapist < ApplicationRecord
 
   # Main availability check
   def available_at?(appointment_date_time_server_time)
-    AdminPortal::GetTherapistAvailableService.new(self, appointment_date_time_server_time).available?
+    AdminPortal::GetTherapistAvailableService.new(therapist: self, appointment_date_time_server_time:).available?
   end
 
   # Get detailed availability info
-  def availability_details(appointment_date_time_server_time, current_appointment_id = nil)
-    service = AdminPortal::GetTherapistAvailableService.new(self, appointment_date_time_server_time, current_appointment_id)
+  def availability_details(appointment_date_time_server_time:, current_appointment_id: nil, is_all_of_day: false)
+    service = AdminPortal::GetTherapistAvailableService.new(
+      therapist: self,
+      appointment_date_time_server_time:,
+      current_appointment_id:,
+      is_all_of_day:
+    )
     {
       available: service.available?,
       reasons: service.reasons,
       locations: {
         prev_appointment: service.previous_appointment_location,
         next_appointment: service.next_appointment_location
-      }
+      },
+      available_slots: service.available_time_slots_for_date
     }
   end
 

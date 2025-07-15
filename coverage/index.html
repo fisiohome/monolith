@@ -13,7 +13,7 @@
       <img src="./assets/0.13.1/loading.gif" alt="loading"/>
     </div>
     <div id="wrapper" class="hide">
-      <div class="timestamp">Generated <abbr class="timeago" title="2025-06-23T10:11:00+00:00">2025-06-23T10:11:00+00:00</abbr></div>
+      <div class="timestamp">Generated <abbr class="timeago" title="2025-07-14T17:34:03+00:00">2025-07-14T17:34:03+00:00</abbr></div>
       <ul class="group_tabs"></ul>
 
       <div id="content">
@@ -22,14 +22,14 @@
     <span class="group_name">All Files</span>
     (<span class="covered_percent">
       <span class="red">
-  27.18%
+  25.1%
 </span>
 
      </span>
      covered at
      <span class="covered_strength">
        <span class="red">
-         0.27
+         0.25
        </span>
     </span> hits/line
     )
@@ -38,15 +38,15 @@
   <a name="AllFiles"></a>
 
   <div>
-    <b>30</b> files in total.
+    <b>31</b> files in total.
   </div>
 
   <div class="t-line-summary">
-    <b>872</b> relevant lines,
-    <span class="green"><b>237</b> lines covered</span> and
-    <span class="red"><b>635</b> lines missed. </span>
+    <b>1048</b> relevant lines,
+    <span class="green"><b>263</b> lines covered</span> and
+    <span class="red"><b>785</b> lines missed. </span>
     (<span class="red">
-  27.18%
+  25.1%
 </span>
 )
   </div>
@@ -396,6 +396,17 @@
             <td class="cell--number">17</td>
             <td class="cell--number">26</td>
             <td class="cell--number">0.40</td>
+            
+          </tr>
+        
+          <tr class="t-file">
+            <td class="strong t-file__name"><a href="#ac1e39d28f1e38c290d083107b680566fa81420e" class="src_link" title="test/services/get_therapist_available_service_test.rb">test/services/get_therapist_available_service_test.rb</a></td>
+            <td class="red strong cell--number t-file__coverage">14.77 %</td>
+            <td class="cell--number">575</td>
+            <td class="cell--number">176</td>
+            <td class="cell--number">26</td>
+            <td class="cell--number">150</td>
+            <td class="cell--number">0.15</td>
             
           </tr>
         
@@ -24077,6 +24088,5839 @@
       
         <div>
           <li class="never" data-hits="" data-linenumber="88">
+            
+
+            
+
+            <code class="ruby">end</code>
+          </li>
+        </div>
+      
+    </ol>
+  </pre>
+</div>
+
+      
+        <div class="source_table" id="ac1e39d28f1e38c290d083107b680566fa81420e">
+  <div class="header">
+    <h3>test/services/get_therapist_available_service_test.rb</h3>
+    <h4>
+      <span class="red">
+  14.77%
+</span>
+
+      lines covered
+    </h4>
+
+    
+
+    <div class="t-line-summary">
+      <b>176</b> relevant lines.
+      <span class="green"><b>26</b> lines covered</span> and
+      <span class="red"><b>150</b> lines missed.</span>
+    </div>
+
+    
+
+  </div>
+
+  <pre>
+    <ol>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="1">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">require &quot;test_helper&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="2">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="3">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">class GetTherapistAvailableServiceTest &lt; ActiveSupport::TestCase</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="4">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="5">
+            
+
+            
+
+            <code class="ruby">  # Test Setup</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="6">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="7">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="8">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  def setup</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="9">
+            
+
+            
+
+            <code class="ruby">    # Create base test data that will be used across multiple tests</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="10">
+            
+
+            
+
+            <code class="ruby">    @therapist = therapists(:therapist_one)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="11">
+            
+
+            
+
+            <code class="ruby">    @schedule = therapist_appointment_schedules(:schedule_for_therapist_one)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="12">
+            
+
+            
+
+            <code class="ruby">    @appointment_date_time = 1.day.from_now</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="13">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="14">
+            
+
+            
+
+            <code class="ruby">    # Ensure correct weekly availabilities for Monday</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="15">
+            
+
+            
+
+            <code class="ruby">    @schedule.therapist_weekly_availabilities.destroy_all</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="16">
+            
+
+            
+
+            <code class="ruby">    [</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="17">
+            
+
+            
+
+            <code class="ruby">      {start: [9, 0], end: [12, 0]},</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="18">
+            
+
+            
+
+            <code class="ruby">      {start: [13, 0], end: [16, 0]},</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="19">
+            
+
+            
+
+            <code class="ruby">      {start: [17, 0], end: [18, 0]}</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="20">
+            
+
+            
+
+            <code class="ruby">    ].each do |slot|</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="21">
+            
+
+            
+
+            <code class="ruby">      @schedule.therapist_weekly_availabilities.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="22">
+            
+
+            
+
+            <code class="ruby">        day_of_week: &quot;Monday&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="23">
+            
+
+            
+
+            <code class="ruby">        start_time: Time.zone.local(2000, 1, 1, *slot[:start]),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="24">
+            
+
+            
+
+            <code class="ruby">        end_time: Time.zone.local(2000, 1, 1, *slot[:end])</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="25">
+            
+
+            
+
+            <code class="ruby">      )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="26">
+            
+
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="27">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="28">
+            
+
+            
+
+            <code class="ruby">    # Remove all adjusted availabilities for the schedule</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="29">
+            
+
+            
+
+            <code class="ruby">    @schedule.therapist_adjusted_availabilities.destroy_all</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="30">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="31">
+            
+
+            
+
+            <code class="ruby">    # Reload the schedule to ensure the weekly availabilities are loaded</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="32">
+            
+
+            
+
+            <code class="ruby">    @schedule.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="33">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="34">
+            
+
+            
+
+            <code class="ruby">    # Initialize the service with default parameters</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="35">
+            
+
+            
+
+            <code class="ruby">    @service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="36">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="37">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: @appointment_date_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="38">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="39">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="40">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="41">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="42">
+            
+
+            
+
+            <code class="ruby">  # Basic Availability Tests</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="43">
+            
+
+            
+
+            <code class="ruby">  # These tests verify fundamental availability logic</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="44">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="45">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="46">
+            
+
+            
+
+            <code class="ruby">  # Test: Therapist is available when all conditions are met (Monday, 10 AM)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="47">
+            
+
+            
+
+            <code class="ruby">  # This is the happy path - all constraints are satisfied</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="48">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should be available when all conditions are met&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="49">
+            
+
+            
+
+            <code class="ruby">    appointment_time = next_monday_at(10, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="50">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="51">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="52">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="53">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="54">
+            
+
+            
+
+            <code class="ruby">    assert service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="55">
+            
+
+            
+
+            <code class="ruby">    assert_empty service.reasons</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="56">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="57">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="58">
+            
+
+            
+
+            <code class="ruby">  # Test: Therapist with no schedule should not be available</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="59">
+            
+
+            
+
+            <code class="ruby">  # Edge case: therapist exists but has no appointment schedule configured</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="60">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available when therapist has no schedule&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="61">
+            
+
+            
+
+            <code class="ruby">    therapist_without_schedule = therapists(:therapist_two)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="62">
+            
+
+            
+
+            <code class="ruby">    therapist_without_schedule.therapist_appointment_schedule&amp;.destroy</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="63">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="64">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="65">
+            
+
+            
+
+            <code class="ruby">      therapist: therapist_without_schedule,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="66">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: @appointment_date_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="67">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="68">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="69">
+            
+
+            
+
+            <code class="ruby">    # Note: No reasons are added in this case, just logs</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="70">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="71">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="72">
+            
+
+            
+
+            <code class="ruby">  # Test: Therapist is not available for past dates</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="73">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Cannot book appointments in the past</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="74">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available for past dates&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="75">
+            
+
+            
+
+            <code class="ruby">    past_time = 1.hour.ago</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="76">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="77">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="78">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: past_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="79">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="80">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="81">
+            
+
+            
+
+            <code class="ruby">    assert_includes service.reasons, &quot;Not available for past dates&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="82">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="83">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="84">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available when appointment exceeds max advance booking days</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="85">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Cannot book too far in advance (prevents overbooking)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="86">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available when exceeds max advance booking&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="87">
+            
+
+            
+
+            <code class="ruby">    # Create a time that&#39;s beyond the allowed advance booking period</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="88">
+            
+
+            
+
+            <code class="ruby">    future_time = (@schedule.max_advance_booking_in_days + 1).days.from_now</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="89">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="90">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="91">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: future_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="92">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="93">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="94">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="95">
+            
+
+            
+
+            <code class="ruby">    assert_includes service.reasons, &quot;Exceeds max advance booking (#{@schedule.max_advance_booking_in_days} days)&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="96">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="97">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="98">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="99">
+            
+
+            
+
+            <code class="ruby">  # Window Constraints Tests</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="100">
+            
+
+            
+
+            <code class="ruby">  # These tests verify date window restrictions (start/end date windows)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="101">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="102">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="103">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available if appointment is before start date window</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="104">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Therapists can set a future start date for accepting bookings</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="105">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available before start date window&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="106">
+            
+
+            
+
+            <code class="ruby">    window_schedule = therapist_appointment_schedules(:window_schedule)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="107">
+            
+
+            
+
+            <code class="ruby">    # Set window to start 5 days from now</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="108">
+            
+
+            
+
+            <code class="ruby">    window_schedule.update(start_date_window: Date.current + 5.days, end_date_window: Date.current + 30.days)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="109">
+            
+
+            
+
+            <code class="ruby">    window_schedule.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="110">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="111">
+            
+
+            
+
+            <code class="ruby">    # Try to book 2 days from now (before the window starts)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="112">
+            
+
+            
+
+            <code class="ruby">    appointment_time = Date.current + 2.days</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="113">
+            
+
+            
+
+            <code class="ruby">    fail &quot;Test setup error: appointment_time &gt;= start_date_window&quot; if window_schedule.start_date_window &amp;&amp; appointment_time &gt;= window_schedule.start_date_window</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="114">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="115">
+            
+
+            
+
+            <code class="ruby">    therapist = window_schedule.therapist</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="116">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="117">
+            
+
+            
+
+            <code class="ruby">      therapist: therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="118">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time.to_time.change(hour: 10, min: 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="119">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="120">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="121">
+            
+
+            
+
+            <code class="ruby">    assert service.reasons.any? { |reason| reason.include?(&quot;Before start date window&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="122">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="123">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="124">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available if appointment is after end date window</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="125">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Therapists can set an end date after which they stop accepting bookings</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="126">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available after end date window&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="127">
+            
+
+            
+
+            <code class="ruby">    window_schedule = therapist_appointment_schedules(:window_schedule)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="128">
+            
+
+            
+
+            <code class="ruby">    # Set window to end 3 days from now</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="129">
+            
+
+            
+
+            <code class="ruby">    window_schedule.update(start_date_window: Date.current, end_date_window: Date.current + 3.days, max_advance_booking_in_days: 30)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="130">
+            
+
+            
+
+            <code class="ruby">    window_schedule.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="131">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="132">
+            
+
+            
+
+            <code class="ruby">    # Try to book 10 days from now (after the window ends)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="133">
+            
+
+            
+
+            <code class="ruby">    appointment_time = Date.current + 10.days</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="134">
+            
+
+            
+
+            <code class="ruby">    fail &quot;Test setup error: appointment_time &lt;= end_date_window&quot; if window_schedule.end_date_window &amp;&amp; appointment_time &lt;= window_schedule.end_date_window</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="135">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="136">
+            
+
+            
+
+            <code class="ruby">    therapist = window_schedule.therapist</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="137">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="138">
+            
+
+            
+
+            <code class="ruby">      therapist: therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="139">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time.to_time.change(hour: 10, min: 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="140">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="141">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="142">
+            
+
+            
+
+            <code class="ruby">    assert service.reasons.any? { |reason| reason.include?(&quot;After end date window&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="143">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="144">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="145">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="146">
+            
+
+            
+
+            <code class="ruby">  # Weekly Slot Logic Tests</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="147">
+            
+
+            
+
+            <code class="ruby">  # These tests verify weekly availability patterns (day of week + time slots)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="148">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="149">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="150">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available when no weekly slots exist for the requested day</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="151">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Each day of the week can have different availability patterns</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="152">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available when no weekly slots exist&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="153">
+            
+
+            
+
+            <code class="ruby">    # Test on a day that doesn&#39;t have weekly availability (e.g., Tuesday)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="154">
+            
+
+            
+
+            <code class="ruby">    appointment_time = next_tuesday_at(10, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="155">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="156">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="157">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="158">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="159">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="160">
+            
+
+            
+
+            <code class="ruby">    assert service.reasons.any? { |r| r.include?(&quot;No weekly slots for #{appointment_time.strftime(&quot;%A&quot;)}&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="161">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="162">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="163">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available when time is outside weekly slot</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="164">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Even on available days, specific time windows apply</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="165">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available when time is outside weekly slot&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="166">
+            
+
+            
+
+            <code class="ruby">    # Test Monday at 8 AM (outside 9 AM - 12 PM slot)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="167">
+            
+
+            
+
+            <code class="ruby">    appointment_time = next_monday_at(8, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="168">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="169">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="170">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="171">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="172">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="173">
+            
+
+            
+
+            <code class="ruby">    assert service.reasons.any? { |reason| reason.include?(&quot;Outside weekly availability for Monday&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="174">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="175">
+            
+
+            
+
+            <code class="ruby">    # Test Monday at 12:30 PM (between 12:00 and 13:00 slots)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="176">
+            
+
+            
+
+            <code class="ruby">    appointment_time_between = next_monday_at(12, 30)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="177">
+            
+
+            
+
+            <code class="ruby">    service_between = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="178">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="179">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time_between</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="180">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="181">
+            
+
+            
+
+            <code class="ruby">    refute service_between.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="182">
+            
+
+            
+
+            <code class="ruby">    assert service_between.reasons.any? { |reason| reason.include?(&quot;Outside weekly availability for Monday&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="183">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="184">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="185">
+            
+
+            
+
+            <code class="ruby">  # Test: Should be available when time fits within weekly slot</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="186">
+            
+
+            
+
+            <code class="ruby">  # Happy path: Requested time falls within configured weekly availability</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="187">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should be available when time fits within weekly slot&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="188">
+            
+
+            
+
+            <code class="ruby">    # Test Monday at 10 AM (within 9 AM - 12 PM slot)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="189">
+            
+
+            
+
+            <code class="ruby">    appointment_time = next_monday_at(10, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="190">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="191">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="192">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="193">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="194">
+            
+
+            
+
+            <code class="ruby">    assert service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="195">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="196">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="197">
+            
+
+            
+
+            <code class="ruby">  # Test: Should handle time zone conversion correctly</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="198">
+            
+
+            
+
+            <code class="ruby">  # Edge case: Therapist and server may be in different time zones</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="199">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should handle time zone conversion correctly&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="200">
+            
+
+            
+
+            <code class="ruby">    @schedule.update(time_zone: &quot;America/New_York&quot;)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="201">
+            
+
+            
+
+            <code class="ruby">    @schedule.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="202">
+            
+
+            
+
+            <code class="ruby">    @therapist.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="203">
+            
+
+            
+
+            <code class="ruby">    @schedule = @therapist.therapist_appointment_schedule</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="204">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="205">
+            
+
+            
+
+            <code class="ruby">    # Recreate weekly availabilities for the new time zone</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="206">
+            
+
+            
+
+            <code class="ruby">    @schedule.therapist_weekly_availabilities.destroy_all</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="207">
+            
+
+            
+
+            <code class="ruby">    [</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="208">
+            
+
+            
+
+            <code class="ruby">      {start: [9, 0], end: [12, 0]},</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="209">
+            
+
+            
+
+            <code class="ruby">      {start: [13, 0], end: [16, 0]},</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="210">
+            
+
+            
+
+            <code class="ruby">      {start: [17, 0], end: [18, 0]}</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="211">
+            
+
+            
+
+            <code class="ruby">    ].each do |slot|</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="212">
+            
+
+            
+
+            <code class="ruby">      @schedule.therapist_weekly_availabilities.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="213">
+            
+
+            
+
+            <code class="ruby">        day_of_week: &quot;Monday&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="214">
+            
+
+            
+
+            <code class="ruby">        start_time: Time.zone.local(2000, 1, 1, *slot[:start]),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="215">
+            
+
+            
+
+            <code class="ruby">        end_time: Time.zone.local(2000, 1, 1, *slot[:end])</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="216">
+            
+
+            
+
+            <code class="ruby">      )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="217">
+            
+
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="218">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="219">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="220">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="221">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: next_monday_at(10, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="222">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="223">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="224">
+            
+
+            
+
+            <code class="ruby">    # Should still work correctly with time zone conversion</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="225">
+            
+
+            
+
+            <code class="ruby">    assert service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="226">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="227">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="228">
+            
+
+            
+
+            <code class="ruby">  # Test: Should handle multiple weekly slots on the same day</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="229">
+            
+
+            
+
+            <code class="ruby">  # Business rule: A single day can have multiple time slots (e.g., morning and afternoon)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="230">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should handle multiple weekly slots&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="231">
+            
+
+            
+
+            <code class="ruby">    # Use existing Monday slots from fixtures (morning and afternoon)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="232">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="233">
+            
+
+            
+
+            <code class="ruby">    # Test appointment in first slot (9 AM - 12 PM)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="234">
+            
+
+            
+
+            <code class="ruby">    service_1 = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="235">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="236">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: next_monday_at(10, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="237">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="238">
+            
+
+            
+
+            <code class="ruby">    assert service_1.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="239">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="240">
+            
+
+            
+
+            <code class="ruby">    # Test appointment in second slot (1 PM - 4 PM)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="241">
+            
+
+            
+
+            <code class="ruby">    appointment_time_14 = next_monday_at(14, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="242">
+            
+
+            
+
+            <code class="ruby">    service_2 = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="243">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="244">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time_14</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="245">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="246">
+            
+
+            
+
+            <code class="ruby">    assert service_2.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="247">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="248">
+            
+
+            
+
+            <code class="ruby">    # Test appointment between slots (12:30 PM) - should be unavailable</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="249">
+            
+
+            
+
+            <code class="ruby">    service_3 = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="250">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="251">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: next_monday_at(12, 30)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="252">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="253">
+            
+
+            
+
+            <code class="ruby">    available = service_3.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="254">
+            
+
+            
+
+            <code class="ruby">    refute available</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="255">
+            
+
+            
+
+            <code class="ruby">    assert service_3.reasons.any? { |reason| reason.include?(&quot;Outside weekly availability for Monday&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="256">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="257">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="258">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="259">
+            
+
+            
+
+            <code class="ruby">  # Adjusted Availability Tests</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="260">
+            
+
+            
+
+            <code class="ruby">  # These tests verify one-time availability overrides (holidays, sick days, etc.)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="261">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="262">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="263">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available when adjusted availability is set to unavailable</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="264">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Therapists can mark specific dates as completely unavailable</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="265">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available when adjusted availability is set to unavailable&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="266">
+            
+
+            
+
+            <code class="ruby">    # Create adjusted availability directly for the test date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="267">
+            
+
+            
+
+            <code class="ruby">    adjusted_date = next_monday_at(10, 0).to_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="268">
+            
+
+            
+
+            <code class="ruby">    @schedule.therapist_adjusted_availabilities.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="269">
+            
+
+            
+
+            <code class="ruby">      specific_date: adjusted_date,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="270">
+            
+
+            
+
+            <code class="ruby">      start_time: nil,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="271">
+            
+
+            
+
+            <code class="ruby">      end_time: nil,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="272">
+            
+
+            
+
+            <code class="ruby">      reason: &quot;Holiday&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="273">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="274">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="275">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="276">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="277">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: next_monday_at(10, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="278">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="279">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="280">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="281">
+            
+
+            
+
+            <code class="ruby">    # Check for any message containing &quot;Unavailable on&quot; and the date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="282">
+            
+
+            
+
+            <code class="ruby">    assert service.reasons.any? { |reason| reason.include?(&quot;Unavailable on #{adjusted_date}&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="283">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="284">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="285">
+            
+
+            
+
+            <code class="ruby">  # Test: Should be available when adjusted availability has valid times</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="286">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Therapists can modify hours for specific dates (e.g., half-day)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="287">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should be available when adjusted availability has valid times&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="288">
+            
+
+            
+
+            <code class="ruby">    # Create adjusted availability directly for the test date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="289">
+            
+
+            
+
+            <code class="ruby">    adjusted_date = next_monday_at(10, 0).to_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="290">
+            
+
+            
+
+            <code class="ruby">    therapist_tz = @schedule.time_zone || Time.zone.name</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="291">
+            
+
+            
+
+            <code class="ruby">    start_time = Time.use_zone(therapist_tz) { Time.zone.local(2000, 1, 1, 9, 0) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="292">
+            
+
+            
+
+            <code class="ruby">    end_time = Time.use_zone(therapist_tz) { Time.zone.local(2000, 1, 1, 12, 0) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="293">
+            
+
+            
+
+            <code class="ruby">    @schedule.therapist_adjusted_availabilities.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="294">
+            
+
+            
+
+            <code class="ruby">      specific_date: adjusted_date,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="295">
+            
+
+            
+
+            <code class="ruby">      start_time: start_time,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="296">
+            
+
+            
+
+            <code class="ruby">      end_time: end_time,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="297">
+            
+
+            
+
+            <code class="ruby">      reason: &quot;Half day&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="298">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="299">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="300">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="301">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="302">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: next_monday_at(10, 0) # 10 AM</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="303">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="304">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="305">
+            
+
+            
+
+            <code class="ruby">    assert service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="306">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="307">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="308">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available when time is outside adjusted availability</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="309">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Even on adjusted dates, time constraints still apply</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="310">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available when time is outside adjusted availability&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="311">
+            
+
+            
+
+            <code class="ruby">    # Create adjusted availability directly for the test date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="312">
+            
+
+            
+
+            <code class="ruby">    adjusted_date = next_monday_at(10, 0).to_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="313">
+            
+
+            
+
+            <code class="ruby">    @schedule.therapist_adjusted_availabilities.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="314">
+            
+
+            
+
+            <code class="ruby">      specific_date: adjusted_date,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="315">
+            
+
+            
+
+            <code class="ruby">      start_time: Time.zone.parse(&quot;09:00&quot;),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="316">
+            
+
+            
+
+            <code class="ruby">      end_time: Time.zone.parse(&quot;12:00&quot;),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="317">
+            
+
+            
+
+            <code class="ruby">      reason: &quot;Half day&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="318">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="319">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="320">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="321">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="322">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: next_monday_at(8, 0) # 8 AM</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="323">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="324">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="325">
+            
+
+            
+
+            <code class="ruby">    refute service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="326">
+            
+
+            
+
+            <code class="ruby">    # Check for any message containing &quot;Outside the availability hours&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="327">
+            
+
+            
+
+            <code class="ruby">    assert service.reasons.any? { |reason| reason.include?(&quot;Outside the adjusted availability hours&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="328">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="329">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="330">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="331">
+            
+
+            
+
+            <code class="ruby">  # Max Daily Appointments Tests</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="332">
+            
+
+            
+
+            <code class="ruby">  # These tests verify daily appointment limits</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="333">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="334">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="335">
+            
+
+            
+
+            <code class="ruby">  # Test: Should be available for all-of-day when therapist has weekly availability</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="336">
+            
+
+            
+
+            <code class="ruby">  # Business rule: &quot;All of day&quot; bookings bypass time slot restrictions</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="337">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should be available for all-of-day when therapist has weekly availability&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="338">
+            
+
+            
+
+            <code class="ruby">    appointment_time = next_monday_at(9, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="339">
+            
+
+            
+
+            <code class="ruby">    @schedule.update!(appointment_duration_in_minutes: 60, buffer_time_in_minutes: 0, max_daily_appointments: 10)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="340">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="341">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="342">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="343">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_time,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="344">
+            
+
+            
+
+            <code class="ruby">      is_all_of_day: true</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="345">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="346">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="347">
+            
+
+            
+
+            <code class="ruby">    assert service.available?, &quot;Therapist should be available for all-of-day on Monday&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="348">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="349">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="350">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available for all-of-day on past dates</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="351">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Even &quot;all of day&quot; bookings cannot be in the past</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="352">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available for all-of-day on past dates&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="353">
+            
+
+            
+
+            <code class="ruby">    past_time = 1.day.ago</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="354">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="355">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="356">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="357">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: past_time,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="358">
+            
+
+            
+
+            <code class="ruby">      is_all_of_day: true</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="359">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="360">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="361">
+            
+
+            
+
+            <code class="ruby">    refute service.available?, &quot;Therapist should not be available for past dates&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="362">
+            
+
+            
+
+            <code class="ruby">    assert_includes service.reasons, &quot;Not available for past dates&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="363">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="364">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="365">
+            
+
+            
+
+            <code class="ruby">  # Test: Not available when therapist has reached max daily appointments</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="366">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Prevent overbooking by enforcing daily appointment limits</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="367">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should not be available when therapist has reached max daily appointments&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="368">
+            
+
+            
+
+            <code class="ruby">    schedule = @therapist.therapist_appointment_schedule</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="369">
+            
+
+            
+
+            <code class="ruby">    appointment_date = next_monday_at(10, 0).to_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="370">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="371">
+            
+
+            
+
+            <code class="ruby">    # Set max daily appointments to 4 for this test</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="372">
+            
+
+            
+
+            <code class="ruby">    schedule.update!(max_daily_appointments: 4)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="373">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="374">
+            
+
+            
+
+            <code class="ruby">    # Create exactly the maximum allowed appointments (4 appointments)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="375">
+            
+
+            
+
+            <code class="ruby">    create_max_daily_appointments(@therapist, schedule, appointment_date)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="376">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="377">
+            
+
+            
+
+            <code class="ruby">    @therapist.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="378">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="379">
+            
+
+            
+
+            <code class="ruby">    # After creating max allowed appointments, try to book a new appointment</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="380">
+            
+
+            
+
+            <code class="ruby">    # Use a time within the weekly availability windows (9:00-12:00, 13:00-16:00, 17:00-18:00)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="381">
+            
+
+            
+
+            <code class="ruby">    # Ensure the time is in the future in therapist&#39;s time zone</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="382">
+            
+
+            
+
+            <code class="ruby">    future_time = next_monday_at(9, 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="383">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="384">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="385">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: future_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="386">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="387">
+            
+
+            
+
+            <code class="ruby">    available = service.available?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="388">
+            
+
+            
+
+            <code class="ruby">    refute available, &quot;Therapist should not be available after reaching max daily appointments&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="389">
+            
+
+            
+
+            <code class="ruby">    assert service.reasons.any? { |reason| reason.include?(&quot;has reached max daily appointments&quot;) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="390">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="391">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="392">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="393">
+            
+
+            
+
+            <code class="ruby">  # Time Slot Generation Tests</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="394">
+            
+
+            
+
+            <code class="ruby">  # These tests verify the available_time_slots_for_date method</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="395">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="396">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="397">
+            
+
+            
+
+            <code class="ruby">  # Test: Should generate correct time slots for a full day without appointments</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="398">
+            
+
+            
+
+            <code class="ruby">  # Business rule: Generate 30-minute intervals within availability windows</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="399">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should generate correct time slots for full day without appointments&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="400">
+            
+
+            
+
+            <code class="ruby">    appointment_date = next_monday_at(9, 0).to_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="401">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="402">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="403">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="404">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_date.to_time.change(hour: 9, min: 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="405">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="406">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="407">
+            
+
+            
+
+            <code class="ruby">    slots = service.available_time_slots_for_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="408">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="409">
+            
+
+            
+
+            <code class="ruby">    # Should include slots from all three availability windows:</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="410">
+            
+
+            
+
+            <code class="ruby">    # 09:00-12:00, 13:00-16:00, 17:00-18:00</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="411">
+            
+
+            
+
+            <code class="ruby">    # With 90-minute appointments, last possible start times are:</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="412">
+            
+
+            
+
+            <code class="ruby">    # 09:00-12:00: 10:30 (10:30+90min=12:00)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="413">
+            
+
+            
+
+            <code class="ruby">    # 13:00-16:00: 14:30 (14:30+90min=16:00)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="414">
+            
+
+            
+
+            <code class="ruby">    # 17:00-18:00: 17:00 (17:00+90min=18:30, but window ends at 18:00, so only 17:00)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="415">
+            
+
+            
+
+            <code class="ruby">    expected_slots = [</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="416">
+            
+
+            
+
+            <code class="ruby">      &quot;09:00&quot;, &quot;09:30&quot;, &quot;10:00&quot;, &quot;10:30&quot;, &quot;11:00&quot;, &quot;11:30&quot;, &quot;12:00&quot;, # 09:00-12:00</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="417">
+            
+
+            
+
+            <code class="ruby">      &quot;13:00&quot;, &quot;13:30&quot;, &quot;14:00&quot;, &quot;14:30&quot;, &quot;15:00&quot;, &quot;15:30&quot;, &quot;16:00&quot;, # 13:00-16:00</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="418">
+            
+
+            
+
+            <code class="ruby">      &quot;17:00&quot;, &quot;17:30&quot;, &quot;18:00&quot; # 17:00-18:00</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="419">
+            
+
+            
+
+            <code class="ruby">    ]</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="420">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="421">
+            
+
+            
+
+            <code class="ruby">    assert_equal expected_slots, slots</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="422">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="423">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="424">
+            
+
+            
+
+            <code class="ruby">  # Test: Should respect appointment duration and buffer when calculating overlaps</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="425">
+            
+
+            
+
+            <code class="ruby">  # Business rule: New appointments must not overlap with existing appointments including buffer</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="426">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  test &quot;should respect appointment duration and buffer when calculating overlaps&quot; do</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="427">
+            
+
+            
+
+            <code class="ruby">    appointment_date = next_monday_at(9, 0).to_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="428">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="429">
+            
+
+            
+
+            <code class="ruby">    # Create appointment with 60 min duration + 30 min buffer = 90 min total</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="430">
+            
+
+            
+
+            <code class="ruby">    # Appointment at 13:00 should block until 14:30</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="431">
+            
+
+            
+
+            <code class="ruby">    create_appointment(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="432">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="433">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: appointment_date.to_time.change(hour: 13, min: 0),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="434">
+            
+
+            
+
+            <code class="ruby">      duration: 60,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="435">
+            
+
+            
+
+            <code class="ruby">      buffer: 30,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="436">
+            
+
+            
+
+            <code class="ruby">      seq: 4</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="437">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="438">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="439">
+            
+
+            
+
+            <code class="ruby">    service = AdminPortal::GetTherapistAvailableService.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="440">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="441">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time_server_time: appointment_date.to_time.change(hour: 9, min: 0)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="442">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="443">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="444">
+            
+
+            
+
+            <code class="ruby">    slots = service.available_time_slots_for_date</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="445">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="446">
+            
+
+            
+
+            <code class="ruby">    # 14:00 is available, 14:30 is available</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="447">
+            
+
+            
+
+            <code class="ruby">    assert_includes slots, &quot;14:00&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="448">
+            
+
+            
+
+            <code class="ruby">    assert_includes slots, &quot;14:30&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="449">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="450">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="451">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="452">
+            
+
+            
+
+            <code class="ruby">  # Helper Methods</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="453">
+            
+
+            
+
+            <code class="ruby">  # These methods support the test cases above</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="454">
+            
+
+            
+
+            <code class="ruby">  # ---------------------------------------------------------------------------</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="455">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="456">
+            
+
+            
+
+            <code class="ruby">  # Helper: Create an appointment with specific duration and buffer</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="457">
+            
+
+            
+
+            <code class="ruby">  # @param therapist [Therapist] The therapist for the appointment</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="458">
+            
+
+            
+
+            <code class="ruby">  # @param appointment_date_time [DateTime] The appointment time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="459">
+            
+
+            
+
+            <code class="ruby">  # @param duration [Integer] Duration in minutes</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="460">
+            
+
+            
+
+            <code class="ruby">  # @param buffer [Integer] Buffer time in minutes</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="461">
+            
+
+            
+
+            <code class="ruby">  # @param seq [Integer] Sequence number for uniqueness</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="462">
+            
+
+            
+
+            <code class="ruby">  # @return [Appointment] The created appointment</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="463">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  def create_appointment(therapist:, appointment_date_time:, duration:, buffer:, seq: nil)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="464">
+            
+
+            
+
+            <code class="ruby">    # Update the therapist&#39;s schedule to match the test requirements</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="465">
+            
+
+            
+
+            <code class="ruby">    schedule = therapist.therapist_appointment_schedule</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="466">
+            
+
+            
+
+            <code class="ruby">    schedule.update!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="467">
+            
+
+            
+
+            <code class="ruby">      appointment_duration_in_minutes: duration,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="468">
+            
+
+            
+
+            <code class="ruby">      buffer_time_in_minutes: buffer</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="469">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="470">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="471">
+            
+
+            
+
+            <code class="ruby">    # Use a sequence for uniqueness if provided</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="472">
+            
+
+            
+
+            <code class="ruby">    uniq = seq || SecureRandom.hex(4)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="473">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="474">
+            
+
+            
+
+            <code class="ruby">    Appointment.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="475">
+            
+
+            
+
+            <code class="ruby">      therapist: therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="476">
+            
+
+            
+
+            <code class="ruby">      patient: Patient.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="477">
+            
+
+            
+
+            <code class="ruby">        name: &quot;Test Patient #{uniq}&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="478">
+            
+
+            
+
+            <code class="ruby">        date_of_birth: &quot;2000-01-01&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="479">
+            
+
+            
+
+            <code class="ruby">        gender: &quot;MALE&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="480">
+            
+
+            
+
+            <code class="ruby">        patient_contact: PatientContact.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="481">
+            
+
+            
+
+            <code class="ruby">          contact_name: &quot;Test Patient #{uniq}&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="482">
+            
+
+            
+
+            <code class="ruby">          contact_phone: &quot;6289172123#{uniq}&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="483">
+            
+
+            
+
+            <code class="ruby">          email: &quot;testpatient#{uniq}@yopmail.com&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="484">
+            
+
+            
+
+            <code class="ruby">        )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="485">
+            
+
+            
+
+            <code class="ruby">      ),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="486">
+            
+
+            
+
+            <code class="ruby">      service: Service.first,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="487">
+            
+
+            
+
+            <code class="ruby">      package: Package.first,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="488">
+            
+
+            
+
+            <code class="ruby">      location: Location.first,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="489">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: appointment_date_time,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="490">
+            
+
+            
+
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="491">
+            
+
+            
+
+            <code class="ruby">      patient_medical_record_attributes: {</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="492">
+            
+
+            
+
+            <code class="ruby">        complaint_description: &quot;Test complaint&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="493">
+            
+
+            
+
+            <code class="ruby">        illness_onset_date: &quot;2024-01-01&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="494">
+            
+
+            
+
+            <code class="ruby">        condition: &quot;NORMAL&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="495">
+            
+
+            
+
+            <code class="ruby">        medical_history: &quot;None&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="496">
+            
+
+            
+
+            <code class="ruby">      },</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="497">
+            
+
+            
+
+            <code class="ruby">      status: &quot;pending_patient_approval&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="498">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="499">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="500">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="501">
+            
+
+            
+
+            <code class="ruby">  # Returns the next Monday at the given hour/minute in the future</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="502">
+            
+
+            
+
+            <code class="ruby">  # Ensures the returned time is in the future to avoid past date issues</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="503">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  def next_monday_at(hour, minute)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="504">
+            
+
+            
+
+            <code class="ruby">    today = Date.current</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="505">
+            
+
+            
+
+            <code class="ruby">    # Find the next Monday (including today if today is Monday)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="506">
+            
+
+            
+
+            <code class="ruby">    date = today</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="507">
+            
+
+            
+
+            <code class="ruby">    date += 1.day until date.monday?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="508">
+            
+
+            
+
+            <code class="ruby">    therapist_tz = @schedule&amp;.time_zone || Time.zone.name</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="509">
+            
+
+            
+
+            <code class="ruby">    # Create the target time for this Monday in therapist&#39;s time zone</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="510">
+            
+
+            
+
+            <code class="ruby">    time_in_tz = Time.use_zone(therapist_tz) { Time.zone.local(date.year, date.month, date.day, hour, minute) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="511">
+            
+
+            
+
+            <code class="ruby">    # If the target time is in the past, go to next Monday</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="512">
+            
+
+            
+
+            <code class="ruby">    if time_in_tz &lt;= Time.current.in_time_zone(therapist_tz)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="513">
+            
+
+            
+
+            <code class="ruby">      date += 7.days</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="514">
+            
+
+            
+
+            <code class="ruby">      time_in_tz = Time.use_zone(therapist_tz) { Time.zone.local(date.year, date.month, date.day, hour, minute) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="515">
+            
+
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="516">
+            
+
+            
+
+            <code class="ruby">    time_in_tz</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="517">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="518">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="519">
+            
+
+            
+
+            <code class="ruby">  # Returns the next Tuesday at the given hour/minute in the future</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="520">
+            
+
+            
+
+            <code class="ruby">  # Ensures the returned time is in the future to avoid past date issues</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="521">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  def next_tuesday_at(hour, minute)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="522">
+            
+
+            
+
+            <code class="ruby">    today = Date.current</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="523">
+            
+
+            
+
+            <code class="ruby">    # Find the next Tuesday</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="524">
+            
+
+            
+
+            <code class="ruby">    date = today</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="525">
+            
+
+            
+
+            <code class="ruby">    date += 1.day until date.tuesday?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="526">
+            
+
+            
+
+            <code class="ruby">    therapist_tz = @schedule&amp;.time_zone || Time.zone.name</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="527">
+            
+
+            
+
+            <code class="ruby">    # Create the target time for this Tuesday in therapist&#39;s time zone</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="528">
+            
+
+            
+
+            <code class="ruby">    time_in_tz = Time.use_zone(therapist_tz) { Time.zone.local(date.year, date.month, date.day, hour, minute) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="529">
+            
+
+            
+
+            <code class="ruby">    # If the target time is in the past, go to next Tuesday</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="530">
+            
+
+            
+
+            <code class="ruby">    if time_in_tz &lt;= Time.current.in_time_zone(therapist_tz)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="531">
+            
+
+            
+
+            <code class="ruby">      date += 7.days</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="532">
+            
+
+            
+
+            <code class="ruby">      time_in_tz = Time.use_zone(therapist_tz) { Time.zone.local(date.year, date.month, date.day, hour, minute) }</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="533">
+            
+
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="534">
+            
+
+            
+
+            <code class="ruby">    time_in_tz</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="535">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="536">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="537">
+            
+
+            
+
+            <code class="ruby">  # Helper: Create max allowed appointments for a given day, spaced to avoid overlap</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="538">
+            
+
+            
+
+            <code class="ruby">  # Creates the maximum number of appointments allowed per day for testing daily limits</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="539">
+            
+              <span class="hits">1</span>
+            
+
+            
+
+            <code class="ruby">  def create_max_daily_appointments(therapist, schedule, appointment_date)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="540">
+            
+
+            
+
+            <code class="ruby">    max_appts = schedule.max_daily_appointments</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="541">
+            
+
+            
+
+            <code class="ruby">    max_appts.times do |i|</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="542">
+            
+
+            
+
+            <code class="ruby">      # Calculate appointment times with 70-minute spacing (60 min appointment + 10 min buffer)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="543">
+            
+
+            
+
+            <code class="ruby">      appointment_hour = 16 + (i * 70 / 60)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="544">
+            
+
+            
+
+            <code class="ruby">      appointment_minute = (i * 70) % 60</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="545">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="546">
+            
+
+            
+
+            <code class="ruby">      Appointment.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="547">
+            
+
+            
+
+            <code class="ruby">        therapist: therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="548">
+            
+
+            
+
+            <code class="ruby">        patient: Patient.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="549">
+            
+
+            
+
+            <code class="ruby">          name: &quot;Patient#{i}&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="550">
+            
+
+            
+
+            <code class="ruby">          date_of_birth: &quot;2000-01-01&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="551">
+            
+
+            
+
+            <code class="ruby">          gender: &quot;MALE&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="552">
+            
+
+            
+
+            <code class="ruby">          patient_contact: PatientContact.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="553">
+            
+
+            
+
+            <code class="ruby">            contact_name: &quot;Patient#{i}&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="554">
+            
+
+            
+
+            <code class="ruby">            contact_phone: &quot;6289172123#{i}&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="555">
+            
+
+            
+
+            <code class="ruby">            email: &quot;patient#{i}@yopmail.com&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="556">
+            
+
+            
+
+            <code class="ruby">          )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="557">
+            
+
+            
+
+            <code class="ruby">        ),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="558">
+            
+
+            
+
+            <code class="ruby">        service: Service.first,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="559">
+            
+
+            
+
+            <code class="ruby">        package: Package.first,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="560">
+            
+
+            
+
+            <code class="ruby">        location: Location.first,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="561">
+            
+
+            
+
+            <code class="ruby">        appointment_date_time: Time.use_zone(schedule.time_zone) {</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="562">
+            
+
+            
+
+            <code class="ruby">          Time.zone.local(appointment_date.year, appointment_date.month, appointment_date.day, appointment_hour, appointment_minute)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="563">
+            
+
+            
+
+            <code class="ruby">        },</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="564">
+            
+
+            
+
+            <code class="ruby">        preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="565">
+            
+
+            
+
+            <code class="ruby">        patient_medical_record_attributes: {</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="566">
+            
+
+            
+
+            <code class="ruby">          complaint_description: &quot;Test complaint&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="567">
+            
+
+            
+
+            <code class="ruby">          illness_onset_date: &quot;2024-01-01&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="568">
+            
+
+            
+
+            <code class="ruby">          condition: &quot;NORMAL&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="569">
+            
+
+            
+
+            <code class="ruby">          medical_history: &quot;None&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="570">
+            
+
+            
+
+            <code class="ruby">        },</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="571">
+            
+
+            
+
+            <code class="ruby">        status: &quot;pending_patient_approval&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="572">
+            
+
+            
+
+            <code class="ruby">      )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="573">
+            
+
+            
+
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="574">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="575">
             
 
             

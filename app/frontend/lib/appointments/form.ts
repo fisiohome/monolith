@@ -250,6 +250,7 @@ export const FORM_OPTIONS_SCHEMA = z.object({
 	patientContactSource: z.enum(["existing", "new"]),
 	coordinateSource: z.enum(["manual", "automatic"]),
 	referenceAppointmentId: idSchema.optional(),
+	findTherapistsAllOfDay: z.boolean().optional(),
 });
 export type FormOptionsSchema = z.infer<typeof FORM_OPTIONS_SCHEMA>;
 
@@ -294,7 +295,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		condition,
 		medicalHistory,
 		fullName,
-		age,
+		age: _age,
 		dateOfBirth,
 		gender,
 		addressNotes,
@@ -344,7 +345,7 @@ interface FormDefaultProps {
 }
 
 // @ts-ignore
-const devValues = () => {
+const _devValues = () => {
 	// for referral
 	const referralSource = "Other";
 	const isCustomReferral = checkIsCustomReferral(referralSource);
@@ -421,6 +422,7 @@ export const defineAppointmentFormDefaultValues = (
 	const patientRecordSource = "existing";
 	const patientContactSource = "existing";
 	const coordinateSource = "automatic";
+	const findTherapistsAllOfDay = false;
 
 	// for appointment references (needed for create a appointment series)
 	const referenceAppointmentId = props?.apptRef?.id;
@@ -508,7 +510,8 @@ export const defineAppointmentFormDefaultValues = (
 			patientRecordSource,
 			referenceAppointmentId,
 			patientContactSource,
-			coordinateSource
+			coordinateSource,
+			findTherapistsAllOfDay,
 		},
 		contactInformation,
 		patientDetails,

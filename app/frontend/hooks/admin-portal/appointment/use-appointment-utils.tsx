@@ -450,7 +450,10 @@ export const usePreferredTherapistGender = ({
 
 // * hooks about appointment date time field
 export interface useAppointmentDateTimeProps {
-	sourceValue?: Date;
+	sourceValue?: {
+		date?: Date;
+		isAllOfDay?: boolean;
+	};
 	min: Date | null;
 	max: Date | null;
 }
@@ -462,16 +465,17 @@ export const useAppointmentDateTime = ({
 	const { locale, tzDate } = useDateContext();
 	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
 	const [appointmentDate, setAppointmentDate] = useState<Date | null>(
-		sourceValue ? new Date(sourceValue.toString()) : null,
+		sourceValue?.date ? new Date(sourceValue.date.toString()) : null,
 	);
 	const [appointmentTime, setAppointmentTime] = useState<string>(
-		sourceValue
-			? format(sourceValue.toString(), "HH:mm", {
+		sourceValue?.date
+			? format(sourceValue.date.toString(), "HH:mm", {
 					locale,
 					in: tzDate,
 				})
 			: "",
 	);
+	const [_isAllOfDay, _setisAllOfDay] = useState(!!sourceValue?.isAllOfDay);
 	// Memoized calendar properties for the appointment date field
 	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
 		// normalize “today” to midnight
@@ -577,6 +581,7 @@ export const useTherapistAvailability = ({
 	serviceIdValue,
 	preferredTherapistGenderValue,
 	appointmentDateTImeValue,
+	isAllOfDayValue,
 	patientValues,
 	fetchURL,
 	formType = "create",
@@ -586,6 +591,7 @@ export const useTherapistAvailability = ({
 	serviceIdValue: string | number;
 	preferredTherapistGenderValue: (typeof PREFERRED_THERAPIST_GENDER)[number];
 	appointmentDateTImeValue: Date | null;
+	isAllOfDayValue: boolean;
 	patientValues: PatientValues;
 	fetchURL: string;
 	formType?: "create" | "reschedule";
@@ -825,6 +831,7 @@ export const useTherapistAvailability = ({
 							serviceId: serviceIdValue,
 							preferredTherapistGender: preferredTherapistGenderValue,
 							appointmentDateTime: appointmentDateTImeValue,
+							isAllOfDay: isAllOfDayValue,
 						}
 					: {
 							preferredTherapistGender: preferredTherapistGenderValue,
@@ -880,6 +887,7 @@ export const useTherapistAvailability = ({
 		preferredTherapistGenderValue,
 		appointmentDateTImeValue,
 		patientValues.locationId,
+		isAllOfDayValue,
 		onResetTherapistOptions,
 		mappingTherapists,
 		onChangeTherapistLoading,
@@ -890,9 +898,10 @@ export const useTherapistAvailability = ({
 	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
 	useEffect(() => {
 		if (
-			serviceIdValue ||
-			appointmentDateTImeValue ||
-			preferredTherapistGenderValue
+			(serviceIdValue ||
+				appointmentDateTImeValue ||
+				preferredTherapistGenderValue) &&
+			!isAllOfDayValue
 		) {
 			onResetTherapistOptions();
 			onResetIsoline();
@@ -903,6 +912,7 @@ export const useTherapistAvailability = ({
 		serviceIdValue,
 		appointmentDateTImeValue,
 		preferredTherapistGenderValue,
+		isAllOfDayValue,
 		onResetIsoline,
 		onResetTherapistOptions,
 	]);

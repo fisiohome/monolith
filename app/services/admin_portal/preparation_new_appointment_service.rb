@@ -164,6 +164,10 @@ module AdminPortal
       @params[:reference]
     end
 
+    def is_all_of_day
+      @params[:is_all_of_day]
+    end
+
     def apply_gender_filter(therapists, gender_param)
       return therapists unless gender_param.present? && gender_param != "NO PREFERENCE"
 
@@ -190,15 +194,12 @@ module AdminPortal
 
     def apply_availability_filter(therapists, param_value)
       appointment_date_time = Time.zone.parse(param_value)
-
-      # Convert to an array to filter and map in Ruby
       therapists.to_a.filter_map do |therapist|
-        details = therapist.availability_details(appointment_date_time)
-
-        # You could add a condition here if you want to exclude non-available therapists.
-        # if details[:available]
+        details = therapist.availability_details(
+          appointment_date_time_server_time: appointment_date_time,
+          is_all_of_day:
+        )
         formatted_therapists(therapist, details)
-        # end
       end
     end
   end

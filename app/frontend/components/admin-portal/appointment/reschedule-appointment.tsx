@@ -222,126 +222,127 @@ export const RescheduleFields = memo(function Component({
 				</Alert>
 			)}
 
-			<div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 col-span-full">
-				<div className="grid gap-4">
-					<Deferred
-						data={["optionsData"]}
-						fallback={
-							<div className="flex flex-col self-end gap-3 col-span-full">
-								<Skeleton className="w-10 h-4 rounded-md" />
-								<div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-1">
-									<Skeleton className="relative w-full rounded-md h-9" />
-									<Skeleton className="relative w-full rounded-md h-9" />
-									<Skeleton className="relative w-full rounded-md h-9" />
-								</div>
+			<div className="grid grid-cols-1 gap-4 col-span-full">
+				<Deferred
+					data={["optionsData"]}
+					fallback={
+						<div className="flex flex-col self-end gap-3 col-span-full">
+							<Skeleton className="w-10 h-4 rounded-md" />
+							<div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-1">
+								<Skeleton className="relative w-full rounded-md h-9" />
+								<Skeleton className="relative w-full rounded-md h-9" />
+								<Skeleton className="relative w-full rounded-md h-9" />
 							</div>
-						}
-					>
-						<FormField
-							control={form.control}
-							name="preferredTherapistGender"
-							render={({ field }) => (
-								<FormItem className="space-y-3">
-									<FormLabel>{tasf("pref_therapist_gender.label")}</FormLabel>
-									<FormControl>
-										<RadioGroup
-											onValueChange={(value) => {
-												field.onChange(value);
-												onResetAllTherapistState();
-											}}
-											defaultValue={field.value}
-											orientation="horizontal"
-											className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-1"
-										>
-											{preferredTherapistGenderOption.map((gender) => (
-												<FormItem
-													key={gender}
-													className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-												>
-													<FormControl>
-														<RadioGroupItem value={gender} />
-													</FormControl>
-													<FormLabel className="flex items-center gap-1 font-normal capitalize truncate">
-														{getGenderIcon(gender, "shrink-0")}
-														<span className="truncate text-nowrap">
-															{tasf(
-																`pref_therapist_gender.options.${gender.toLowerCase()}`,
-															)}
-														</span>
-													</FormLabel>
-												</FormItem>
-											))}
-										</RadioGroup>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					</Deferred>
-
+						</div>
+					}
+				>
 					<FormField
 						control={form.control}
-						name="appointmentDateTime"
+						name="preferredTherapistGender"
 						render={({ field }) => (
-							<FormItem>
-								<FormLabel>{tasf("appt_date.label")}</FormLabel>
-
-								{apptDateTime?.message && (
-									<Alert className="text-xs">
-										<Info className="size-3.5 shrink-0" />
-										<AlertTitle>Info</AlertTitle>
-										<AlertDescription className="text-xs">
-											{apptDateTime.message}
-										</AlertDescription>
-									</Alert>
-								)}
-
+							<FormItem className="space-y-3">
+								<FormLabel>{tasf("pref_therapist_gender.label")}</FormLabel>
 								<FormControl>
-									<DateTimePicker
-										value={field.value}
-										min={apptDateTime.min}
-										max={apptDateTime.max}
-										onChangeValue={field.onChange}
-										callbackOnChange={() => {
-											// reset all therapist and isoline maps state
+									<RadioGroup
+										onValueChange={(value) => {
+											field.onChange(value);
 											onResetAllTherapistState();
 										}}
-									/>
+										defaultValue={field.value}
+										orientation="horizontal"
+										className="grid grid-cols-1 gap-4 md:grid-cols-3"
+									>
+										{preferredTherapistGenderOption.map((gender) => (
+											<FormItem
+												key={gender}
+												className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+											>
+												<FormControl>
+													<RadioGroupItem value={gender} />
+												</FormControl>
+												<FormLabel className="flex items-center gap-1 font-normal capitalize truncate">
+													{getGenderIcon(gender, "shrink-0")}
+													<span className="truncate text-nowrap">
+														{tasf(
+															`pref_therapist_gender.options.${gender.toLowerCase()}`,
+														)}
+													</span>
+												</FormLabel>
+											</FormItem>
+										))}
+									</RadioGroup>
 								</FormControl>
-
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
-				</div>
+				</Deferred>
 
 				<FormField
 					control={form.control}
-					name="therapist.name"
+					name="appointmentDateTime"
 					render={({ field }) => (
-						<FormItem className="w-full">
-							<FormLabel>{tasf("therapist.label")}</FormLabel>
+						<FormItem>
+							<FormLabel>{tasf("appt_date.label")}</FormLabel>
+
+							{apptDateTime?.message && (
+								<Alert className="text-xs">
+									<Info className="size-3.5 shrink-0" />
+									<AlertTitle>Info</AlertTitle>
+									<AlertDescription className="text-xs">
+										{apptDateTime.message}
+									</AlertDescription>
+								</Alert>
+							)}
 
 							<FormControl>
-								<TherapistSelection
+								<DateTimePicker
 									value={field.value}
-									isLoading={isLoading.therapists || isMapLoading}
-									appt={appointment}
-									items={therapistsOptions.feasible}
-									find={{
-										isDisabled: !watchAppointmentDateTimeValue,
-										handler: async () => await onFindTherapists(),
-									}}
-									onSelectTherapist={(value) => onSelectTherapist(value)}
-									onPersist={(value) => {
-										setFormSelections({ ...formSelections, therapist: value });
+									min={apptDateTime.min}
+									max={apptDateTime.max}
+									onChangeValue={field.onChange}
+									callbackOnChange={() => {
+										// reset all therapist and isoline maps state
+										onResetAllTherapistState();
 									}}
 								/>
 							</FormControl>
+
+							<FormMessage />
 						</FormItem>
 					)}
 				/>
 			</div>
+
+			<FormField
+				control={form.control}
+				name="therapist.name"
+				render={({ field }) => (
+					<FormItem className="col-span-full">
+						{/* <FormLabel>{tasf("therapist.label")}</FormLabel> */}
+
+						<FormControl>
+							<TherapistSelection
+								items={therapistsOptions.feasible}
+								config={{
+									isLoading: isLoading.therapists || isMapLoading,
+									selectedTherapistName: field.value,
+									selectedTherapist: formSelections?.therapist || undefined,
+									appt: appointment,
+								}}
+								find={{
+									isDisabled: !watchAppointmentDateTimeValue,
+									handler: async () => await onFindTherapists(),
+								}}
+								onSelectTherapist={(value) => onSelectTherapist(value)}
+								onPersist={(value) => {
+									setFormSelections({ ...formSelections, therapist: value });
+								}}
+							/>
+						</FormControl>
+					</FormItem>
+				)}
+			/>
 
 			<HereMap
 				ref={mapRef}

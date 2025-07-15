@@ -1,18 +1,8 @@
-import { LoadingBasic } from "@/components/shared/loading";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/extended/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import type { TherapistOption } from "@/hooks/admin-portal/appointment/use-appointment-utils";
-import { getGenderIcon } from "@/hooks/use-gender";
-import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
-import { cn } from "@/lib/utils";
-import type { Appointment } from "@/types/admin-portal/appointment";
-import type { Therapist } from "@/types/admin-portal/therapist";
 import { useDebounce } from "@uidotdev/usehooks";
 import {
+	ChevronDown,
 	ChevronsRight,
+	Hash,
 	Search,
 	Sparkles,
 	Stethoscope,
@@ -30,6 +20,20 @@ import {
 	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { LoadingBasic } from "@/components/shared/loading";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/extended/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { TherapistOption } from "@/hooks/admin-portal/appointment/use-appointment-utils";
+import { getGenderIcon } from "@/hooks/use-gender";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
+import { cn } from "@/lib/utils";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import type { Therapist } from "@/types/admin-portal/therapist";
+import { TimeSlotButton } from "./date-time";
 
 // * button selection list
 type TherapistSelectButtonProps = {
@@ -95,7 +99,7 @@ interface CardTherapistProps extends ComponentProps<"div"> {
 	therapist: Pick<
 		Therapist,
 		"registrationNumber" | "id" | "gender" | "name" | "employmentType"
-	>;
+	> & { timeSlots?: string[] };
 }
 
 function CardTherapist({ className, therapist }: CardTherapistProps) {
@@ -105,10 +109,7 @@ function CardTherapist({ className, therapist }: CardTherapistProps) {
 				<Avatar className="border rounded-lg border-border bg-muted size-12">
 					<AvatarImage src="#" />
 					<AvatarFallback className="flex flex-col">
-						<User className="flex-shrink-0 size-5 text-muted-foreground/75" />
-						<span className="text-[10px] leading-none mt-1 text-muted-foreground">
-							{therapist.registrationNumber}
-						</span>
+						<User className="flex-shrink-0 size-6 text-muted-foreground/50" />
 					</AvatarFallback>
 				</Avatar>
 
@@ -116,15 +117,10 @@ function CardTherapist({ className, therapist }: CardTherapistProps) {
 					<div className="flex gap-1">
 						<Badge
 							variant="outline"
-							className="font-light text-[10px] text-inherit p-0 px-1 mb-1"
+							className="font-light text-[10px] text-inherit p-0 px-1 mb-1 uppercase"
 						>
-							{therapist?.gender &&
-								getGenderIcon(
-									therapist.gender,
-									"flex-shrink-0 size-2.5 text-inherit/75 mr-0.5",
-								)}
-
-							<span>{therapist?.gender || "N/A"}</span>
+							<Hash className="flex-shrink-0 size-2.5 text-inherit opacity-75 mr-0.5" />
+							<span>{therapist.registrationNumber}</span>
 						</Badge>
 
 						<Badge
@@ -133,9 +129,22 @@ function CardTherapist({ className, therapist }: CardTherapistProps) {
 						>
 							<span>{therapist?.employmentType || "N/A"}</span>
 						</Badge>
+
+						<Badge
+							variant="outline"
+							className="font-light text-[10px] text-inherit p-0 px-1 mb-1"
+						>
+							{therapist?.gender &&
+								getGenderIcon(
+									therapist.gender,
+									"flex-shrink-0 size-2.5 text-inherit opacity-75 mr-0.5",
+								)}
+
+							<span>{therapist?.gender || "N/A"}</span>
+						</Badge>
 					</div>
 
-					<p className="tracking-wide uppercase line-clamp-1">
+					<p className="tracking-wide uppercase line-clamp-1 font-bold">
 						{therapist.name}
 					</p>
 				</div>
@@ -162,43 +171,59 @@ function EmptyTherapists() {
 
 // * core component
 export interface TherapistSelectionProps extends ComponentProps<"div"> {
-	value: string | undefined;
-	isLoading: boolean;
 	items: TherapistOption[];
-	appt?: Appointment;
-	selectedTherapist?: TherapistOption;
-	height?: number;
+	config: {
+		height?: number;
+		isLoading: boolean;
+		selectedTherapist?: TherapistOption;
+		selectedTherapistName: string | undefined;
+		appt?: Appointment;
+		isAllOfDay?: boolean;
+		selectedTimeSlot?: string;
+	};
 	find: {
 		isDisabled: boolean;
 		handler: () => Promise<void>;
 	};
 	onSelectTherapist: (value: { id: string; name: string }) => void;
 	onPersist: (value: TherapistOption | null) => void;
+	onSelectTimeSlot?: (value: string) => void;
 }
 
 const TherapistSelection = memo(function Component({
 	className,
-	value,
-	isLoading,
 	items,
+	config: {
+		isLoading,
+		height = 525,
+		selectedTherapistName,
+		selectedTherapist,
+		selectedTimeSlot,
+		isAllOfDay,
+		appt,
+	},
 	find,
-	selectedTherapist,
-	appt,
-	height = 525,
 	onSelectTherapist,
 	onPersist,
+	onSelectTimeSlot,
 }: TherapistSelectionProps) {
 	const { t: tasf } = useTranslation("appointments-form", {
 		keyPrefix: "appt_schedule.fields",
 	});
+	const isMobile = useIsMobile();
 	const [search, setSearch] = useState("");
 	const debouncedSearchTerm = useDebounce(search, 250);
 	// Filter by search term first
 	const filteredTherapists = useMemo(
 		() =>
 			items.filter((t) => {
-				if (debouncedSearchTerm) {
-					return t.name.includes(debouncedSearchTerm);
+				const searchTerm = debouncedSearchTerm.toLowerCase();
+
+				if (searchTerm) {
+					return (
+						t.name.includes(searchTerm) ||
+						t.registrationNumber.includes(searchTerm)
+					);
 				}
 				return true;
 			}),
@@ -253,16 +278,16 @@ const TherapistSelection = memo(function Component({
 	const therapistRefs = useRef<{ [id: string]: HTMLButtonElement | null }>({});
 	// Auto-scroll effect for selected therapist
 	useEffect(() => {
-		if (!value) return;
+		if (!selectedTherapistName) return;
 		// Find the therapist by name
-		const therapist = items.find((t) => t.name === value);
+		const therapist = items.find((t) => t.name === selectedTherapistName);
 		if (therapist && therapistRefs.current[therapist.id]) {
 			therapistRefs.current[therapist.id]?.scrollIntoView({
 				block: "nearest",
 				behavior: "smooth",
 			});
 		}
-	}, [value, items]);
+	}, [selectedTherapistName, items]);
 
 	// therapist reference for selected therapist (new form) or existing therapist (reschedule-form)
 	const therapistReference = useMemo<
@@ -282,8 +307,30 @@ const TherapistSelection = memo(function Component({
 				appt?.therapist?.employmentType ||
 				selectedTherapist?.employmentType ||
 				"KARPIS",
+			timeSlots:
+				appt?.therapist?.availabilityDetails?.availableSlots ||
+				selectedTherapist?.availabilityDetails?.availableSlots ||
+				[],
 		};
 	}, [appt?.therapist, selectedTherapist]);
+
+	// time suggested
+	const [timeSlotIds, setTimeSlotIds] = useState<string[]>([]);
+	const isOpenTimeSlot = useCallback(
+		(id: string) => {
+			return timeSlotIds.includes(id);
+		},
+		[timeSlotIds],
+	);
+	const toggleTimeSlot = useCallback((idCheck: string) => {
+		setTimeSlotIds((prev) => {
+			if (prev.includes(idCheck)) {
+				return prev.filter((id) => id !== idCheck);
+			}
+
+			return [...prev, idCheck];
+		});
+	}, []);
 
 	return (
 		<div className={cn("flex flex-col gap-6", className)}>
@@ -305,7 +352,7 @@ const TherapistSelection = memo(function Component({
 
 			<ScrollArea
 				className="relative p-3 text-sm border rounded-md border-borderder bg-sidebar text-muted-foreground"
-				style={{ height: height }}
+				style={{ height }}
 			>
 				{!isLoading && items?.length > 0 && (
 					<div className="sticky top-0 z-10 pb-2 bg-sidebar mb-[0.5rem]">
@@ -325,18 +372,20 @@ const TherapistSelection = memo(function Component({
 					</div>
 				)}
 
-				<div className="grid gap-2 ">
+				<div className="grid gap-2">
 					{isLoading ? (
 						<LoadingBasic columnBased />
 					) : items?.length ? (
 						<Fragment>
 							{suggestedTherapists.length > 0 && (
 								<div>
-									<p className="mb-1 text-xs font-semibold tracking-wide uppercase">
-										{tasf("therapist.search.suggested_label")}
-									</p>
+									<div className="mb-4 border-l-8 border-primary">
+										<p className="text-xs font-semibold tracking-wide uppercase pl-2">
+											{tasf("therapist.search.suggested_label")}
+										</p>
+									</div>
 
-									<div className="grid gap-2">
+									<div className="grid gap-3">
 										{suggestedTherapists.map((t) => {
 											const regNumbers = getAssignedRegistrationNumbers(
 												t,
@@ -344,36 +393,101 @@ const TherapistSelection = memo(function Component({
 											);
 
 											return (
-												<TherapistSelectButton
-													key={t.id}
-													ref={(el) => {
-														therapistRefs.current[t.id] = el;
-													}}
-													selected={value === t.name}
-													onSelect={() => {
-														// save values for react-hook-form
-														onSelectTherapist(
-															value === t.name
-																? DEFAULT_VALUES_THERAPIST
-																: { id: t.id, name: t.name },
-														);
-
-														// save values for session-storage form-selection object
-														onPersist(value === t.name ? null : t);
-													}}
-													regNumbers={regNumbers}
-												>
-													<CardTherapist
-														therapist={{
-															name: t.name,
-															gender: t.gender,
-															id: t.id,
-															registrationNumber: t.registrationNumber,
-															employmentType: t.employmentType,
+												<div key={t.id}>
+													<TherapistSelectButton
+														ref={(el) => {
+															therapistRefs.current[t.id] = el;
 														}}
-														className={cn(!!regNumbers?.length && "mt-5")}
-													/>
-												</TherapistSelectButton>
+														regNumbers={regNumbers}
+														selected={selectedTherapistName === t.name}
+														onSelect={() => {
+															// save values for react-hook-form
+															onSelectTherapist(
+																selectedTherapistName === t.name
+																	? DEFAULT_VALUES_THERAPIST
+																	: { id: t.id, name: t.name },
+															);
+
+															// save values for session-storage form-selection object
+															onPersist(
+																selectedTherapistName === t.name ? null : t,
+															);
+														}}
+													>
+														<CardTherapist
+															therapist={{
+																name: t.name,
+																gender: t.gender,
+																id: t.id,
+																registrationNumber: t.registrationNumber,
+																employmentType: t.employmentType,
+															}}
+															className={cn(!!regNumbers?.length && "mt-5")}
+														/>
+													</TherapistSelectButton>
+
+													{!!t.availabilityDetails?.availableSlots?.length &&
+														!!isAllOfDay && (
+															<div>
+																<Button
+																	type="button"
+																	variant="outline"
+																	size={isMobile ? "default" : "sm"}
+																	className="w-full !border-t-0 shadow-none"
+																	onClick={() => toggleTimeSlot(t.id)}
+																>
+																	<span className="font-light uppercase">
+																		Suggested Time Slots
+																	</span>
+																	<ChevronDown
+																		className={cn(
+																			"transition-transform duration-100 text-muted-foreground/50",
+																			isOpenTimeSlot(t.id) ? "rotate-180" : "",
+																		)}
+																	/>
+																</Button>
+
+																{isOpenTimeSlot(t.id) && (
+																	<div className="grid grid-cols-3 gap-2 mt-2 md:grid-cols-6 xl:grid-cols-7">
+																		{t.availabilityDetails?.availableSlots?.map(
+																			(slot) => (
+																				<TimeSlotButton
+																					key={slot}
+																					time={slot}
+																					isSelected={
+																						selectedTimeSlot === slot || false
+																					}
+																					onSelect={() => {
+																						if (
+																							onSelectTimeSlot &&
+																							typeof onSelectTimeSlot ===
+																								"function"
+																						) {
+																							onSelectTimeSlot(slot);
+																						}
+
+																						// save values for react-hook-form
+																						onSelectTherapist(
+																							selectedTherapistName === t.name
+																								? DEFAULT_VALUES_THERAPIST
+																								: { id: t.id, name: t.name },
+																						);
+
+																						// save values for session-storage form-selection object
+																						onPersist(
+																							selectedTherapistName === t.name
+																								? null
+																								: t,
+																						);
+																					}}
+																				/>
+																			),
+																		)}
+																	</div>
+																)}
+															</div>
+														)}
+												</div>
 											);
 										})}
 									</div>
@@ -383,49 +497,161 @@ const TherapistSelection = memo(function Component({
 							{otherTherapists.length > 0 && (
 								<div className={cn(!!suggestedTherapists?.length && "mt-1")}>
 									{!!suggestedTherapists?.length && (
-										<p className="mb-1 text-xs font-semibold tracking-wide uppercase">
-											{tasf("therapist.search.other_label")}
-										</p>
+										<div className="my-4 border-l-8 border-secondary">
+											<p className="text-xs font-semibold tracking-wide uppercase pl-2">
+												{tasf("therapist.search.other_label")}
+											</p>
+										</div>
 									)}
 
-									<div className="grid gap-2">
+									<div className="grid gap-3">
 										{otherTherapists.map((t) => (
-											<TherapistSelectButton
-												key={t.id}
-												ref={(el) => {
-													therapistRefs.current[t.id] = el;
-												}}
-												selected={value === t.name}
-												onSelect={() => {
-													// save values for react-hook-form
-													onSelectTherapist(
-														value === t.name
-															? DEFAULT_VALUES_THERAPIST
-															: { id: t.id, name: t.name },
-													);
-
-													// save values for session-storage form-selection object
-													onPersist(value === t.name ? null : t);
-												}}
-											>
-												<CardTherapist
-													therapist={{
-														name: t.name,
-														gender: t.gender,
-														id: t.id,
-														registrationNumber: t.registrationNumber,
-														employmentType: t.employmentType,
+											<div key={t.id}>
+												<TherapistSelectButton
+													ref={(el) => {
+														therapistRefs.current[t.id] = el;
 													}}
-												/>
-											</TherapistSelectButton>
+													selected={selectedTherapistName === t.name}
+													onSelect={() => {
+														if (isAllOfDay) {
+															toggleTimeSlot(t.id);
+															return;
+														}
+
+														// save values for react-hook-form
+														onSelectTherapist(
+															selectedTherapistName === t.name
+																? DEFAULT_VALUES_THERAPIST
+																: { id: t.id, name: t.name },
+														);
+														// save values for session-storage form-selection object
+														onPersist(
+															selectedTherapistName === t.name ? null : t,
+														);
+													}}
+												>
+													<CardTherapist
+														therapist={{
+															name: t.name,
+															gender: t.gender,
+															id: t.id,
+															registrationNumber: t.registrationNumber,
+															employmentType: t.employmentType,
+														}}
+													/>
+												</TherapistSelectButton>
+
+												{!!t.availabilityDetails?.availableSlots?.length &&
+													!!isAllOfDay && (
+														<div>
+															<Button
+																type="button"
+																variant="outline"
+																size={isMobile ? "default" : "sm"}
+																className="w-full !border-t-0 shadow-none"
+																onClick={() => toggleTimeSlot(t.id)}
+															>
+																<span className="font-light uppercase">
+																	Suggested Time Slots
+																</span>
+																<ChevronDown
+																	className={cn(
+																		"transition-transform duration-100 text-muted-foreground/50",
+																		isOpenTimeSlot(t.id) ? "rotate-180" : "",
+																	)}
+																/>
+															</Button>
+
+															{isOpenTimeSlot(t.id) && (
+																<div className="grid grid-cols-3 gap-2 mt-2 md:grid-cols-6 xl:grid-cols-7">
+																	{t.availabilityDetails?.availableSlots?.map(
+																		(slot) => (
+																			<TimeSlotButton
+																				key={slot}
+																				time={slot}
+																				isSelected={
+																					selectedTimeSlot === slot || false
+																				}
+																				onSelect={() => {
+																					if (
+																						onSelectTimeSlot &&
+																						typeof onSelectTimeSlot ===
+																							"function"
+																					) {
+																						onSelectTimeSlot(slot);
+																					}
+
+																					// save values for react-hook-form
+																					onSelectTherapist(
+																						selectedTherapistName === t.name
+																							? DEFAULT_VALUES_THERAPIST
+																							: { id: t.id, name: t.name },
+																					);
+
+																					// save values for session-storage form-selection object
+																					onPersist(
+																						selectedTherapistName === t.name
+																							? null
+																							: t,
+																					);
+																				}}
+																			/>
+																		),
+																	)}
+																</div>
+															)}
+														</div>
+													)}
+											</div>
 										))}
 									</div>
 								</div>
 							)}
 						</Fragment>
-					) : therapistReference && therapistReference?.name === value ? (
-						<div className="p-2 border rounded-lg border-primary-foreground bg-primary text-primary-foreground">
-							<CardTherapist therapist={therapistReference} />
+					) : therapistReference &&
+						therapistReference?.name === selectedTherapistName ? (
+						<div className=" ">
+							<CardTherapist
+								therapist={therapistReference}
+								className="text-primary-foreground border rounded-lg border-primary-foreground bg-primary"
+							/>
+
+							{!!therapistReference?.timeSlots?.length && !!isAllOfDay && (
+								<div>
+									<Button
+										type="button"
+										variant="outline"
+										size={isMobile ? "default" : "sm"}
+										className="w-full !border-t-0 shadow-none text"
+										onClick={() => toggleTimeSlot(therapistReference.id)}
+									>
+										<span className="font-light uppercase">
+											Suggested Time Slots
+										</span>
+										<ChevronDown
+											className={cn(
+												"transition-transform duration-100 text-muted-foreground/50",
+												isOpenTimeSlot(therapistReference.id)
+													? "rotate-180"
+													: "",
+											)}
+										/>
+									</Button>
+
+									{isOpenTimeSlot(therapistReference.id) && (
+										<div className="grid grid-cols-3 gap-2 mt-2 md:grid-cols-6 xl:grid-cols-7">
+											{therapistReference.timeSlots.map((slot) => (
+												<TimeSlotButton
+													key={slot}
+													time={slot}
+													isSelected={selectedTimeSlot === slot || false}
+													isDisabled={true}
+												/>
+											))}
+										</div>
+									)}
+								</div>
+							)}
 						</div>
 					) : (
 						<EmptyTherapists />

@@ -185,189 +185,183 @@ export default function useHereMap(
 	 * @function initialize
 	 * @description Sets up the HERE map with platform, events, UI, etc.
 	 */
-	const initialize = useCallback(
-		(options?: { disabledEvent?: boolean }) => {
-			try {
-				if (!mapRef.current && containerRef.current) {
-					console.group();
-					console.info("=== Start process to initializing the HERE Map ===");
-					console.info("Proceed the initialization");
-					const { disabledEvent = false } = options || {};
-					const [lat, lng] = coordinate;
+	const initialize = (options?: { disabledEvent?: boolean }) => {
+		try {
+			if (!mapRef.current && containerRef.current) {
+				console.group();
+				console.info("=== Start process to initializing the HERE Map ===");
+				console.info("Proceed the initialization");
+				const { disabledEvent = false } = options || {};
+				const [lat, lng] = coordinate;
 
-					// Create platform, default layers, and the map instance
-					platformRef.current = new H.service.Platform({ apikey: apiKey });
-					const defaultLayers = platformRef.current.createDefaultLayers({
-						pois: true,
-					}) as any;
+				// Create platform, default layers, and the map instance
+				platformRef.current = new H.service.Platform({ apikey: apiKey });
+				const defaultLayers = platformRef.current.createDefaultLayers({
+					pois: true,
+				}) as any;
 
-					const map = new H.Map(
-						containerRef.current,
-						defaultLayers.vector.normal.map,
-						{
-							zoom: 14,
-							center: { lat, lng },
-							pixelRatio: window.devicePixelRatio || 1,
-							padding: { top: 16, right: 16, bottom: 16, left: 16 },
-						},
-					);
+				const map = new H.Map(
+					containerRef.current,
+					defaultLayers.vector.normal.map,
+					{
+						zoom: 14,
+						center: { lat, lng },
+						pixelRatio: window.devicePixelRatio || 1,
+						padding: { top: 16, right: 16, bottom: 16, left: 16 },
+					},
+				);
 
-					mapRef.current = map;
-					removeCopyrights();
+				mapRef.current = map;
+				removeCopyrights();
 
-					// Add traffic layer
-					map.addLayer(defaultLayers.vector.traffic.map);
+				// Add traffic layer
+				map.addLayer(defaultLayers.vector.traffic.map);
 
-					// Set up map behavior (pan, zoom, etc.)
-					const mapEvents = new H.mapevents.MapEvents(map);
-					behaviorRef.current = new H.mapevents.Behavior(mapEvents);
-					// disabled the map behaviour
-					if (disabledEvent) {
-						behaviorRef.current.disable();
-					}
-
-					// Add default UI components (UI zooming control, and another UI map settings)
-					uiRef.current = H.ui.UI.createDefault(map, defaultLayers);
-					uiRef.current.getControl("mapsettings")?.setVisibility(false);
-					uiRef.current
-						.getControl("zoom")
-						?.setAlignment("bottom-left" as Alignment);
-
-					// If the coordinate is valid (not 0,0), add a default marker
-					if (lat && lng && !isDefaultCoordinate(coordinate)) {
-						console.info("Add the default markers");
-						marker.onAdd(
-							[
-								{
-									position: { lat, lng },
-									address: address.address,
-								},
-							],
-							{ isSecondary: false, changeMapView: true },
-						);
-						setCenterMap({ lat, lng });
-					}
-					console.info("=== Process to initializing the HERE Map Finished ===");
-					console.groupEnd();
+				// Set up map behavior (pan, zoom, etc.)
+				const mapEvents = new H.mapevents.MapEvents(map);
+				behaviorRef.current = new H.mapevents.Behavior(mapEvents);
+				// disabled the map behaviour
+				if (disabledEvent) {
+					behaviorRef.current.disable();
 				}
-			} catch (err) {
-				console.error("initialize", err);
+
+				// Add default UI components (UI zooming control, and another UI map settings)
+				uiRef.current = H.ui.UI.createDefault(map, defaultLayers);
+				uiRef.current.getControl("mapsettings")?.setVisibility(false);
+				uiRef.current
+					.getControl("zoom")
+					?.setAlignment("bottom-left" as Alignment);
+
+				// If the coordinate is valid (not 0,0), add a default marker
+				if (lat && lng && !isDefaultCoordinate(coordinate)) {
+					console.info("Add the default markers");
+					marker.onAdd(
+						[
+							{
+								position: { lat, lng },
+								address: address.address,
+							},
+						],
+						{ isSecondary: false, changeMapView: true },
+					);
+					setCenterMap({ lat, lng });
+				}
+				console.info("=== Process to initializing the HERE Map Finished ===");
+				console.groupEnd();
 			}
-		},
-		[containerRef, coordinate, apiKey, address.address, removeCopyrights],
-	);
+		} catch (err) {
+			console.error("initialize", err);
+		}
+	};
 
 	// * marker function group
-	const onAddMarker = useCallback(
-		(
-			locations: MarkerData[],
-			options?: {
-				isSecondary?: boolean;
-				changeMapView?: boolean;
-				useRouting?: boolean;
-			},
-		) => {
-			try {
-				if (!mapRef.current) return;
-
-				const {
-					isSecondary = false,
-					changeMapView = false,
-					useRouting = false,
-				} = options || {};
-
-				const groupRef = isSecondary
-					? secondaryMarkerGroupRef
-					: primaryMarkerGroupRef;
-				// Remove existing group if it exists
-				onRemoveMarker({ isSecondary });
-
-				// Create a new group for the markers and save it in the ref.
-				const group = new H.map.Group();
-				groupRef.current = group;
-
-				// Add each marker to the group
-				const defaultIcon = isSecondary ? secondaryIcon : primaryIcon;
-				for (const location of locations) {
-					const marker = new H.map.Marker(location.position, {
-						icon: location?.customIcon || defaultIcon,
-						data: location,
-						volatility: true,
-					});
-
-					// Event listener example: show bubble on tap
-					marker.addEventListener(
-						"tap",
-						debounce(async (evt: any) => {
-							const tappedMarker = evt?.target;
-							const markerData = tappedMarker?.getData() as MarkerData | null;
-							if (!markerData) return;
-
-							// If secondary marker, handle route calculation
-							if (isSecondary && useRouting) {
-								// Get primary marker position as destination
-								const primaryMarkers =
-									primaryMarkerGroupRef.current?.getObjects();
-								if (!primaryMarkers || primaryMarkers.length === 0) return;
-								const primaryMarker = primaryMarkers[0] as H.map.Marker;
-								// const primaryPosition = primaryMarker.getGeometry();
-
-								await calculateRouting({
-									origin: markerData,
-									destination: primaryMarker.getData(),
-								});
-								return;
-							}
-
-							// handling the bubble UI
-							if (markerData.bubbleContent) {
-								const bubble = new H.ui.InfoBubble(location.position, {
-									content: markerData.bubbleContent,
-								});
-								uiRef.current?.addBubble(bubble);
-
-								UIConfig.customizeBubbleUI();
-							}
-
-							// Optionally re-center the map on the tapped marker
-							mapRef.current?.setCenter(tappedMarker?.getGeometry(), true);
-						}, 200),
-					);
-
-					// Add marker to the group
-					group.addObject(marker);
-				}
-
-				// Add the marker group to the map
-				mapRef.current.addObject(group);
-
-				// Optionally adjust map bounds to include these markers
-				const bounds = group.getBoundingBox();
-				if (changeMapView && bounds) {
-					/* *
-					 * Update the map view with bounds (and adjust zoom if needed)
-					 *
-					 * Note:
-					 * animation just applied on the zoom level because to prevent the unnecesarry maps loaded, while "getViewModel().setLookAtData()"
-					 * this way saves Maps API for JavaScript quota
-					 * */
-					mapRef.current.getViewModel().setLookAtData({ bounds });
-					mapRef.current.setZoom(18, true);
-
-					// Update center based on the first marker
-					if (locations[0]) {
-						setCenterMap({
-							lat: locations[0].position.lat,
-							lng: locations[0].position.lng,
-						});
-					}
-				}
-			} catch (err) {
-				console.error("marker.onAdd", err);
-			}
+	const onAddMarker = (
+		locations: MarkerData[],
+		options?: {
+			isSecondary?: boolean;
+			changeMapView?: boolean;
+			useRouting?: boolean;
 		},
-		[primaryIcon, secondaryIcon],
-	);
+	) => {
+		try {
+			if (!mapRef.current) return;
+
+			const {
+				isSecondary = false,
+				changeMapView = false,
+				useRouting = false,
+			} = options || {};
+
+			const groupRef = isSecondary
+				? secondaryMarkerGroupRef
+				: primaryMarkerGroupRef;
+			// Remove existing group if it exists
+			onRemoveMarker({ isSecondary });
+
+			// Create a new group for the markers and save it in the ref.
+			const group = new H.map.Group();
+			groupRef.current = group;
+
+			// Add each marker to the group
+			const defaultIcon = isSecondary ? secondaryIcon : primaryIcon;
+			for (const location of locations) {
+				const marker = new H.map.Marker(location.position, {
+					icon: location?.customIcon || defaultIcon,
+					data: location,
+					volatility: true,
+				});
+
+				// Event listener example: show bubble on tap
+				marker.addEventListener(
+					"tap",
+					debounce(async (evt: any) => {
+						const tappedMarker = evt?.target;
+						const markerData = tappedMarker?.getData() as MarkerData | null;
+						if (!markerData) return;
+
+						// If secondary marker, handle route calculation
+						if (isSecondary && useRouting) {
+							// Get primary marker position as destination
+							const primaryMarkers =
+								primaryMarkerGroupRef.current?.getObjects();
+							if (!primaryMarkers || primaryMarkers.length === 0) return;
+							const primaryMarker = primaryMarkers[0] as H.map.Marker;
+							// const primaryPosition = primaryMarker.getGeometry();
+
+							await calculateRouting({
+								origin: markerData,
+								destination: primaryMarker.getData(),
+							});
+							return;
+						}
+
+						// handling the bubble UI
+						if (markerData.bubbleContent) {
+							const bubble = new H.ui.InfoBubble(location.position, {
+								content: markerData.bubbleContent,
+							});
+							uiRef.current?.addBubble(bubble);
+
+							UIConfig.customizeBubbleUI();
+						}
+
+						// Optionally re-center the map on the tapped marker
+						mapRef.current?.setCenter(tappedMarker?.getGeometry(), true);
+					}, 200),
+				);
+
+				// Add marker to the group
+				group.addObject(marker);
+			}
+
+			// Add the marker group to the map
+			mapRef.current.addObject(group);
+
+			// Optionally adjust map bounds to include these markers
+			const bounds = group.getBoundingBox();
+			if (changeMapView && bounds) {
+				/* *
+				 * Update the map view with bounds (and adjust zoom if needed)
+				 *
+				 * Note:
+				 * animation just applied on the zoom level because to prevent the unnecesarry maps loaded, while "getViewModel().setLookAtData()"
+				 * this way saves Maps API for JavaScript quota
+				 * */
+				mapRef.current.getViewModel().setLookAtData({ bounds });
+				mapRef.current.setZoom(18, true);
+
+				// Update center based on the first marker
+				if (locations[0]) {
+					setCenterMap({
+						lat: locations[0].position.lat,
+						lng: locations[0].position.lng,
+					});
+				}
+			}
+		} catch (err) {
+			console.error("marker.onAdd", err);
+		}
+	};
 	const onRemoveMarker = useCallback((options?: { isSecondary?: boolean }) => {
 		try {
 			if (!mapRef.current) return;
@@ -498,133 +492,123 @@ export default function useHereMap(
 	 * @function addIsolineToMap
 	 * @description Adds an isoline polygon to the map based on the provided isoline data.
 	 */
-	const addIsolineToMap = useCallback(
-		(
-			isoline: IsolineResult["isolines"][number],
-			constraint: IsolineConstraint,
-			autoZoom = true,
-		) => {
-			try {
-				if (!mapRef.current) return;
-				const rangeType = constraint.type;
+	const addIsolineToMap = (
+		isoline: IsolineResult["isolines"][number],
+		constraint: IsolineConstraint,
+		autoZoom = true,
+	) => {
+		try {
+			if (!mapRef.current) return;
+			const rangeType = constraint.type;
 
-				// clear the calculated routes
-				removeRouting();
+			// clear the calculated routes
+			removeRouting();
 
-				// Clear previous isolines of the same type
-				const prevGroup =
-					constraint.type === "time"
-						? timeIsolineGroupRef.current
-						: distanceIsolineGroupRef.current;
-				if (prevGroup) {
-					mapRef.current.removeObject(prevGroup);
-				}
-
-				// Create new group with appropriate styling
-				const group = new H.map.Group();
-
-				// Store coordinates and build the polygons
-				const style = isolineLib.LABEL_UI_STYLE[rangeType];
-				let firstSectionCoordinates: H.geo.Point[] | null = null;
-				isolineCoordinatesRef.current[rangeType] = [];
-				for (const section of isoline.polygons) {
-					const lineString = H.geo.LineString.fromFlexiblePolyline(
-						section.outer,
-					);
-					const points = lineString.getLatLngAltArray();
-					const coordinates: H.geo.Point[] = [];
-
-					for (let i = 0; i < points.length; i += 3) {
-						coordinates.push(new H.geo.Point(points[i], points[i + 1]));
-					}
-
-					isolineCoordinatesRef.current[rangeType].push(coordinates);
-
-					const polygon = new H.map.Polygon(lineString, {
-						style: { lineWidth: 2, ...style },
-						data: section,
-					});
-					group.addObject(polygon);
-
-					// Store first section's coordinates for label placement
-					if (!firstSectionCoordinates) {
-						firstSectionCoordinates = coordinates;
-					}
-				}
-
-				if (firstSectionCoordinates && firstSectionCoordinates.length > 0) {
-					// Add label to the first polygon section
-					const { labelElement, labelLat, labelLng, labelText } =
-						isolineLib.computedLabelElement({
-							firstSectionCoordinates,
-							constraint,
-						});
-
-					// Create and add the DomMarker
-					const domIcon = new H.map.DomIcon(labelElement);
-					const labelMarker = new H.map.DomMarker(
-						{ lat: labelLat, lng: labelLng },
-						{
-							icon: domIcon,
-							data: { lat: labelLat, lng: labelLng, label: labelText },
-						},
-					);
-					group.addObject(labelMarker);
-				}
-
-				if (rangeType === "time")
-					// Save group reference
-					timeIsolineGroupRef.current = group;
-				else distanceIsolineGroupRef.current = group;
-
-				// show the polygons to the map
-				mapRef.current.addObject(group);
-
-				if (autoZoom) {
-					// zoom the map to the bounding reactangle
-					mapRef.current.getViewModel().setLookAtData({
-						bounds: group.getBoundingBox(),
-					});
-				}
-
-				return group;
-			} catch (err) {
-				console.error("isoline.addIsolineToMap", err);
+			// Clear previous isolines of the same type
+			const prevGroup =
+				constraint.type === "time"
+					? timeIsolineGroupRef.current
+					: distanceIsolineGroupRef.current;
+			if (prevGroup) {
+				mapRef.current.removeObject(prevGroup);
 			}
-		},
-		[],
-	);
-	const addAllIsolineToMap = useCallback(
-		(values: IsolineResult["isolines"]) => {
-			try {
-				if (!mapRef.current) return;
 
-				const boundingBoxes: H.geo.Rect[] = [];
-				for (const isoline of values) {
-					const group = addIsolineToMap(isoline, isoline.range, false);
-					if (group) boundingBoxes.push(group.getBoundingBox());
+			// Create new group with appropriate styling
+			const group = new H.map.Group();
+
+			// Store coordinates and build the polygons
+			const style = isolineLib.LABEL_UI_STYLE[rangeType];
+			let firstSectionCoordinates: H.geo.Point[] | null = null;
+			isolineCoordinatesRef.current[rangeType] = [];
+			for (const section of isoline.polygons) {
+				const lineString = H.geo.LineString.fromFlexiblePolyline(section.outer);
+				const points = lineString.getLatLngAltArray();
+				const coordinates: H.geo.Point[] = [];
+
+				for (let i = 0; i < points.length; i += 3) {
+					coordinates.push(new H.geo.Point(points[i], points[i + 1]));
 				}
 
-				if (boundingBoxes.length > 0 && mapRef?.current) {
-					// Merge bounding boxes and adjust map view
-					const mergedBox = mergeAllRectangles(boundingBoxes);
-					if (mergedBox) {
-						mapRef?.current
-							?.getViewModel()
-							?.setLookAtData({ bounds: mergedBox });
-					}
-				} else {
-					console.error("No bounding boxes found for constraints.");
-					return null;
-				}
+				isolineCoordinatesRef.current[rangeType].push(coordinates);
 
-				return boundingBoxes;
-			} catch (err) {
-				console.error("isoline.addAllIsolineToMap", err);
+				const polygon = new H.map.Polygon(lineString, {
+					style: { lineWidth: 2, ...style },
+					data: section,
+				});
+				group.addObject(polygon);
+
+				// Store first section's coordinates for label placement
+				if (!firstSectionCoordinates) {
+					firstSectionCoordinates = coordinates;
+				}
 			}
-		},
-		[addIsolineToMap],
-	);
+
+			if (firstSectionCoordinates && firstSectionCoordinates.length > 0) {
+				// Add label to the first polygon section
+				const { labelElement, labelLat, labelLng, labelText } =
+					isolineLib.computedLabelElement({
+						firstSectionCoordinates,
+						constraint,
+					});
+
+				// Create and add the DomMarker
+				const domIcon = new H.map.DomIcon(labelElement);
+				const labelMarker = new H.map.DomMarker(
+					{ lat: labelLat, lng: labelLng },
+					{
+						icon: domIcon,
+						data: { lat: labelLat, lng: labelLng, label: labelText },
+					},
+				);
+				group.addObject(labelMarker);
+			}
+
+			if (rangeType === "time")
+				// Save group reference
+				timeIsolineGroupRef.current = group;
+			else distanceIsolineGroupRef.current = group;
+
+			// show the polygons to the map
+			mapRef.current.addObject(group);
+
+			if (autoZoom) {
+				// zoom the map to the bounding reactangle
+				mapRef.current.getViewModel().setLookAtData({
+					bounds: group.getBoundingBox(),
+				});
+			}
+
+			return group;
+		} catch (err) {
+			console.error("isoline.addIsolineToMap", err);
+		}
+	};
+	const addAllIsolineToMap = (values: IsolineResult["isolines"]) => {
+		try {
+			if (!mapRef.current) return;
+
+			const boundingBoxes: H.geo.Rect[] = [];
+			for (const isoline of values) {
+				const group = addIsolineToMap(isoline, isoline.range, false);
+				if (group) boundingBoxes.push(group.getBoundingBox());
+			}
+
+			if (boundingBoxes.length > 0 && mapRef?.current) {
+				// Merge bounding boxes and adjust map view
+				const mergedBox = mergeAllRectangles(boundingBoxes);
+				if (mergedBox) {
+					mapRef?.current?.getViewModel()?.setLookAtData({ bounds: mergedBox });
+				}
+			} else {
+				console.error("No bounding boxes found for constraints.");
+				return null;
+			}
+
+			return boundingBoxes;
+		} catch (err) {
+			console.error("isoline.addAllIsolineToMap", err);
+		}
+	};
 	const removeIsolines = useCallback(() => {
 		try {
 			if (!mapRef.current) return;
@@ -652,207 +636,190 @@ export default function useHereMap(
 	 * @function calculateIsolineSingleContrainst
 	 * @description single constraint isoline
 	 */
-	const calculateIsolineSingleContrainst = useCallback(
-		async (
-			params: IsolineRequestParams,
-			shouldZoom = true,
-		): Promise<IsolineResult["isolines"][number] | null> => {
-			if (!platformRef.current) {
-				console.error("Platform is not available");
-				return null;
-			}
+	const calculateIsolineSingleContrainst = async (
+		params: IsolineRequestParams,
+		shouldZoom = true,
+	): Promise<IsolineResult["isolines"][number] | null> => {
+		if (!platformRef.current) {
+			console.error("Platform is not available");
+			return null;
+		}
 
-			setIsLoading(true);
-			setIsLoadingType("isoline");
-			try {
-				// Get the routing service from the platform
-				const router = platformRef.current.getRoutingService(undefined, 8);
+		setIsLoading(true);
+		setIsLoadingType("isoline");
+		try {
+			// Get the routing service from the platform
+			const router = platformRef.current.getRoutingService(undefined, 8);
 
-				// Construct the request parameters for the isoline calculation
-				const requestParams = {
-					...(params.origin && {
-						origin: `${params.origin.lat},${params.origin.lng}`,
-					}),
-					...(params.destination && {
-						destination: `${params.destination.lat},${params.destination.lng}`,
-					}),
-					"range[type]": params.rangeType,
-					"range[values]": params.rangeValues,
-					transportMode: params.transportMode,
-					...(params.evParams && {
-						"ev[freeFlowSpeedTable]": params.evParams.freeFlowSpeedTable,
-						"ev[trafficSpeedTable]": params.evParams.trafficSpeedTable,
-						"ev[ascent]": params.evParams.ascent,
-						"ev[descent]": params.evParams.descent,
-						"ev[auxiliaryConsumption]": params.evParams.auxiliaryConsumption,
-					}),
-					...(params.avoid && {
-						avoid: {
-							...(params?.avoid?.features && {
-								features: params.avoid.features,
-							}),
-						},
-					}),
-					routingMode: params.routingMode,
-				};
-
-				return new Promise<IsolineResult["isolines"][number] | null>(
-					(resolve, reject) => {
-						router.calculateIsoline(
-							requestParams,
-							(result) => {
-								const isolines = (result as IsolineResult).isolines;
-								if (!isolines?.length) {
-									resolve(null);
-									return;
-								}
-
-								// Add the isoline to the map
-								const [isoline] = isolines;
-								addIsolineToMap(
-									isoline,
-									{ type: params.rangeType, value: params.rangeValues },
-									shouldZoom,
-								);
-								resolve(isoline);
-							},
-							(error) => {
-								console.error("Isoline calculation error:", error);
-								reject(error);
-							},
-						);
+			// Construct the request parameters for the isoline calculation
+			const requestParams = {
+				...(params.origin && {
+					origin: `${params.origin.lat},${params.origin.lng}`,
+				}),
+				...(params.destination && {
+					destination: `${params.destination.lat},${params.destination.lng}`,
+				}),
+				"range[type]": params.rangeType,
+				"range[values]": params.rangeValues,
+				transportMode: params.transportMode,
+				...(params.evParams && {
+					"ev[freeFlowSpeedTable]": params.evParams.freeFlowSpeedTable,
+					"ev[trafficSpeedTable]": params.evParams.trafficSpeedTable,
+					"ev[ascent]": params.evParams.ascent,
+					"ev[descent]": params.evParams.descent,
+					"ev[auxiliaryConsumption]": params.evParams.auxiliaryConsumption,
+				}),
+				...(params.avoid && {
+					avoid: {
+						...(params?.avoid?.features && {
+							features: params.avoid.features,
+						}),
 					},
-				);
-			} catch (err) {
-				console.error("isoline.calculateIsolineSingleContrainst", err);
-				return null;
-			} finally {
-				setTimeout(() => {
-					setIsLoading(false);
-					setIsLoadingType(null);
-				}, 250);
-			}
-		},
-		[addIsolineToMap],
-	);
+				}),
+				routingMode: params.routingMode,
+			};
+
+			return new Promise<IsolineResult["isolines"][number] | null>(
+				(resolve, reject) => {
+					router.calculateIsoline(
+						requestParams,
+						(result) => {
+							const isolines = (result as IsolineResult).isolines;
+							if (!isolines?.length) {
+								resolve(null);
+								return;
+							}
+
+							// Add the isoline to the map
+							const [isoline] = isolines;
+							addIsolineToMap(
+								isoline,
+								{ type: params.rangeType, value: params.rangeValues },
+								shouldZoom,
+							);
+							resolve(isoline);
+						},
+						(error) => {
+							console.error("Isoline calculation error:", error);
+							reject(error);
+						},
+					);
+				},
+			);
+		} catch (err) {
+			console.error("isoline.calculateIsolineSingleContrainst", err);
+			return null;
+		} finally {
+			setTimeout(() => {
+				setIsLoading(false);
+				setIsLoadingType(null);
+			}, 250);
+		}
+	};
 	/**
 	 * @function calculateIsolineBothConstraints
 	 * @description multiple constraint isoline
 	 */
-	const calculateIsolineBothConstraints = useCallback(
-		async ({
-			coord,
-			constraints,
-		}: {
-			coord: Coordinate;
-			constraints: IsolineConstraint[];
-		}): Promise<IsolineResult["isolines"] | null> => {
-			if (!platformRef.current) {
-				console.error("Platform is not available");
-				return null;
-			}
-			setIsLoading(true);
-			setIsLoadingType("isoline");
+	const calculateIsolineBothConstraints = async ({
+		coord,
+		constraints,
+	}: {
+		coord: Coordinate;
+		constraints: IsolineConstraint[];
+	}): Promise<IsolineResult["isolines"] | null> => {
+		if (!platformRef.current) {
+			console.error("Platform is not available");
+			return null;
+		}
+		setIsLoading(true);
+		setIsLoadingType("isoline");
 
-			try {
-				// Create promises for each constraint isoline calculation
-				const promises = constraints.map((constraint) => {
-					const params: IsolineRequestParams = {
-						origin: coord,
-						rangeType: constraint.type,
-						rangeValues: constraint.value,
-						transportMode: "car",
-						avoid: { features: "tollRoad,ferry,controlledAccessHighway" },
-						routingMode: constraint.type === "distance" ? "fast" : "short",
-					};
+		try {
+			// Create promises for each constraint isoline calculation
+			const promises = constraints.map((constraint) => {
+				const params: IsolineRequestParams = {
+					origin: coord,
+					rangeType: constraint.type,
+					rangeValues: constraint.value,
+					transportMode: "car",
+					avoid: { features: "tollRoad,ferry,controlledAccessHighway" },
+					routingMode: constraint.type === "distance" ? "fast" : "short",
+				};
 
-					return calculateIsolineSingleContrainst(params, false);
-				});
+				return calculateIsolineSingleContrainst(params, false);
+			});
 
-				const boundingBoxes: H.geo.Rect[] = [];
-				const allIsolines: IsolineResult["isolines"][number][] = [];
-				const results = await Promise.allSettled(promises);
+			const boundingBoxes: H.geo.Rect[] = [];
+			const allIsolines: IsolineResult["isolines"][number][] = [];
+			const results = await Promise.allSettled(promises);
 
-				// Process each settled result
-				for (let i = 0; i < results.length; i++) {
-					const res = results[i];
-					if (res.status === "rejected" || !res.value) {
-						console.error(
-							`Failed or no isoline for constraint ${constraints[i].type}`,
-						);
-						return null;
-					}
-
-					// Valid isoline found
-					const isoline = res.value;
-					allIsolines.push(isoline);
-
-					// Add isoline to the map without zooming
-					const constraint = constraints[i];
-					const group = addIsolineToMap(isoline, constraint, false);
-					if (group) boundingBoxes.push(group.getBoundingBox());
-				}
-
-				// Merge bounding boxes and adjust map view
-				if (boundingBoxes.length > 0 && mapRef.current) {
-					const mergedBox = mergeAllRectangles(boundingBoxes);
-					if (mergedBox) {
-						mapRef.current.getViewModel().setLookAtData({ bounds: mergedBox });
-					}
-				} else {
-					console.error("No bounding boxes found for constraints.");
+			// Process each settled result
+			for (let i = 0; i < results.length; i++) {
+				const res = results[i];
+				if (res.status === "rejected" || !res.value) {
+					console.error(
+						`Failed or no isoline for constraint ${constraints[i].type}`,
+					);
 					return null;
 				}
 
-				// Return the array of successful isolines
-				return allIsolines;
-			} catch (err) {
-				console.error("isoline.calculateIsolineBothConstraints", err);
-				return null;
-			} finally {
-				setTimeout(() => {
-					setIsLoading(false);
-					setIsLoadingType(null);
-				}, 250);
+				// Valid isoline found
+				const isoline = res.value;
+				allIsolines.push(isoline);
+
+				// Add isoline to the map without zooming
+				const constraint = constraints[i];
+				const group = addIsolineToMap(isoline, constraint, false);
+				if (group) boundingBoxes.push(group.getBoundingBox());
 			}
-		},
-		[calculateIsolineSingleContrainst, addIsolineToMap],
-	);
-	/**
-	 * @function mergeAllRectangles
-	 * @description Merges an array of H.geo.Rect into a single bounding rectangle.
-	 * @param rects Array of bounding rectangles
-	 * @returns A new H.geo.Rect covering all input rectangles, or null if none
-	 */
-	function mergeAllRectangles(rects: H.geo.Rect[]): H.geo.Rect | null {
-		try {
-			if (!rects || rects.length === 0) {
+
+			// Merge bounding boxes and adjust map view
+			if (boundingBoxes.length > 0 && mapRef.current) {
+				const mergedBox = mergeAllRectangles(boundingBoxes);
+				if (mergedBox) {
+					mapRef.current.getViewModel().setLookAtData({ bounds: mergedBox });
+				}
+			} else {
+				console.error("No bounding boxes found for constraints.");
 				return null;
 			}
 
-			// Initialize min/max values
-			let top = Number.NEGATIVE_INFINITY; // "top" in HERE means the higher latitude value
-			let bottom = Number.POSITIVE_INFINITY; // lower latitude value
-			let left = Number.POSITIVE_INFINITY; // smaller longitude
-			let right = Number.NEGATIVE_INFINITY; // bigger longitude
-
-			for (const r of rects) {
-				// HERE's Lat/Lng bounding box:
-				//   top (max lat), left (min lng), bottom (min lat), right (max lng)
-				top = Math.max(top, r.getTop());
-				bottom = Math.min(bottom, r.getBottom());
-				left = Math.min(left, r.getLeft());
-				right = Math.max(right, r.getRight());
-			}
-
-			// Construct the merged rectangle
-			// new H.geo.Rect(top, left, bottom, right)
-			return new H.geo.Rect(top, left, bottom, right);
+			// Return the array of successful isolines
+			return allIsolines;
 		} catch (err) {
-			console.error("isoline.mergeAllRectangles", err);
+			console.error("isoline.calculateIsolineBothConstraints", err);
+			return null;
+		} finally {
+			setTimeout(() => {
+				setIsLoading(false);
+				setIsLoadingType(null);
+			}, 250);
+		}
+	};
+	const mergeAllRectangles = (rects: H.geo.Rect[]): H.geo.Rect | null => {
+		if (!rects || rects.length === 0) {
 			return null;
 		}
-	}
+
+		// Initialize min/max values
+		let top = Number.NEGATIVE_INFINITY; // "top" in HERE means the higher latitude value
+		let bottom = Number.POSITIVE_INFINITY; // lower latitude value
+		let left = Number.POSITIVE_INFINITY; // smaller longitude
+		let right = Number.NEGATIVE_INFINITY; // bigger longitude
+
+		for (const r of rects) {
+			// HERE's Lat/Lng bounding box:
+			//   top (max lat), left (min lng), bottom (min lat), right (max lng)
+			top = Math.max(top, r.getTop());
+			bottom = Math.min(bottom, r.getBottom());
+			left = Math.min(left, r.getLeft());
+			right = Math.max(right, r.getRight());
+		}
+
+		// Construct the merged rectangle
+		// new H.geo.Rect(top, left, bottom, right)
+		return new H.geo.Rect(top, left, bottom, right);
+	};
 
 	const isoline = {
 		onCalculate: {
@@ -886,7 +853,10 @@ export default function useHereMap(
 		async ({
 			destination,
 			origin,
-		}: { destination: MarkerData; origin: MarkerData }) => {
+		}: {
+			destination: MarkerData;
+			origin: MarkerData;
+		}) => {
 			// Remove previous route and tooltip
 			removeRouting();
 
@@ -1118,7 +1088,9 @@ export default function useHereMap(
 			({
 				// default 0.1 means 10% expand bounds for padding effect
 				expandCount = 0.1,
-			}: { expandCount?: number } = {}) => {
+			}: {
+				expandCount?: number;
+			} = {}) => {
 				if (!mapRef.current) return;
 
 				const groups = [

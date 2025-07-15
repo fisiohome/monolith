@@ -15,7 +15,7 @@ import { goBackHandler, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { MapPin } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -443,6 +443,10 @@ export const useAppointmentSchedulingForm = () => {
 		control: form.control,
 		name: "appointmentScheduling.preferredTherapistGender",
 	});
+	const watchAllOfDayValue = useWatch({
+		control: form.control,
+		name: "formOptions.findTherapistsAllOfDay",
+	});
 	const [isLoading, setIsLoading] = useState({
 		services: false,
 		therapists: false,
@@ -477,6 +481,7 @@ export const useAppointmentSchedulingForm = () => {
 		serviceIdValue: watchServiceValue,
 		appointmentDateTImeValue: watchAppointmentDateTimeValue,
 		preferredTherapistGenderValue: watchPreferredTherapistGenderValue,
+		isAllOfDayValue: !!watchAllOfDayValue,
 		patientValues: {
 			fullName: watchPatientDetailsValue.fullName,
 			address: watchPatientDetailsValue.address,
@@ -614,13 +619,53 @@ export const useAppointmentSchedulingForm = () => {
 	);
 	const packageHooks = { packagesOption, onSelectPackage };
 
+	// * appointment date time
+	const watchSelectedTimeSlotValue = useMemo(() => {
+		return format(watchAppointmentDateTimeValue, "HH:mm");
+	}, [watchAppointmentDateTimeValue]);
+	const onSelectAllOfDay = useCallback(
+		(value: boolean) => {
+			const selectedDate = form.getValues(
+				"appointmentScheduling.appointmentDateTime",
+			);
+			form.setValue("formOptions.findTherapistsAllOfDay", value);
+			form.setValue(
+				"appointmentScheduling.appointmentDateTime",
+				startOfDay(selectedDate),
+				{
+					shouldValidate: false,
+				},
+			);
+		},
+		[form.setValue, form.getValues],
+	);
+	const onSelectTimeSlot = useCallback(
+		(value: string) => {
+			const date = form.getValues("appointmentScheduling.appointmentDateTime");
+			if (date) {
+				const [hours, minutes] = value.split(":");
+				const newDate = new Date(date);
+				newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
+				form.setValue("appointmentScheduling.appointmentDateTime", newDate);
+			}
+		},
+		[form.getValues, form.setValue],
+	);
+	const dateTimeHooks = {
+		watchSelectedTimeSlotValue,
+		onSelectAllOfDay,
+		onSelectTimeSlot,
+	};
+
 	return {
 		...prefGenderHooks,
 		...therapistAvailabilityHooks,
 		...serviceHooks,
 		...packageHooks,
+		...dateTimeHooks,
 		form,
 		isLoading,
 		watchAppointmentSchedulingValue,
+		watchAllOfDayValue,
 	};
 };
