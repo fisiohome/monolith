@@ -49,72 +49,75 @@ module AdminPortal
       perform_checks(appointment_date_time_in_tz, current_date_time_in_tz)
     end
 
-    # Get all available time slots for a specific date
-    # Returns array of time strings in 'HH:MM' format representing available booking times
+    # Returns all available time slots for a specific date, considering therapist's schedule, existing appointments, and business rules.
     #
-    # This method:
-    # 1. Gets the therapist's availability ranges for the date
-    # 2. Filters out times that conflict with existing appointments
-    # 3. Respects appointment duration and buffer times
-    # 4. Optionally filters out past times for today's date
-    # @return [Array<String>] Array of available time slots in HH:MM format
+    # This method performs the following steps:
+    #   1. Retrieves the therapist's availability ranges for the given date (including adjusted and weekly schedules).
+    #   2. Gathers all existing appointments for that date, excluding cancelled/unscheduled and the current appointment (if updating).
+    #   3. Checks if the therapist has already reached their daily appointment limit; if so, returns an empty array.
+    #   4. Iterates through each available slot in 30-minute increments, checking:
+    #      - If the slot is in the past (for today, unless in test env), it is skipped.
+    #      - If the slot overlaps with any existing appointment (including buffer), it is skipped.
+    #      - Otherwise, the slot is added to the list of available times.
+    #   5. Returns an array of available slot start times in 'HH:MM' format.
+    #
+    # @return [Array<String>] Array of available time slot start times in 'HH:MM' format
     def available_time_slots_for_date
+      # 1. Determine the date and therapist's time zone
       date = @appointment_date_time_server_time.to_date
       therapist_time_zone = @schedule.time_zone.presence || Time.zone.name
       slots = get_availability_ranges_for_date
-      return [] if slots.empty?
+      return [] if slots.empty? # No available ranges for this date
 
-      # Get all existing appointments for the date (excluding cancelled/unscheduled)
+      # 2. Fetch all existing appointments for the date (excluding cancelled/unscheduled/current)
       appointments = @therapist.appointments
         .where(appointment_date_time: date.all_day)
         .where.not(status: ["CANCELLED", "UNSCHEDULED"])
         .where.not(id: @current_appointment_id)
         .to_a
 
-      # Early return if therapist has reached daily appointment limit
+      # 3. Enforce daily appointment limit
       return [] if appointments.size >= @schedule.max_daily_appointments
 
       duration = @schedule.appointment_duration_in_minutes
       buffer = @schedule.buffer_time_in_minutes
       available_slots = []
 
-      # Only filter out past slots if the target date is today and not in test environment
-      # This prevents showing unavailable times in the past for today's bookings
+      # 4. Determine if we should filter out past slots (for today, unless in test env)
       current_date = Time.current.to_date
       filter_past_slots = (date == current_date) && !Rails.env.test?
 
+      # 5. Iterate through each availability slot for the day
       slots.each do |slot|
         slot_start = slot[:start]
         slot_end = slot[:end]
 
-        # Iterate through each 30-minute interval within the availability slot
-        # The last possible start time is slot_end - duration
+        # Step through the slot in 30-minute increments
         time = slot_start
         while time <= slot_end
-          # Skip past times for today's date (unless in test environment)
+          # 5a. Skip times in the past for today (unless in test env)
           if filter_past_slots && time < Time.current.in_time_zone(therapist_time_zone)
             time += 30.minutes
             next
           end
 
-          # Calculate the full appointment window including buffer time
+          # 5b. Calculate the full window for this potential appointment (including buffer)
           appointment_start = time
           appointment_end = appointment_start + duration.minutes
           appointment_end_with_buffer = appointment_end + buffer.minutes
+          appointment_range = appointment_start...appointment_end_with_buffer
 
-          # Check for conflicts with existing appointments
-          # Skip slot if it overlaps with any existing appointment (+ buffer)
+          # 5c. Check for conflicts with any existing appointment (including their buffer)
           conflict = appointments.any? do |appt|
             appt_start = appt.appointment_date_time
-            appt_end_with_buffer = appt_start + appt.total_duration_minutes.minutes
+            appt_end = appt_start + appt.total_duration_minutes.minutes
+            appt_range = appt_start...appt_end
 
-            # Block if new slot starts before existing ends,
-            # AND new slot (including duration) ends after existing starts
-            appointment_start < appt_end_with_buffer &&
-              appointment_end_with_buffer > appt_start
+            # Overlap if the new slot starts before an existing ends, and ends after an existing starts
+            appointment_range.begin < appt_range.end && appt_range.begin < appointment_range.end
           end
 
-          # Add to available slots if no conflicts found
+          # 5d. Add to available slots if no conflict found
           unless conflict
             available_slots << time.strftime("%H:%M")
           end
@@ -123,6 +126,7 @@ module AdminPortal
         end
       end
 
+      # 6. Return all available slot start times
       available_slots
     end
 
