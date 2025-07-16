@@ -419,7 +419,7 @@ export default function ExistingPatientSelection() {
 		() => watchPatientRecordSourceValue === "existing",
 		[watchPatientRecordSourceValue],
 	);
-	const onHandleChangePatientSource = useCallback(() => {
+	const onHandleChangePatientSource = () => {
 		// reset the patient contact information and also the patient details
 		const { patientDetails, contactInformation } =
 			defineAppointmentFormDefaultValues();
@@ -434,7 +434,7 @@ export default function ExistingPatientSelection() {
 		// reset the selected patient record data and the search patient state
 		setSelectedPatient(null);
 		setSearchPatient("");
-	}, [form.resetField, form.setValue]);
+	};
 
 	// * for get the patient list
 	const [isLoading, setIsLoading] = useState({ patientList: false });
@@ -717,8 +717,8 @@ export default function ExistingPatientSelection() {
 														))
 													) : (
 														<div className="grid gap-4">
-															<Search className="mx-auto text-muted size-6" />
-															<p className="text-center text-pretty text-muted w-[75%] mx-auto">
+															<Search className="mx-auto text-card-foreground/50 size-6" />
+															<p className="text-center text-pretty text-card-foreground/50 w-[75%] mx-auto">
 																{tpp("fields.existing_selection.list.empty")}
 															</p>
 														</div>

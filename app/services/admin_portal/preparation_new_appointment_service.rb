@@ -45,39 +45,51 @@ module AdminPortal
     # retrieves all therapists available by selected location and service
     def fetch_therapists
       return unless selected_location_id.present? && selected_service_id.present?
-      location = Location.find(selected_location_id)
-      service = Service.find(selected_service_id)
 
-      location_ids = if location.city == "KOTA ADM. JAKARTA PUSAT"
-        # * Booking from Jakarta Pusat: All therapists in DKI Jakarta
-        Location.where(state: "DKI JAKARTA").pluck(:id)
-      else
-        # * Otherwise: Only therapists in the selected location
-        [location.id]
-      end
+      # Eager-load location and service in a single query to minimize DB hits
+      location, service = Location.includes(:services).find(selected_location_id), Service.find(selected_service_id)
 
-      therapists = Therapist
+      # Determine location_ids for therapist filtering
+      location_ids =
+        if location.city == "KOTA ADM. JAKARTA PUSAT"
+          Location.where(state: "DKI JAKARTA").pluck(:id)
+        else
+          [location.id]
+        end
+
+      always_include_names = [
+        "Riswanda Khoiruddin Imawan",
+        "Muhammad Fajri Ramadhana",
+        "Satya Liwa Marliando",
+        "Nanda Riezki Fajri"
+      ]
+
+      # Build base scope for therapists to DRY up includes/joins
+      base_therapist_scope = Therapist
         .joins(:service, active_therapist_address: {address: :location})
         .includes(
-          [
-            :appointments,
-            therapist_appointment_schedule: [
-              :therapist_weekly_availabilities,
-              :therapist_adjusted_availabilities
-            ]
+          :appointments,
+          therapist_appointment_schedule: [
+            :therapist_weekly_availabilities,
+            :therapist_adjusted_availabilities
           ]
         )
         .where(service: service)
-        # * therapist from JAKARTA PUSAT, all booking come from Greater Jakarta can taken by therapist
-        .where(
-          (location.state == "DKI JAKARTA") ? ["addresses.location_id IN (?) OR locations.city = ?", location_ids, "KOTA ADM. JAKARTA PUSAT"] : ["addresses.location_id IN (?)", location_ids]
-        )
         .where(employment_status: "ACTIVE")
-        # Exclude addresses with invalid lat/long
         .where.not("addresses.latitude = 0 OR addresses.longitude = 0")
         .distinct
 
-      # Gender filtering
+      # Query always-include therapists and normal therapists in a single query, then merge
+      therapists = base_therapist_scope.where(
+        (location.state == "DKI JAKARTA") ?
+          ["(therapists.name IN (?) OR addresses.location_id IN (?) OR locations.city = ?)", always_include_names, location_ids, "KOTA ADM. JAKARTA PUSAT"] :
+          ["(therapists.name IN (?) OR addresses.location_id IN (?))", always_include_names, location_ids]
+      )
+
+      # Remove duplicates by id (since always_include_names may overlap with location filter)
+      therapists = therapists.uniq { |t| t.id }
+
+      # Gender filtering (in-memory if small, or DB if possible)
       selected_preferred_therapist_gender = @params[:preferred_therapist_gender]
       therapists = apply_gender_filter(therapists, selected_preferred_therapist_gender)
 
@@ -86,13 +98,13 @@ module AdminPortal
       if selected_appointment_date_time.present?
         apply_availability_filter(therapists, selected_appointment_date_time)
       else
-        # If no availability filter, at least serialize with minimal availability data
         therapists.map { |therapist| formatted_therapists(therapist) }
       end
     end
 
     def fetch_options_data
-      patient_genders = Patient.genders.map { |key, value| value }
+      # Use pluck for patient_genders to avoid loading all records
+      patient_genders = Patient.genders.values
       patient_conditions = Appointment::PATIENT_CONDITION
       preferred_therapist_gender = Appointment::PREFERRED_THERAPIST_GENDER
       referral_sources = Appointment::REFERRAL_SOURCES

@@ -118,20 +118,7 @@ export default function PatientContactForm() {
 		[globalProps?.patientContactList],
 	);
 	useEffect(() => {
-		onHandleFetchContactList(searchContact);
-	}, [searchContact]);
-	const onHandleContactSource = useCallback(() => {
-		// reset the patient contact information
-		const { contactInformation } = defineAppointmentFormDefaultValues();
-		form.resetField("contactInformation", {
-			defaultValue: { ...contactInformation },
-		});
-
-		setSearchContact("");
-		setSelectedContact(null);
-	}, [form.resetField]);
-	const onHandleFetchContactList = useCallback(
-		debounce((value: string) => {
+		const onHandleFetchContactList = debounce((value: string) => {
 			const { fullUrl } = populateQueryParams(
 				globalProps.adminPortal.router.adminPortal.appointment.new,
 				deepTransformKeysToSnakeCase({
@@ -162,9 +149,23 @@ export default function PatientContactForm() {
 					},
 				},
 			);
-		}, 250),
-		[],
-	);
+		}, 250);
+
+		onHandleFetchContactList(searchContact);
+	}, [
+		searchContact,
+		globalProps.adminPortal.router.adminPortal.appointment.new,
+	]);
+	const onHandleContactSource = useCallback(() => {
+		// reset the patient contact information
+		const { contactInformation } = defineAppointmentFormDefaultValues();
+		form.resetField("contactInformation", {
+			defaultValue: { ...contactInformation },
+		});
+
+		setSearchContact("");
+		setSelectedContact(null);
+	}, [form.resetField]);
 
 	//* for patient contact selection
 	const [selectedContact, setSelectedContact] = useState<null | NonNullable<
@@ -480,8 +481,8 @@ export default function PatientContactForm() {
 													))
 												) : (
 													<div className="grid gap-4">
-														<Search className="mx-auto text-muted size-6" />
-														<p className="text-center text-pretty text-muted w-[75%] mx-auto">
+														<Search className="mx-auto text-card-foreground/50 size-6" />
+														<p className="text-center text-pretty text-card-foreground/50 w-[75%] mx-auto">
 															{tpc("fields.existing_selection.list.empty")}
 														</p>
 													</div>
