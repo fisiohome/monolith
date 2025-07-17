@@ -14,6 +14,7 @@ export interface Availability {
 	endDateWindow: string;
 	weeklyAvailabilities: WeeklyAvailability[];
 	adjustedAvailabilities: AdjustedAvailability[];
+	availabilityRules?: AvailabilityRule[];
 }
 
 export interface WeeklyAvailability {
@@ -26,10 +27,12 @@ export interface WeeklyAvailability {
 export interface AdjustedAvailability {
 	id: number;
 	specificDate: string;
-	startTime?: string;
-	endTime?: string;
 	reason?: string;
 	isUnavailable: boolean;
+	times?: Array<{
+		startTime: string;
+		endTime: string;
+	}>;
 }
 
 export interface AvailabilityDetail {
@@ -52,4 +55,10 @@ export interface AvailabilityDetail {
 					Pick<Appointment, "id" | "registrationNumber">);
 	};
 	reasons: string[];
+}
+
+export interface AvailabilityRule {
+	distanceInMeters?: number;
+	durationInMinutes?: number;
+	location?: boolean;
 }

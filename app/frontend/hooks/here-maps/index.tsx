@@ -145,6 +145,11 @@ export default function useHereMap(
 	 */
 	const distanceIsolineGroupRef = useRef<H.map.Group | null>(null);
 	/**
+	 * @constant allIsolineGroupRef
+	 * @description for all isoline groups
+	 */
+	const allIsolineGroupRef = useRef<H.map.Group | null>(null);
+	/**
 	 * @constant isolineCoordinatesRef
 	 * @description Stores the polygon coordinates returned by the isoline calculations.
 	 */
@@ -587,14 +592,65 @@ export default function useHereMap(
 		try {
 			if (!mapRef.current) return;
 
-			const boundingBoxes: H.geo.Rect[] = [];
-			for (const isoline of values) {
-				const group = addIsolineToMap(isoline, isoline.range, false);
-				if (group) boundingBoxes.push(group.getBoundingBox());
+			// Remove previous master group if it exists
+			if (allIsolineGroupRef.current) {
+				mapRef.current.removeObject(allIsolineGroupRef.current);
+				allIsolineGroupRef.current = null;
 			}
 
+			const masterGroup = new H.map.Group();
+			const boundingBoxes: H.geo.Rect[] = [];
+			const seenKeys = new Set<string>();
+			for (const isoline of values) {
+				const key = `${isoline.range.type}-${isoline.range.value}`;
+				if (seenKeys.has(key)) continue; // Skip duplicate
+				seenKeys.add(key);
+				// Build the polygon(s) for this isoline
+				const rangeType = isoline.range.type;
+				const style = isolineLib.LABEL_UI_STYLE[rangeType];
+				let firstSectionCoordinates: H.geo.Point[] | null = null;
+				for (const section of isoline.polygons) {
+					const lineString = H.geo.LineString.fromFlexiblePolyline(
+						section.outer,
+					);
+					const points = lineString.getLatLngAltArray();
+					const coordinates: H.geo.Point[] = [];
+					for (let i = 0; i < points.length; i += 3) {
+						coordinates.push(new H.geo.Point(points[i], points[i + 1]));
+					}
+					const polygon = new H.map.Polygon(lineString, {
+						style: { lineWidth: 2, ...style },
+						data: section,
+					});
+					masterGroup.addObject(polygon);
+					if (!firstSectionCoordinates) {
+						firstSectionCoordinates = coordinates;
+					}
+				}
+				if (firstSectionCoordinates && firstSectionCoordinates.length > 0) {
+					const { labelElement, labelLat, labelLng, labelText } =
+						isolineLib.computedLabelElement({
+							firstSectionCoordinates,
+							constraint: isoline.range,
+						});
+					const domIcon = new H.map.DomIcon(labelElement);
+					const labelMarker = new H.map.DomMarker(
+						{ lat: labelLat, lng: labelLng },
+						{
+							icon: domIcon,
+							data: { lat: labelLat, lng: labelLng, label: labelText },
+						},
+					);
+					masterGroup.addObject(labelMarker);
+				}
+				if (masterGroup.getBoundingBox()) {
+					boundingBoxes.push(masterGroup.getBoundingBox());
+				}
+			}
+			mapRef.current.addObject(masterGroup);
+			allIsolineGroupRef.current = masterGroup;
+
 			if (boundingBoxes.length > 0 && mapRef?.current) {
-				// Merge bounding boxes and adjust map view
 				const mergedBox = mergeAllRectangles(boundingBoxes);
 				if (mergedBox) {
 					mapRef?.current?.getViewModel()?.setLookAtData({ bounds: mergedBox });
@@ -648,10 +704,26 @@ export default function useHereMap(
 		setIsLoading(true);
 		setIsLoadingType("isoline");
 		try {
+			// Validate parameters for therapist availability use case
+			if (!params.origin && !params.destination) {
+				console.error(
+					"Isoline calculation requires either origin or destination parameter",
+				);
+				return null;
+			}
+
+			if (params.origin && params.destination) {
+				console.warn(
+					"Both origin and destination provided. For therapist availability, prefer origin (patient location)",
+				);
+			}
+
 			// Get the routing service from the platform
 			const router = platformRef.current.getRoutingService(undefined, 8);
 
 			// Construct the request parameters for the isoline calculation
+			// For therapist availability: use origin (patient location) as the center point
+			// The isoline shows where therapists can reach the patient from within the range
 			const requestParams = {
 				...(params.origin && {
 					origin: `${params.origin.lat},${params.origin.lng}`,
@@ -662,21 +734,17 @@ export default function useHereMap(
 				"range[type]": params.rangeType,
 				"range[values]": params.rangeValues,
 				transportMode: params.transportMode,
-				...(params.evParams && {
-					"ev[freeFlowSpeedTable]": params.evParams.freeFlowSpeedTable,
-					"ev[trafficSpeedTable]": params.evParams.trafficSpeedTable,
-					"ev[ascent]": params.evParams.ascent,
-					"ev[descent]": params.evParams.descent,
-					"ev[auxiliaryConsumption]": params.evParams.auxiliaryConsumption,
+				...(params.routingMode && {
+					routingMode: params.routingMode,
 				}),
+				...(params.traffic?.mode && {
+					"traffic[mode]": params.traffic.mode,
+				}),
+				optimizeFor: params.optimizeFor || "balanced",
+				departureTime: params.departureTime || new Date().toISOString(),
 				...(params.avoid && {
-					avoid: {
-						...(params?.avoid?.features && {
-							features: params.avoid.features,
-						}),
-					},
+					"avoid[features]": params.avoid.features,
 				}),
-				routingMode: params.routingMode,
 			};
 
 			return new Promise<IsolineResult["isolines"][number] | null>(
@@ -737,14 +805,8 @@ export default function useHereMap(
 		try {
 			// Create promises for each constraint isoline calculation
 			const promises = constraints.map((constraint) => {
-				const params: IsolineRequestParams = {
-					origin: coord,
-					rangeType: constraint.type,
-					rangeValues: constraint.value,
-					transportMode: "car",
-					avoid: { features: "tollRoad,ferry,controlledAccessHighway" },
-					routingMode: constraint.type === "distance" ? "fast" : "short",
-				};
+				// Use constraint-specific optimized parameters
+				const params = getConstraintSpecificParams(coord, constraint);
 
 				return calculateIsolineSingleContrainst(params, false);
 			});
@@ -796,6 +858,130 @@ export default function useHereMap(
 			}, 250);
 		}
 	};
+	/**
+	 * @function getConstraintSpecificParams
+	 * @description Generates optimized parameters specific to each constraint type
+	 *
+	 * @param coord - The coordinate (patient location)
+	 * @param constraint - The isoline constraint (time or distance only for therapist availability)
+	 * @returns Optimized IsolineRequestParams for the specific constraint type
+	 *
+	 * @example
+	 * Constraint-specific optimized parameters (RECOMMENDED)
+	 * const constraints = [
+	 *   { type: "time", value: 50 * 60 },    // 50 minutes
+	 *   { type: "distance", value: 25000 },  // 25km
+	 * ];
+	 *
+	 * Each constraint gets optimized parameters automatically:
+	 * - Time: high quality, real-time traffic, fine resolution
+	 * - Distance: performance optimized, no traffic, coarser resolution
+	 * const results = await isoline.onCalculate.both({
+	 *   coord: patientCoords,
+	 *   constraints,
+	 * });
+	 *
+	 * Or manually for single constraint:
+	 * const timeParams = isoline.getConstraintSpecificParams(patientCoords, {
+	 *   type: "time",
+	 *   value: 50 * 60,
+	 * });
+	 *
+	 * Constraint-specific avoid features:
+	 *
+	 * Time-based isoline (optimized for travel time):
+	 * - tollRoad: Avoid toll booths (delays)
+	 * - ferry: Avoid ferry crossings (waiting times)
+	 * - carShuttleTrain: Avoid car shuttle trains (delays)
+	 * - tunnel: Avoid tunnels (potential congestion)
+	 * - dirtRoad: Avoid unpaved roads (slower speeds)
+	 *
+	 * Distance-based isoline (optimized for coverage area):
+	 * - tollRoad: Avoid toll roads (may force longer routes)
+	 * - ferry: Avoid ferries (adds distance to reach ferry)
+	 * - controlledAccessHighway: Avoid highways (limited access)
+	 * - carShuttleTrain: Avoid car shuttle trains (limited access points)
+	 */
+	const getConstraintSpecificParams = useCallback(
+		(
+			coord: Coordinate,
+			constraint: IsolineConstraint,
+		): IsolineRequestParams => {
+			const baseParams = {
+				origin: coord,
+				rangeType: constraint.type,
+				rangeValues: constraint.value,
+				transportMode: "car" as const,
+			};
+
+			switch (constraint.type) {
+				case "time":
+					return {
+						...baseParams,
+						routingMode: "short", // Optimize for shortest route for time accuracy
+						departureTime: new Date().toISOString(),
+						traffic: {
+							mode: "default",
+						},
+						optimizeFor: "quality",
+						// Time-based isoline: Avoid features that slow down travel time
+						avoid: {
+							features: "tollRoad,ferry,carShuttleTrain,tunnel,dirtRoad",
+							// Avoid toll roads (delays at toll booths)
+							// Avoid ferries (long waiting times)
+							// Avoid car shuttle trains (delays)
+							// Avoid tunnels (potential congestion)
+							// Avoid dirt roads (slower speeds)
+						},
+					};
+
+				case "distance":
+					return {
+						...baseParams,
+						routingMode: "fast", // Optimize for fastest route for distance efficiency
+						departureTime: new Date().toISOString(),
+						traffic: {
+							mode: "default",
+						},
+						optimizeFor: "quality",
+						// Distance-based isoline: Avoid features that increase distance
+						avoid: {
+							features:
+								"tollRoad,ferry,controlledAccessHighway,carShuttleTrain",
+							// Avoid toll roads (may force longer routes)
+							// Avoid ferries (adds distance to reach ferry)
+							// Avoid controlled access highways (may not be accessible from all areas)
+							// Avoid car shuttle trains (limited access points)
+						},
+					};
+
+				default:
+					// Fallback to balanced approach for any other constraint types
+					console.warn(
+						`Unsupported constraint type: ${constraint.type}. Using balanced approach.`,
+					);
+					return {
+						...baseParams,
+						routingMode: "fast",
+						departureTime: new Date().toISOString(),
+						traffic: {
+							mode: "default",
+						},
+						shape: {
+							maxPoints: 1000,
+							maxResolution: 200,
+						},
+						optimizeFor: "balanced",
+						// Balanced approach: Standard avoid features
+						avoid: {
+							features: "tollRoad,ferry,controlledAccessHighway",
+						},
+					};
+			}
+		},
+		[],
+	);
+
 	const mergeAllRectangles = (rects: H.geo.Rect[]): H.geo.Rect | null => {
 		if (!rects || rects.length === 0) {
 			return null;

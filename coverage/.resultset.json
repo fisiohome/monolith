@@ -2675,6 +2675,17 @@
           null
         ]
       },
+      "/workspaces/monolith/test/jobs/backfill_therapist_availability_rules_job_test.rb": {
+        "lines": [
+          1,
+          null,
+          1,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
       "/workspaces/monolith/test/models/address_test.rb": {
         "lines": [
           1,
@@ -5476,6 +5487,6 @@
         ]
       }
     },
-    "timestamp": 1752639276
+    "timestamp": 1752732656
   }
 }

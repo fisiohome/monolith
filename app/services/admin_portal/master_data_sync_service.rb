@@ -326,6 +326,10 @@ module AdminPortal
               min_booking_before_in_hours: 24,
               available_now: true
             )
+            # Set default rules if not present
+            if schedule.availability_rules.blank? || schedule.availability_rules == {}
+              schedule.availability_rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES
+            end
             schedule.save! if schedule.new_record? || schedule.changed?
 
             # Apply custom schedule or default

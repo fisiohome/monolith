@@ -68,6 +68,13 @@ const adjustedAvailabilitiesSchema = z.object({
 	times: createOverlapValidator("adjusted availability").nullable(),
 });
 
+// Availability Rules Schema
+const availabilityRulesSchema = z.object({
+	distanceInMeters: z.number().int().nonnegative().optional(),
+	durationInMinutes: z.number().int().nonnegative().optional(),
+	useLocationRules: z.boolean().optional(),
+});
+
 // Main schema definition
 export const AVAILABILITY_FORM_SCHEMA = z
 	.object({
@@ -82,6 +89,7 @@ export const AVAILABILITY_FORM_SCHEMA = z
 		endDateWindow: z.coerce.date().optional(),
 		weeklyAvailabilities: z.array(weeklyAvailabilitiesSchema).nullable(),
 		adjustedAvailabilities: z.array(adjustedAvailabilitiesSchema).nullable(),
+		availabilityRules: z.array(availabilityRulesSchema).optional(),
 	})
 	.superRefine((data, ctx) => {
 		if (!data.availableNow) {
@@ -136,7 +144,20 @@ export const getDefaultValues = ({
 		endDateWindow,
 		weeklyAvailabilities = [],
 		adjustedAvailabilities = [],
+		availabilityRules = [],
 	}: Partial<Therapist["availability"]> = availability;
+
+	// Convert backend availability rules format to frontend format
+	const convertedAvailabilityRules = availabilityRules && Array.isArray(availabilityRules) && availabilityRules.length > 0 
+		? [availabilityRules.reduce((acc: { distanceInMeters?: number; durationInMinutes?: number; useLocationRules?: boolean }, rule: { distanceInMeters?: number; durationInMinutes?: number; location?: boolean }) => {
+			if (rule && typeof rule === 'object') {
+				if (rule.distanceInMeters) acc.distanceInMeters = rule.distanceInMeters;
+				if (rule.durationInMinutes) acc.durationInMinutes = rule.durationInMinutes;
+				if (rule.location !== undefined) acc.useLocationRules = rule.location;
+			}
+			return acc;
+		}, {} as { distanceInMeters?: number; durationInMinutes?: number; useLocationRules?: boolean })]
+		: [{ distanceInMeters: 0, durationInMinutes: 0, useLocationRules: false }];
 
 	return {
 		therapistId: therapist?.id || "",
@@ -151,51 +172,27 @@ export const getDefaultValues = ({
 			: undefined,
 		endDateWindow: endDateWindow ? new Date(String(endDateWindow)) : undefined,
 
-		weeklyAvailabilities: days.map((day) => ({
+		weeklyAvailabilities: Array.isArray(weeklyAvailabilities) ? days.map((day) => ({
 			dayOfWeek: day,
 			times: weeklyAvailabilities
 				.filter(
-					({ dayOfWeek }) => dayOfWeek.toLowerCase() === day.toLowerCase(),
+					({ dayOfWeek }) => dayOfWeek && dayOfWeek.toLowerCase() === day.toLowerCase(),
 				)
 				.map(({ startTime, endTime }) => ({ startTime, endTime })),
+		})) : days.map((day) => ({
+			dayOfWeek: day,
+			times: [],
 		})) satisfies AvailabilityFormSchema["weeklyAvailabilities"],
 
-		adjustedAvailabilities: adjustedAvailabilities.length
-			? (Object.values(
-					adjustedAvailabilities.reduce(
-						(
-							acc,
-							{ specificDate, startTime, endTime, reason, isUnavailable },
-						) => {
-							// parse a date to the specific timezone
-							// const date = new TZDate(specificDate, serverTimezone);
-							const date = new Date(String(specificDate));
-							const formattedDate = date.toString();
+		adjustedAvailabilities: Array.isArray(adjustedAvailabilities) ? adjustedAvailabilities.map((adj) => ({
+			specificDate: adj.specificDate ? new Date(String(adj.specificDate)) : null,
+			reason: adj.reason || "",
+			times: adj.times?.map((time: { startTime: string; endTime: string }) => ({
+				startTime: time.startTime,
+				endTime: time.endTime,
+			})) || null,
+		})) : [] satisfies AvailabilityFormSchema["adjustedAvailabilities"],
 
-							acc[formattedDate] ??= {
-								specificDate: date,
-								times: [],
-								reason: undefined,
-							};
-
-							if (isUnavailable) {
-								acc[formattedDate].reason = reason || "";
-								acc[formattedDate].times = null;
-							} else if (startTime && endTime) {
-								acc[formattedDate].times?.push({ startTime, endTime });
-								if (reason) acc[formattedDate].reason = reason;
-							}
-
-							return acc;
-						},
-						{} as Record<
-							string,
-							NonNullable<
-								AvailabilityFormSchema["adjustedAvailabilities"]
-							>[number]
-						>,
-					),
-				) satisfies AvailabilityFormSchema["adjustedAvailabilities"])
-			: [],
+		availabilityRules: convertedAvailabilityRules,
 	};
 };

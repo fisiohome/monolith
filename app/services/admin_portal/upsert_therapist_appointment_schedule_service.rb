@@ -43,6 +43,7 @@ module AdminPortal
         :available_now,
         :start_date_window,
         :end_date_window,
+        availability_rules: [:distance_in_meters, :duration_in_minutes, :location],
         weekly_availabilities: [:day_of_week, :start_time, :end_time],
         adjusted_availabilities: [:specific_date, :start_time, :end_time, :reason]
       )

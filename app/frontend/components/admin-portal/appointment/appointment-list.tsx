@@ -361,189 +361,185 @@ function ScheduleList({ schedule }: ScheduleListProps) {
 							<ExpandableCardHeader
 								className={cn("p-4 md:p-6", isExpanded ? "" : "!pb-2")}
 							>
-								<>
-									<div className="flex flex-col flex-1 gap-6 md:flex-row">
-										<div className="flex flex-col items-center self-center w-full my-2 md:w-32">
-											<Badge
-												variant="outline"
-												className={cn(
-													"mb-1 text-center text-pretty",
-													distanceBadgeVariant,
-												)}
-											>
-												{startTimeLabel.distance}
-											</Badge>
-											<p className="text-2xl font-bold tracking-widest group-hover:text-primary">
-												{startTimeLabel.time}
-											</p>
-											<p className="text-xs font-semibold group-hover:text-primary">
-												{startTimeLabel.period}
-											</p>
-											<Badge
-												variant="outline"
-												className="mt-3 text-xs font-semibold group-hover:text-primary"
-											>
-												Visit {schedule.visitProgress}
-											</Badge>
+								<div className="flex flex-col flex-1 gap-6 md:flex-row">
+									<div className="flex flex-col items-center self-center w-full my-2 md:w-32">
+										<Badge
+											variant="outline"
+											className={cn(
+												"mb-1 text-center text-pretty",
+												distanceBadgeVariant,
+											)}
+										>
+											{startTimeLabel.distance}
+										</Badge>
+										<p className="text-2xl font-bold tracking-widest group-hover:text-primary">
+											{startTimeLabel.time}
+										</p>
+										<p className="text-xs font-semibold group-hover:text-primary">
+											{startTimeLabel.period}
+										</p>
+										<Badge
+											variant="outline"
+											className="mt-3 text-xs font-semibold group-hover:text-primary"
+										>
+											Visit {schedule.visitProgress}
+										</Badge>
+									</div>
+
+									<Separator
+										orientation="vertical"
+										className="w-[2px] h-auto rounded hidden md:inline-block"
+									/>
+
+									<div className="grid items-start w-full grid-cols-1 gap-4 my-2 lg:gap-6 md:grid-cols-12">
+										<div className="flex flex-col items-start justify-between w-full gap-4 md:items-center md:flex-row col-span-full">
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div className="relative">
+															<DotBadgeWithLabel
+																className="relative flex-shrink-0 text-left"
+																variant={statusDotVariant}
+															>
+																<span
+																	title={schedule.status}
+																	className="flex-grow-0 text-xs tracking-wide text-nowrap"
+																>
+																	{t(`statuses.${schedule.status}`)}
+																</span>
+															</DotBadgeWithLabel>
+														</div>
+													</TooltipTrigger>
+													<TooltipContent>
+														<p className="uppercase">
+															Status: {t(`statuses.${schedule.status}`)}
+														</p>
+													</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+
+											<div className="flex-none order-first md:order-last">
+												<Badge
+													variant="outline"
+													className={cn(
+														"text-pretty font-bold",
+														schedule?.service?.code &&
+															getBrandBadgeVariant(schedule.service.code),
+													)}
+												>
+													<Hash className="size-3" />
+													<span>{schedule.registrationNumber}</span>
+												</Badge>
+											</div>
 										</div>
 
-										<Separator
-											orientation="vertical"
-											className="w-[2px] h-auto rounded hidden md:inline-block"
-										/>
-
-										<div className="grid items-start w-full grid-cols-1 gap-4 my-2 lg:gap-6 md:grid-cols-12">
-											<div className="flex flex-col items-start justify-between w-full gap-4 md:items-center md:flex-row col-span-full">
-												<TooltipProvider>
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<div className="relative">
-																<DotBadgeWithLabel
-																	className="relative flex-shrink-0 text-left"
-																	variant={statusDotVariant}
-																>
-																	<span
-																		title={schedule.status}
-																		className="flex-grow-0 text-xs tracking-wide text-nowrap"
-																	>
-																		{t(`statuses.${schedule.status}`)}
-																	</span>
-																</DotBadgeWithLabel>
-															</div>
-														</TooltipTrigger>
-														<TooltipContent>
-															<p className="uppercase">
-																Status: {t(`statuses.${schedule.status}`)}
-															</p>
-														</TooltipContent>
-													</Tooltip>
-												</TooltipProvider>
-
-												<div className="flex-none order-first md:order-last">
-													<Badge
-														variant="outline"
-														className={cn(
-															"text-pretty font-bold",
-															schedule?.service?.code &&
-																getBrandBadgeVariant(schedule.service.code),
-														)}
-													>
-														<Hash className="size-3" />
-														<span>{schedule.registrationNumber}</span>
-													</Badge>
-												</div>
-											</div>
-
-											<div className="grid items-start gap-4 xl:grid-cols-12 col-span-full">
-												<div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1 xl:col-span-4">
-													<div className="flex items-center gap-2">
-														{schedule?.patient && (
-															<>
-																<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
-																	<AvatarImage
-																		src="#"
-																		alt={schedule.patient.name}
-																	/>
-																	<AvatarFallback>
-																		<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
-																		{/* {generateInitials(schedule.patient.name)} */}
-																	</AvatarFallback>
-																</Avatar>
-																<div>
-																	<p className="uppercase line-clamp-1">
-																		{schedule.patient.name}
-																	</p>
-																	{/* <div className="flex gap-1 text-xs font-light line-clamp-1">
+										<div className="grid items-start gap-4 xl:grid-cols-12 col-span-full">
+											<div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1 xl:col-span-4">
+												<div className="flex items-center gap-2">
+													{schedule?.patient && (
+														<>
+															<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
+																<AvatarImage
+																	src="#"
+																	alt={schedule.patient.name}
+																/>
+																<AvatarFallback>
+																	<User className="flex-shrink-0 size-4 text-muted-foreground/75" />
+																	{/* {generateInitials(schedule.patient.name)} */}
+																</AvatarFallback>
+															</Avatar>
+															<div>
+																<p className="uppercase line-clamp-1">
+																	{schedule.patient.name}
+																</p>
+																{/* <div className="flex gap-1 text-xs font-light line-clamp-1">
 															<span>{schedule.patient.gender}</span>
 															<span>&#x2022;</span>
 															<span>{schedule.patient.age} years</span>
 														</div> */}
-																</div>
-															</>
-														)}
-													</div>
-
-													<div className="flex items-center gap-2">
-														<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
-															<AvatarImage
-																src="#"
-																alt={schedule?.therapist?.name || "N/A"}
-															/>
-															<AvatarFallback>
-																<Stethoscope className="flex-shrink-0 size-4 text-muted-foreground/75" />
-																{/* {generateInitials(schedule?.therapist?.name || "?")} */}
-															</AvatarFallback>
-														</Avatar>
-
-														<div>
-															<p className="uppercase line-clamp-1">
-																{schedule?.therapist?.name || "N/A"}
-															</p>
-															{/* <div className="flex gap-1 text-xs font-light line-clamp-1">
-														<span>{schedule.therapist.employmentType}</span>
-													</div> */}
-														</div>
-													</div>
+															</div>
+														</>
+													)}
 												</div>
 
-												<div className="grid order-first gap-4 xl:order-last xl:col-span-8">
-													<div className="flex items-start gap-3 min-h-6">
-														<Hospital className="flex-shrink-0 size-4 text-muted-foreground/75" />
-														<p className="truncate text-pretty lg:line-clamp-1">
-															<span>
-																{schedule?.service?.name?.replaceAll(
-																	"_",
-																	" ",
-																) || "N/A"}{" "}
-															</span>
-															<span className="mx-2">&#x2022;</span>
-															<span>{schedule?.package?.name}</span>
-															<span className="mx-1">-</span>
-															<span className="italic font-light">
-																{schedule?.package?.numberOfVisit || "N/A"}{" "}
-																visit(s)
-															</span>
-														</p>
-													</div>
+												<div className="flex items-center gap-2">
+													<Avatar className="text-[10px] border rounded-lg border-border bg-muted size-6">
+														<AvatarImage
+															src="#"
+															alt={schedule?.therapist?.name || "N/A"}
+														/>
+														<AvatarFallback>
+															<Stethoscope className="flex-shrink-0 size-4 text-muted-foreground/75" />
+															{/* {generateInitials(schedule?.therapist?.name || "?")} */}
+														</AvatarFallback>
+													</Avatar>
 
-													<div className="flex items-start gap-3 min-h-6">
-														<MapPinHouse className="flex-shrink-0 size-4 text-muted-foreground/75" />
-														<span
-															title={
-																[
-																	schedule?.location?.city,
-																	schedule?.location?.state,
-																	schedule?.location?.country,
-																]?.join(", ") || "N/A"
-															}
-															className={cn(
-																"text-pretty capitalize",
-																isExpanded ? "" : "line-clamp-2",
-															)}
-														>
-															{[
+													<div>
+														<p className="uppercase line-clamp-1">
+															{schedule?.therapist?.name || "N/A"}
+														</p>
+														{/* <div className="flex gap-1 text-xs font-light line-clamp-1">
+														<span>{schedule.therapist.employmentType}</span>
+													</div> */}
+													</div>
+												</div>
+											</div>
+
+											<div className="grid order-first gap-4 xl:order-last xl:col-span-8">
+												<div className="flex items-start gap-3 min-h-6">
+													<Hospital className="flex-shrink-0 size-4 text-muted-foreground/75" />
+													<p className="truncate text-pretty lg:line-clamp-1">
+														<span>
+															{schedule?.service?.name?.replaceAll("_", " ") ||
+																"N/A"}{" "}
+														</span>
+														<span className="mx-2">&#x2022;</span>
+														<span>{schedule?.package?.name}</span>
+														<span className="mx-1">-</span>
+														<span className="italic font-light">
+															{schedule?.package?.numberOfVisit || "N/A"}{" "}
+															visit(s)
+														</span>
+													</p>
+												</div>
+
+												<div className="flex items-start gap-3 min-h-6">
+													<MapPinHouse className="flex-shrink-0 size-4 text-muted-foreground/75" />
+													<span
+														title={
+															[
 																schedule?.location?.city,
 																schedule?.location?.state,
 																schedule?.location?.country,
-															]?.join(", ") || "N/A"}
-														</span>
-													</div>
+															]?.join(", ") || "N/A"
+														}
+														className={cn(
+															"text-pretty capitalize",
+															isExpanded ? "" : "line-clamp-2",
+														)}
+													>
+														{[
+															schedule?.location?.city,
+															schedule?.location?.state,
+															schedule?.location?.country,
+														]?.join(", ") || "N/A"}
+													</span>
 												</div>
 											</div>
 										</div>
 									</div>
+								</div>
 
-									{isFreshAppt && (
-										<div className="absolute top-0 -translate-x-1/2 left-1/2">
-											<div className="flex items-center gap-1 p-1 px-2 text-white border-b border-l border-r border-white rounded-br-md rounded-bl-md bg-gradient-to-r from-violet-500 to-purple-500 animate-pulse">
-												<Sparkles className="size-3.5 shrink-0 text-inherit" />
-												<p className="text-xs text-nowrap">
-													{t("list.recently_added")}
-												</p>
-											</div>
+								{isFreshAppt && (
+									<div className="absolute top-0 -translate-x-1/2 left-1/2">
+										<div className="flex items-center gap-1 p-1 px-2 text-white border-b border-l border-r border-white rounded-br-md rounded-bl-md bg-gradient-to-r from-violet-500 to-purple-500 animate-pulse">
+											<Sparkles className="size-3.5 shrink-0 text-inherit" />
+											<p className="text-xs text-nowrap">
+												{t("list.recently_added")}
+											</p>
 										</div>
-									)}
-								</>
+									</div>
+								)}
 							</ExpandableCardHeader>
 							<ExpandableCardContent className="px-4 pb-0 md:px-6">
 								<div className="flex flex-col items-start justify-between mb-4">
@@ -1221,7 +1217,7 @@ const AdminList = memo(function Component({
 			<div className="grid gap-3">
 				<div className="grid grid-cols-3 gap-2">
 					<p className="font-light">Email:</p>
-					<p className="col-span-2 font-semibold text-right text-pretty">
+					<p className="col-span-2 font-semibold text-right text-pretty break-all">
 						{admin?.user?.email}
 					</p>
 				</div>
@@ -1362,7 +1358,7 @@ function TherapistCard({ className, therapist }: TherapistCardProps) {
 
 						<div className="grid grid-cols-3 gap-2">
 							<p className="font-light">Email:</p>
-							<p className="col-span-2 font-semibold text-right text-pretty">
+							<p className="col-span-2 font-semibold text-right text-pretty break-all">
 								{therapist?.user?.email || "N/A"}
 							</p>
 						</div>
@@ -1503,7 +1499,7 @@ function PatientCard({
 
 					<div className="grid grid-cols-3 gap-2">
 						<p className="font-light">Email:</p>
-						<p className="col-span-2 font-semibold text-right text-pretty">
+						<p className="col-span-2 font-semibold text-right text-pretty break-all">
 							{patient?.contact?.email || "N/A"}
 						</p>
 					</div>

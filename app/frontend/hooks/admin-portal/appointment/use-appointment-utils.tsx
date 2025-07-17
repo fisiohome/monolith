@@ -1,7 +1,7 @@
 import { useDateContext } from "@/components/providers/date-provider";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
-import type { MarkerData } from "@/hooks/here-maps";
+import type { IsolineConstraint, MarkerData } from "@/hooks/here-maps";
 import { useTherapistMarker } from "@/hooks/here-maps/use-markers";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import {
@@ -663,6 +663,87 @@ export const useTherapistAvailability = ({
 		[markerIcon],
 	);
 	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
+
+	// Group therapists by their availability rules for efficient isoline calculations
+	const groupTherapistsByConstraints = useCallback(
+		(therapists: TherapistOption[]): Map<string, TherapistOption[]> => {
+			const groups = new Map<string, TherapistOption[]>();
+
+			therapists.forEach((therapist) => {
+				// Get therapist's availability rules or use defaults
+				const rules = therapist.availability?.availabilityRules || [];
+
+				// Create a unique key for this constraint combination
+				// Sort rules to ensure consistent grouping regardless of order
+				const sortedRules = rules.filter(Boolean).sort((a, b) => {
+					// Sort by distance first, then duration
+					const aDist = a.distanceInMeters || 0;
+					const bDist = b.distanceInMeters || 0;
+					if (aDist !== bDist) return aDist - bDist;
+
+					const aDur = a.durationInMinutes || 0;
+					const bDur = b.durationInMinutes || 0;
+					return aDur - bDur;
+				});
+
+				// Create a unique key for this constraint set
+				const constraintKey =
+					sortedRules.length > 0
+						? sortedRules
+								.map(
+									(r) =>
+										`${r.distanceInMeters || 0}-${r.durationInMinutes || 0}`,
+								)
+								.join("|")
+						: "default";
+
+				if (!groups.has(constraintKey)) {
+					groups.set(constraintKey, []);
+				}
+				groups.get(constraintKey)?.push(therapist);
+			});
+
+			return groups;
+		},
+		[],
+	);
+
+	// Get isoline constraints for a specific group of therapists
+	const getIsolineConstraintsForGroup = useCallback(
+		(therapists: TherapistOption[]): IsolineConstraint[] => {
+			// Get the first therapist's rules (they should all be the same in a group)
+			const firstTherapist = therapists[0];
+			const rules = firstTherapist?.availability?.availabilityRules || [];
+
+			// If no rules, use default constraints
+			if (!rules.length) {
+				return ISOLINE_CONSTRAINTS;
+			}
+
+			// Extract constraints from the rules
+			const constraints: IsolineConstraint[] = [];
+
+			rules.forEach((rule) => {
+				if (rule?.distanceInMeters && Number.isFinite(rule.distanceInMeters)) {
+					constraints.push({ type: "distance", value: rule.distanceInMeters });
+				}
+				if (
+					rule?.durationInMinutes &&
+					Number.isFinite(rule.durationInMinutes)
+				) {
+					constraints.push({
+						type: "time",
+						value: rule.durationInMinutes * 60,
+					}); // convert minutes to seconds
+				}
+			});
+
+			// If no valid constraints found, use defaults
+			return constraints.length > 0 ? constraints : ISOLINE_CONSTRAINTS;
+		},
+		[],
+	);
+
 	// reset the isoline calculated and marker printed
 	const onResetIsoline = useCallback(() => {
 		// remove the markers
@@ -675,71 +756,93 @@ export const useTherapistAvailability = ({
 		// reset the state calculated marker
 		setIsIsolineCalculated(false);
 	}, []);
+
 	const onCalculateIsoline = useCallback(
 		async (therapists: NonNullable<TherapistOption[]>) => {
 			if (!mapRef.current) return;
 
-			// calculate the isoline and store the result to the session storage
 			const { latitude, longitude, address: patientAddress } = patientValues;
 			const patientCoords = { lat: latitude, lng: longitude };
-			const result = await mapRef.current.isoline.onCalculate.both({
-				coord: patientCoords,
-				constraints: ISOLINE_CONSTRAINTS,
-			});
-			setIsolineStorage(result);
 
-			// Map therapists to MarkerData
-			const therapistCoords: MarkerData[] =
-				therapists
-					.map((therapist) => {
-						// Safely handle missing activeAddress
-						if (!therapist?.activeAddress) return null;
+			// Group therapists by their constraints
+			const therapistGroups = groupTherapistsByConstraints(therapists);
 
-						// grab prevAppointment if present
-						const prev =
-							therapist.availabilityDetails?.locations?.prevAppointment;
+			// Collect all isoline results and all marker data for map rendering
+			const allIsolineResults: IsolineResult["isolines"] = [];
+			const allTherapistCoords: MarkerData[] = [];
 
-						// determine which coords to use
-						let lat: number;
-						let lng: number;
-						let address: string;
-
-						if (prev) {
-							lat = prev.latitude;
-							lng = prev.longitude;
-							address = prev.address;
-						} else if (therapist.activeAddress) {
-							lat = therapist.activeAddress.latitude;
-							lng = therapist.activeAddress.longitude;
-							address = therapist.activeAddress.address;
-						} else {
-							// no valid location—skip this therapist
-							return null;
-						}
-
-						return generateMarkerDataTherapist({
-							address,
-							position: { lat, lng },
-							therapist,
-						});
-					})
-					.filter((coord) => coord !== null) || [];
-
-			// Get feasibility therapists result
-			const feasibleResult = mapRef.current.isLocationFeasible(therapistCoords);
+			// Collect feasibility results for all groups
 			const therapistList = {
 				feasible: [] as TherapistOption[],
 				notFeasible: [] as TherapistOption[],
 			};
-			for (const item of feasibleResult || []) {
-				const therapist = item?.additional?.therapist;
-				if (!therapist) continue;
 
-				if (item.isFeasible) {
-					therapistList?.feasible?.push(therapist);
-				} else {
-					therapistList?.notFeasible?.push(therapist);
+			for (const [_constraintKey, groupTherapists] of therapistGroups) {
+				// Get constraints for this group
+				const constraints = getIsolineConstraintsForGroup(groupTherapists);
+
+				// Calculate isoline for this group
+				const result = await mapRef.current.isoline.onCalculate.both({
+					coord: patientCoords,
+					constraints,
+				});
+
+				// Store isoline results for map rendering
+				if (result) {
+					allIsolineResults.push(...result);
 				}
+
+				// Map therapists in this group to MarkerData
+				const groupTherapistCoords: MarkerData[] =
+					groupTherapists
+						.map((therapist) => {
+							if (!therapist?.activeAddress) return null;
+							const prev =
+								therapist.availabilityDetails?.locations?.prevAppointment;
+							let lat: number;
+							let lng: number;
+							let address: string;
+							if (prev) {
+								lat = prev.latitude;
+								lng = prev.longitude;
+								address = prev.address;
+							} else if (therapist.activeAddress) {
+								lat = therapist.activeAddress.latitude;
+								lng = therapist.activeAddress.longitude;
+								address = therapist.activeAddress.address;
+							} else {
+								return null;
+							}
+							return generateMarkerDataTherapist({
+								address,
+								position: { lat, lng },
+								therapist,
+							});
+						})
+						.filter((coord) => coord !== null) || [];
+
+				allTherapistCoords.push(...groupTherapistCoords);
+
+				// --- FEASIBILITY CHECK PER GROUP ---
+				const feasibleResult =
+					mapRef.current.isLocationFeasible(groupTherapistCoords);
+				for (const item of feasibleResult || []) {
+					const therapist = item?.additional?.therapist;
+					if (!therapist) continue;
+					if (item.isFeasible) {
+						therapistList.feasible.push(therapist);
+					} else {
+						therapistList.notFeasible.push(therapist);
+					}
+				}
+			}
+
+			// Store combined isoline results for map rendering
+			setIsolineStorage(allIsolineResults);
+
+			// Render all isoline polygons for all constraint groups on the map
+			if (mapRef.current?.isoline?.onAddAll) {
+				mapRef.current.isoline.onAddAll(allIsolineResults);
 			}
 			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
 			setIsTherapistFound(true);
@@ -758,7 +861,7 @@ export const useTherapistAvailability = ({
 				therapistList.feasible
 					?.map(
 						(feasibleTherapist) =>
-							therapistCoords?.find(
+							allTherapistCoords?.find(
 								(coord) =>
 									coord?.additional?.therapist?.id === feasibleTherapist.id,
 							) || null,
@@ -778,6 +881,8 @@ export const useTherapistAvailability = ({
 			setMarkerStorage,
 			generateMarkerDataPatient,
 			generateMarkerDataTherapist,
+			groupTherapistsByConstraints,
+			getIsolineConstraintsForGroup,
 		],
 	);
 

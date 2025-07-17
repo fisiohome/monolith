@@ -50,6 +50,7 @@ module TherapistsHelper
           buffer_time_in_minutes start_date_window end_date_window
         ])&.merge(
           is_available_now: therapist.therapist_appointment_schedule.available_now,
+          availability_rules: therapist.therapist_appointment_schedule.availability_rules,
           weekly_availabilities: therapist.therapist_appointment_schedule.therapist_weekly_availabilities.map do |wa|
             {
               id: wa.id,

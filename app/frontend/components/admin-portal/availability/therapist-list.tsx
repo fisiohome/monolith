@@ -194,7 +194,7 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 				}}
 			/>
 
-			<ScrollArea className="w-full max-h-[35dvh] xl:max-h-[75dvh] overflow-y-auto">
+			<ScrollArea className="w-full max-h-[40dvh] xl:max-h-[100dvh] overflow-y-auto">
 				<div className="grid gap-2 mx-3">
 					{therapists?.length ? (
 						therapists.map((therapist, therapistIndex) => (

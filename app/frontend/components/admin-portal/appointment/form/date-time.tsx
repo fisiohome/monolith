@@ -190,7 +190,7 @@ export default function DateTimePicker({
 
 				<Separator className="my-4" />
 
-				<div className="grid grid-cols-1 gap-2 md:grid-cols-4 xl:grid-cols-5">
+				<div className="grid grid-cols-1 gap-2 md:grid-cols-4 xl:grid-cols-6">
 					{basicTimeSlots.map((time) => (
 						<TimeSlotButton
 							key={time}

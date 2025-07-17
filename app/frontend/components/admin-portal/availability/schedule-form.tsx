@@ -142,6 +142,34 @@ export default function ScheduleForm({
 						},
 					];
 				}) || null;
+
+			// Convert frontend availability rules format to backend format
+			const formattedAvailabilityRules = values?.availabilityRules?.[0]
+				? [
+						...(values.availabilityRules[0].distanceInMeters &&
+						values.availabilityRules[0].distanceInMeters > 0
+							? [
+									{
+										distanceInMeters:
+											values.availabilityRules[0].distanceInMeters,
+									},
+								]
+							: []),
+						...(values.availabilityRules[0].durationInMinutes &&
+						values.availabilityRules[0].durationInMinutes > 0
+							? [
+									{
+										durationInMinutes:
+											values.availabilityRules[0].durationInMinutes,
+									},
+								]
+							: []),
+						...(values.availabilityRules[0].useLocationRules !== undefined
+							? [{ location: values.availabilityRules[0].useLocationRules }]
+							: []),
+					]
+				: null;
+
 			const payload = deepTransformKeysToSnakeCase({
 				currentQuery: globalProps?.adminPortal?.currentQuery,
 				therapistAppointmentSchedule: {
@@ -149,6 +177,7 @@ export default function ScheduleForm({
 					therapistId: selectedTherapist?.id || "",
 					weeklyAvailabilities: formattedWeeklyAvailabilities,
 					adjustedAvailabilities: formattedAdjustedAvailabilities,
+					availabilityRules: formattedAvailabilityRules,
 				},
 			}) satisfies Parameters<typeof router.put>["1"];
 
@@ -237,7 +266,9 @@ export default function ScheduleForm({
 							>
 								<AccordionTrigger className="p-3">
 									<div className="lg:w-6/12">
-										<p>{accordion.title}</p>
+										<p className="font-semibold uppercase tracking-wide">
+											{accordion.title}
+										</p>
 										<p className="font-light text-pretty">
 											{accordion.description}
 										</p>

@@ -23,6 +23,32 @@ class TherapistAppointmentSchedule < ApplicationRecord
   validate :start_date_or_available_now
   # validate :therapist_must_be_active
 
+  # Default availability rules used when no custom rules are set.
+  # These represent the standard maximum distance (in meters) and duration (in minutes)
+  # for therapist availability if no custom rules are provided.
+  DEFAULT_AVAILABILITY_RULES = [
+    {"distance_in_meters" => 25_000},
+    {"duration_in_minutes" => 50},
+    {"location" => true}
+  ].freeze
+
+  # Returns the effective availability rules for this schedule.
+  # If custom rules are present and valid, they are used.
+  # Otherwise, the default rules are returned.
+  #
+  # Rules can be:
+  #   - Only distance: [{"distance_in_meters" => 25000}]
+  #   - Only duration: [{"duration_in_minutes" => 50}]
+  #   - Both: [{"distance_in_meters" => 25000}, {"duration_in_minutes" => 50}]
+  #   - None (nil or []): falls back to default rules
+  def effective_availability_rules
+    if availability_rules.present? && availability_rules.is_a?(Array) && availability_rules.any?
+      availability_rules
+    else
+      DEFAULT_AVAILABILITY_RULES
+    end
+  end
+
   private
 
   def start_date_before_end_date
@@ -42,4 +68,20 @@ class TherapistAppointmentSchedule < ApplicationRecord
   #     errors.add(:base, "Cannot create or update a schedule for a non-active therapist")
   #   end
   # end
+
+  # Validates that availability_rules, if present, is an array of hashes,
+  # and each hash contains at least one of the allowed keys:
+  #   - "distance_in_meters"
+  #   - "duration_in_minutes"
+  #   - "location"
+  #
+  # This allows any combination: just distance, just duration, just location, or any combination.
+  def availability_rules_format
+    return if availability_rules.blank?
+
+    if !availability_rules.is_a?(Array) ||
+        !availability_rules.all? { |rule| rule.is_a?(Hash) && (rule.key?("distance_in_meters") || rule.key?("duration_in_minutes") || rule.key?("location")) }
+      errors.add(:availability_rules, "must be an array of hashes with distance_in_meters, duration_in_minutes, or location keys")
+    end
+  end
 end

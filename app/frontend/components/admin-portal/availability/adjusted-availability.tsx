@@ -1,3 +1,14 @@
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { format, isSameDay } from "date-fns";
+import {
+	AlertCircle,
+	CalendarIcon,
+	MinusCircle,
+	PlusCircle,
+	X,
+} from "lucide-react";
+import { type ComponentProps, useCallback, useMemo, useState } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useDateContext } from "@/components/providers/date-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -25,29 +36,15 @@ import type { AvailabilityFormSchema } from "@/lib/availabilities";
 import { IS_MOBILE_MEDIA_QUERY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { format, isSameDay } from "date-fns";
-import {
-	AlertCircle,
-	CalendarIcon,
-	MinusCircle,
-	PlusCircle,
-	X,
-} from "lucide-react";
-import {
-	type ComponentProps,
-	Fragment,
-	useCallback,
-	useMemo,
-	useState,
-} from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import BaseAvailabilityTimeField from "./time-field";
 
 const DateSelectedField = ({
 	parentIndex,
 	isDisabled,
-}: { parentIndex: number; isDisabled: (date: Date) => boolean }) => {
+}: {
+	parentIndex: number;
+	isDisabled: (date: Date) => boolean;
+}) => {
 	const { locale, tzDate } = useDateContext();
 	const form = useFormContext<AvailabilityFormSchema>();
 	const isMobile = useMediaQuery(IS_MOBILE_MEDIA_QUERY);
@@ -392,19 +389,17 @@ function AdjustedDateField({
 					</div>
 				</TableCell>
 			) : (
-				<Fragment>
-					<TableCell colSpan={2}>
-						<div className="flex gap-2 font-light text-muted-foreground">
-							<UnavailableField parentIndex={field.index} />
+				<TableCell colSpan={2}>
+					<div className="flex gap-2 font-light text-muted-foreground">
+						<UnavailableField parentIndex={field.index} />
 
-							<UnavailableTableActions
-								parentIndex={field.index}
-								onAddTime={onAddTime}
-								onRemoveDate={onRemoveDate}
-							/>
-						</div>
-					</TableCell>
-				</Fragment>
+						<UnavailableTableActions
+							parentIndex={field.index}
+							onAddTime={onAddTime}
+							onRemoveDate={onRemoveDate}
+						/>
+					</div>
+				</TableCell>
 			)}
 		</TableRow>
 	);

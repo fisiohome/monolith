@@ -54,7 +54,7 @@ export interface IsolineRequestParams {
 	rangeType: RangeType;
 	rangeValues: number;
 	transportMode: TransportMode;
-	routingMode: RoutingMode;
+	routingMode?: RoutingMode;
 	avoid?: {
 		// "seasonalClosure" | "tollRoad" | "controlledAccessHighway" | "ferry" | "carShuttleTrain" | "tunnel" | "dirtRoad" | "difficultTurns" | "uTurns"
 		features: string;
@@ -65,6 +65,35 @@ export interface IsolineRequestParams {
 		ascent?: number;
 		descent?: number;
 		auxiliaryConsumption?: number;
+	};
+	// New parameters for enhanced isoline calculation
+	departureTime?: string; // ISO string for departure time
+	traffic?: {
+		mode: "default" | "disabled";
+		overrideFlowDuration?: number;
+	};
+	shape?: {
+		maxPoints?: number;
+		maxResolution?: number; // Minimum granularity in meters (>= 0)
+	};
+	optimizeFor?: "quality" | "performance" | "balanced";
+	consumptionModel?: "empirical" | "physical";
+	fuel?: {
+		type: ConsumptionType;
+		freeFlowSpeedTable?: string;
+		trafficSpeedTable?: string;
+		additionalConsumption?: number;
+		ascent?: number;
+	};
+	vehicle?: {
+		width?: number;
+		height?: number;
+		length?: number;
+		weight?: number;
+		axleCount?: number;
+		rollingResistanceCoefficient?: number;
+		airDragCoefficient?: number;
+		frontalArea?: number;
 	};
 }
 

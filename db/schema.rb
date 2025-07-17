@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_07_03_130648) do
+ActiveRecord::Schema[8.0].define(version: 2025_07_16_021741) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -272,6 +272,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_07_03_130648) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "max_daily_appointments", default: 4, null: false
+    t.json "availability_rules"
     t.index ["therapist_id"], name: "index_therapist_appointment_schedules_on_therapist_id"
   end
 
