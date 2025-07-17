@@ -1,3 +1,8 @@
+import { router, usePage } from "@inertiajs/react";
+import { useSessionStorage } from "@uidotdev/usehooks";
+import { format, isBefore, startOfDay, sub } from "date-fns";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useDateContext } from "@/components/providers/date-provider";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
@@ -6,11 +11,11 @@ import { useTherapistMarker } from "@/hooks/here-maps/use-markers";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import {
 	type AppointmentBookingSchema,
+	checkIsCustomFisiohomePartner,
+	checkIsCustomReferral,
 	DEFAULT_VALUES_PACKAGE,
 	DEFAULT_VALUES_SERVICE,
 	DEFAULT_VALUES_THERAPIST,
-	checkIsCustomFisiohomePartner,
-	checkIsCustomReferral,
 } from "@/lib/appointments/form";
 import type { PREFERRED_THERAPIST_GENDER } from "@/lib/constants";
 import {
@@ -25,11 +30,6 @@ import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointm
 import type { Location } from "@/types/admin-portal/location";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { Coordinate, IsolineResult } from "@/types/here-maps";
-import { router, usePage } from "@inertiajs/react";
-import { useSessionStorage } from "@uidotdev/usehooks";
-import { format, isBefore, startOfDay, sub } from "date-fns";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
 
 export type LocationOption = Pick<
 	Location,
@@ -941,6 +941,7 @@ export const useTherapistAvailability = ({
 					: {
 							preferredTherapistGender: preferredTherapistGenderValue,
 							appointmentDateTime: appointmentDateTImeValue,
+							isAllOfDay: isAllOfDayValue,
 						},
 			),
 		);

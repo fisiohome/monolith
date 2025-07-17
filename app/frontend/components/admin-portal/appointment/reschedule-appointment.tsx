@@ -1,3 +1,8 @@
+import { Deferred } from "@inertiajs/react";
+import { useIsFirstRender } from "@uidotdev/usehooks";
+import { AlertCircle, Hospital, Info, LoaderIcon } from "lucide-react";
+import { type ComponentProps, memo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import HereMap from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	useFormActionButtons,
@@ -18,13 +24,8 @@ import {
 } from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
-import { Deferred } from "@inertiajs/react";
-import { useIsFirstRender } from "@uidotdev/usehooks";
-import { AlertCircle, Hospital, Info, LoaderIcon } from "lucide-react";
-import { type ComponentProps, memo, useEffect } from "react";
 import DateTimePicker from "./form/date-time";
 import TherapistSelection from "./form/therapist-selection";
-import { useTranslation } from "react-i18next";
 
 export interface FormActionButtonsprops extends ComponentProps<"div"> {
 	isLoading: boolean;
@@ -89,49 +90,31 @@ export const RescheduleFields = memo(function Component({
 		keyPrefix: "appt_schedule.fields",
 	});
 	const isFirstRender = useIsFirstRender();
-	const {
-		form,
-		preferredTherapistGenderOption,
-		watchAppointmentDateTimeValue,
-		isLoading,
-		errorsServerValidation,
-		therapistsOptions,
-		isTherapistFound,
-		mapRef,
-		isMapLoading,
-		coordinate,
-		mapAddress,
-		brandPackagesSource,
-		appointment,
-		onFindTherapists,
-		onSelectTherapist,
-		onResetAllTherapistState,
-		generateMarkerDataTherapist,
-		generateMarkerDataPatient,
-		isIsolineCalculated,
-		formSelections,
-		setFormSelections,
-		apptDateTime,
-	} = useRescheduleFields();
+	const formHooks = useRescheduleFields();
 
 	// * side effect to add isoline calculated and stored isoline and the marker marked to the map
 	useEffect(() => {
 		// Ensure the map is initialized, isoline not calculated, and restrict to first render
-		if (!mapRef?.current || isIsolineCalculated || !isFirstRender) return;
+		if (
+			!formHooks.mapRef?.current ||
+			formHooks.isIsolineCalculated ||
+			!isFirstRender
+		)
+			return;
 
 		// Add Therapist marker to the map if appointment includes therapist details
-		if (appointment?.therapist) {
-			const therapistMarkerData = generateMarkerDataTherapist({
-				address: appointment.therapist.activeAddress?.address || "",
+		if (formHooks.appointment?.therapist) {
+			const therapistMarkerData = formHooks.generateMarkerDataTherapist({
+				address: formHooks.appointment.therapist.activeAddress?.address || "",
 				position: {
-					lat: appointment.therapist.activeAddress?.latitude || 0,
-					lng: appointment.therapist.activeAddress?.longitude || 0,
+					lat: formHooks.appointment.therapist.activeAddress?.latitude || 0,
+					lng: formHooks.appointment.therapist.activeAddress?.longitude || 0,
 				},
-				therapist: appointment.therapist,
+				therapist: formHooks.appointment.therapist,
 			});
 
 			// Add therapist marker as a secondary marker, routing and map-view adjustment disabled
-			mapRef.current.marker.onAdd([therapistMarkerData], {
+			formHooks.mapRef.current.marker.onAdd([therapistMarkerData], {
 				isSecondary: true,
 				useRouting: false,
 				changeMapView: false,
@@ -139,37 +122,39 @@ export const RescheduleFields = memo(function Component({
 		}
 
 		// Add Patient marker to the map if appointment includes patient details
-		if (appointment?.patient) {
-			const patientMarkerData = generateMarkerDataPatient({
-				address: appointment.patient.activeAddress?.address || "",
+		if (formHooks.appointment?.patient) {
+			const patientMarkerData = formHooks.generateMarkerDataPatient({
+				address: formHooks.appointment.patient.activeAddress?.address || "",
 				position: {
-					lat: appointment.patient.activeAddress?.latitude || 0,
-					lng: appointment.patient.activeAddress?.longitude || 0,
+					lat: formHooks.appointment.patient.activeAddress?.latitude || 0,
+					lng: formHooks.appointment.patient.activeAddress?.longitude || 0,
 				},
 				patient: {
-					address: appointment.patient.activeAddress?.address || "",
-					latitude: appointment.patient.activeAddress?.latitude || 0,
-					longitude: appointment.patient.activeAddress?.longitude || 0,
-					fullName: appointment.patient.name,
-					locationId: appointment.patient.activeAddress?.locationId || "",
+					address: formHooks.appointment.patient.activeAddress?.address || "",
+					latitude: formHooks.appointment.patient.activeAddress?.latitude || 0,
+					longitude:
+						formHooks.appointment.patient.activeAddress?.longitude || 0,
+					fullName: formHooks.appointment.patient.name,
+					locationId:
+						formHooks.appointment.patient.activeAddress?.locationId || "",
 				},
 			});
 
 			// Add patient marker to the map
-			mapRef.current.marker.onAdd([patientMarkerData]);
+			formHooks.mapRef.current.marker.onAdd([patientMarkerData]);
 		}
 
 		// Adjust map view to fit markers if either therapist or patient markers are added
-		if (appointment?.therapist || appointment?.patient) {
-			mapRef.current.mapControl.getCameraBound({ expandCount: 0.3 });
+		if (formHooks.appointment?.therapist || formHooks.appointment?.patient) {
+			formHooks.mapRef.current.mapControl.getCameraBound({ expandCount: 0.3 });
 		}
 	}, [
-		mapRef?.current,
-		isIsolineCalculated,
-		appointment?.patient,
-		appointment?.therapist,
-		generateMarkerDataPatient,
-		generateMarkerDataTherapist,
+		formHooks.mapRef?.current,
+		formHooks.isIsolineCalculated,
+		formHooks.appointment?.patient,
+		formHooks.appointment?.therapist,
+		formHooks.generateMarkerDataPatient,
+		formHooks.generateMarkerDataTherapist,
 		isFirstRender,
 	]);
 
@@ -191,17 +176,17 @@ export const RescheduleFields = memo(function Component({
 
 					<div className="grid text-sm line-clamp-1">
 						<p className="font-semibold uppercase truncate">
-							{brandPackagesSource.brandName}
+							{formHooks.brandPackagesSource.brandName}
 						</p>
 
 						<div className="flex items-center gap-1 mt-2 text-xs">
 							<p className="font-light text-pretty">
 								<span className="uppercase">
-									{brandPackagesSource.packageName}
+									{formHooks.brandPackagesSource.packageName}
 								</span>
 								<span className="mx-2">&#x2022;</span>
 								<span className="italic font-light">
-									{brandPackagesSource.packageVisit}
+									{formHooks.brandPackagesSource.packageVisit}
 								</span>
 							</p>
 						</div>
@@ -209,18 +194,19 @@ export const RescheduleFields = memo(function Component({
 				</div>
 			</div>
 
-			{!therapistsOptions?.feasible?.length && isTherapistFound && (
-				<Alert
-					variant="destructive"
-					className="col-span-full motion-preset-rebound-down"
-				>
-					<AlertCircle className="w-4 h-4" />
-					<AlertTitle>{tas("alert_therapist.title")}</AlertTitle>
-					<AlertDescription>
-						{tas("alert_therapist.description")}
-					</AlertDescription>
-				</Alert>
-			)}
+			{!formHooks.therapistsOptions?.feasible?.length &&
+				formHooks.isTherapistFound && (
+					<Alert
+						variant="destructive"
+						className="col-span-full motion-preset-rebound-down"
+					>
+						<AlertCircle className="w-4 h-4" />
+						<AlertTitle>{tas("alert_therapist.title")}</AlertTitle>
+						<AlertDescription>
+							{tas("alert_therapist.description")}
+						</AlertDescription>
+					</Alert>
+				)}
 
 			<div className="grid grid-cols-1 gap-4 col-span-full">
 				<Deferred
@@ -237,7 +223,7 @@ export const RescheduleFields = memo(function Component({
 					}
 				>
 					<FormField
-						control={form.control}
+						control={formHooks.form.control}
 						name="preferredTherapistGender"
 						render={({ field }) => (
 							<FormItem className="space-y-3">
@@ -246,13 +232,13 @@ export const RescheduleFields = memo(function Component({
 									<RadioGroup
 										onValueChange={(value) => {
 											field.onChange(value);
-											onResetAllTherapistState();
+											formHooks.onResetAllTherapistState();
 										}}
 										defaultValue={field.value}
 										orientation="horizontal"
 										className="grid grid-cols-1 gap-4 md:grid-cols-3"
 									>
-										{preferredTherapistGenderOption.map((gender) => (
+										{formHooks.preferredTherapistGenderOption.map((gender) => (
 											<FormItem
 												key={gender}
 												className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
@@ -279,35 +265,56 @@ export const RescheduleFields = memo(function Component({
 				</Deferred>
 
 				<FormField
-					control={form.control}
+					control={formHooks.form.control}
 					name="appointmentDateTime"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>{tasf("appt_date.label")}</FormLabel>
+							<FormLabel className="flex items-center justify-between">
+								<span>{tasf("appt_date.label")}</span>
+								<FormField
+									control={formHooks.form.control}
+									name="formOptions.findTherapistsAllOfDay"
+									render={({ field }) => (
+										<FormItem className="flex items-center gap-1.5">
+											<FormLabel>All of day</FormLabel>
+											<FormControl>
+												<Switch
+													className="!mt-0"
+													checked={field.value}
+													onCheckedChange={(value) => {
+														formHooks.onSelectAllOfDay(value);
 
-							{apptDateTime?.message && (
+														// reset all therapist and isoline maps state
+														formHooks.onResetAllTherapistState();
+													}}
+												/>
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+							</FormLabel>
+							{formHooks.apptDateTime?.message && (
 								<Alert className="text-xs">
 									<Info className="size-3.5 shrink-0" />
 									<AlertTitle>Info</AlertTitle>
 									<AlertDescription className="text-xs">
-										{apptDateTime.message}
+										{formHooks.apptDateTime.message}
 									</AlertDescription>
 								</Alert>
 							)}
-
 							<FormControl>
 								<DateTimePicker
 									value={field.value}
-									min={apptDateTime.min}
-									max={apptDateTime.max}
+									min={formHooks.apptDateTime.min}
+									max={formHooks.apptDateTime.max}
 									onChangeValue={field.onChange}
+									isAllOfDay={!!formHooks.watchAllOfDayValue}
 									callbackOnChange={() => {
 										// reset all therapist and isoline maps state
-										onResetAllTherapistState();
+										formHooks.onResetAllTherapistState();
 									}}
 								/>
 							</FormControl>
-
 							<FormMessage />
 						</FormItem>
 					)}
@@ -315,7 +322,7 @@ export const RescheduleFields = memo(function Component({
 			</div>
 
 			<FormField
-				control={form.control}
+				control={formHooks.form.control}
 				name="therapist.name"
 				render={({ field }) => (
 					<FormItem className="col-span-full">
@@ -323,21 +330,31 @@ export const RescheduleFields = memo(function Component({
 
 						<FormControl>
 							<TherapistSelection
-								items={therapistsOptions.feasible}
+								items={formHooks.therapistsOptions.feasible}
 								config={{
-									isLoading: isLoading.therapists || isMapLoading,
+									isLoading:
+										formHooks.isLoading.therapists || formHooks.isMapLoading,
 									selectedTherapistName: field.value,
-									selectedTherapist: formSelections?.therapist || undefined,
-									appt: appointment,
+									selectedTherapist:
+										formHooks.formSelections?.therapist || undefined,
+									appt: formHooks.appointment,
+									isAllOfDay: !!formHooks.watchAllOfDayValue,
+									selectedTimeSlot: formHooks.selectedTimeSlot || undefined,
 								}}
 								find={{
-									isDisabled: !watchAppointmentDateTimeValue,
-									handler: async () => await onFindTherapists(),
+									isDisabled: !formHooks.watchAppointmentDateTimeValue,
+									handler: async () => await formHooks.onFindTherapists(),
 								}}
-								onSelectTherapist={(value) => onSelectTherapist(value)}
+								onSelectTherapist={(value) =>
+									formHooks.onSelectTherapist(value)
+								}
 								onPersist={(value) => {
-									setFormSelections({ ...formSelections, therapist: value });
+									formHooks.setFormSelections({
+										...formHooks.formSelections,
+										therapist: value,
+									});
 								}}
+								onSelectTimeSlot={(value) => formHooks.onSelectTimeSlot(value)}
 							/>
 						</FormControl>
 					</FormItem>
@@ -345,15 +362,15 @@ export const RescheduleFields = memo(function Component({
 			/>
 
 			<HereMap
-				ref={mapRef}
-				coordinate={coordinate}
-				address={{ ...mapAddress }}
+				ref={formHooks.mapRef}
+				coordinate={formHooks.coordinate}
+				address={{ ...formHooks.mapAddress }}
 				options={{ disabledEvent: false }}
 				className="col-span-full"
 			/>
 
 			<FormField
-				control={form.control}
+				control={formHooks.form.control}
 				name="reason"
 				render={({ field }) => (
 					<FormItem className="col-span-full">
@@ -376,7 +393,7 @@ export const RescheduleFields = memo(function Component({
 			/>
 
 			{/* for showing the alert error if there's any server validation error */}
-			{!!errorsServerValidation?.length && (
+			{!!formHooks.errorsServerValidation?.length && (
 				<Alert
 					variant="destructive"
 					className="col-span-full motion-preset-rebound-down"
@@ -385,7 +402,7 @@ export const RescheduleFields = memo(function Component({
 					<AlertTitle className="text-xs">Error</AlertTitle>
 					<AlertDescription className="text-xs">
 						<ul className="list-disc">
-							{errorsServerValidation?.map((error) => (
+							{formHooks.errorsServerValidation?.map((error) => (
 								<li key={error}>{error}</li>
 							))}
 						</ul>

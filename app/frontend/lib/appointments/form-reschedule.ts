@@ -1,6 +1,6 @@
+import { z } from "zod";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type { Appointment } from "@/types/admin-portal/appointment";
-import { z } from "zod";
 import type { PREFERRED_THERAPIST_GENDER } from "../constants";
 import { APPOINTMENT_SCHEDULING_SCHEMA } from "./form";
 
@@ -13,6 +13,11 @@ export const RESCHEDULE_APPOINTMENT_FORM_SCHEMA = z.object({
 	appointmentDateTime: appointmentDateTime.nullable(),
 	therapist,
 	reason: z.string().optional(),
+	formOptions: z
+		.object({
+			findTherapistsAllOfDay: z.boolean().default(false),
+		})
+		.default({ findTherapistsAllOfDay: false }),
 });
 export type AppointmentRescheduleSchema = z.infer<
 	typeof RESCHEDULE_APPOINTMENT_FORM_SCHEMA
@@ -30,6 +35,7 @@ export const defineFormDefaultValues = (appointment: Appointment) => {
 			: null,
 		therapist,
 		reason: "",
+		formOptions: { findTherapistsAllOfDay: false },
 	} satisfies AppointmentRescheduleSchema;
 };
 
@@ -39,6 +45,7 @@ export interface AppointmentReschedulePayload {
 	preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
 	therapistId: string | null;
 	reason: string | null;
+	isAllOfDay?: boolean;
 }
 
 export const buildPayload = (values: AppointmentRescheduleSchema) => {
@@ -47,12 +54,14 @@ export const buildPayload = (values: AppointmentRescheduleSchema) => {
 		appointmentDateTime = null,
 		therapist,
 		reason = null,
+		formOptions,
 	} = values;
 	const payload = deepTransformKeysToSnakeCase({
 		preferredTherapistGender,
 		appointmentDateTime,
 		therapistId: therapist?.id ? String(therapist.id) : null,
 		reason,
+		isAllOfDay: formOptions?.findTherapistsAllOfDay ?? false,
 	} satisfies AppointmentReschedulePayload);
 
 	return payload;

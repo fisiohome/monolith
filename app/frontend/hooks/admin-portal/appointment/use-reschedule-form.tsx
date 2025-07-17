@@ -1,19 +1,20 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router, usePage } from "@inertiajs/react";
+import { useMediaQuery, useSessionStorage } from "@uidotdev/usehooks";
+import { format, startOfDay } from "date-fns";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
 import {
 	type AppointmentRescheduleSchema,
-	RESCHEDULE_APPOINTMENT_FORM_SCHEMA,
 	buildPayload,
 	defineFormDefaultValues,
+	RESCHEDULE_APPOINTMENT_FORM_SCHEMA,
 } from "@/lib/appointments/form-reschedule";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { SESSION_ISOLINE_KEY, SESSION_MARKERS_KEY } from "@/lib/here-maps";
 import { goBackHandler, populateQueryParams } from "@/lib/utils";
 import type { AppointmentRescheduleGlobalPageProps } from "@/pages/AdminPortal/Appointment/Reschedule";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { router, usePage } from "@inertiajs/react";
-import { useMediaQuery, useSessionStorage } from "@uidotdev/usehooks";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { SESSION_STORAGE_FORM_SELECTIONS_KEY } from "./use-appointment-form";
 import {
 	type TherapistOption,
@@ -208,6 +209,10 @@ export const useRescheduleFields = () => {
 		control: form.control,
 		name: "appointmentDateTime",
 	});
+	const watchAllOfDayValue = useWatch({
+		control: form.control,
+		name: "formOptions.findTherapistsAllOfDay",
+	});
 	const [isLoading, setIsLoading] = useState({ therapists: false });
 	const errorsServerValidation = useMemo(
 		() => (globalProps?.errors?.fullMessages as unknown as string[]) || null,
@@ -260,6 +265,7 @@ export const useRescheduleFields = () => {
 		serviceIdValue: serviceId,
 		appointmentDateTImeValue: watchAppointmentDateTimeValue,
 		preferredTherapistGenderValue: watchPreferredTherapistGenderValue,
+		isAllOfDayValue: !!watchAllOfDayValue,
 		patientValues: {
 			fullName: patientDetails.fullName,
 			address: patientDetails.address,
@@ -307,16 +313,51 @@ export const useRescheduleFields = () => {
 			message,
 		};
 	}, [globalProps.optionsData?.apptDateTime]);
+	const selectedTimeSlot = useMemo(() => {
+		if (!watchAppointmentDateTimeValue) return null;
+		return format(watchAppointmentDateTimeValue, "HH:mm");
+	}, [watchAppointmentDateTimeValue]);
+	const onSelectAllOfDay = useCallback(
+		(value: boolean) => {
+			const selectedDate = form.getValues("appointmentDateTime");
+			form.setValue("formOptions.findTherapistsAllOfDay", value);
+			if (selectedDate) {
+				form.setValue("appointmentDateTime", startOfDay(selectedDate), {
+					shouldValidate: false,
+				});
+			}
+		},
+		[form.setValue, form.getValues],
+	);
+	const onSelectTimeSlot = useCallback(
+		(value: string) => {
+			const date = form.getValues("appointmentDateTime");
+			if (date) {
+				const [hours, minutes] = value.split(":");
+				const newDate = new Date(date);
+				newDate.setHours(Number.parseInt(hours), Number.parseInt(minutes));
+				form.setValue("appointmentDateTime", newDate);
+			}
+		},
+		[form.getValues, form.setValue],
+	);
+	const apptHooksValue = {
+		apptDateTime,
+		watchAppointmentDateTimeValue,
+		watchAllOfDayValue,
+		selectedTimeSlot,
+		onSelectAllOfDay,
+		onSelectTimeSlot,
+	};
 
 	return {
 		...prefGenderHooks,
 		...therapistAvailabilityHooks,
+		...apptHooksValue,
 		form,
 		isLoading,
 		appointment,
-		watchAppointmentDateTimeValue,
 		errorsServerValidation,
 		brandPackagesSource,
-		apptDateTime,
 	};
 };
