@@ -144,7 +144,7 @@ function CardTherapist({ className, therapist }: CardTherapistProps) {
 						</Badge>
 					</div>
 
-					<p className="tracking-wide uppercase line-clamp-1 font-bold">
+					<p className="font-bold tracking-wide uppercase line-clamp-1">
 						{therapist.name}
 					</p>
 				</div>
@@ -380,7 +380,7 @@ const TherapistSelection = memo(function Component({
 							{suggestedTherapists.length > 0 && (
 								<div>
 									<div className="mb-4 border-l-8 border-primary">
-										<p className="text-xs font-semibold tracking-wide uppercase pl-2">
+										<p className="pl-2 text-xs font-semibold tracking-wide uppercase">
 											{tasf("therapist.search.suggested_label")}
 										</p>
 									</div>
@@ -498,7 +498,7 @@ const TherapistSelection = memo(function Component({
 								<div className={cn(!!suggestedTherapists?.length && "mt-1")}>
 									{!!suggestedTherapists?.length && (
 										<div className="my-4 border-l-8 border-secondary">
-											<p className="text-xs font-semibold tracking-wide uppercase pl-2">
+											<p className="pl-2 text-xs font-semibold tracking-wide uppercase">
 												{tasf("therapist.search.other_label")}
 											</p>
 										</div>
@@ -610,10 +610,10 @@ const TherapistSelection = memo(function Component({
 						</Fragment>
 					) : therapistReference &&
 						therapistReference?.name === selectedTherapistName ? (
-						<div className=" ">
+						<div>
 							<CardTherapist
 								therapist={therapistReference}
-								className="text-primary-foreground border rounded-lg border-primary-foreground bg-primary"
+								className="border rounded-lg text-primary-foreground border-primary-foreground bg-primary"
 							/>
 
 							{!!therapistReference?.timeSlots?.length && !!isAllOfDay && (

@@ -1,6 +1,6 @@
 import { router, usePage } from "@inertiajs/react";
 import { useSessionStorage } from "@uidotdev/usehooks";
-import { format, isBefore, startOfDay, sub } from "date-fns";
+import { format, isBefore, startOfDay, sub, subDays } from "date-fns";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useDateContext } from "@/components/providers/date-provider";
@@ -489,9 +489,9 @@ export const useAppointmentDateTime = ({
 		const isMinMaxExist = min || max;
 		const minDate = min
 			? isBefore(startOfDay(min), today)
-				? today
+				? subDays(today, 1)
 				: min
-			: today;
+			: subDays(today, 1);
 		const maxDate = max
 			? sub(startOfDay(max), { days: 1 })
 			: twoMonthsFromToday;

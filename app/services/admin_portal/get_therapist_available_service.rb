@@ -249,6 +249,11 @@ module AdminPortal
     # @param current_date_time_in_tz [DateTime] Current time in therapist's timezone
     # @return [Boolean] true if basic time checks pass
     def basic_time_checks(appointment_date_time_in_tz, current_date_time_in_tz)
+      is_appointment_today = ->(date_time) { date_time.to_date == Date.current }
+
+      # skip this for checking all of day therapist avaiability and if the appointment date is today date
+      return true if is_appointment_today.call(appointment_date_time_in_tz) && @is_all_of_day
+
       if appointment_date_time_in_tz <= current_date_time_in_tz
         message = "Not available for past dates"
         @logger.debug message
@@ -257,6 +262,7 @@ module AdminPortal
 
       # Minimum booking advance feature is currently disabled
       # This was handled manually instead of through the system
+      # This formula applies if the appointment date is less than the appt date + min_booking_before_in_hours.
       # TODO: Consider re-enabling this feature if business requirements change
       # min_booking_time = current_date_time_in_tz + @schedule.min_booking_before_in_hours.hours
       # if appointment_date_time_in_tz < min_booking_time

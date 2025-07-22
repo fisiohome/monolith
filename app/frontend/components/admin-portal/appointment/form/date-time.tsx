@@ -14,7 +14,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useAppointmentDateTime } from "@/hooks/admin-portal/appointment/use-appointment-utils";
-import { generateTimeSlots } from "@/hooks/use-calendar-schedule";
+import {
+	checkPastTimeSlot,
+	generateTimeSlots,
+} from "@/hooks/use-calendar-schedule";
 import { cn } from "@/lib/utils";
 
 const UNIQUE_TIME_SLOTS = ["09:00", "11:00", "13:00", "16:00", "18:00"];
@@ -23,14 +26,12 @@ export const TimeSlotButton = memo(function TimeSlotButton({
 	time,
 	isSelected,
 	isDisabled = false,
-	isAllOfDay = false,
 	onSelect,
 	buttonRef,
 }: {
 	time: string;
 	isSelected: boolean;
 	isDisabled?: boolean;
-	isAllOfDay?: boolean;
 	onSelect?: () => void;
 	buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
@@ -54,7 +55,7 @@ export const TimeSlotButton = memo(function TimeSlotButton({
 			type="button"
 			variant={isSelected ? "default" : "primary-outline"}
 			className={cn("w-full", !isSelected && "bg-sidebar shadow-inner")}
-			disabled={isAllOfDay || isDisabled}
+			disabled={isDisabled}
 			onClick={(event) => {
 				event.preventDefault();
 				event.stopPropagation();
@@ -86,6 +87,7 @@ export default function DateTimePicker({
 	onChangeValue,
 	callbackOnChange,
 }: DateTimePickerProps) {
+	const { locale, tzDate } = useDateContext();
 	const {
 		appointmentDate,
 		appointmentDateCalendarProps,
@@ -126,6 +128,24 @@ export default function DateTimePicker({
 		[value],
 	);
 	const basicTimeSlots = useMemo(() => generateTimeSlots(30), []);
+	const isTimeSlotDisabled = useCallback(
+		(time: string): boolean => {
+			if (isAllOfDay) {
+				return true;
+			}
+
+			if (!appointmentDate) {
+				return true;
+			}
+
+			return checkPastTimeSlot({
+				time,
+				date: appointmentDate,
+				dateOpt: { locale, in: tzDate },
+			});
+		},
+		[isAllOfDay, appointmentDate, locale, tzDate],
+	);
 
 	// * measure calendar height whenever it renders or resizes
 	useEffect(() => {
@@ -182,7 +202,7 @@ export default function DateTimePicker({
 							key={`${time}-unique`}
 							time={time}
 							isSelected={selectedTime === time}
-							isAllOfDay={isAllOfDay}
+							isDisabled={isTimeSlotDisabled(time)}
 							onSelect={() => handleTimeSelect(time, "unique")}
 						/>
 					))}
@@ -197,7 +217,7 @@ export default function DateTimePicker({
 							buttonRef={selectedTime === time ? selectedButtonRef : null}
 							time={time}
 							isSelected={selectedTime === time}
-							isAllOfDay={isAllOfDay}
+							isDisabled={isTimeSlotDisabled(time)}
 							onSelect={() => handleTimeSelect(time, "basic")}
 						/>
 					))}
