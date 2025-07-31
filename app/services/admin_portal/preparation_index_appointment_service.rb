@@ -67,37 +67,27 @@ module AdminPortal
 
     # Now returns a filtered, sorted ActiveRecord::Relation (not grouped or paginated)
     def filtered_appointments_relation
+      sort_params = get_sort_params
       Appointment
         # Eager load all required associations
         .includes(:therapist, :patient, :service, :package, :location, :admins)
         # apply the filter
         .apply_filters(@params, @current_user)
-        # sorting, ensure everything is sorted by the full date - time
-        .then { |relation| apply_sorting(relation) }
-    end
-
-    # Apply sorting based on params
-    def apply_sorting(relation)
-      mapping = SORT_MAPPINGS[@params[:sort]] || SORT_MAPPINGS["upcoming_visit"]
-      sort_by = mapping[:sort_by]
-      sort_order = mapping[:sort_order]
-
-      relation.order(sort_by => sort_order.to_sym)
+        # sorting, ensure everything is sorted based on sort params selected
+        .order(sort_params[:sort_by] => sort_params[:sort_order].to_sym)
     end
 
     # group appointments by the date part of appointment_date_time, sort them by date and serialize after pagination.
     def group_and_serialize(appointments)
-      mapping = SORT_MAPPINGS[@params[:sort]] || SORT_MAPPINGS["upcoming_visit"]
-      sort_by = mapping[:sort_by]
-      sort_order = mapping[:sort_order]
+      sort_params = get_sort_params
 
       # Group by appointment_date_time's date regardless of sort, but adjust group sorting
       grouped = appointments.group_by { |a| a.appointment_date_time.to_date if a.appointment_date_time.present? }
 
       # Sort groups based on the current sort parameters
-      if sort_by == "appointment_date_time"
+      if sort_params[:sort_by] == "appointment_date_time"
         grouped = grouped.sort_by { |date, _| [date.nil? ? 1 : 0, date || Date.new(0)] }
-        grouped = grouped.reverse if sort_order == "desc"
+        grouped = grouped.reverse if sort_params[:sort_order] == "desc"
       else
         # Maintain the order from the database, group hash keys are in insertion order (Ruby >= 2.0)
         grouped = grouped.to_a
@@ -129,6 +119,16 @@ module AdminPortal
     def reverse_groups_if_needed(groups)
       return groups unless %w[past cancel].include?(@params[:status])
       groups.reverse!
+    end
+
+    # helper function to get the sort by and sort order by params
+    def get_sort_params
+      default_sort = (@params[:status] == "unschedule") ? "newest" : "upcoming_visit"
+      mapping = SORT_MAPPINGS[@params[:sort]] || SORT_MAPPINGS[default_sort]
+      sort_by = mapping[:sort_by]
+      sort_order = mapping[:sort_order]
+
+      {sort_by:, sort_order:}
     end
   end
 end

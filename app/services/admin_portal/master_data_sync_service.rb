@@ -1017,7 +1017,7 @@ module AdminPortal
 
     def fetch_and_parse_csv(gid:)
       url = URI("#{MASTER_DATA_URL}&gid=#{gid}")
-      data = URI.open(url).read
+      data = URI.open(url).read # rubocop:disable Security/Open
       CSV.parse(data, headers: true)
     rescue OpenURI::HTTPError, CSV::MalformedCSVError => e
       Rails.logger.error "Failed to fetch or parse CSV: #{e.class} - #{e.message}"
