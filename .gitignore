@@ -38,6 +38,10 @@
 
 # ignore node modules
 node_modules
-/config/credentials/production.key
 
+# ignore credentials
+/config/credentials/production.key
 /config/credentials/staging.key
+
+# ignore public vite-dev
+public/vite-dev/*
