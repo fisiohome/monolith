@@ -189,12 +189,12 @@ export default function PatientRegionForm() {
 																	<CommandItem
 																		key={city.name}
 																		value={city.name}
-																		onSelect={() =>
+																		onSelect={() => {
 																			onSelectLocation({
 																				id: String(city.id),
 																				city: city.name,
-																			})
-																		}
+																			});
+																		}}
 																	>
 																		<span>{city.name}</span>
 																		<Check

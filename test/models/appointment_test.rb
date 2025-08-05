@@ -300,7 +300,8 @@ class AppointmentTest < ActiveSupport::TestCase
       location: @location,
       appointment_date_time: @future_time.change(hour: 9),
       preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record
+      patient_medical_record_attributes: @patient_medical_record,
+      skip_auto_series_creation: false
     )
 
     # ─── Expectations ────────────────────────────────────────────────────────────
@@ -709,7 +710,8 @@ class AppointmentTest < ActiveSupport::TestCase
       location: @location,
       appointment_date_time: @future_time,
       preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record
+      patient_medical_record_attributes: @patient_medical_record,
+      skip_auto_series_creation: false
     )
 
     all_visits = initial.all_visits_in_series
@@ -831,7 +833,8 @@ class AppointmentTest < ActiveSupport::TestCase
       therapist: @therapist,
       preferred_therapist_gender: "NO PREFERENCE",
       patient_medical_record_attributes: @patient_medical_record,
-      updater: @user            # <- will be copied to histories
+      updater: @user,           # <- will be copied to histories
+      skip_auto_series_creation: false
     )
 
     # sanity check
@@ -963,7 +966,8 @@ class AppointmentTest < ActiveSupport::TestCase
       therapist: @therapist,
       appointment_date_time: t0,
       preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record
+      patient_medical_record_attributes: @patient_medical_record,
+      skip_auto_series_creation: false
     )
 
     # ─── Grab the auto-built series appointments ────────────────────────────────

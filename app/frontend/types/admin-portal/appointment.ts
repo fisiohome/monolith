@@ -147,5 +147,13 @@ export interface AppointmentPayload {
 		otherFisiohomePartnerName?: string;
 		voucherCode?: string;
 		notes?: string;
+
+		// series visits
+		seriesVisits?: {
+			appointmentDateTime: Date;
+			therapistId: string | null;
+			visitNumber: number;
+			preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
+		}[];
 	};
 }

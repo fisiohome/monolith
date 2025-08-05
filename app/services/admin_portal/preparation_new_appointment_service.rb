@@ -22,14 +22,16 @@ module AdminPortal
     def fetch_services
       return if selected_location_id.blank?
 
-      location = Location.find(selected_location_id)
+      location = Location.includes(services: :packages).find(selected_location_id)
+
       active_services = location.services
-        .joins(:location_services)
-        .where(location_services: {active: true})
-        .where(active: true)
+        .joins(:location_services, :packages)
+        .where(
+          location_services: {active: true},
+          services: {active: true},
+          packages: {active: true}
+        )
         .distinct
-        .includes(:packages)
-        .where(packages: {active: true})
 
       active_services.map do |service|
         deep_transform_keys_to_camel_case(

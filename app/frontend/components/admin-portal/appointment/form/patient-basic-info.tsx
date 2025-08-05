@@ -268,8 +268,8 @@ export default function PatientBasicInfoForm() {
 															</p>
 
 															{field.value ? (
-																// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-																<div
+																<button
+																	type="button"
 																	className="cursor-pointer"
 																	onClick={(event) => {
 																		event.preventDefault();
@@ -283,7 +283,7 @@ export default function PatientBasicInfoForm() {
 																	}}
 																>
 																	<X className="opacity-50" />
-																</div>
+																</button>
 															) : (
 																<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
 															)}

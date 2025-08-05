@@ -94,7 +94,7 @@ function FormComponent() {
 	const { isSuccessBooked, mode, formStorage } = useFormProvider();
 	const [isLoading, setIsLoading] = useState(false);
 
-	// stepper management state
+	// stepper management state - reordered to prioritize scheduling first
 	const steps = useMemo(
 		() =>
 			[

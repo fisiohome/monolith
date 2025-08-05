@@ -423,10 +423,16 @@ export default function ExistingPatientSelection() {
 		// reset the patient contact information and also the patient details
 		const { patientDetails, contactInformation } =
 			defineAppointmentFormDefaultValues();
-		form.setValue("patientDetails", { ...patientDetails });
-		form.resetField("patientDetails");
-		form.setValue("contactInformation", { ...contactInformation });
-		form.resetField("contactInformation");
+		form.setValue(
+			"patientDetails",
+			{ ...patientDetails },
+			{ shouldValidate: false, shouldDirty: true, shouldTouch: false },
+		);
+		form.setValue(
+			"contactInformation",
+			{ ...contactInformation },
+			{ shouldValidate: false, shouldDirty: true, shouldTouch: false },
+		);
 
 		// reset the data fetching of patient list
 		onHandleFetchPatientList("");

@@ -11,7 +11,7 @@ import {
 	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments/form";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
-import { goBackHandler, populateQueryParams } from "@/lib/utils";
+import { cn, goBackHandler, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
@@ -190,44 +190,54 @@ export const useReviewForm = () => {
 
 		return [
 			{
+				key: "contact",
 				title: "Contact" as const,
 				stepValue: 0,
 				subs: [
 					{
+						key: "contact-name",
 						title: "Name",
 						value: contactInformation.contactName,
 					},
 					{
+						key: "contact-phone",
 						title: "Phone Number",
 						value: contactInformation.contactPhone,
 					},
 					{
+						key: "contact-email",
 						title: "Email",
 						value: contactInformation?.email || "N/A",
 					},
 					{
+						key: "contact-miitel-link",
 						title: "MiiTel Link",
 						value: contactInformation?.miitelLink || "N/A",
 					},
 				],
 			},
 			{
+				key: "patient-profile",
 				title: "Patient Profile" as const,
 				stepValue: 0,
 				subs: [
 					{
+						key: "patient-full-name",
 						title: "Full Name",
 						value: patientDetails.fullName,
 					},
 					{
+						key: "patient-date-of-birth",
 						title: "Date of Birth",
 						value: format(patientDetails.dateOfBirth, "PPP", {}),
 					},
 					{
+						key: "patient-age",
 						title: "Age",
 						value: `${patientDetails.age} years`,
 					},
 					{
+						key: "patient-gender",
 						title: "Gender",
 						value: patientDetails.gender ? (
 							<Badge variant="outline">
@@ -241,26 +251,32 @@ export const useReviewForm = () => {
 						),
 					},
 					{
+						key: "patient-current-condition",
 						title: "Current Condition",
 						value: <Badge variant="outline">{patientDetails?.condition}</Badge>,
 					},
 					{
+						key: "patient-illness-onset-date",
 						title: "Illness Onset Date",
 						value: patientDetails?.illnessOnsetDate || "N/A",
 					},
 					{
+						key: "patient-medical-history",
 						title: "Medical History",
 						value: patientDetails?.medicalHistory || "N/A",
 					},
 					{
+						key: "patient-region",
 						title: "Region",
 						value: patientDetails.location.city,
 					},
 					{
+						key: "patient-postal-code",
 						title: "Postal Code",
 						value: patientDetails?.postalCode || "N/A",
 					},
 					{
+						key: "patient-address",
 						title: "Address",
 						value: (
 							<div className="space-y-2">
@@ -285,20 +301,24 @@ export const useReviewForm = () => {
 						),
 					},
 					{
+						key: "patient-address-note",
 						title: "Address Note",
 						value: patientDetails?.addressNotes || "N/A",
 					},
 				],
 			},
 			{
-				title: "Schedule and Settings" as const,
+				key: "bookings",
+				title: "Bookings" as const,
 				stepValue: 1,
 				subs: [
 					{
+						key: "service",
 						title: "Service",
 						value: appointmentScheduling.service.name.replaceAll("_", " "),
 					},
 					{
+						key: "package",
 						title: "Package",
 						value: (
 							<p>
@@ -313,6 +333,31 @@ export const useReviewForm = () => {
 						),
 					},
 					{
+						key: "visit-1",
+						title: <p className="font-bold">Visit 1</p>,
+						value: (
+							<Badge
+								key="status-1"
+								variant="outline"
+								className={cn(
+									"uppercase",
+									!appointmentScheduling.appointmentDateTime
+										? "border-gray-300 text-gray-700"
+										: appointmentScheduling.therapist?.id
+											? "border-green-300 text-green-700"
+											: "border-yellow-300 text-yellow-700",
+								)}
+							>
+								{!appointmentScheduling.appointmentDateTime
+									? "Unscheduled"
+									: appointmentScheduling.therapist?.id
+										? "Scheduled"
+										: "Pending Therapist"}
+							</Badge>
+						),
+					},
+					{
+						key: "preferred-therapist-gender-1",
 						title: "Preferred Therapist Gender",
 						value: (
 							<Badge variant="outline">
@@ -326,6 +371,7 @@ export const useReviewForm = () => {
 						),
 					},
 					{
+						key: "appointment-date-time-1",
 						title: "Appointment Date & Time",
 						value: format(
 							appointmentScheduling.appointmentDateTime,
@@ -334,20 +380,93 @@ export const useReviewForm = () => {
 						),
 					},
 					{
+						key: "assigned-therapist-1",
 						title: "Assigned Therapist",
 						value:
 							appointmentScheduling.therapist?.name?.toUpperCase() || "N/A",
 					},
+					// All visits display
+					...(review.appointmentScheduling.seriesVisits?.flatMap((visit) => {
+						const visitStatus = !visit.appointmentDateTime
+							? "Unscheduled"
+							: visit.therapist?.id
+								? "Scheduled"
+								: "Pending Therapist";
+
+						const statusBadge = (
+							<Badge
+								key={`status-${visit.visitNumber}`}
+								variant="outline"
+								className={cn(
+									"uppercase",
+									visitStatus === "Scheduled"
+										? "border-green-300 text-green-700"
+										: visitStatus === "Pending Therapist"
+											? "border-yellow-300 text-yellow-700"
+											: "border-gray-300 text-gray-700",
+								)}
+							>
+								{visitStatus}
+							</Badge>
+						);
+
+						return [
+							{
+								key: `visit-${visit.visitNumber}-header`,
+								title: <p className="font-bold">Visit {visit.visitNumber}</p>,
+								value: statusBadge,
+							},
+							{
+								key: `visit-${visit.visitNumber}-gender`,
+								title: "Preferred Therapist Gender",
+								value: (
+									<Badge variant="outline">
+										<span className="flex items-center justify-end gap-1">
+											{getGenderIcon(
+												visit.preferredTherapistGender.toLowerCase(),
+											)}
+											{visit.preferredTherapistGender}
+										</span>
+									</Badge>
+								),
+							},
+							{
+								key: `visit-${visit.visitNumber}-datetime`,
+								title: "Appointment Date & Time",
+								value: visit.appointmentDateTime
+									? format(
+											visit.appointmentDateTime,
+											`PPP, ${timeFormatDateFns}`,
+											{ locale, in: tzDate },
+										)
+									: "Not scheduled yet",
+							},
+							{
+								key: `visit-${visit.visitNumber}-therapist`,
+								title: "Assigned Therapist",
+								value: visit.therapist?.name?.toUpperCase() || "N/A",
+							},
+						];
+					}) || []),
 				],
 			},
 			{
+				key: "additionals",
 				title: "Additionals" as const,
 				stepValue: 2,
 				subs: [
 					{
+						key: "referral-source",
 						title: "Referral Source",
 						value: additionalSettings?.referralSource
 							? `${additionalSettings?.referralSource} - ${additionalSettings?.customReferralSource}`
+							: "N/A",
+					},
+					{
+						key: "fisiohome-partner-booking",
+						title: "Fisiohome Partner Booking",
+						value: additionalSettings?.fisiohomePartnerName
+							? `${additionalSettings?.fisiohomePartnerName} - ${additionalSettings?.customFisiohomePartnerName}`
 							: "N/A",
 					},
 					{
@@ -357,10 +476,12 @@ export const useReviewForm = () => {
 							: "N/A",
 					},
 					{
+						key: "voucher-code",
 						title: "Voucher Code",
 						value: additionalSettings?.voucherCode || "N/A",
 					},
 					{
+						key: "notes",
 						title: "Notes",
 						value: additionalSettings?.notes || "N/A",
 					},
@@ -422,6 +543,7 @@ export const usePatientDetailsForm = () => {
 export const useAppointmentSchedulingForm = () => {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentNewGlobalPageProps>();
+	const { tzDate } = useDateContext();
 	const form = useFormContext<AppointmentBookingSchema>();
 	const watchPatientDetailsValue = useWatch({
 		control: form.control,
@@ -629,15 +751,46 @@ export const useAppointmentSchedulingForm = () => {
 				"appointmentScheduling.appointmentDateTime",
 			);
 			form.setValue("formOptions.findTherapistsAllOfDay", value);
-			form.setValue(
-				"appointmentScheduling.appointmentDateTime",
-				startOfDay(selectedDate),
-				{
-					shouldValidate: false,
-				},
-			);
+
+			if (value) {
+				form.setValue(
+					"appointmentScheduling.appointmentDateTime",
+					startOfDay(selectedDate, { in: tzDate }),
+					{ shouldValidate: false },
+				);
+			} else {
+				const now = new Date();
+				const minutes = now.getMinutes();
+				let hours = now.getHours();
+
+				// Round up to next 30 minute interval
+				let roundedMinutes = 0;
+				if (minutes >= 30) {
+					hours += 1;
+				} else {
+					roundedMinutes = 30;
+				}
+
+				// Create new date with selected date and rounded time
+				const selectedDateObj = new Date(selectedDate);
+				const nextHalfHour = new Date(
+					selectedDateObj.getFullYear(),
+					selectedDateObj.getMonth(),
+					selectedDateObj.getDate(),
+					hours,
+					roundedMinutes,
+					0, // seconds
+					0, // milliseconds
+				);
+
+				form.setValue(
+					"appointmentScheduling.appointmentDateTime",
+					nextHalfHour,
+					{ shouldValidate: false },
+				);
+			}
 		},
-		[form.setValue, form.getValues],
+		[form.setValue, form.getValues, tzDate],
 	);
 	const onSelectTimeSlot = useCallback(
 		(value: string) => {

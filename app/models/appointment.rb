@@ -3,6 +3,7 @@ class Appointment < ApplicationRecord
 
   # * define the attrs accessors, initializer, and the alias
   attr_accessor :updater  # Temporary attribute to track who updated
+  attr_accessor :skip_auto_series_creation # Add a flag to control auto series creation
 
   def initialize(*)
     super
@@ -119,7 +120,7 @@ class Appointment < ApplicationRecord
   before_validation :set_auto_status, on: :create
 
   # after every create, snap a fresh history record
-  after_commit :create_series_appointments, on: :create, if: -> { should_create_series? }
+  after_commit :create_series_appointments, on: :create, if: -> { should_create_series? && enable_auto_series_creation? }
   after_commit :snapshot_address_history, on: [:create]
   after_commit :snapshot_package_history, on: [:create]
   after_commit :track_status_change, on: [:create, :update], if: -> { saved_change_to_status? && updater.present? }
@@ -296,6 +297,10 @@ class Appointment < ApplicationRecord
     # Sum of appointment duration and buffer time from therapist's schedule
     therapist.therapist_appointment_schedule.appointment_duration_in_minutes +
       therapist.therapist_appointment_schedule.buffer_time_in_minutes
+  end
+
+  def enable_auto_series_creation?
+    !skip_auto_series_creation
   end
 
   def initial_visit?
@@ -889,6 +894,7 @@ class Appointment < ApplicationRecord
     self.status = determine_initial_status
   end
 
+  # Method to explicitly create series appointments
   def create_series_appointments
     return unless initial_visit?
 
@@ -897,7 +903,8 @@ class Appointment < ApplicationRecord
 
     # Scrub columns that would violate PK/FK constraints or business rules
     scrubbed_template = template.except(
-      "id", "registration_number", "visit_number", "appointment_reference_id", "therapist_id", "appointment_date_time", "status", "created_at", "updated_at"
+      "id", "registration_number", "visit_number", "appointment_reference_id",
+      "therapist_id", "appointment_date_time", "status", "created_at", "updated_at"
     )
 
     # Add the fields that DO differ for each child
@@ -906,10 +913,11 @@ class Appointment < ApplicationRecord
         scrubbed_template.merge(
           visit_number: visit_no,
           appointment_date_time: nil,
-          preferred_therapist_gender:,
+          preferred_therapist_gender: preferred_therapist_gender,
           status: :unscheduled,
+          skip_auto_series_creation: true,  # Prevent infinite recursion
           updater: updater,
-          admins:
+          admins: admins
         )
       )
 
@@ -919,6 +927,7 @@ class Appointment < ApplicationRecord
       else
         {complaint_description: "", condition: ""}
       end
+
       sequel.create_patient_medical_record!(medical_attrs)
     end
   end

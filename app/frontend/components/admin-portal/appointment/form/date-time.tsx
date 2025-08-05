@@ -77,6 +77,7 @@ export interface DateTimePickerProps extends ComponentProps<"div"> {
 	onChangeValue: (...event: any[]) => void;
 	callbackOnChange: () => void;
 	isAllOfDay?: boolean;
+	autoScroll?: boolean;
 }
 export default function DateTimePicker({
 	className,
@@ -84,6 +85,7 @@ export default function DateTimePicker({
 	min = null,
 	max = null,
 	isAllOfDay = false,
+	autoScroll = true,
 	onChangeValue,
 	callbackOnChange,
 }: DateTimePickerProps) {
@@ -165,7 +167,7 @@ export default function DateTimePicker({
 
 	// * auto-scroll selected time into center
 	useEffect(() => {
-		if (timeGroupType === "unique") return;
+		if (timeGroupType === "unique" || !autoScroll) return;
 
 		if (selectedButtonRef?.current && value && calendarHeight) {
 			selectedButtonRef.current.scrollIntoView({
@@ -173,13 +175,12 @@ export default function DateTimePicker({
 				block: "center",
 			});
 		}
-	}, [value, calendarHeight, timeGroupType]);
+	}, [value, autoScroll, calendarHeight, timeGroupType]);
 
 	return (
 		<div ref={calendarRef} className={cn("flex w-full gap-2", className)}>
 			<Calendar
 				{...appointmentDateCalendarProps}
-				initialFocus
 				mode="single"
 				captionLayout="dropdown"
 				className="p-1 border rounded-md border-border bg-background"

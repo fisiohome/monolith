@@ -351,7 +351,7 @@ const TherapistSelection = memo(function Component({
 			</Button>
 
 			<ScrollArea
-				className="relative p-3 text-sm border rounded-md border-borderder bg-sidebar text-muted-foreground"
+				className="relative p-3 text-sm border rounded-md border-border bg-sidebar text-muted-foreground"
 				style={{ height }}
 			>
 				{!isLoading && items?.length > 0 && (

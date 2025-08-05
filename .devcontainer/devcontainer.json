@@ -18,7 +18,7 @@
     "ghcr.io/devcontainers/features/sshd:1": {}
   },
   "mounts": [
-    "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly"
+    "type=bind,source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,readonly,consistency=cached"
   ],
   "containerEnv": {
     "CAPYBARA_SERVER_PORT": "45678",

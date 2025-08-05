@@ -100,6 +100,11 @@ Rails.application.routes.draw do
 
       namespace :api do
         namespace :v1 do
+          resources :therapists, only: [] do
+            collection do
+              get "feasible", to: "therapists#feasible"
+            end
+          end
           resources :services, only: [:index]
         end
       end

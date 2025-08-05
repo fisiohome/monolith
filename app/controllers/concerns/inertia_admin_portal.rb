@@ -69,8 +69,11 @@ module InertiaAdminPortal
               }
             },
             api: {
-              service: {
+              services: {
                 index: api_v1_services_path
+              },
+              therapists: {
+                feasible: feasible_api_v1_therapists_path
               }
             }
           },

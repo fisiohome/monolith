@@ -1,8 +1,11 @@
 import { Deferred, Link, usePage } from "@inertiajs/react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { useIsFirstRender, useSessionStorage } from "@uidotdev/usehooks";
+import { format } from "date-fns";
 import {
 	AlertCircle,
 	Check,
+	ChevronDownIcon,
 	ChevronsUpDown,
 	CircleCheckBig,
 	Hospital,
@@ -17,13 +20,22 @@ import {
 	Fragment,
 	memo,
 	type SetStateAction,
+	Suspense,
+	useCallback,
 	useContext,
 	useEffect,
 	useMemo,
+	useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { useDateContext } from "@/components/providers/date-provider";
 import HereMap from "@/components/shared/here-map";
 import { RetroGridPattern } from "@/components/shared/retro-grid-pattern";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+} from "@/components/ui/accordion";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	AlertDialog,
@@ -36,6 +48,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -80,7 +93,6 @@ import {
 	usePartnerBookingSelection,
 	usePartnerNameSelection,
 	usePatientReferralSource,
-	usePatientRegion,
 } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import { getGenderIcon } from "@/hooks/use-gender";
 import {
@@ -88,6 +100,8 @@ import {
 	DEFAULT_VALUES_SERVICE,
 	defineAppointmentFormDefaultValues,
 } from "@/lib/appointments/form";
+import { getBadgeVariantStatus } from "@/lib/appointments/utils";
+import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import DateTimePicker from "./form/date-time";
@@ -96,12 +110,14 @@ import PatientBasicInfoForm from "./form/patient-basic-info";
 import PatientContactForm from "./form/patient-contact";
 import PatientMedicalForm from "./form/patient-medical";
 import PatientRegionForm from "./form/patient-region";
+import { SeriesScheduler } from "./form/series-scheduler";
 import TherapistSelection from "./form/therapist-selection";
 
 export type FormMode = "new" | "series";
 type FormStorage = AppointmentBookingSchema | null;
 type FormStorageSelection = {
 	therapist: null | TherapistOption;
+	seriesTherapists: null | Record<number, TherapistOption | null>;
 };
 
 // * form provider props
@@ -124,6 +140,7 @@ const FormProviderContext = createContext<FormProviderState>({
 	formStorage: null,
 	formSelections: {
 		therapist: null,
+		seriesTherapists: null,
 	},
 	setFormStorage: () => {},
 	setFormSelections: () => {},
@@ -163,6 +180,7 @@ export function FormProvider({ children }: FormProviderProps) {
 		FormProviderState["formSelections"]
 	>(SESSION_STORAGE_FORM_SELECTIONS_KEY, {
 		therapist: null,
+		seriesTherapists: null,
 	});
 
 	return (
@@ -387,23 +405,90 @@ export const PatientDetailsForm = memo(function Component() {
 
 	return (
 		<FormStepItemContainer>
-			<ExistingPatientSelection />
+			<Suspense
+				fallback={
+					<div className="col-span-full grid grid-cols-2 items-center gap-4">
+						{Array.from({ length: 2 }).map((_, index) => (
+							<Skeleton
+								key={String(index)}
+								className="w-full h-12 rounded-md shadow-inner border-input"
+							/>
+						))}
+
+						<Skeleton className="w-full h-20 rounded-md shadow-inner border-input col-span-full" />
+					</div>
+				}
+			>
+				<ExistingPatientSelection />
+			</Suspense>
 
 			<Separator className="mt-3 col-span-full" />
 
 			{isExistingPatientSource ? (
-				<PatientMedicalForm />
+				<Suspense
+					fallback={
+						<div className="col-span-full grid items-center gap-4">
+							<div className="flex items-center justify-between gap-4">
+								<Skeleton className="w-[200px] h-6 rounded-md shadow-inner border-input" />
+								<Skeleton className="w-12 h-6 rounded-md shadow-inner border-input" />
+							</div>
+
+							<Skeleton className="w-full h-20 rounded-md shadow-inner border-input col-span-full" />
+						</div>
+					}
+				>
+					<PatientMedicalForm />
+				</Suspense>
 			) : (
 				<Fragment>
-					<PatientContactForm />
+					<Suspense
+						fallback={
+							<div className="col-span-full grid items-center gap-4">
+								<div className="flex items-center justify-between gap-4">
+									<Skeleton className="w-[200px] h-6 rounded-md shadow-inner border-input" />
+									<Skeleton className="w-12 h-6 rounded-md shadow-inner border-input" />
+								</div>
+
+								<Skeleton className="w-full h-20 rounded-md shadow-inner border-input col-span-full" />
+							</div>
+						}
+					>
+						<PatientContactForm />
+					</Suspense>
 
 					<Separator className="mt-3 col-span-full" />
 
-					<PatientBasicInfoForm />
+					<Suspense
+						fallback={
+							<div className="col-span-full grid items-center gap-4">
+								<div className="flex items-center justify-between gap-4">
+									<Skeleton className="w-[200px] h-6 rounded-md shadow-inner border-input" />
+									<Skeleton className="w-12 h-6 rounded-md shadow-inner border-input" />
+								</div>
+
+								<Skeleton className="w-full h-20 rounded-md shadow-inner border-input col-span-full" />
+							</div>
+						}
+					>
+						<PatientBasicInfoForm />
+					</Suspense>
 
 					<Separator className="mt-3 col-span-full" />
 
-					<PatientMedicalForm />
+					<Suspense
+						fallback={
+							<div className="col-span-full grid items-center gap-4">
+								<div className="flex items-center justify-between gap-4">
+									<Skeleton className="w-[200px] h-6 rounded-md shadow-inner border-input" />
+									<Skeleton className="w-12 h-6 rounded-md shadow-inner border-input" />
+								</div>
+
+								<Skeleton className="w-full h-20 rounded-md shadow-inner border-input col-span-full" />
+							</div>
+						}
+					>
+						<PatientMedicalForm />
+					</Suspense>
 
 					<Separator className="mt-3 col-span-full" />
 
@@ -421,9 +506,12 @@ export function AppointmentSchedulingForm() {
 	const { t: tasf } = useTranslation("appointments-form", {
 		keyPrefix: "appt_schedule.fields",
 	});
+
+	const { locale, tzDate } = useDateContext();
 	const isFirstRender = useIsFirstRender();
 	const { mode, formSelections, setFormSelections } = useFormProvider();
-	const { coordinate, mapAddress } = usePatientRegion();
+
+	// For scheduling-first approach, location selection will be added to the form
 	const {
 		form,
 		isLoading,
@@ -460,15 +548,52 @@ export function AppointmentSchedulingForm() {
 		onResetAllTherapistState,
 	} = restSchedulingHooks;
 
+	// get the badge statuses
+	const getStatusBadge = useMemo(() => {
+		const className = !watchAppointmentSchedulingValue?.appointmentDateTime
+			? getBadgeVariantStatus("unscheduled")
+			: watchAppointmentSchedulingValue?.therapist?.id
+				? getBadgeVariantStatus("paid")
+				: getBadgeVariantStatus("pending_therapist_assignment");
+		const label = !watchAppointmentSchedulingValue?.appointmentDateTime
+			? "Unscheduled"
+			: watchAppointmentSchedulingValue?.therapist?.id
+				? "Scheduled"
+				: "Pending Therapist Assignment";
+
+		return { className, label };
+	}, [watchAppointmentSchedulingValue]);
+
+	// For scheduling-first approach, we'll implement region selection directly in the form
+	// Location will be selected before services/packages are filtered
+	const coordinate = useMemo(() => {
+		// For scheduling-first approach, coordinates will be determined later
+		// when patient provides specific address within the selected location
+		return MAP_DEFAULT_COORDINATE; // Default fallback - will be updated when patient details are added
+	}, []);
+	const mapAddress = useMemo(() => {
+		return {
+			country: "", // Will be determined from location selection
+			state: "", // Will be determined from location selection
+			city: "", // Will be determined from location selection
+			postalCode: "", // Will be filled later in patient details
+			address: "", // Will be filled later in patient details
+		};
+	}, []);
+	const [isOpenAccordion, setIsOpenAccordion] = useState<string>("first-visit");
+	const onCloseAccordionItem = useCallback(() => {
+		setIsOpenAccordion("");
+	}, []);
+
 	// * side effect to add isoline calculated and stored isoline and the marker marked to the map
 	useEffect(() => {
 		// Ensure the map is initialized and isolane not calculated, therapist selected not changed, and restrict to the first render
 		if (
 			!mapRef?.current ||
 			isIsolineCalculated ||
-			watchAppointmentSchedulingValue?.therapist?.id !==
-				formSelections?.therapist?.id ||
-			!isFirstRender
+			(watchAppointmentSchedulingValue?.therapist?.id !==
+				formSelections?.therapist?.id &&
+				(!isFirstRender || !isOpenAccordion))
 		)
 			return;
 
@@ -505,9 +630,10 @@ export function AppointmentSchedulingForm() {
 		isIsolineCalculated,
 		markerStorage,
 		formSelections.therapist,
-		generateMarkerDataTherapist,
 		watchAppointmentSchedulingValue?.therapist,
 		isFirstRender,
+		isOpenAccordion,
+		generateMarkerDataTherapist,
 	]);
 
 	return (
@@ -564,25 +690,151 @@ export function AppointmentSchedulingForm() {
 				</Alert>
 			)}
 
-			<div className="grid grid-cols-1 gap-4 col-span-full md:grid-cols-2">
-				{mode === "new" && (
-					<>
-						<Deferred
-							data={["services"]}
-							fallback={
-								<div className="flex flex-col self-end gap-3">
-									<Skeleton className="w-10 h-4 rounded-md" />
-									<Skeleton className="relative w-full rounded-md h-9" />
-								</div>
-							}
-						>
-							<FormField
-								control={form.control}
-								name="appointmentScheduling.service.name"
-								render={({ field }) => (
+			{mode === "new" && (
+				<>
+					<Deferred
+						data={["services"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<Skeleton className="relative w-full rounded-md h-9" />
+							</div>
+						}
+					>
+						<FormField
+							control={form.control}
+							name="appointmentScheduling.service.name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel className="text-nowrap">
+										{tasf("service.label")}
+									</FormLabel>
+									<Popover>
+										<PopoverTrigger asChild>
+											<FormControl>
+												<Button
+													variant="outline"
+													className={cn(
+														"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
+														!field.value && "text-muted-foreground",
+													)}
+													onFocus={() => onFocusServiceField()}
+												>
+													<p>
+														{field.value
+															? servicesOption
+																	?.find(
+																		(service) => service.name === field.value,
+																	)
+																	?.name?.replaceAll("_", " ") ||
+																field.value.replaceAll("_", " ")
+															: tasf("service.placeholder")}
+													</p>
+													{field.value ? (
+														<button
+															type="button"
+															className="cursor-pointer"
+															onClick={(event) => {
+																event.preventDefault();
+																event.stopPropagation();
+
+																onSelectService(DEFAULT_VALUES_SERVICE);
+															}}
+														>
+															<X className="opacity-50" />
+														</button>
+													) : (
+														<ChevronsUpDown className="opacity-50" />
+													)}
+												</Button>
+											</FormControl>
+										</PopoverTrigger>
+										<PopoverContent
+											className="p-0 w-[300px]"
+											align="start"
+											side="bottom"
+										>
+											<Command>
+												<CommandInput
+													placeholder={tasf("service.search.placeholder")}
+													className="h-9"
+													disabled={isLoading.services}
+												/>
+												<CommandList>
+													<CommandEmpty>
+														{tasf("service.search.empty")}
+													</CommandEmpty>
+													<CommandGroup>
+														{isLoading.services ? (
+															<CommandItem value={undefined} disabled>
+																<LoaderIcon className="animate-spin" />
+																<span>{tasf("service.search.loading")}</span>
+															</CommandItem>
+														) : (
+															servicesOption?.map((service) => (
+																<CommandItem
+																	key={service.id}
+																	value={service.name}
+																	onSelect={() =>
+																		onSelectService({
+																			id: String(service.id),
+																			name: service.name,
+																		})
+																	}
+																>
+																	<span className="flex flex-col items-start">
+																		<span>
+																			{service.name.replaceAll("_", " ")}
+																		</span>
+																		<span className="text-xs font-light text-pretty">
+																			{service.description}
+																		</span>
+																	</span>
+
+																	<Check
+																		className={cn(
+																			"ml-auto",
+																			service.name === field.value
+																				? "opacity-100"
+																				: "opacity-0",
+																		)}
+																	/>
+																</CommandItem>
+															))
+														)}
+													</CommandGroup>
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
+
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</Deferred>
+
+					<Deferred
+						data={["services"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<Skeleton className="relative w-full rounded-md h-9" />
+							</div>
+						}
+					>
+						<FormField
+							control={form.control}
+							name="appointmentScheduling.package.name"
+							render={({ field }) => {
+								const selectedPackage = packagesOption?.find(
+									(packageItem) => packageItem.name === field.value,
+								);
+
+								return (
 									<FormItem>
 										<FormLabel className="text-nowrap">
-											{tasf("service.label")}
+											{tasf("package.label")}
 										</FormLabel>
 										<Popover>
 											<PopoverTrigger asChild>
@@ -593,34 +845,18 @@ export function AppointmentSchedulingForm() {
 															"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
 															!field.value && "text-muted-foreground",
 														)}
-														onFocus={() => onFocusServiceField()}
 													>
-														<p>
-															{field.value
-																? servicesOption
-																		?.find(
-																			(service) => service.name === field.value,
-																		)
-																		?.name?.replaceAll("_", " ") ||
-																	field.value.replaceAll("_", " ")
-																: tasf("service.placeholder")}
-														</p>
 														{field.value ? (
-															<button
-																type="button"
-																className="cursor-pointer"
-																onClick={(event) => {
-																	event.preventDefault();
-																	event.stopPropagation();
-
-																	onSelectService(DEFAULT_VALUES_SERVICE);
-																}}
-															>
-																<X className="opacity-50" />
-															</button>
+															<p>
+																<span>
+																	{selectedPackage?.name || field.value}
+																</span>{" "}
+																<span className="italic font-light">{`(${selectedPackage?.numberOfVisit || watchAppointmentSchedulingValue?.package?.numberOfVisit} visit(s))`}</span>
+															</p>
 														) : (
-															<ChevronsUpDown className="opacity-50" />
+															<span>{tasf("package.placeholder")}</span>
 														)}
+														<ChevronsUpDown className="opacity-50" />
 													</Button>
 												</FormControl>
 											</PopoverTrigger>
@@ -631,52 +867,41 @@ export function AppointmentSchedulingForm() {
 											>
 												<Command>
 													<CommandInput
-														placeholder={tasf("service.search.placeholder")}
+														placeholder={tasf("package.search.placeholder")}
 														className="h-9"
-														disabled={isLoading.services}
 													/>
 													<CommandList>
 														<CommandEmpty>
-															{tasf("service.search.empty")}
+															{tasf("package.search.empty")}
 														</CommandEmpty>
 														<CommandGroup>
-															{isLoading.services ? (
-																<CommandItem value={undefined} disabled>
-																	<LoaderIcon className="animate-spin" />
-																	<span>{tasf("service.search.loading")}</span>
-																</CommandItem>
-															) : (
-																servicesOption?.map((service) => (
-																	<CommandItem
-																		key={service.id}
-																		value={service.name}
-																		onSelect={() =>
-																			onSelectService({
-																				id: String(service.id),
-																				name: service.name,
-																			})
-																		}
-																	>
-																		<span className="flex flex-col items-start">
-																			<span>
-																				{service.name.replaceAll("_", " ")}
-																			</span>
-																			<span className="text-xs font-light text-pretty">
-																				{service.description}
-																			</span>
-																		</span>
+															{packagesOption?.map((packageItem) => (
+																<CommandItem
+																	key={packageItem.id}
+																	value={packageItem.name}
+																	onSelect={() =>
+																		onSelectPackage({
+																			id: packageItem.id,
+																			name: packageItem.name,
+																			numberOfVisit: packageItem.numberOfVisit,
+																		})
+																	}
+																>
+																	<p>
+																		<span>{packageItem.name}</span>{" "}
+																		<span className="italic font-light">{`(${packageItem.numberOfVisit} visit(s))`}</span>
+																	</p>
 
-																		<Check
-																			className={cn(
-																				"ml-auto",
-																				service.name === field.value
-																					? "opacity-100"
-																					: "opacity-0",
-																			)}
-																		/>
-																	</CommandItem>
-																))
-															)}
+																	<Check
+																		className={cn(
+																			"ml-auto",
+																			packageItem.name === field.value
+																				? "opacity-100"
+																				: "opacity-0",
+																		)}
+																	/>
+																</CommandItem>
+															))}
 														</CommandGroup>
 													</CommandList>
 												</Command>
@@ -685,264 +910,240 @@ export function AppointmentSchedulingForm() {
 
 										<FormMessage />
 									</FormItem>
-								)}
-							/>
-						</Deferred>
+								);
+							}}
+						/>
+					</Deferred>
+				</>
+			)}
 
-						<Deferred
-							data={["services"]}
-							fallback={
-								<div className="flex flex-col self-end gap-3">
-									<Skeleton className="w-10 h-4 rounded-md" />
-									<Skeleton className="relative w-full rounded-md h-9" />
-								</div>
-							}
-						>
-							<FormField
-								control={form.control}
-								name="appointmentScheduling.package.name"
-								render={({ field }) => {
-									const selectedPackage = packagesOption?.find(
-										(packageItem) => packageItem.name === field.value,
-									);
-
-									return (
-										<FormItem>
-											<FormLabel className="text-nowrap">
-												{tasf("package.label")}
-											</FormLabel>
-											<Popover>
-												<PopoverTrigger asChild>
-													<FormControl>
-														<Button
-															variant="outline"
-															className={cn(
-																"relative w-full flex justify-between font-normal bg-sidebar shadow-inner",
-																!field.value && "text-muted-foreground",
-															)}
-														>
-															{field.value ? (
-																<p>
-																	<span>
-																		{selectedPackage?.name || field.value}
-																	</span>{" "}
-																	<span className="italic font-light">{`(${selectedPackage?.numberOfVisit || watchAppointmentSchedulingValue?.package?.numberOfVisit} visit(s))`}</span>
-																</p>
-															) : (
-																<span>{tasf("package.placeholder")}</span>
-															)}
-															<ChevronsUpDown className="opacity-50" />
-														</Button>
-													</FormControl>
-												</PopoverTrigger>
-												<PopoverContent
-													className="p-0 w-[300px]"
-													align="start"
-													side="bottom"
-												>
-													<Command>
-														<CommandInput
-															placeholder={tasf("package.search.placeholder")}
-															className="h-9"
-														/>
-														<CommandList>
-															<CommandEmpty>
-																{tasf("package.search.empty")}
-															</CommandEmpty>
-															<CommandGroup>
-																{packagesOption?.map((packageItem) => (
-																	<CommandItem
-																		key={packageItem.id}
-																		value={packageItem.name}
-																		onSelect={() =>
-																			onSelectPackage({
-																				id: packageItem.id,
-																				name: packageItem.name,
-																				numberOfVisit:
-																					packageItem.numberOfVisit,
-																			})
-																		}
-																	>
-																		<p>
-																			<span>{packageItem.name}</span>{" "}
-																			<span className="italic font-light">{`(${packageItem.numberOfVisit} visit(s))`}</span>
-																		</p>
-
-																		<Check
-																			className={cn(
-																				"ml-auto",
-																				packageItem.name === field.value
-																					? "opacity-100"
-																					: "opacity-0",
-																			)}
-																		/>
-																	</CommandItem>
-																))}
-															</CommandGroup>
-														</CommandList>
-													</Command>
-												</PopoverContent>
-											</Popover>
-
-											<FormMessage />
-										</FormItem>
-									);
-								}}
-							/>
-						</Deferred>
-					</>
-				)}
-
-				<Deferred
-					data={["optionsData"]}
-					fallback={
-						<div className="flex flex-col self-end gap-3 col-span-full">
-							<Skeleton className="w-10 h-4 rounded-md" />
-							<div className="grid grid-cols-1 gap-4">
-								<Skeleton className="relative w-full rounded-md h-9" />
-								<Skeleton className="relative w-full rounded-md h-9" />
-								<Skeleton className="relative w-full rounded-md h-9" />
-							</div>
-						</div>
-					}
+			<Accordion
+				collapsible
+				type="single"
+				value={isOpenAccordion}
+				onValueChange={setIsOpenAccordion}
+				className="w-full col-span-full -mb-2"
+			>
+				<AccordionItem
+					value="first-visit"
+					className="bg-sidebar text-muted-foreground border border-border rounded-md has-focus-visible:border-ring has-focus-visible:ring-ring/50 px-4 py-1 outline-none last:border-b has-focus-visible:ring-[3px]"
 				>
-					<FormField
-						control={form.control}
-						name="appointmentScheduling.preferredTherapistGender"
-						render={({ field }) => (
-							<FormItem className="space-y-3 col-span-full">
-								<FormLabel>{tasf("pref_therapist_gender.label")}</FormLabel>
-								<FormControl>
-									<RadioGroup
-										onValueChange={(value) => {
-											field.onChange(value);
-											onResetAllTherapistState();
-										}}
-										defaultValue={field.value}
-										orientation="horizontal"
-										className="grid grid-cols-1 gap-4 md:grid-cols-3"
-									>
-										{preferredTherapistGenderOption.map((gender) => (
-											<FormItem
-												key={gender}
-												className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-											>
-												<FormControl>
-													<RadioGroupItem value={gender} />
-												</FormControl>
-												<FormLabel className="flex items-center gap-1 font-normal capitalize">
-													{getGenderIcon(gender)}
-													<span>
-														{tasf(
-															`pref_therapist_gender.options.${gender.toLowerCase()}`,
-														)}
-													</span>
-												</FormLabel>
-											</FormItem>
-										))}
-									</RadioGroup>
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-				</Deferred>
+					<AccordionPrimitive.Header className="flex">
+						<AccordionPrimitive.Trigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between rounded-md py-2 text-left text-[15px] leading-6 font-semibold transition-all outline-none focus-visible:ring-[3px] [&[data-state=open]>svg]:rotate-180">
+							<div className="flex items-center gap-3">
+								<span
+									className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-primary/75 text-primary-foreground"
+									aria-hidden="true"
+								>
+									1
+								</span>
+								<span className="flex flex-col space-y-1">
+									<span>Visit 1</span>
+									{watchAppointmentSchedulingValue?.appointmentDateTime ? (
+										<span className="text-sm font-normal">
+											{format(
+												watchAppointmentSchedulingValue.appointmentDateTime,
+												"MMM d, yyyy h:mm a",
+												{ locale, in: tzDate },
+											)}
+										</span>
+									) : (
+										<span className="text-sm font-normal">Unscheduled</span>
+									)}
+								</span>
+							</div>
 
-				<FormField
-					control={form.control}
-					name="appointmentScheduling.appointmentDateTime"
-					render={({ field }) => (
-						<FormItem className="col-span-full">
-							<FormLabel className="flex items-center justify-between">
-								<span>{tasf("appt_date.label")}</span>
+							<div className="flex items-center gap-3">
+								<Badge
+									variant="outline"
+									className={cn("uppercase", getStatusBadge.className)}
+								>
+									{getStatusBadge.label}
+								</Badge>
 
+								<ChevronDownIcon
+									size={16}
+									className="pointer-events-none shrink-0 opacity-60 transition-transform duration-200"
+									aria-hidden="true"
+								/>
+							</div>
+						</AccordionPrimitive.Trigger>
+					</AccordionPrimitive.Header>
+					<AccordionContent className="text-muted-foreground pb-2">
+						<div className="p-4 px-0 pb-0 border-t bg-muted/5 grid grid-cols-1 md:grid-cols-2 gap-4">
+							<Deferred
+								data={["optionsData"]}
+								fallback={
+									<div className="flex flex-col self-end gap-3 col-span-full">
+										<Skeleton className="w-10 h-4 rounded-md" />
+										<div className="grid grid-cols-1 gap-4">
+											<Skeleton className="relative w-full rounded-md h-9" />
+											<Skeleton className="relative w-full rounded-md h-9" />
+											<Skeleton className="relative w-full rounded-md h-9" />
+										</div>
+									</div>
+								}
+							>
 								<FormField
 									control={form.control}
-									name="formOptions.findTherapistsAllOfDay"
+									name="appointmentScheduling.preferredTherapistGender"
 									render={({ field }) => (
-										<FormItem className="flex items-center gap-1.5">
-											<FormLabel>All of day</FormLabel>
-
+										<FormItem className="space-y-3 col-span-full">
+											<FormLabel>
+												{tasf("pref_therapist_gender.label")}
+											</FormLabel>
 											<FormControl>
-												<Switch
-													className="!mt-0"
-													checked={field.value}
-													onCheckedChange={(value) => {
-														onSelectAllOfDay(value);
-
-														// reset all therapist and isoline maps state
+												<RadioGroup
+													onValueChange={(value) => {
+														field.onChange(value);
 														onResetAllTherapistState();
 													}}
-												/>
+													defaultValue={field.value}
+													orientation="horizontal"
+													className="grid grid-cols-1 gap-4 md:grid-cols-3"
+												>
+													{preferredTherapistGenderOption.map((gender) => (
+														<FormItem
+															key={gender}
+															className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+														>
+															<FormControl>
+																<RadioGroupItem value={gender} />
+															</FormControl>
+															<FormLabel className="flex items-center gap-1 font-normal uppercase">
+																{getGenderIcon(gender)}
+																<span>
+																	{tasf(
+																		`pref_therapist_gender.options.${gender.toLowerCase()}`,
+																	)}
+																</span>
+															</FormLabel>
+														</FormItem>
+													))}
+												</RadioGroup>
 											</FormControl>
+											<FormMessage />
 										</FormItem>
 									)}
 								/>
-							</FormLabel>
+							</Deferred>
 
-							<FormControl>
-								<DateTimePicker
-									value={field.value}
-									onChangeValue={field.onChange}
-									isAllOfDay={!!watchAllOfDayValue}
-									callbackOnChange={() => {
-										// reset all therapist and isoline maps state
-										onResetAllTherapistState();
-									}}
-								/>
-							</FormControl>
+							<FormField
+								control={form.control}
+								name="appointmentScheduling.appointmentDateTime"
+								render={({ field }) => (
+									<FormItem className="col-span-full">
+										<FormLabel className="flex items-center justify-between">
+											<span>{tasf("appt_date.label")}</span>
 
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-			</div>
+											<FormField
+												control={form.control}
+												name="formOptions.findTherapistsAllOfDay"
+												render={({ field }) => (
+													<FormItem className="flex items-center gap-1.5">
+														<FormLabel>All of day</FormLabel>
 
-			<FormField
-				control={form.control}
-				name="appointmentScheduling.therapist.name"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						{/* <FormLabel>{tasf("therapist.label")}</FormLabel> */}
+														<FormControl>
+															<Switch
+																className="!mt-0"
+																checked={field.value}
+																onCheckedChange={(value) => {
+																	onSelectAllOfDay(value);
 
-						<FormControl>
-							<TherapistSelection
-								items={therapistsOptions.feasible}
-								config={{
-									isLoading: isLoading.therapists || isMapLoading,
-									selectedTherapistName: field.value,
-									selectedTherapist: formSelections?.therapist || undefined,
-									isAllOfDay: !!watchAllOfDayValue,
-									selectedTimeSlot: watchSelectedTimeSlotValue,
-								}}
-								find={{
-									isDisabled:
-										!watchAppointmentSchedulingValue.appointmentDateTime,
-									handler: async () => {
-										const isError = onCheckServiceError();
-										if (isError) return;
+																	// reset all therapist and isoline maps state
+																	onResetAllTherapistState();
+																}}
+															/>
+														</FormControl>
+													</FormItem>
+												)}
+											/>
+										</FormLabel>
 
-										onFindTherapists();
-									},
-								}}
-								onSelectTherapist={(value) => onSelectTherapist(value)}
-								onPersist={(value) => {
-									setFormSelections({ ...formSelections, therapist: value });
-								}}
-								onSelectTimeSlot={(value) => onSelectTimeSlot(value)}
+										<FormControl>
+											<DateTimePicker
+												value={field.value}
+												onChangeValue={field.onChange}
+												isAllOfDay={!!watchAllOfDayValue}
+												autoScroll={false}
+												callbackOnChange={() => {
+													// reset all therapist and isoline maps state
+													onResetAllTherapistState();
+												}}
+											/>
+										</FormControl>
+
+										<FormMessage />
+									</FormItem>
+								)}
 							/>
-						</FormControl>
-					</FormItem>
-				)}
-			/>
 
-			<HereMap
-				ref={mapRef}
-				coordinate={coordinate}
-				address={{ ...mapAddress }}
-				options={{ disabledEvent: false }}
-				className="col-span-full"
-			/>
+							<FormField
+								control={form.control}
+								name="appointmentScheduling.therapist.name"
+								render={({ field }) => (
+									<FormItem className="col-span-full">
+										{/* <FormLabel>{tasf("therapist.label")}</FormLabel> */}
+
+										<FormControl>
+											<TherapistSelection
+												items={therapistsOptions.feasible}
+												config={{
+													isLoading: isLoading.therapists || isMapLoading,
+													selectedTherapistName: field.value,
+													selectedTherapist:
+														formSelections?.therapist || undefined,
+													isAllOfDay: !!watchAllOfDayValue,
+													selectedTimeSlot: watchSelectedTimeSlotValue,
+												}}
+												find={{
+													isDisabled:
+														!watchAppointmentSchedulingValue.appointmentDateTime,
+													handler: async () => {
+														const isError = onCheckServiceError();
+														if (isError) return;
+
+														onFindTherapists();
+													},
+												}}
+												onSelectTherapist={(value) => onSelectTherapist(value)}
+												onPersist={(value) => {
+													setFormSelections({
+														...formSelections,
+														therapist: value,
+													});
+												}}
+												onSelectTimeSlot={(value) => onSelectTimeSlot(value)}
+											/>
+										</FormControl>
+									</FormItem>
+								)}
+							/>
+
+							<HereMap
+								ref={mapRef}
+								coordinate={coordinate}
+								address={{ ...mapAddress }}
+								options={{ disabledEvent: false }}
+								className="col-span-full"
+							/>
+						</div>
+
+						<div className="mt-4 flex items-center gap-2">
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={onCloseAccordionItem}
+							>
+								Close
+							</Button>
+						</div>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
+
+			<SeriesScheduler />
 		</FormStepItemContainer>
 	);
 }
@@ -1297,7 +1498,7 @@ export function ReviewForm() {
 	return (
 		<FormStepItemContainer className="!grid-cols-1 gap-6">
 			{sections.map((section) => (
-				<div key={section.title} className="grid gap-2 text-sm">
+				<div key={section.key} className="grid gap-2 text-sm">
 					<div className="flex items-center justify-between">
 						<p className="text-sm font-medium tracking-tight">
 							{section.title}
@@ -1321,7 +1522,7 @@ export function ReviewForm() {
 					<Table className="border rounded-lg border-border">
 						<TableBody>
 							{section.subs.map((sub) => (
-								<TableRow key={sub.title}>
+								<TableRow key={sub.key}>
 									<TableCell className="p-2 font-light tracking-tight md:p-4">
 										{sub.title}
 									</TableCell>

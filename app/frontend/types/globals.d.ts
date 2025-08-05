@@ -47,6 +47,11 @@ export interface AdminPortal {
 			};
 		};
 		adminPortalRootPath: string;
+		api: {
+			therapists: {
+				feasible: string;
+			};
+		};
 		adminPortal: {
 			adminManagement: {
 				index: string;

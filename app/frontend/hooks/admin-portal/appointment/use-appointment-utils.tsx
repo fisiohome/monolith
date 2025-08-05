@@ -1009,6 +1009,7 @@ export const useTherapistAvailability = ({
 				preferredTherapistGenderValue) &&
 			!isAllOfDayValue
 		) {
+			onResetTherapistFormValue();
 			onResetTherapistOptions();
 			onResetIsoline();
 		}
@@ -1021,6 +1022,7 @@ export const useTherapistAvailability = ({
 		isAllOfDayValue,
 		onResetIsoline,
 		onResetTherapistOptions,
+		onResetTherapistFormValue,
 	]);
 
 	return {

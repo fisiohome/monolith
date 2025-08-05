@@ -1,3 +1,6 @@
+import { startOfDay } from "date-fns";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import { z } from "zod";
 import type { FormMode } from "@/components/admin-portal/appointment/new-appointment-form";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type {
@@ -5,8 +8,6 @@ import type {
 	AppointmentPayload,
 } from "@/types/admin-portal/appointment";
 import type { Auth } from "@/types/globals";
-import { isValidPhoneNumber } from "react-phone-number-input";
-import { z } from "zod";
 import {
 	FISIOHOME_PARTNER,
 	GENDERS,
@@ -56,7 +57,7 @@ export const DEFAULT_VALUES_PATIENT_CONTACT = {
  * * new appointment booking form schema
  */
 
-// contact information schema
+// * contact information schema
 export const CONTACT_INFORMATION_SCHEMA = z.object({
 	contactName: z
 		.string()
@@ -72,7 +73,7 @@ export type ContactInformationSchema = z.infer<
 	typeof CONTACT_INFORMATION_SCHEMA
 >;
 
-// patient details schema
+// * patient details schema
 export const PATIENT_DETAILS_SCHEMA = z.object({
 	fullName: z
 		.string()
@@ -118,7 +119,41 @@ export const PATIENT_DETAILS_SCHEMA = z.object({
 });
 export type PatientDetailsSchema = z.infer<typeof PATIENT_DETAILS_SCHEMA>;
 
-// appointment scheduling schema
+// Common therapist schema
+const THERAPIST_SCHEMA = z
+	.object({
+		id: idSchema.optional(),
+		name: z.string().optional(),
+	})
+	.optional()
+	.nullable();
+
+// Common appointment date time schema
+const APPOINTMENT_DATE_TIME_SCHEMA = z.coerce
+	.date()
+	.refine((date) => date >= startOfDay(new Date()), {
+		message: "Appointment date must be in the future",
+	});
+
+// Base appointment fields that are shared
+const BASE_APPOINTMENT_FIELDS = {
+	preferredTherapistGender: z.enum(PREFERRED_THERAPIST_GENDER, {
+		required_error: "Please select a preferred therapist gender",
+	}),
+	appointmentDateTime: APPOINTMENT_DATE_TIME_SCHEMA,
+	therapist: THERAPIST_SCHEMA,
+	findTherapistsAllOfDay: z.boolean().optional(),
+};
+
+// * series visit schema
+export const SERIES_VISIT_SCHEMA = z.object({
+	visitNumber: z.number().int().positive(),
+	...BASE_APPOINTMENT_FIELDS,
+});
+
+export type SeriesVisitSchema = z.infer<typeof SERIES_VISIT_SCHEMA>;
+
+// * appointment scheduling schema
 export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 	service: z
 		.object({
@@ -139,19 +174,13 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 			path: ["name"],
 			message: "Please select a package",
 		}),
-	preferredTherapistGender: z.enum(PREFERRED_THERAPIST_GENDER, {
-		required_error: "Please select a preferred therapist gender",
-	}),
-	appointmentDateTime: z.coerce.date().refine((date) => date > new Date(), {
-		message: "Appointment date must be in the future",
-	}),
-	therapist: z
-		.object({
-			id: idSchema.optional(),
-			name: z.string().optional(),
-		})
-		.optional(),
+	...BASE_APPOINTMENT_FIELDS,
+	// Add series visits array for multiple appointments
+	seriesVisits: z.array(SERIES_VISIT_SCHEMA).optional(),
+	// Add flag to indicate if series scheduling is enabled
+	enableSeriesScheduling: z.boolean().default(false),
 });
+
 export type AppointmentSchedulingSchema = z.infer<
 	typeof APPOINTMENT_SCHEDULING_SCHEMA
 >;
@@ -255,13 +284,34 @@ export const FORM_OPTIONS_SCHEMA = z.object({
 export type FormOptionsSchema = z.infer<typeof FORM_OPTIONS_SCHEMA>;
 
 // all merge schema
-export const APPOINTMENT_BOOKING_SCHEMA = z.object({
-	formOptions: FORM_OPTIONS_SCHEMA,
-	contactInformation: CONTACT_INFORMATION_SCHEMA,
-	patientDetails: PATIENT_DETAILS_SCHEMA,
-	appointmentScheduling: APPOINTMENT_SCHEDULING_SCHEMA,
-	additionalSettings: ADDITIONAL_SETTINGS_SCHEMA,
-});
+export const APPOINTMENT_BOOKING_SCHEMA = z
+	.object({
+		formOptions: FORM_OPTIONS_SCHEMA,
+		contactInformation: CONTACT_INFORMATION_SCHEMA,
+		patientDetails: PATIENT_DETAILS_SCHEMA,
+		appointmentScheduling: APPOINTMENT_SCHEDULING_SCHEMA,
+		additionalSettings: ADDITIONAL_SETTINGS_SCHEMA,
+	})
+	.refine(
+		(data) => {
+			const {
+				package: pkg,
+				enableSeriesScheduling,
+				seriesVisits = [],
+			} = data.appointmentScheduling;
+
+			// If series scheduling is not enabled or no package is selected, validation passes
+			if (!enableSeriesScheduling || !pkg) return true;
+
+			// If series scheduling is enabled, we need to have the correct number of visits
+			return seriesVisits.length === pkg.numberOfVisit - 1; // -1 because the first visit is the main appointment
+		},
+		{
+			message:
+				"Number of series visits must match the package's number of visits minus one",
+			path: ["appointmentScheduling.seriesVisits"],
+		},
+	);
 export type AppointmentBookingSchema = z.infer<
 	typeof APPOINTMENT_BOOKING_SCHEMA
 >;
@@ -286,6 +336,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		package: appointmentPackage,
 		service,
 		therapist,
+		seriesVisits,
 		...restAppointmentScheduling
 	} = appointmentScheduling;
 	const {
@@ -331,6 +382,14 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 			patientComplaintDescription: complaintDescription,
 			patientCondition: condition,
 			patientMedicalHistory: medicalHistory,
+			seriesVisits: seriesVisits?.length
+				? seriesVisits.map(
+						({ findTherapistsAllOfDay, therapist, ...rest }) => ({
+							...rest,
+							therapistId: String(therapist?.id || "") || null,
+						}),
+					)
+				: undefined,
 		},
 	} satisfies AppointmentPayload);
 

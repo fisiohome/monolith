@@ -1,7 +1,3 @@
-import useHereMap, { type HereMapHooks } from "@/hooks/here-maps";
-import { MAP_DEFAULT_COORDINATE, TRAFFIC_INTERVAL } from "@/lib/here-maps";
-import { cn } from "@/lib/utils";
-import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import {
 	type ComponentProps,
@@ -11,6 +7,10 @@ import {
 	useMemo,
 	useRef,
 } from "react";
+import useHereMap, { type HereMapHooks } from "@/hooks/here-maps";
+import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
+import { cn } from "@/lib/utils";
+import type { GlobalPageProps } from "@/types/globals";
 
 /**
  * HereMaphandler:
@@ -133,15 +133,16 @@ const HereMap = forwardRef<HereMaphandler, HereMapProps>(
 		useEffect(() => {
 			initialize(options);
 
+			// ! Turn-off traffic update interval for now
 			// for update traffic map layer every ten-minute
-			const trafficInterval = setInterval(
-				mapControl.updateLayer.traffic,
-				TRAFFIC_INTERVAL,
-			);
-			return () => {
-				clearInterval(trafficInterval);
-			};
-		}, [initialize, mapControl.updateLayer.traffic, options]);
+			// const trafficInterval = setInterval(
+			// 	mapControl.updateLayer.traffic,
+			// 	TRAFFIC_INTERVAL,
+			// );
+			// return () => {
+			// 	clearInterval(trafficInterval);
+			// };
+		}, [initialize, options]);
 
 		return (
 			<div

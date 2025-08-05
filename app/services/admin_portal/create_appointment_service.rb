@@ -8,24 +8,25 @@ module AdminPortal
 
     def call
       ActiveRecord::Base.transaction do
-        # create the visit series
-        if @appt_ref.present?
+        # Handle series appointments if specified in params
+        if @params[:appointment][:series_visits].present?
+          create_series_appointments
+        # Handle legacy sequential appointments
+        elsif @appt_ref.present?
           @appointment = create_sequential_appointments
-
           create_patient_medical_record_appointment
           associate_admins
-
+          next {success: true, data: @appointment}
+        # Standard single appointment
+        else
+          find_or_initialize_patient
+          upsert_patient_contact
+          upsert_patient_address
+          create_appointment
+          create_patient_medical_record_appointment
+          associate_admins
           next {success: true, data: @appointment}
         end
-
-        find_or_initialize_patient
-        upsert_patient_contact
-        upsert_patient_address
-        create_appointment
-        create_patient_medical_record_appointment
-        associate_admins
-
-        {success: true, data: @appointment}
       end
     rescue ActionController::ParameterMissing => e
       {success: false, error: "Invalid parameters: #{e.message}", type: "ParameterMissing"}
@@ -36,6 +37,43 @@ module AdminPortal
     end
 
     private
+
+    # Creates a series of appointments based on the provided visit details
+    # Expects @params[:appointment][:series_visits] to be an array of visit attributes
+    def create_series_appointments
+      raise ArgumentError, "Missing series_visits parameter" unless @params[:appointment][:series_visits].is_a?(Array)
+      raise ArgumentError, "At least one visit must be provided" if @params[:appointment][:series_visits].empty?
+
+      # Create the first appointment which will be the reference appointment
+      find_or_initialize_patient
+      upsert_patient_contact
+      upsert_patient_address
+      create_appointment
+      create_patient_medical_record_appointment
+      associate_admins
+
+      reference_appointment = @appointment
+      # Create the rest of the series
+      @params[:appointment][:series_visits].each do |visit_attrs|
+        @appointment = Appointment.new(
+          reference_appointment.attributes.except(
+            "id", "registration_number", "visit_number", "appointment_reference_id",
+            "therapist_id", "appointment_date_time", "status", "created_at", "updated_at"
+          ).merge(visit_attrs)
+        )
+        @appointment.appointment_reference_id = reference_appointment.id
+        @appointment.visit_number = visit_attrs[:visit_number] if visit_attrs[:visit_number]
+        @appointment.appointment_date_time = visit_attrs[:appointment_date_time]&.in_time_zone(Time.zone.name) if visit_attrs[:appointment_date_time]
+        @appointment.therapist_id = visit_attrs[:therapist_id] if visit_attrs[:therapist_id]
+        @appointment.updater = @current_user
+        @appointment.save!
+
+        create_patient_medical_record_appointment
+        associate_admins
+      end
+
+      {success: true, data: reference_appointment}
+    end
 
     def find_or_initialize_patient
       # Duplicate patient parameters so we can safely modify them.
@@ -53,29 +91,32 @@ module AdminPortal
     # This method will update the existing patient contact if it exists,
     # or create a new one if it doesn't, and always associate it with @patient.
     def upsert_patient_contact
-      cp = @params[:patient_contact] || {}
+      return @patient_contact if @patient_contact # memoization
+      return @patient_contact = @patient.patient_contact if @patient.patient_contact
 
-      # Try to find an existing PatientContact for this patient
-      contact = @patient.patient_contact
+      cp = @params[:patient_contact].to_h
+      return if cp.blank?
 
-      if contact
-        # Update the existing contact with new attributes if changed
-        contact.assign_attributes(cp)
-        contact.save! if contact.changed?
-      else
-        # Try to find a PatientContact by email/contact_phone, or create a new one
-        contact = PatientContact.find_or_initialize_by(
-          email: cp[:email],
-          contact_phone: cp[:contact_phone]
-        )
-        contact.assign_attributes(cp)
-        contact.save! if contact.new_record? || contact.changed?
+      # Normalize contact details
+      email = cp[:email].to_s.downcase.presence
+      phone = cp[:contact_phone].to_s.gsub(/\D/, "").presence
+
+      # Try to find existing contact by email or phone
+      contact = if email
+        PatientContact.find_by(email: email)
+      elsif phone
+        PatientContact.find_by(contact_phone: phone)
       end
 
-      # Associate the contact with the patient if not already associated
+      # If no existing contact found, create a new one
+      unless contact
+        contact = PatientContact.new(cp)
+        contact.save! if contact.changed?
+      end
+
+      # Update patient association if needed
       if @patient.patient_contact != contact
-        @patient.patient_contact = contact
-        @patient.save! if @patient.changed?
+        @patient.update!(patient_contact: contact)
       end
 
       @patient_contact = contact
@@ -138,7 +179,8 @@ module AdminPortal
           :patient_illness_onset_date,
           :patient_complaint_description,
           :patient_condition,
-          :patient_medical_history
+          :patient_medical_history,
+          :series_visits
         ))
         .merge(appointment_date_time: appointment_date_time_formatted)
 
@@ -184,7 +226,8 @@ module AdminPortal
         :patient_medical_history,
         :appointment_date_time,
         :preferred_therapist_gender,
-        :notes
+        :notes,
+        :series_visits
       ))
 
       Appointment.create!(base_attributes)
@@ -207,7 +250,9 @@ module AdminPortal
           # appointment scheduling
           :appointment_date_time, :preferred_therapist_gender,
           # additional settings
-          :referral_source, :other_referral_source, :fisiohome_partner_booking, :fisiohome_partner_name, :other_fisiohome_partner_name, :voucher_code, :notes
+          :referral_source, :other_referral_source, :fisiohome_partner_booking, :fisiohome_partner_name, :other_fisiohome_partner_name, :voucher_code, :notes,
+          # series visits
+          series_visits: %i[appointment_date_time therapist_id visit_number preferred_therapist_gender]
         ]
       ).to_h.deep_symbolize_keys
     end
