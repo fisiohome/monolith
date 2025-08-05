@@ -1,3 +1,10 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router, usePage } from "@inertiajs/react";
+import { AlertCircle, Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -39,18 +46,14 @@ import type {
 	AppointmentStatuses,
 } from "@/types/admin-portal/appointment";
 import type { ResponsiveDialogMode } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { router, usePage } from "@inertiajs/react";
-import { AlertCircle, Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { z } from "zod";
 
 export function CancelAppointmentForm({
 	selectedAppointment,
 	forceMode,
-}: { selectedAppointment: Appointment; forceMode?: ResponsiveDialogMode }) {
+}: {
+	selectedAppointment: Appointment;
+	forceMode?: ResponsiveDialogMode;
+}) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const [isLoading, setIsLoading] = useState(false);
@@ -130,7 +133,10 @@ export function CancelAppointmentForm({
 export function UpdatePICForm({
 	selectedAppointment,
 	forceMode,
-}: { selectedAppointment: Appointment; forceMode?: ResponsiveDialogMode }) {
+}: {
+	selectedAppointment: Appointment;
+	forceMode?: ResponsiveDialogMode;
+}) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const admins = useMemo(
@@ -264,7 +270,10 @@ export function UpdatePICForm({
 export function UpdateStatusForm({
 	selectedAppointment,
 	forceMode,
-}: { selectedAppointment: Appointment; forceMode?: ResponsiveDialogMode }) {
+}: {
+	selectedAppointment: Appointment;
+	forceMode?: ResponsiveDialogMode;
+}) {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
@@ -277,16 +286,22 @@ export function UpdateStatusForm({
 		}),
 		[isLoading, forceMode, t],
 	);
-	const appointmentStatuses = useMemo(
-		() =>
+	console.log(selectedAppointment);
+	const appointmentStatuses = useMemo(() => {
+		const statusList =
 			globalProps.optionsData?.statuses.filter(
 				(status) =>
 					status.key !== "unscheduled" &&
 					status.key !== "cancelled" &&
 					status.key !== "pending_therapist_assignment",
-			) || [],
-		[globalProps.optionsData?.statuses],
-	);
+			) || [];
+
+		if (selectedAppointment?.isPaid) {
+			return statusList.filter((status) => status.key !== "pending_payment");
+		}
+
+		return statusList;
+	}, [globalProps.optionsData?.statuses, selectedAppointment?.isPaid]);
 	const formSchema = z.object({
 		id: z.string(),
 		status: z.enum(

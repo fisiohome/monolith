@@ -81,6 +81,7 @@ module AppointmentsHelper
         formatted_total_price: appointment.formatted_total_price,
         start_time: appointment.start_time,
         end_time: appointment.end_time,
+        is_paid: appointment.paid?,
         initial_visit: appointment.initial_visit?,
         visit_progress: appointment.visit_progress,
         next_visit_progress: appointment.next_visit_progress,

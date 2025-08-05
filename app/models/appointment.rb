@@ -429,6 +429,11 @@ class Appointment < ApplicationRecord
     STATUS_METADATA[status]
   end
 
+  # Check if this appointment or its reference (first visit) is paid
+  def paid?
+    status_paid? || reference_appointment&.status_paid?
+  end
+
   def cascade_cancellation(updater: nil, reason: nil)
     return unless initial_visit?
 
@@ -450,10 +455,11 @@ class Appointment < ApplicationRecord
       return false
     end
 
-    if !schedulable? && !(updater_is_super_admin? || updater_is_admin_supervisor?)
-      errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
-      return false
-    end
+    # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+    # if !schedulable? && !(updater_is_super_admin? || updater_is_admin_supervisor?)
+    #   errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
+    #   return false
+    # end
 
     transaction do
       if update(status: :pending_patient_approval, status_reason:, updater:)
@@ -466,11 +472,12 @@ class Appointment < ApplicationRecord
   end
 
   def patient_approve!
-    base_message = "Cannot change to waiting payment"
-    unless status_pending_patient_approval?
-      errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
-      return false
-    end
+    # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+    # base_message = "Cannot change to waiting payment"
+    # if !status_pending_patient_approval? && !(updater_is_super_admin? || updater_is_admin_supervisor?)
+    #   errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
+    #   return false
+    # end
 
     transaction do
       if update(status: :pending_payment, status_reason:, updater:)
@@ -483,11 +490,12 @@ class Appointment < ApplicationRecord
   end
 
   def mark_paid!
-    base_message = "Cannot mark paid appointment"
-    unless status_pending_payment?
-      errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
-      return false
-    end
+    # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+    # base_message = "Cannot mark paid appointment"
+    # if !status_pending_payment? && !(updater_is_super_admin? || updater_is_admin_supervisor?)
+    #   errors.add(:base, "#{base_message}, #{status_human_readable[:description]}")
+    #   return false
+    # end
 
     transaction do
       if update(status: :paid, status_reason:, updater:)

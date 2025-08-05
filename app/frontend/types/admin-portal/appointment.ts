@@ -98,6 +98,7 @@ export interface Appointment {
 	seriesAppointments: Appointment[];
 	allVisits?: Appointment[];
 	statusHistories: StatusHistory[];
+	isPaid: boolean;
 	createdAt: string;
 	updatedAt: string;
 }
