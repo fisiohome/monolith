@@ -150,7 +150,7 @@ export interface AppointmentPayload {
 
 		// series visits
 		seriesVisits?: {
-			appointmentDateTime: Date;
+			appointmentDateTime: Date | null;
 			therapistId: string | null;
 			visitNumber: number;
 			preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];

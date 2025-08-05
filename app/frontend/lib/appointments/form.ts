@@ -140,15 +140,15 @@ const BASE_APPOINTMENT_FIELDS = {
 	preferredTherapistGender: z.enum(PREFERRED_THERAPIST_GENDER, {
 		required_error: "Please select a preferred therapist gender",
 	}),
-	appointmentDateTime: APPOINTMENT_DATE_TIME_SCHEMA,
 	therapist: THERAPIST_SCHEMA,
 	findTherapistsAllOfDay: z.boolean().optional(),
 };
 
 // * series visit schema
 export const SERIES_VISIT_SCHEMA = z.object({
-	visitNumber: z.number().int().positive(),
 	...BASE_APPOINTMENT_FIELDS,
+	visitNumber: z.number().int().positive(),
+	appointmentDateTime: APPOINTMENT_DATE_TIME_SCHEMA.nullable(),
 });
 
 export type SeriesVisitSchema = z.infer<typeof SERIES_VISIT_SCHEMA>;
@@ -175,6 +175,7 @@ export const APPOINTMENT_SCHEDULING_SCHEMA = z.object({
 			message: "Please select a package",
 		}),
 	...BASE_APPOINTMENT_FIELDS,
+	appointmentDateTime: APPOINTMENT_DATE_TIME_SCHEMA,
 	// Add series visits array for multiple appointments
 	seriesVisits: z.array(SERIES_VISIT_SCHEMA).optional(),
 	// Add flag to indicate if series scheduling is enabled
@@ -337,6 +338,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		service,
 		therapist,
 		seriesVisits,
+		enableSeriesScheduling: _enableSeriesScheduling,
 		...restAppointmentScheduling
 	} = appointmentScheduling;
 	const {
@@ -387,6 +389,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 						({ findTherapistsAllOfDay, therapist, ...rest }) => ({
 							...rest,
 							therapistId: String(therapist?.id || "") || null,
+							appointmentDateTime: rest?.appointmentDateTime || null,
 						}),
 					)
 				: undefined,

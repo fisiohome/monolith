@@ -13,7 +13,7 @@
       <img src="./assets/0.13.1/loading.gif" alt="loading"/>
     </div>
     <div id="wrapper" class="hide">
-      <div class="timestamp">Generated <abbr class="timeago" title="2025-08-05T08:47:23+00:00">2025-08-05T08:47:23+00:00</abbr></div>
+      <div class="timestamp">Generated <abbr class="timeago" title="2025-08-05T14:14:14+00:00">2025-08-05T14:14:14+00:00</abbr></div>
       <ul class="group_tabs"></ul>
 
       <div id="content">
@@ -22,7 +22,7 @@
     <span class="group_name">All Files</span>
     (<span class="covered_percent">
       <span class="red">
-  25.17%
+  25.19%
 </span>
 
      </span>
@@ -42,11 +42,11 @@
   </div>
 
   <div class="t-line-summary">
-    <b>1053</b> relevant lines,
+    <b>1052</b> relevant lines,
     <span class="green"><b>265</b> lines covered</span> and
-    <span class="red"><b>788</b> lines missed. </span>
+    <span class="red"><b>787</b> lines missed. </span>
     (<span class="red">
-  25.17%
+  25.19%
 </span>
 )
   </div>
@@ -192,12 +192,12 @@
         
           <tr class="t-file">
             <td class="strong t-file__name"><a href="#49fc1eeb8db3174f508b8df680151633cc67c764" class="src_link" title="test/models/appointment_test.rb">test/models/appointment_test.rb</a></td>
-            <td class="red strong cell--number t-file__coverage">14.48 %</td>
-            <td class="cell--number">1006</td>
-            <td class="cell--number">290</td>
+            <td class="red strong cell--number t-file__coverage">14.53 %</td>
+            <td class="cell--number">1009</td>
+            <td class="cell--number">289</td>
             <td class="cell--number">42</td>
-            <td class="cell--number">248</td>
-            <td class="cell--number">0.14</td>
+            <td class="cell--number">247</td>
+            <td class="cell--number">0.15</td>
             
           </tr>
         
@@ -3488,7 +3488,7 @@
     <h3>test/models/appointment_test.rb</h3>
     <h4>
       <span class="red">
-  14.48%
+  14.53%
 </span>
 
       lines covered
@@ -3497,9 +3497,9 @@
     
 
     <div class="t-line-summary">
-      <b>290</b> relevant lines.
+      <b>289</b> relevant lines.
       <span class="green"><b>42</b> lines covered</span> and
-      <span class="red"><b>248</b> lines missed.</span>
+      <span class="red"><b>247</b> lines missed.</span>
     </div>
 
     
@@ -7651,7 +7651,7 @@
 
             
 
-            <code class="ruby">    assert_nil @package.discount, ph.discount</code>
+            <code class="ruby">    assert_nil @package.discount, &quot;Expected package discount to be nil&quot;</code>
           </li>
         </div>
       
@@ -7661,7 +7661,7 @@
 
             
 
-            <code class="ruby">    assert_equal @package.total_price, ph.total_price</code>
+            <code class="ruby">    assert_nil ph.discount, &quot;Expected package history discount to be nil&quot;</code>
           </li>
         </div>
       
@@ -7671,7 +7671,7 @@
 
             
 
-            <code class="ruby">    assert_equal @package.fee_per_visit, ph.fee_per_visit</code>
+            <code class="ruby">    assert_equal @package.total_price, ph.total_price</code>
           </li>
         </div>
       
@@ -7681,17 +7681,17 @@
 
             
 
-            <code class="ruby">    assert_equal @package.total_fee, ph.total_fee</code>
+            <code class="ruby">    assert_equal @package.fee_per_visit, ph.fee_per_visit</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="415">
+          <li class="missed" data-hits="0" data-linenumber="415">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    assert_equal @package.total_fee, ph.total_fee</code>
           </li>
         </div>
       
@@ -7701,12 +7701,22 @@
 
             
 
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="417">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="417">
+          <li class="covered" data-hits="1" data-linenumber="418">
             
               <span class="hits">1</span>
             
@@ -7718,7 +7728,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="418">
+          <li class="missed" data-hits="0" data-linenumber="419">
             
 
             
@@ -7728,7 +7738,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="419">
+          <li class="never" data-hits="" data-linenumber="420">
             
 
             
@@ -7738,7 +7748,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="420">
+          <li class="never" data-hits="" data-linenumber="421">
             
 
             
@@ -7748,7 +7758,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="421">
+          <li class="never" data-hits="" data-linenumber="422">
             
 
             
@@ -7758,7 +7768,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="422">
+          <li class="never" data-hits="" data-linenumber="423">
             
 
             
@@ -7768,7 +7778,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="423">
+          <li class="never" data-hits="" data-linenumber="424">
             
 
             
@@ -7778,7 +7788,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="424">
+          <li class="never" data-hits="" data-linenumber="425">
             
 
             
@@ -7788,7 +7798,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="425">
+          <li class="never" data-hits="" data-linenumber="426">
             
 
             
@@ -7798,7 +7808,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="426">
+          <li class="never" data-hits="" data-linenumber="427">
             
 
             
@@ -7808,7 +7818,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="427">
+          <li class="never" data-hits="" data-linenumber="428">
             
 
             
@@ -7818,22 +7828,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="428">
+          <li class="never" data-hits="" data-linenumber="429">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="429">
-            
-
-            
-
-            <code class="ruby">    assert appt.update(status: :pending_payment)</code>
           </li>
         </div>
       
@@ -7843,7 +7843,7 @@
 
             
 
-            <code class="ruby">    assert appt.update(status: :paid)</code>
+            <code class="ruby">    assert appt.update(status: :pending_payment)</code>
           </li>
         </div>
       
@@ -7853,17 +7853,17 @@
 
             
 
-            <code class="ruby">    assert appt.update(status: :cancelled)</code>
+            <code class="ruby">    assert appt.update(status: :paid)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="432">
+          <li class="missed" data-hits="0" data-linenumber="432">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    assert appt.update(status: :cancelled)</code>
           </li>
         </div>
       
@@ -7873,12 +7873,22 @@
 
             
 
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="434">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="434">
+          <li class="covered" data-hits="1" data-linenumber="435">
             
               <span class="hits">1</span>
             
@@ -7890,7 +7900,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="435">
+          <li class="missed" data-hits="0" data-linenumber="436">
             
 
             
@@ -7900,22 +7910,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="436">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="437">
             
 
             
 
-            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -7925,7 +7925,7 @@
 
             
 
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
+            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
           </li>
         </div>
       
@@ -7935,7 +7935,7 @@
 
             
 
-            <code class="ruby">      number_of_visit: 3,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -7945,7 +7945,7 @@
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -7955,7 +7955,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -7965,7 +7965,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
@@ -7975,7 +7975,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
@@ -7985,7 +7985,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
@@ -7995,12 +7995,22 @@
 
             
 
+            <code class="ruby">      active: true</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="446">
+            
+
+            
+
             <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="446">
+          <li class="missed" data-hits="0" data-linenumber="447">
             
 
             
@@ -8010,7 +8020,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="447">
+          <li class="never" data-hits="" data-linenumber="448">
             
 
             
@@ -8020,7 +8030,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="448">
+          <li class="never" data-hits="" data-linenumber="449">
             
 
             
@@ -8030,7 +8040,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="449">
+          <li class="never" data-hits="" data-linenumber="450">
             
 
             
@@ -8040,7 +8050,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="450">
+          <li class="never" data-hits="" data-linenumber="451">
             
 
             
@@ -8050,7 +8060,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="451">
+          <li class="never" data-hits="" data-linenumber="452">
             
 
             
@@ -8060,7 +8070,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="452">
+          <li class="never" data-hits="" data-linenumber="453">
             
 
             
@@ -8070,7 +8080,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="453">
+          <li class="never" data-hits="" data-linenumber="454">
             
 
             
@@ -8080,22 +8090,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="454">
-            
-
-            
-
-            <code class="ruby">      updater: @user</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="455">
             
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      updater: @user,</code>
           </li>
         </div>
       
@@ -8105,7 +8105,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
@@ -8115,12 +8115,32 @@
 
             
 
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="458">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="459">
+            
+
+            
+
             <code class="ruby">    # ── Sanity check ────────────────────────────────────────────────────────────</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="458">
+          <li class="missed" data-hits="0" data-linenumber="460">
             
 
             
@@ -8130,7 +8150,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="459">
+          <li class="missed" data-hits="0" data-linenumber="461">
             
 
             
@@ -8140,7 +8160,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="460">
+          <li class="never" data-hits="" data-linenumber="462">
             
 
             
@@ -8150,7 +8170,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="461">
+          <li class="never" data-hits="" data-linenumber="463">
             
 
             
@@ -8160,7 +8180,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="462">
+          <li class="missed" data-hits="0" data-linenumber="464">
             
 
             
@@ -8170,7 +8190,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="463">
+          <li class="missed" data-hits="0" data-linenumber="465">
             
 
             
@@ -8180,7 +8200,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="464">
+          <li class="missed" data-hits="0" data-linenumber="466">
             
 
             
@@ -8190,7 +8210,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="465">
+          <li class="never" data-hits="" data-linenumber="467">
             
 
             
@@ -8200,7 +8220,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="466">
+          <li class="never" data-hits="" data-linenumber="468">
             
 
             
@@ -8210,7 +8230,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="467">
+          <li class="missed" data-hits="0" data-linenumber="469">
             
 
             
@@ -8220,7 +8240,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="468">
+          <li class="missed" data-hits="0" data-linenumber="470">
             
 
             
@@ -8230,32 +8250,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="469">
+          <li class="never" data-hits="" data-linenumber="471">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="470">
-            
-
-            
-
-            <code class="ruby">    first_visit.series_appointments.each do |child|</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="471">
-            
-
-            
-
-            <code class="ruby">      child.reload</code>
           </li>
         </div>
       
@@ -8265,7 +8265,7 @@
 
             
 
-            <code class="ruby">      assert_equal &quot;cancelled&quot;, child.status, &quot;series visit #{child.visit_number} should also be cancelled&quot;</code>
+            <code class="ruby">    first_visit.series_appointments.each do |child|</code>
           </li>
         </div>
       
@@ -8275,27 +8275,27 @@
 
             
 
+            <code class="ruby">      child.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="474">
+            
+
+            
+
+            <code class="ruby">      assert_equal &quot;cancelled&quot;, child.status, &quot;series visit #{child.visit_number} should also be cancelled&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="475">
+            
+
+            
+
             <code class="ruby">      assert_equal first_visit.id, child.appointment_reference_id, &quot;child should still point to its root&quot;</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="474">
-            
-
-            
-
-            <code class="ruby">    end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="475">
-            
-
-            
-
-            <code class="ruby">  end</code>
           </li>
         </div>
       
@@ -8305,12 +8305,32 @@
 
             
 
+            <code class="ruby">    end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="477">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="478">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="477">
+          <li class="covered" data-hits="1" data-linenumber="479">
             
               <span class="hits">1</span>
             
@@ -8322,7 +8342,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="478">
+          <li class="missed" data-hits="0" data-linenumber="480">
             
 
             
@@ -8332,7 +8352,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="479">
+          <li class="never" data-hits="" data-linenumber="481">
             
 
             
@@ -8342,7 +8362,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="480">
+          <li class="never" data-hits="" data-linenumber="482">
             
 
             
@@ -8352,7 +8372,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="481">
+          <li class="never" data-hits="" data-linenumber="483">
             
 
             
@@ -8362,7 +8382,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="482">
+          <li class="never" data-hits="" data-linenumber="484">
             
 
             
@@ -8372,7 +8392,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="483">
+          <li class="never" data-hits="" data-linenumber="485">
             
 
             
@@ -8382,7 +8402,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="484">
+          <li class="never" data-hits="" data-linenumber="486">
             
 
             
@@ -8392,7 +8412,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="485">
+          <li class="never" data-hits="" data-linenumber="487">
             
 
             
@@ -8402,7 +8422,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="486">
+          <li class="never" data-hits="" data-linenumber="488">
             
 
             
@@ -8412,7 +8432,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="487">
+          <li class="never" data-hits="" data-linenumber="489">
             
 
             
@@ -8422,32 +8442,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="488">
+          <li class="never" data-hits="" data-linenumber="490">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="489">
-            
-
-            
-
-            <code class="ruby">    # sanity check</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="490">
-            
-
-            
-
-            <code class="ruby">    assert_equal &quot;pending_therapist_assignment&quot;, first_visit.status</code>
           </li>
         </div>
       
@@ -8457,12 +8457,32 @@
 
             
 
+            <code class="ruby">    # sanity check</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="492">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;pending_therapist_assignment&quot;, first_visit.status</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="493">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="492">
+          <li class="never" data-hits="" data-linenumber="494">
             
 
             
@@ -8472,7 +8492,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="493">
+          <li class="missed" data-hits="0" data-linenumber="495">
             
 
             
@@ -8482,7 +8502,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="494">
+          <li class="missed" data-hits="0" data-linenumber="496">
             
 
             
@@ -8492,7 +8512,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="495">
+          <li class="missed" data-hits="0" data-linenumber="497">
             
 
             
@@ -8502,7 +8522,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="496">
+          <li class="missed" data-hits="0" data-linenumber="498">
             
 
             
@@ -8512,7 +8532,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="497">
+          <li class="never" data-hits="" data-linenumber="499">
             
 
             
@@ -8522,7 +8542,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="498">
+          <li class="missed" data-hits="0" data-linenumber="500">
             
 
             
@@ -8532,7 +8552,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="499">
+          <li class="missed" data-hits="0" data-linenumber="501">
             
 
             
@@ -8542,7 +8562,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="500">
+          <li class="never" data-hits="" data-linenumber="502">
             
 
             
@@ -8552,7 +8572,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="501">
+          <li class="never" data-hits="" data-linenumber="503">
             
 
             
@@ -8562,7 +8582,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="502">
+          <li class="never" data-hits="" data-linenumber="504">
             
 
             
@@ -8572,7 +8592,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="503">
+          <li class="missed" data-hits="0" data-linenumber="505">
             
 
             
@@ -8582,7 +8602,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="504">
+          <li class="missed" data-hits="0" data-linenumber="506">
             
 
             
@@ -8592,32 +8612,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="505">
+          <li class="never" data-hits="" data-linenumber="507">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="506">
-            
-
-            
-
-            <code class="ruby">    last_history = first_visit.status_histories.order(:created_at).last</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="507">
-            
-
-            
-
-            <code class="ruby">    assert_equal &quot;PENDING THERAPIST ASSIGNMENT&quot;, last_history.old_status</code>
           </li>
         </div>
       
@@ -8627,7 +8627,7 @@
 
             
 
-            <code class="ruby">    assert_equal &quot;PENDING PATIENT APPROVAL&quot;, last_history.new_status</code>
+            <code class="ruby">    last_history = first_visit.status_histories.order(:created_at).last</code>
           </li>
         </div>
       
@@ -8637,7 +8637,7 @@
 
             
 
-            <code class="ruby">    assert_equal @user.id, last_history.changed_by</code>
+            <code class="ruby">    assert_equal &quot;PENDING THERAPIST ASSIGNMENT&quot;, last_history.old_status</code>
           </li>
         </div>
       
@@ -8647,12 +8647,32 @@
 
             
 
+            <code class="ruby">    assert_equal &quot;PENDING PATIENT APPROVAL&quot;, last_history.new_status</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="511">
+            
+
+            
+
+            <code class="ruby">    assert_equal @user.id, last_history.changed_by</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="512">
+            
+
+            
+
             <code class="ruby">    assert_equal &quot;Therapist assigned by OPS&quot;, last_history.reason</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="511">
+          <li class="never" data-hits="" data-linenumber="513">
             
 
             
@@ -8662,7 +8682,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="512">
+          <li class="never" data-hits="" data-linenumber="514">
             
 
             
@@ -8672,7 +8692,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="513">
+          <li class="covered" data-hits="1" data-linenumber="515">
             
               <span class="hits">1</span>
             
@@ -8684,7 +8704,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="514">
+          <li class="missed" data-hits="0" data-linenumber="516">
             
 
             
@@ -8694,32 +8714,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="515">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="516">
-            
-
-            
-
-            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="517">
             
 
             
 
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -8729,7 +8729,7 @@
 
             
 
-            <code class="ruby">      number_of_visit: 3,</code>
+            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
           </li>
         </div>
       
@@ -8739,7 +8739,7 @@
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -8749,7 +8749,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -8759,7 +8759,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -8769,7 +8769,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
@@ -8779,7 +8779,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
@@ -8789,17 +8789,17 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="525">
+          <li class="never" data-hits="" data-linenumber="525">
             
 
             
 
-            <code class="ruby">    first_visit = Appointment.create!(</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
@@ -8809,17 +8809,17 @@
 
             
 
-            <code class="ruby">      patient: @patient,</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="527">
+          <li class="missed" data-hits="0" data-linenumber="527">
             
 
             
 
-            <code class="ruby">      service: @service,</code>
+            <code class="ruby">    first_visit = Appointment.create!(</code>
           </li>
         </div>
       
@@ -8829,7 +8829,7 @@
 
             
 
-            <code class="ruby">      package: triple_pkg,</code>
+            <code class="ruby">      patient: @patient,</code>
           </li>
         </div>
       
@@ -8839,7 +8839,7 @@
 
             
 
-            <code class="ruby">      location: @location,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -8849,7 +8849,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time,</code>
+            <code class="ruby">      package: triple_pkg,</code>
           </li>
         </div>
       
@@ -8859,7 +8859,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -8869,7 +8869,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -8879,7 +8879,7 @@
 
             
 
-            <code class="ruby">      updater: @user</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
           </li>
         </div>
       
@@ -8889,7 +8889,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
           </li>
         </div>
       
@@ -8899,7 +8899,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      updater: @user,</code>
           </li>
         </div>
       
@@ -8909,102 +8909,12 @@
 
             
 
-            <code class="ruby">    # sanity check</code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="537">
-            
-
-            
-
-            <code class="ruby">    child = first_visit.series_appointments.order(:visit_number).first</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="538">
-            
-
-            
-
-            <code class="ruby">    assert child.unscheduled?, &quot;child should start UNSCHEDULED&quot;</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="539">
-            
-
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="540">
-            
-
-            
-
-            <code class="ruby">    # Try to move the child to PENDING PATIENT APPROVAL (allowed transition from UNSCHEDULED)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="541">
-            
-
-            
-
-            <code class="ruby">    child.assign_attributes(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="542">
-            
-
-            
-
-            <code class="ruby">      status: :pending_patient_approval,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="543">
-            
-
-            
-
-            <code class="ruby">      therapist: @therapist,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="544">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: 4.days.from_now.change(hour: 10),</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="545">
-            
-
-            
-
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="546">
+          <li class="never" data-hits="" data-linenumber="537">
             
 
             
@@ -9014,7 +8924,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="547">
+          <li class="never" data-hits="" data-linenumber="538">
             
 
             
@@ -9024,22 +8934,112 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="548">
+          <li class="never" data-hits="" data-linenumber="539">
             
 
             
 
-            <code class="ruby">    assert_not child.valid?, &quot;validation should fail because root is still PENDING THERAPIST ASSIGNMENT&quot;</code>
+            <code class="ruby">    # sanity check</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="549">
+          <li class="missed" data-hits="0" data-linenumber="540">
             
 
             
 
-            <code class="ruby">    assert_includes child.errors[:status].join,</code>
+            <code class="ruby">    child = first_visit.series_appointments.order(:visit_number).first</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="541">
+            
+
+            
+
+            <code class="ruby">    assert child.unscheduled?, &quot;child should start UNSCHEDULED&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="542">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="543">
+            
+
+            
+
+            <code class="ruby">    # Try to move the child to PENDING PATIENT APPROVAL (allowed transition from UNSCHEDULED)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="544">
+            
+
+            
+
+            <code class="ruby">    child.assign_attributes(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="545">
+            
+
+            
+
+            <code class="ruby">      status: :pending_patient_approval,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="546">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="547">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: 4.days.from_now.change(hour: 10),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="548">
+            
+
+            
+
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="549">
+            
+
+            
+
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -9049,27 +9049,27 @@
 
             
 
-            <code class="ruby">      &quot;cannot be ahead of first visit (#{first_visit.registration_number}) status (Awaiting Therapist)&quot;,</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="551">
+          <li class="missed" data-hits="0" data-linenumber="551">
             
 
             
 
-            <code class="ruby">      &quot;error message should mention the root appointment&quot;</code>
+            <code class="ruby">    assert_not child.valid?, &quot;validation should fail because root is still PENDING THERAPIST ASSIGNMENT&quot;</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="552">
+          <li class="missed" data-hits="0" data-linenumber="552">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    assert_includes child.errors[:status].join,</code>
           </li>
         </div>
       
@@ -9079,12 +9079,42 @@
 
             
 
+            <code class="ruby">      &quot;cannot be ahead of first visit (#{first_visit.registration_number}) status (Awaiting Therapist)&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="554">
+            
+
+            
+
+            <code class="ruby">      &quot;error message should mention the root appointment&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="555">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="556">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="554">
+          <li class="covered" data-hits="1" data-linenumber="557">
             
               <span class="hits">1</span>
             
@@ -9096,7 +9126,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="555">
+          <li class="missed" data-hits="0" data-linenumber="558">
             
 
             
@@ -9106,42 +9136,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="556">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="557">
-            
-
-            
-
-            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="558">
-            
-
-            
-
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="559">
             
 
             
 
-            <code class="ruby">      number_of_visit: 3,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -9151,7 +9151,7 @@
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
           </li>
         </div>
       
@@ -9161,7 +9161,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -9171,7 +9171,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -9181,7 +9181,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -9191,7 +9191,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
@@ -9201,17 +9201,17 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="566">
+          <li class="never" data-hits="" data-linenumber="566">
             
 
             
 
-            <code class="ruby">    first_visit = Appointment.create!(</code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
@@ -9221,7 +9221,7 @@
 
             
 
-            <code class="ruby">      patient: @patient,</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
@@ -9231,17 +9231,17 @@
 
             
 
-            <code class="ruby">      service: @service,</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="569">
+          <li class="missed" data-hits="0" data-linenumber="569">
             
 
             
 
-            <code class="ruby">      package: triple_pkg,</code>
+            <code class="ruby">    first_visit = Appointment.create!(</code>
           </li>
         </div>
       
@@ -9251,7 +9251,7 @@
 
             
 
-            <code class="ruby">      location: @location,</code>
+            <code class="ruby">      patient: @patient,</code>
           </li>
         </div>
       
@@ -9261,7 +9261,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -9271,7 +9271,7 @@
 
             
 
-            <code class="ruby">      therapist: @therapist,</code>
+            <code class="ruby">      package: triple_pkg,</code>
           </li>
         </div>
       
@@ -9281,7 +9281,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -9291,7 +9291,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -9301,7 +9301,7 @@
 
             
 
-            <code class="ruby">      updater: @user</code>
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
@@ -9311,7 +9311,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
           </li>
         </div>
       
@@ -9321,7 +9321,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
           </li>
         </div>
       
@@ -9331,17 +9331,17 @@
 
             
 
-            <code class="ruby">    # sanity check</code>
+            <code class="ruby">      updater: @user,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="579">
+          <li class="never" data-hits="" data-linenumber="579">
             
 
             
 
-            <code class="ruby">    assert_equal &quot;pending_patient_approval&quot;, first_visit.status</code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
@@ -9351,7 +9351,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -9361,17 +9361,17 @@
 
             
 
-            <code class="ruby">    # update the series appointment to pending patient approval as well</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="582">
+          <li class="never" data-hits="" data-linenumber="582">
             
 
             
 
-            <code class="ruby">    child = first_visit.series_appointments.order(:visit_number).first</code>
+            <code class="ruby">    # sanity check</code>
           </li>
         </div>
       
@@ -9381,7 +9381,7 @@
 
             
 
-            <code class="ruby">    child.update!(</code>
+            <code class="ruby">    assert_equal &quot;pending_patient_approval&quot;, first_visit.status</code>
           </li>
         </div>
       
@@ -9391,7 +9391,7 @@
 
             
 
-            <code class="ruby">      status: :pending_patient_approval,</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -9401,27 +9401,27 @@
 
             
 
-            <code class="ruby">      therapist: @therapist,</code>
+            <code class="ruby">    # update the series appointment to pending patient approval as well</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="586">
+          <li class="missed" data-hits="0" data-linenumber="586">
             
 
             
 
-            <code class="ruby">      appointment_date_time: 4.days.from_now.change(hour: 10),</code>
+            <code class="ruby">    child = first_visit.series_appointments.order(:visit_number).first</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="587">
+          <li class="missed" data-hits="0" data-linenumber="587">
             
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
+            <code class="ruby">    child.update!(</code>
           </li>
         </div>
       
@@ -9431,7 +9431,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      status: :pending_patient_approval,</code>
           </li>
         </div>
       
@@ -9441,7 +9441,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
@@ -9451,17 +9451,17 @@
 
             
 
-            <code class="ruby">    # Try to reschedule the first visit *after* its series visit</code>
+            <code class="ruby">      appointment_date_time: 4.days.from_now.change(hour: 10),</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="591">
+          <li class="never" data-hits="" data-linenumber="591">
             
 
             
 
-            <code class="ruby">    first_visit.appointment_date_time = 5.days.from_now.change(hour: 11)</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
           </li>
         </div>
       
@@ -9471,17 +9471,17 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="593">
+          <li class="never" data-hits="" data-linenumber="593">
             
 
             
 
-            <code class="ruby">    assert_not first_visit.valid?, &quot;validation should fail when first visit is moved beyond a series visit&quot;</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -9491,27 +9491,27 @@
 
             
 
+            <code class="ruby">    # Try to reschedule the first visit *after* its series visit</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="595">
+            
+
+            
+
+            <code class="ruby">    first_visit.appointment_date_time = 5.days.from_now.change(hour: 11)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="596">
+            
+
+            
+
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="595">
-            
-
-            
-
-            <code class="ruby">    # Error must reference the offending child appointment</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="596">
-            
-
-            
-
-            <code class="ruby">    msg = first_visit.errors[:appointment_date_time].join</code>
           </li>
         </div>
       
@@ -9521,7 +9521,7 @@
 
             
 
-            <code class="ruby">    assert_includes msg, &quot;must occur before any another visit series (#{child.registration_number})&quot;,</code>
+            <code class="ruby">    assert_not first_visit.valid?, &quot;validation should fail when first visit is moved beyond a series visit&quot;</code>
           </li>
         </div>
       
@@ -9531,7 +9531,7 @@
 
             
 
-            <code class="ruby">      &quot;message should mention the child registration number&quot;</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -9541,12 +9541,52 @@
 
             
 
+            <code class="ruby">    # Error must reference the offending child appointment</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="600">
+            
+
+            
+
+            <code class="ruby">    msg = first_visit.errors[:appointment_date_time].join</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="601">
+            
+
+            
+
+            <code class="ruby">    assert_includes msg, &quot;must occur before any another visit series (#{child.registration_number})&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="602">
+            
+
+            
+
+            <code class="ruby">      &quot;message should mention the child registration number&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="603">
+            
+
+            
+
             <code class="ruby">  end</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="600">
+          <li class="never" data-hits="" data-linenumber="604">
             
 
             
@@ -9556,7 +9596,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="601">
+          <li class="covered" data-hits="1" data-linenumber="605">
             
               <span class="hits">1</span>
             
@@ -9568,7 +9608,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="602">
+          <li class="missed" data-hits="0" data-linenumber="606">
             
 
             
@@ -9578,7 +9618,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="603">
+          <li class="never" data-hits="" data-linenumber="607">
             
 
             
@@ -9588,7 +9628,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="604">
+          <li class="never" data-hits="" data-linenumber="608">
             
 
             
@@ -9598,7 +9638,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="605">
+          <li class="never" data-hits="" data-linenumber="609">
             
 
             
@@ -9608,7 +9648,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="606">
+          <li class="never" data-hits="" data-linenumber="610">
             
 
             
@@ -9618,7 +9658,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="607">
+          <li class="never" data-hits="" data-linenumber="611">
             
 
             
@@ -9628,7 +9668,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="608">
+          <li class="never" data-hits="" data-linenumber="612">
             
 
             
@@ -9638,7 +9678,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="609">
+          <li class="never" data-hits="" data-linenumber="613">
             
 
             
@@ -9648,52 +9688,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="610">
-            
-
-            
-
-            <code class="ruby">    )</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="611">
-            
-
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="612">
-            
-
-            
-
-            <code class="ruby">    assert_equal &quot;IDR 100,000.00&quot;, appt.formatted_total_price</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="613">
-            
-
-            
-
-            <code class="ruby">    assert_equal &quot;IDR 0.00&quot;, appt.formatted_discount</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="614">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -9708,7 +9708,47 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="616">
+          <li class="missed" data-hits="0" data-linenumber="616">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;IDR 100,000.00&quot;, appt.formatted_total_price</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="617">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;IDR 0.00&quot;, appt.formatted_discount</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="618">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="619">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="620">
             
               <span class="hits">1</span>
             
@@ -9720,7 +9760,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="617">
+          <li class="missed" data-hits="0" data-linenumber="621">
             
 
             
@@ -9730,7 +9770,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="618">
+          <li class="never" data-hits="" data-linenumber="622">
             
 
             
@@ -9740,7 +9780,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="619">
+          <li class="never" data-hits="" data-linenumber="623">
             
 
             
@@ -9750,7 +9790,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="620">
+          <li class="never" data-hits="" data-linenumber="624">
             
 
             
@@ -9760,7 +9800,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="621">
+          <li class="never" data-hits="" data-linenumber="625">
             
 
             
@@ -9770,7 +9810,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="622">
+          <li class="never" data-hits="" data-linenumber="626">
             
 
             
@@ -9780,7 +9820,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="623">
+          <li class="never" data-hits="" data-linenumber="627">
             
 
             
@@ -9790,7 +9830,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="624">
+          <li class="never" data-hits="" data-linenumber="628">
             
 
             
@@ -9800,7 +9840,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="625">
+          <li class="never" data-hits="" data-linenumber="629">
             
 
             
@@ -9810,7 +9850,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="626">
+          <li class="never" data-hits="" data-linenumber="630">
             
 
             
@@ -9820,7 +9860,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="627">
+          <li class="never" data-hits="" data-linenumber="631">
             
 
             
@@ -9830,7 +9870,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="628">
+          <li class="missed" data-hits="0" data-linenumber="632">
             
 
             
@@ -9840,7 +9880,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="629">
+          <li class="never" data-hits="" data-linenumber="633">
             
 
             
@@ -9850,7 +9890,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="630">
+          <li class="never" data-hits="" data-linenumber="634">
             
 
             
@@ -9860,7 +9900,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="631">
+          <li class="covered" data-hits="1" data-linenumber="635">
             
               <span class="hits">1</span>
             
@@ -9872,7 +9912,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="632">
+          <li class="missed" data-hits="0" data-linenumber="636">
             
 
             
@@ -9882,7 +9922,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="633">
+          <li class="never" data-hits="" data-linenumber="637">
             
 
             
@@ -9892,7 +9932,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="634">
+          <li class="missed" data-hits="0" data-linenumber="638">
             
 
             
@@ -9902,7 +9942,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="635">
+          <li class="never" data-hits="" data-linenumber="639">
             
 
             
@@ -9912,7 +9952,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="636">
+          <li class="never" data-hits="" data-linenumber="640">
             
 
             
@@ -9922,7 +9962,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="637">
+          <li class="never" data-hits="" data-linenumber="641">
             
 
             
@@ -9932,7 +9972,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="638">
+          <li class="never" data-hits="" data-linenumber="642">
             
 
             
@@ -9942,7 +9982,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="639">
+          <li class="never" data-hits="" data-linenumber="643">
             
 
             
@@ -9952,7 +9992,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="640">
+          <li class="never" data-hits="" data-linenumber="644">
             
 
             
@@ -9962,7 +10002,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="641">
+          <li class="never" data-hits="" data-linenumber="645">
             
 
             
@@ -9972,7 +10012,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="642">
+          <li class="never" data-hits="" data-linenumber="646">
             
 
             
@@ -9982,7 +10022,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="643">
+          <li class="missed" data-hits="0" data-linenumber="647">
             
 
             
@@ -9992,7 +10032,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="644">
+          <li class="never" data-hits="" data-linenumber="648">
             
 
             
@@ -10002,7 +10042,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="645">
+          <li class="never" data-hits="" data-linenumber="649">
             
 
             
@@ -10012,7 +10052,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="646">
+          <li class="covered" data-hits="1" data-linenumber="650">
             
               <span class="hits">1</span>
             
@@ -10024,7 +10064,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="647">
+          <li class="missed" data-hits="0" data-linenumber="651">
             
 
             
@@ -10034,7 +10074,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="648">
+          <li class="never" data-hits="" data-linenumber="652">
             
 
             
@@ -10044,7 +10084,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="649">
+          <li class="missed" data-hits="0" data-linenumber="653">
             
 
             
@@ -10054,7 +10094,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="650">
+          <li class="never" data-hits="" data-linenumber="654">
             
 
             
@@ -10064,7 +10104,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="651">
+          <li class="never" data-hits="" data-linenumber="655">
             
 
             
@@ -10074,7 +10114,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="652">
+          <li class="never" data-hits="" data-linenumber="656">
             
 
             
@@ -10084,7 +10124,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="653">
+          <li class="never" data-hits="" data-linenumber="657">
             
 
             
@@ -10094,7 +10134,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="654">
+          <li class="never" data-hits="" data-linenumber="658">
             
 
             
@@ -10104,7 +10144,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="655">
+          <li class="never" data-hits="" data-linenumber="659">
             
 
             
@@ -10114,7 +10154,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="656">
+          <li class="never" data-hits="" data-linenumber="660">
             
 
             
@@ -10124,7 +10164,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="657">
+          <li class="never" data-hits="" data-linenumber="661">
             
 
             
@@ -10134,7 +10174,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="658">
+          <li class="never" data-hits="" data-linenumber="662">
             
 
             
@@ -10144,7 +10184,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="659">
+          <li class="missed" data-hits="0" data-linenumber="663">
             
 
             
@@ -10154,7 +10194,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="660">
+          <li class="never" data-hits="" data-linenumber="664">
             
 
             
@@ -10164,7 +10204,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="661">
+          <li class="never" data-hits="" data-linenumber="665">
             
 
             
@@ -10174,7 +10214,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="662">
+          <li class="covered" data-hits="1" data-linenumber="666">
             
               <span class="hits">1</span>
             
@@ -10186,7 +10226,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="663">
+          <li class="missed" data-hits="0" data-linenumber="667">
             
 
             
@@ -10196,7 +10236,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="664">
+          <li class="never" data-hits="" data-linenumber="668">
             
 
             
@@ -10206,7 +10246,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="665">
+          <li class="missed" data-hits="0" data-linenumber="669">
             
 
             
@@ -10216,7 +10256,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="666">
+          <li class="never" data-hits="" data-linenumber="670">
             
 
             
@@ -10226,7 +10266,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="667">
+          <li class="never" data-hits="" data-linenumber="671">
             
 
             
@@ -10236,7 +10276,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="668">
+          <li class="never" data-hits="" data-linenumber="672">
             
 
             
@@ -10246,7 +10286,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="669">
+          <li class="never" data-hits="" data-linenumber="673">
             
 
             
@@ -10256,7 +10296,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="670">
+          <li class="never" data-hits="" data-linenumber="674">
             
 
             
@@ -10266,7 +10306,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="671">
+          <li class="never" data-hits="" data-linenumber="675">
             
 
             
@@ -10276,7 +10316,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="672">
+          <li class="never" data-hits="" data-linenumber="676">
             
 
             
@@ -10286,7 +10326,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="673">
+          <li class="never" data-hits="" data-linenumber="677">
             
 
             
@@ -10296,7 +10336,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="674">
+          <li class="never" data-hits="" data-linenumber="678">
             
 
             
@@ -10306,7 +10346,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="675">
+          <li class="missed" data-hits="0" data-linenumber="679">
             
 
             
@@ -10316,7 +10356,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="676">
+          <li class="never" data-hits="" data-linenumber="680">
             
 
             
@@ -10326,7 +10366,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="677">
+          <li class="never" data-hits="" data-linenumber="681">
             
 
             
@@ -10336,7 +10376,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="678">
+          <li class="covered" data-hits="1" data-linenumber="682">
             
               <span class="hits">1</span>
             
@@ -10348,7 +10388,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="679">
+          <li class="missed" data-hits="0" data-linenumber="683">
             
 
             
@@ -10358,7 +10398,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="680">
+          <li class="missed" data-hits="0" data-linenumber="684">
             
 
             
@@ -10368,7 +10408,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="681">
+          <li class="never" data-hits="" data-linenumber="685">
             
 
             
@@ -10378,7 +10418,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="682">
+          <li class="never" data-hits="" data-linenumber="686">
             
 
             
@@ -10388,7 +10428,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="683">
+          <li class="covered" data-hits="1" data-linenumber="687">
             
               <span class="hits">1</span>
             
@@ -10400,7 +10440,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="684">
+          <li class="missed" data-hits="0" data-linenumber="688">
             
 
             
@@ -10410,7 +10450,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="685">
+          <li class="missed" data-hits="0" data-linenumber="689">
             
 
             
@@ -10420,7 +10460,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="686">
+          <li class="missed" data-hits="0" data-linenumber="690">
             
 
             
@@ -10430,7 +10470,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="687">
+          <li class="never" data-hits="" data-linenumber="691">
             
 
             
@@ -10440,7 +10480,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="688">
+          <li class="never" data-hits="" data-linenumber="692">
             
 
             
@@ -10450,7 +10490,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="689">
+          <li class="covered" data-hits="1" data-linenumber="693">
             
               <span class="hits">1</span>
             
@@ -10462,7 +10502,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="690">
+          <li class="missed" data-hits="0" data-linenumber="694">
             
 
             
@@ -10472,7 +10512,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="691">
+          <li class="missed" data-hits="0" data-linenumber="695">
             
 
             
@@ -10482,7 +10522,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="692">
+          <li class="never" data-hits="" data-linenumber="696">
             
 
             
@@ -10492,7 +10532,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="693">
+          <li class="never" data-hits="" data-linenumber="697">
             
 
             
@@ -10502,7 +10542,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="694">
+          <li class="covered" data-hits="1" data-linenumber="698">
             
               <span class="hits">1</span>
             
@@ -10514,7 +10554,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="695">
+          <li class="missed" data-hits="0" data-linenumber="699">
             
 
             
@@ -10524,52 +10564,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="696">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="697">
-            
-
-            
-
-            <code class="ruby">      name: &quot;Series3&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="698">
-            
-
-            
-
-            <code class="ruby">      number_of_visit: 3,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="699">
-            
-
-            
-
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="700">
             
 
             
 
-            <code class="ruby">      price_per_visit: 1,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -10579,7 +10579,7 @@
 
             
 
-            <code class="ruby">      total_price: 3,</code>
+            <code class="ruby">      name: &quot;Series3&quot;,</code>
           </li>
         </div>
       
@@ -10589,7 +10589,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 1,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -10599,7 +10599,7 @@
 
             
 
-            <code class="ruby">      total_fee: 3,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -10609,7 +10609,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      price_per_visit: 1,</code>
           </li>
         </div>
       
@@ -10619,17 +10619,17 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      total_price: 3,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="706">
+          <li class="never" data-hits="" data-linenumber="706">
             
 
             
 
-            <code class="ruby">    initial = Appointment.create!(</code>
+            <code class="ruby">      fee_per_visit: 1,</code>
           </li>
         </div>
       
@@ -10639,7 +10639,7 @@
 
             
 
-            <code class="ruby">      patient: @patient,</code>
+            <code class="ruby">      total_fee: 3,</code>
           </li>
         </div>
       
@@ -10649,7 +10649,7 @@
 
             
 
-            <code class="ruby">      service: @service,</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
@@ -10659,17 +10659,17 @@
 
             
 
-            <code class="ruby">      package: triple_pkg,</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="710">
+          <li class="missed" data-hits="0" data-linenumber="710">
             
 
             
 
-            <code class="ruby">      location: @location,</code>
+            <code class="ruby">    initial = Appointment.create!(</code>
           </li>
         </div>
       
@@ -10679,7 +10679,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time,</code>
+            <code class="ruby">      patient: @patient,</code>
           </li>
         </div>
       
@@ -10689,7 +10689,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -10699,7 +10699,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
+            <code class="ruby">      package: triple_pkg,</code>
           </li>
         </div>
       
@@ -10709,7 +10709,7 @@
 
             
 
-            <code class="ruby">      skip_auto_series_creation: false</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -10719,7 +10719,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -10729,12 +10729,52 @@
 
             
 
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="717">
+            
+
+            
+
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="718">
+            
+
+            
+
+            <code class="ruby">      skip_auto_series_creation: false</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="719">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="720">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="717">
+          <li class="missed" data-hits="0" data-linenumber="721">
             
 
             
@@ -10744,7 +10784,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="718">
+          <li class="missed" data-hits="0" data-linenumber="722">
             
 
             
@@ -10754,7 +10794,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="719">
+          <li class="missed" data-hits="0" data-linenumber="723">
             
 
             
@@ -10764,7 +10804,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="720">
+          <li class="missed" data-hits="0" data-linenumber="724">
             
 
             
@@ -10774,7 +10814,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="721">
+          <li class="never" data-hits="" data-linenumber="725">
             
 
             
@@ -10784,7 +10824,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="722">
+          <li class="never" data-hits="" data-linenumber="726">
             
 
             
@@ -10794,7 +10834,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="723">
+          <li class="covered" data-hits="1" data-linenumber="727">
             
               <span class="hits">1</span>
             
@@ -10806,7 +10846,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="724">
+          <li class="missed" data-hits="0" data-linenumber="728">
             
 
             
@@ -10816,7 +10856,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="725">
+          <li class="missed" data-hits="0" data-linenumber="729">
             
 
             
@@ -10826,7 +10866,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="726">
+          <li class="missed" data-hits="0" data-linenumber="730">
             
 
             
@@ -10836,7 +10876,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="727">
+          <li class="never" data-hits="" data-linenumber="731">
             
 
             
@@ -10846,7 +10886,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="728">
+          <li class="missed" data-hits="0" data-linenumber="732">
             
 
             
@@ -10856,7 +10896,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="729">
+          <li class="never" data-hits="" data-linenumber="733">
             
 
             
@@ -10866,7 +10906,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="730">
+          <li class="never" data-hits="" data-linenumber="734">
             
 
             
@@ -10876,7 +10916,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="731">
+          <li class="never" data-hits="" data-linenumber="735">
             
 
             
@@ -10886,7 +10926,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="732">
+          <li class="never" data-hits="" data-linenumber="736">
             
 
             
@@ -10896,7 +10936,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="733">
+          <li class="never" data-hits="" data-linenumber="737">
             
 
             
@@ -10906,7 +10946,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="734">
+          <li class="never" data-hits="" data-linenumber="738">
             
 
             
@@ -10916,7 +10956,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="735">
+          <li class="never" data-hits="" data-linenumber="739">
             
 
             
@@ -10926,52 +10966,12 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="736">
+          <li class="missed" data-hits="0" data-linenumber="740">
             
 
             
 
             <code class="ruby">    parent.cancel!</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="737">
-            
-
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="738">
-            
-
-            
-
-            <code class="ruby">    series = Appointment.new(reference_appointment: parent, visit_number: 2)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="739">
-            
-
-            
-
-            <code class="ruby">    assert series.cancellable?</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="740">
-            
-
-            
-
-            <code class="ruby">  end</code>
           </li>
         </div>
       
@@ -10986,7 +10986,47 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="742">
+          <li class="missed" data-hits="0" data-linenumber="742">
+            
+
+            
+
+            <code class="ruby">    series = Appointment.new(reference_appointment: parent, visit_number: 2)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="743">
+            
+
+            
+
+            <code class="ruby">    assert series.cancellable?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="744">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="745">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="746">
             
               <span class="hits">1</span>
             
@@ -10998,7 +11038,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="743">
+          <li class="missed" data-hits="0" data-linenumber="747">
             
 
             
@@ -11008,7 +11048,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="744">
+          <li class="never" data-hits="" data-linenumber="748">
             
 
             
@@ -11018,7 +11058,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="745">
+          <li class="never" data-hits="" data-linenumber="749">
             
 
             
@@ -11028,7 +11068,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="746">
+          <li class="never" data-hits="" data-linenumber="750">
             
 
             
@@ -11038,7 +11078,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="747">
+          <li class="never" data-hits="" data-linenumber="751">
             
 
             
@@ -11048,7 +11088,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="748">
+          <li class="never" data-hits="" data-linenumber="752">
             
 
             
@@ -11058,7 +11098,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="749">
+          <li class="never" data-hits="" data-linenumber="753">
             
 
             
@@ -11068,7 +11108,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="750">
+          <li class="never" data-hits="" data-linenumber="754">
             
 
             
@@ -11078,7 +11118,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="751">
+          <li class="never" data-hits="" data-linenumber="755">
             
 
             
@@ -11088,7 +11128,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="752">
+          <li class="never" data-hits="" data-linenumber="756">
             
 
             
@@ -11098,7 +11138,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="753">
+          <li class="never" data-hits="" data-linenumber="757">
             
 
             
@@ -11108,52 +11148,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="754">
-            
-
-            
-
-            <code class="ruby">    )</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="755">
-            
-
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="756">
-            
-
-            
-
-            <code class="ruby">    assert appt.patient_approve!</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="757">
-            
-
-            
-
-            <code class="ruby">    assert_equal &quot;pending_payment&quot;, appt.reload.status</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="758">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -11168,7 +11168,47 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="760">
+          <li class="missed" data-hits="0" data-linenumber="760">
+            
+
+            
+
+            <code class="ruby">    assert appt.patient_approve!</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="761">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;pending_payment&quot;, appt.reload.status</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="762">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="763">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="764">
             
               <span class="hits">1</span>
             
@@ -11180,7 +11220,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="761">
+          <li class="missed" data-hits="0" data-linenumber="765">
             
 
             
@@ -11190,7 +11230,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="762">
+          <li class="never" data-hits="" data-linenumber="766">
             
 
             
@@ -11200,7 +11240,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="763">
+          <li class="never" data-hits="" data-linenumber="767">
             
 
             
@@ -11210,7 +11250,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="764">
+          <li class="never" data-hits="" data-linenumber="768">
             
 
             
@@ -11220,7 +11260,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="765">
+          <li class="never" data-hits="" data-linenumber="769">
             
 
             
@@ -11230,7 +11270,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="766">
+          <li class="never" data-hits="" data-linenumber="770">
             
 
             
@@ -11240,7 +11280,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="767">
+          <li class="never" data-hits="" data-linenumber="771">
             
 
             
@@ -11250,7 +11290,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="768">
+          <li class="never" data-hits="" data-linenumber="772">
             
 
             
@@ -11260,7 +11300,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="769">
+          <li class="never" data-hits="" data-linenumber="773">
             
 
             
@@ -11270,7 +11310,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="770">
+          <li class="never" data-hits="" data-linenumber="774">
             
 
             
@@ -11280,7 +11320,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="771">
+          <li class="never" data-hits="" data-linenumber="775">
             
 
             
@@ -11290,7 +11330,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="772">
+          <li class="never" data-hits="" data-linenumber="776">
             
 
             
@@ -11300,52 +11340,12 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="773">
+          <li class="missed" data-hits="0" data-linenumber="777">
             
 
             
 
             <code class="ruby">    appt.patient_approve!</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="774">
-            
-
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="775">
-            
-
-            
-
-            <code class="ruby">    assert appt.mark_paid!</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="776">
-            
-
-            
-
-            <code class="ruby">    assert_equal &quot;paid&quot;, appt.reload.status</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="777">
-            
-
-            
-
-            <code class="ruby">  end</code>
           </li>
         </div>
       
@@ -11360,7 +11360,47 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="779">
+          <li class="missed" data-hits="0" data-linenumber="779">
+            
+
+            
+
+            <code class="ruby">    assert appt.mark_paid!</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="780">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;paid&quot;, appt.reload.status</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="781">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="782">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="783">
             
               <span class="hits">1</span>
             
@@ -11372,7 +11412,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="780">
+          <li class="missed" data-hits="0" data-linenumber="784">
             
 
             
@@ -11382,7 +11422,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="781">
+          <li class="never" data-hits="" data-linenumber="785">
             
 
             
@@ -11392,52 +11432,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="782">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="783">
-            
-
-            
-
-            <code class="ruby">      package: @package,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="784">
-            
-
-            
-
-            <code class="ruby">      location: @location,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="785">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: @future_time,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="786">
             
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -11447,7 +11447,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record</code>
+            <code class="ruby">      package: @package,</code>
           </li>
         </div>
       
@@ -11457,7 +11457,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -11467,7 +11467,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -11477,172 +11477,12 @@
 
             
 
-            <code class="ruby">    # Different package &amp; patient</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="791">
-            
-
-            
-
-            <code class="ruby">    other_patient_contact = PatientContact.create!(contact_name: &quot;Other&quot;, contact_phone: &quot;62891721231&quot;, email: &quot;other@yopmail.com&quot;)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="792">
-            
-
-            
-
-            <code class="ruby">    other_patient = Patient.create!(name: &quot;Other&quot;, date_of_birth: &quot;2000-01-01&quot;, gender: &quot;FEMALE&quot;, patient_contact: other_patient_contact)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="793">
-            
-
-            
-
-            <code class="ruby">    other_package = Package.create!(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="794">
-            
-
-            
-
-            <code class="ruby">      service: @service, name: &quot;Different&quot;, currency: &quot;IDR&quot;, number_of_visit: 1,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="795">
-            
-
-            
-
-            <code class="ruby">      price_per_visit: 100_000, total_price: 100_000, fee_per_visit: 70_000, total_fee: 70_000, active: true</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="796">
-            
-
-            
-
-            <code class="ruby">    )</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="797">
-            
-
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="798">
-            
-
-            
-
-            <code class="ruby">    series = Appointment.new(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="799">
-            
-
-            
-
-            <code class="ruby">      reference_appointment: initial,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="800">
-            
-
-            
-
-            <code class="ruby">      patient: other_patient,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="801">
-            
-
-            
-
-            <code class="ruby">      package: other_package,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="802">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="803">
-            
-
-            
-
-            <code class="ruby">      location: @location,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="804">
-            
-
-            
-
-            <code class="ruby">      visit_number: 2,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="805">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: @future_time + 1.day,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="806">
-            
-
-            
-
             <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="807">
+          <li class="never" data-hits="" data-linenumber="791">
             
 
             
@@ -11652,7 +11492,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="808">
+          <li class="never" data-hits="" data-linenumber="792">
             
 
             
@@ -11662,7 +11502,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="809">
+          <li class="never" data-hits="" data-linenumber="793">
             
 
             
@@ -11672,32 +11512,192 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="810">
+          <li class="never" data-hits="" data-linenumber="794">
             
 
             
 
-            <code class="ruby">    assert_not series.valid?</code>
+            <code class="ruby">    # Different package &amp; patient</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="811">
+          <li class="missed" data-hits="0" data-linenumber="795">
             
 
             
 
-            <code class="ruby">    assert_includes series.errors[:package_id], &quot;must match reference appointment&#39;s package&quot;</code>
+            <code class="ruby">    other_patient_contact = PatientContact.create!(contact_name: &quot;Other&quot;, contact_phone: &quot;62891721231&quot;, email: &quot;other@yopmail.com&quot;)</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="812">
+          <li class="missed" data-hits="0" data-linenumber="796">
             
 
             
 
-            <code class="ruby">    assert_includes series.errors[:patient_id], &quot;must match reference appointment&#39;s patient&quot;</code>
+            <code class="ruby">    other_patient = Patient.create!(name: &quot;Other&quot;, date_of_birth: &quot;2000-01-01&quot;, gender: &quot;FEMALE&quot;, patient_contact: other_patient_contact)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="797">
+            
+
+            
+
+            <code class="ruby">    other_package = Package.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="798">
+            
+
+            
+
+            <code class="ruby">      service: @service, name: &quot;Different&quot;, currency: &quot;IDR&quot;, number_of_visit: 1,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="799">
+            
+
+            
+
+            <code class="ruby">      price_per_visit: 100_000, total_price: 100_000, fee_per_visit: 70_000, total_fee: 70_000, active: true</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="800">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="801">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="802">
+            
+
+            
+
+            <code class="ruby">    series = Appointment.new(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="803">
+            
+
+            
+
+            <code class="ruby">      reference_appointment: initial,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="804">
+            
+
+            
+
+            <code class="ruby">      patient: other_patient,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="805">
+            
+
+            
+
+            <code class="ruby">      package: other_package,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="806">
+            
+
+            
+
+            <code class="ruby">      service: @service,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="807">
+            
+
+            
+
+            <code class="ruby">      location: @location,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="808">
+            
+
+            
+
+            <code class="ruby">      visit_number: 2,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="809">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: @future_time + 1.day,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="810">
+            
+
+            
+
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="811">
+            
+
+            
+
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="812">
+            
+
+            
+
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -11707,12 +11707,52 @@
 
             
 
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="814">
+            
+
+            
+
+            <code class="ruby">    assert_not series.valid?</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="815">
+            
+
+            
+
+            <code class="ruby">    assert_includes series.errors[:package_id], &quot;must match reference appointment&#39;s package&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="816">
+            
+
+            
+
+            <code class="ruby">    assert_includes series.errors[:patient_id], &quot;must match reference appointment&#39;s patient&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="817">
+            
+
+            
+
             <code class="ruby">  end</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="814">
+          <li class="never" data-hits="" data-linenumber="818">
             
 
             
@@ -11722,7 +11762,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="815">
+          <li class="covered" data-hits="1" data-linenumber="819">
             
               <span class="hits">1</span>
             
@@ -11734,7 +11774,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="816">
+          <li class="missed" data-hits="0" data-linenumber="820">
             
 
             
@@ -11744,52 +11784,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="817">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="818">
-            
-
-            
-
-            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="819">
-            
-
-            
-
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="820">
-            
-
-            
-
-            <code class="ruby">      number_of_visit: 3,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="821">
             
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -11799,7 +11799,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
           </li>
         </div>
       
@@ -11809,7 +11809,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -11819,7 +11819,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -11829,7 +11829,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -11839,17 +11839,17 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="827">
+          <li class="never" data-hits="" data-linenumber="827">
             
 
             
 
-            <code class="ruby">    first_visit = Appointment.create!(</code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
@@ -11859,7 +11859,7 @@
 
             
 
-            <code class="ruby">      patient: @patient,</code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
@@ -11869,7 +11869,7 @@
 
             
 
-            <code class="ruby">      service: @service,</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
@@ -11879,17 +11879,17 @@
 
             
 
-            <code class="ruby">      package: triple_pkg,</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="831">
+          <li class="missed" data-hits="0" data-linenumber="831">
             
 
             
 
-            <code class="ruby">      location: @location,</code>
+            <code class="ruby">    first_visit = Appointment.create!(</code>
           </li>
         </div>
       
@@ -11899,7 +11899,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time,</code>
+            <code class="ruby">      patient: @patient,</code>
           </li>
         </div>
       
@@ -11909,7 +11909,7 @@
 
             
 
-            <code class="ruby">      therapist: @therapist,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -11919,7 +11919,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      package: triple_pkg,</code>
           </li>
         </div>
       
@@ -11929,7 +11929,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -11939,7 +11939,7 @@
 
             
 
-            <code class="ruby">      updater: @user,           # &lt;- will be copied to histories</code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -11949,7 +11949,7 @@
 
             
 
-            <code class="ruby">      skip_auto_series_creation: false</code>
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
@@ -11959,7 +11959,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
           </li>
         </div>
       
@@ -11969,7 +11969,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
           </li>
         </div>
       
@@ -11979,112 +11979,22 @@
 
             
 
-            <code class="ruby">    # sanity check</code>
+            <code class="ruby">      updater: @user,           # &lt;- will be copied to histories</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="841">
+          <li class="never" data-hits="" data-linenumber="841">
             
 
             
 
-            <code class="ruby">    assert_equal &quot;pending_patient_approval&quot;, first_visit.status</code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="842">
-            
-
-            
-
-            <code class="ruby">    child = first_visit.series_appointments.order(:visit_number).first</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="843">
-            
-
-            
-
-            <code class="ruby">    puts first_visit.inspect</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="844">
-            
-
-            
-
-            <code class="ruby">    puts child.inspect</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="845">
-            
-
-            
-
-            <code class="ruby">    puts child.errors.inspect</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="846">
-            
-
-            
-
-            <code class="ruby">    child.update!(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="847">
-            
-
-            
-
-            <code class="ruby">      status: :pending_patient_approval,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="848">
-            
-
-            
-
-            <code class="ruby">      therapist: @therapist,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="849">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: 4.days.from_now.change(hour: 10),</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="850">
-            
-
-            
-
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="851">
+          <li class="never" data-hits="" data-linenumber="842">
             
 
             
@@ -12094,12 +12004,102 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="852">
+          <li class="never" data-hits="" data-linenumber="843">
             
 
             
 
             <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="844">
+            
+
+            
+
+            <code class="ruby">    # sanity check</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="845">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;pending_patient_approval&quot;, first_visit.status</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="846">
+            
+
+            
+
+            <code class="ruby">    child = first_visit.series_appointments.order(:visit_number).first</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="847">
+            
+
+            
+
+            <code class="ruby">    child.update!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="848">
+            
+
+            
+
+            <code class="ruby">      status: :pending_patient_approval,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="849">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="850">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: 4.days.from_now.change(hour: 10),</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="851">
+            
+
+            
+
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="852">
+            
+
+            
+
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -12109,17 +12109,17 @@
 
             
 
-            <code class="ruby">    # Now make it invalid by assigning status :unscheduled but keeping the other fields</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="854">
+          <li class="never" data-hits="" data-linenumber="854">
             
 
             
 
-            <code class="ruby">    child.assign_attributes(status: :unscheduled)</code>
+            <code class="ruby">    # Now make it invalid by assigning status :unscheduled but keeping the other fields</code>
           </li>
         </div>
       
@@ -12129,7 +12129,7 @@
 
             
 
-            <code class="ruby">    assert_not child.valid?</code>
+            <code class="ruby">    child.assign_attributes(status: :unscheduled)</code>
           </li>
         </div>
       
@@ -12139,7 +12139,7 @@
 
             
 
-            <code class="ruby">    assert_includes child.errors[:appointment_date_time], &quot;must be blank for unscheduled appointments&quot;</code>
+            <code class="ruby">    assert_not child.valid?</code>
           </li>
         </div>
       
@@ -12149,17 +12149,17 @@
 
             
 
-            <code class="ruby">    assert_includes child.errors[:therapist_id], &quot;cannot be assigned to unscheduled appointments&quot;</code>
+            <code class="ruby">    assert_includes child.errors[:appointment_date_time], &quot;must be blank for unscheduled appointments&quot;</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="858">
+          <li class="missed" data-hits="0" data-linenumber="858">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    assert_includes child.errors[:therapist_id], &quot;cannot be assigned to unscheduled appointments&quot;</code>
           </li>
         </div>
       
@@ -12169,12 +12169,22 @@
 
             
 
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="860">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="860">
+          <li class="covered" data-hits="1" data-linenumber="861">
             
               <span class="hits">1</span>
             
@@ -12186,7 +12196,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="861">
+          <li class="missed" data-hits="0" data-linenumber="862">
             
 
             
@@ -12196,7 +12206,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="862">
+          <li class="never" data-hits="" data-linenumber="863">
             
 
             
@@ -12206,7 +12216,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="863">
+          <li class="never" data-hits="" data-linenumber="864">
             
 
             
@@ -12216,7 +12226,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="864">
+          <li class="never" data-hits="" data-linenumber="865">
             
 
             
@@ -12226,7 +12236,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="865">
+          <li class="never" data-hits="" data-linenumber="866">
             
 
             
@@ -12236,7 +12246,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="866">
+          <li class="never" data-hits="" data-linenumber="867">
             
 
             
@@ -12246,7 +12256,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="867">
+          <li class="never" data-hits="" data-linenumber="868">
             
 
             
@@ -12256,7 +12266,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="868">
+          <li class="never" data-hits="" data-linenumber="869">
             
 
             
@@ -12266,7 +12276,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="869">
+          <li class="never" data-hits="" data-linenumber="870">
             
 
             
@@ -12276,7 +12286,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="870">
+          <li class="never" data-hits="" data-linenumber="871">
             
 
             
@@ -12286,7 +12296,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="871">
+          <li class="never" data-hits="" data-linenumber="872">
             
 
             
@@ -12296,7 +12306,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="872">
+          <li class="missed" data-hits="0" data-linenumber="873">
             
 
             
@@ -12306,7 +12316,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="873">
+          <li class="missed" data-hits="0" data-linenumber="874">
             
 
             
@@ -12316,7 +12326,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="874">
+          <li class="never" data-hits="" data-linenumber="875">
             
 
             
@@ -12326,7 +12336,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="875">
+          <li class="missed" data-hits="0" data-linenumber="876">
             
 
             
@@ -12336,7 +12346,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="876">
+          <li class="never" data-hits="" data-linenumber="877">
             
 
             
@@ -12346,7 +12356,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="877">
+          <li class="never" data-hits="" data-linenumber="878">
             
 
             
@@ -12356,7 +12366,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="878">
+          <li class="covered" data-hits="1" data-linenumber="879">
             
               <span class="hits">1</span>
             
@@ -12368,7 +12378,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="879">
+          <li class="missed" data-hits="0" data-linenumber="880">
             
 
             
@@ -12378,7 +12388,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="880">
+          <li class="missed" data-hits="0" data-linenumber="881">
             
 
             
@@ -12388,22 +12398,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="881">
+          <li class="never" data-hits="" data-linenumber="882">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="882">
-            
-
-            
-
-            <code class="ruby">    appt.therapist = @therapist</code>
           </li>
         </div>
       
@@ -12413,27 +12413,27 @@
 
             
 
+            <code class="ruby">    appt.therapist = @therapist</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="884">
+            
+
+            
+
             <code class="ruby">    assert_not appt.send(:valid_for_scheduling?)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="884">
+          <li class="never" data-hits="" data-linenumber="885">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="885">
-            
-
-            
-
-            <code class="ruby">    appt.appointment_date_time = @future_time</code>
           </li>
         </div>
       
@@ -12443,17 +12443,17 @@
 
             
 
-            <code class="ruby">    assert appt.send(:valid_for_scheduling?)</code>
+            <code class="ruby">    appt.appointment_date_time = @future_time</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="887">
+          <li class="missed" data-hits="0" data-linenumber="887">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    assert appt.send(:valid_for_scheduling?)</code>
           </li>
         </div>
       
@@ -12463,12 +12463,22 @@
 
             
 
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="889">
+            
+
+            
+
             <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="889">
+          <li class="covered" data-hits="1" data-linenumber="890">
             
               <span class="hits">1</span>
             
@@ -12480,7 +12490,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="890">
+          <li class="missed" data-hits="0" data-linenumber="891">
             
 
             
@@ -12490,7 +12500,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="891">
+          <li class="never" data-hits="" data-linenumber="892">
             
 
             
@@ -12500,7 +12510,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="892">
+          <li class="missed" data-hits="0" data-linenumber="893">
             
 
             
@@ -12510,7 +12520,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="893">
+          <li class="never" data-hits="" data-linenumber="894">
             
 
             
@@ -12520,7 +12530,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="894">
+          <li class="never" data-hits="" data-linenumber="895">
             
 
             
@@ -12530,7 +12540,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="895">
+          <li class="never" data-hits="" data-linenumber="896">
             
 
             
@@ -12540,7 +12550,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="896">
+          <li class="never" data-hits="" data-linenumber="897">
             
 
             
@@ -12550,7 +12560,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="897">
+          <li class="never" data-hits="" data-linenumber="898">
             
 
             
@@ -12560,7 +12570,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="898">
+          <li class="never" data-hits="" data-linenumber="899">
             
 
             
@@ -12570,7 +12580,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="899">
+          <li class="never" data-hits="" data-linenumber="900">
             
 
             
@@ -12580,7 +12590,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="900">
+          <li class="never" data-hits="" data-linenumber="901">
             
 
             
@@ -12590,22 +12600,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="901">
+          <li class="never" data-hits="" data-linenumber="902">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="902">
-            
-
-            
-
-            <code class="ruby">    second = first.series_appointments.find_by(visit_number: 2)</code>
           </li>
         </div>
       
@@ -12615,12 +12615,32 @@
 
             
 
-            <code class="ruby">    assert_equal second, first.next_visits</code>
+            <code class="ruby">    second = first.series_appointments.find_by(visit_number: 2)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="904">
+          <li class="missed" data-hits="0" data-linenumber="904">
+            
+
+            
+
+            <code class="ruby">    assert_nil second</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="905">
+            
+
+            
+
+            <code class="ruby">    assert_nil first.next_visits</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="906">
             
 
             
@@ -12630,7 +12650,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="905">
+          <li class="never" data-hits="" data-linenumber="907">
             
 
             
@@ -12640,7 +12660,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="906">
+          <li class="covered" data-hits="1" data-linenumber="908">
             
               <span class="hits">1</span>
             
@@ -12652,7 +12672,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="907">
+          <li class="missed" data-hits="0" data-linenumber="909">
             
 
             
@@ -12662,32 +12682,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="908">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="909">
-            
-
-            
-
-            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="910">
             
 
             
 
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -12697,7 +12697,7 @@
 
             
 
-            <code class="ruby">      number_of_visit: 3,</code>
+            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
           </li>
         </div>
       
@@ -12707,7 +12707,7 @@
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -12717,7 +12717,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -12727,7 +12727,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -12737,7 +12737,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
@@ -12747,7 +12747,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
@@ -12757,17 +12757,17 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="918">
+          <li class="never" data-hits="" data-linenumber="918">
             
 
             
 
-            <code class="ruby">    initial = Appointment.create!(</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
@@ -12777,17 +12777,17 @@
 
             
 
-            <code class="ruby">      patient: @patient,</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="920">
+          <li class="missed" data-hits="0" data-linenumber="920">
             
 
             
 
-            <code class="ruby">      service: @service,</code>
+            <code class="ruby">    initial = Appointment.create!(</code>
           </li>
         </div>
       
@@ -12797,7 +12797,7 @@
 
             
 
-            <code class="ruby">      package: triple_pkg,</code>
+            <code class="ruby">      patient: @patient,</code>
           </li>
         </div>
       
@@ -12807,7 +12807,7 @@
 
             
 
-            <code class="ruby">      location: @location,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -12817,7 +12817,7 @@
 
             
 
-            <code class="ruby">      therapist: @therapist,</code>
+            <code class="ruby">      package: triple_pkg,</code>
           </li>
         </div>
       
@@ -12827,7 +12827,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time,</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -12837,7 +12837,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
@@ -12847,7 +12847,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record</code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -12857,7 +12857,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
           </li>
         </div>
       
@@ -12867,7 +12867,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
           </li>
         </div>
       
@@ -12877,82 +12877,12 @@
 
             
 
-            <code class="ruby">    # manually schedule 3rd visit</code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="930">
-            
-
-            
-
-            <code class="ruby">    third = initial.series_appointments.find_by(visit_number: 3)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="931">
-            
-
-            
-
-            <code class="ruby">    third.update!(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="932">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: @future_time + 5.days,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="933">
-            
-
-            
-
-            <code class="ruby">      therapist: @therapist,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="934">
-            
-
-            
-
-            <code class="ruby">      status: :pending_patient_approval,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="935">
-            
-
-            
-
-            <code class="ruby">      status_reason: &quot;reschedule&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="936">
-            
-
-            
-
-            <code class="ruby">      updater: @user</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="937">
+          <li class="never" data-hits="" data-linenumber="930">
             
 
             
@@ -12962,12 +12892,82 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="938">
+          <li class="never" data-hits="" data-linenumber="931">
             
 
             
 
             <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="932">
+            
+
+            
+
+            <code class="ruby">    # manually schedule 3rd visit</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="933">
+            
+
+            
+
+            <code class="ruby">    third = initial.series_appointments.find_by(visit_number: 3)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="934">
+            
+
+            
+
+            <code class="ruby">    third.update!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="935">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: @future_time + 5.days,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="936">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="937">
+            
+
+            
+
+            <code class="ruby">      status: :pending_patient_approval,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="938">
+            
+
+            
+
+            <code class="ruby">      status_reason: &quot;reschedule&quot;,</code>
           </li>
         </div>
       
@@ -12977,12 +12977,42 @@
 
             
 
+            <code class="ruby">      updater: @user</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="940">
+            
+
+            
+
+            <code class="ruby">    )</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="941">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="942">
+            
+
+            
+
             <code class="ruby">    # set 2nd visit after 3rd → should be invalid</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="940">
+          <li class="missed" data-hits="0" data-linenumber="943">
             
 
             
@@ -12992,7 +13022,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="941">
+          <li class="missed" data-hits="0" data-linenumber="944">
             
 
             
@@ -13002,7 +13032,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="942">
+          <li class="missed" data-hits="0" data-linenumber="945">
             
 
             
@@ -13012,7 +13042,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="943">
+          <li class="never" data-hits="" data-linenumber="946">
             
 
             
@@ -13022,7 +13052,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="944">
+          <li class="missed" data-hits="0" data-linenumber="947">
             
 
             
@@ -13032,7 +13062,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="945">
+          <li class="missed" data-hits="0" data-linenumber="948">
             
 
             
@@ -13042,7 +13072,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="946">
+          <li class="never" data-hits="" data-linenumber="949">
             
 
             
@@ -13052,7 +13082,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="947">
+          <li class="never" data-hits="" data-linenumber="950">
             
 
             
@@ -13062,7 +13092,7 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="948">
+          <li class="covered" data-hits="1" data-linenumber="951">
             
               <span class="hits">1</span>
             
@@ -13074,7 +13104,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="949">
+          <li class="never" data-hits="" data-linenumber="952">
             
 
             
@@ -13084,7 +13114,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="950">
+          <li class="missed" data-hits="0" data-linenumber="953">
             
 
             
@@ -13094,42 +13124,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="951">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="952">
-            
-
-            
-
-            <code class="ruby">      name: &quot;3-Visit Series&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="953">
-            
-
-            
-
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="954">
             
 
             
 
-            <code class="ruby">      number_of_visit: 3,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -13139,7 +13139,7 @@
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      name: &quot;3-Visit Series&quot;,</code>
           </li>
         </div>
       
@@ -13149,7 +13149,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -13159,7 +13159,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -13169,7 +13169,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -13179,7 +13179,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
@@ -13189,7 +13189,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
@@ -13199,7 +13199,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
@@ -13209,122 +13209,12 @@
 
             
 
-            <code class="ruby">    # ─── Create the FIRST visit at a known time ─────────────────────────────────</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="963">
-            
-
-            
-
-            <code class="ruby">    t0 = @future_time.change(hour: 9)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="964">
-            
-
-            
-
-            <code class="ruby">    first = Appointment.create!(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="965">
-            
-
-            
-
-            <code class="ruby">      patient: @patient,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="966">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="967">
-            
-
-            
-
-            <code class="ruby">      package: triple_pkg,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="968">
-            
-
-            
-
-            <code class="ruby">      location: @location,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="969">
-            
-
-            
-
-            <code class="ruby">      therapist: @therapist,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="970">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: t0,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="971">
-            
-
-            
-
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="972">
-            
-
-            
-
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="973">
-            
-
-            
-
-            <code class="ruby">      skip_auto_series_creation: false</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="974">
+          <li class="never" data-hits="" data-linenumber="963">
             
 
             
@@ -13334,12 +13224,122 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="975">
+          <li class="never" data-hits="" data-linenumber="964">
             
 
             
 
             <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="965">
+            
+
+            
+
+            <code class="ruby">    # ─── Create the FIRST visit at a known time ─────────────────────────────────</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="966">
+            
+
+            
+
+            <code class="ruby">    t0 = @future_time.change(hour: 9)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="967">
+            
+
+            
+
+            <code class="ruby">    first = Appointment.create!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="968">
+            
+
+            
+
+            <code class="ruby">      patient: @patient,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="969">
+            
+
+            
+
+            <code class="ruby">      service: @service,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="970">
+            
+
+            
+
+            <code class="ruby">      package: triple_pkg,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="971">
+            
+
+            
+
+            <code class="ruby">      location: @location,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="972">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="973">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: t0,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="974">
+            
+
+            
+
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="975">
+            
+
+            
+
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
           </li>
         </div>
       
@@ -13349,27 +13349,27 @@
 
             
 
-            <code class="ruby">    # ─── Grab the auto-built series appointments ────────────────────────────────</code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="977">
+          <li class="never" data-hits="" data-linenumber="977">
             
 
             
 
-            <code class="ruby">    second = first.series_appointments.find_by(visit_number: 2)</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="978">
+          <li class="never" data-hits="" data-linenumber="978">
             
 
             
 
-            <code class="ruby">    third = first.series_appointments.find_by(visit_number: 3)</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -13379,17 +13379,17 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    # ─── Grab the auto-built series appointments ────────────────────────────────</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="980">
+          <li class="missed" data-hits="0" data-linenumber="980">
             
 
             
 
-            <code class="ruby">    # ─── Schedule them at t1 = t0 + 1.day, t2 = t0 + 2.days ────────────────────</code>
+            <code class="ruby">    second = first.series_appointments.find_by(visit_number: 2)</code>
           </li>
         </div>
       
@@ -13399,17 +13399,17 @@
 
             
 
-            <code class="ruby">    t1 = t0 + 1.day</code>
+            <code class="ruby">    third = first.series_appointments.find_by(visit_number: 3)</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="982">
+          <li class="never" data-hits="" data-linenumber="982">
             
 
             
 
-            <code class="ruby">    t2 = t0 + 2.days</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -13419,7 +13419,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    # ─── Schedule them at t1 = t0 + 1.day, t2 = t0 + 2.days ────────────────────</code>
           </li>
         </div>
       
@@ -13429,7 +13429,7 @@
 
             
 
-            <code class="ruby">    [second, third].each do |appt|</code>
+            <code class="ruby">    t1 = t0 + 1.day</code>
           </li>
         </div>
       
@@ -13439,7 +13439,7 @@
 
             
 
-            <code class="ruby">      appt.update!(</code>
+            <code class="ruby">    t2 = t0 + 2.days</code>
           </li>
         </div>
       
@@ -13449,7 +13449,7 @@
 
             
 
-            <code class="ruby">        therapist: @therapist,</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -13459,17 +13459,17 @@
 
             
 
-            <code class="ruby">        appointment_date_time: ((appt.visit_number == 2) ? t1 : t2),</code>
+            <code class="ruby">    [second, third].each do |appt|</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="988">
+          <li class="missed" data-hits="0" data-linenumber="988">
             
 
             
 
-            <code class="ruby">        status: :pending_patient_approval,</code>
+            <code class="ruby">      appt.update!(</code>
           </li>
         </div>
       
@@ -13479,17 +13479,17 @@
 
             
 
-            <code class="ruby">        preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
+            <code class="ruby">        therapist: @therapist,</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="990">
+          <li class="missed" data-hits="0" data-linenumber="990">
             
 
             
 
-            <code class="ruby">      )</code>
+            <code class="ruby">        appointment_date_time: ((appt.visit_number == 2) ? t1 : t2),</code>
           </li>
         </div>
       
@@ -13499,7 +13499,7 @@
 
             
 
-            <code class="ruby">    end</code>
+            <code class="ruby">        status: :pending_patient_approval,</code>
           </li>
         </div>
       
@@ -13509,7 +13509,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">        preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
           </li>
         </div>
       
@@ -13519,7 +13519,7 @@
 
             
 
-            <code class="ruby">    # ─── Assertions for the model helpers ───────────────────────────────────────</code>
+            <code class="ruby">      )</code>
           </li>
         </div>
       
@@ -13529,27 +13529,27 @@
 
             
 
-            <code class="ruby">    # First visit: no previous, next is the 2nd</code>
+            <code class="ruby">    end</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="995">
+          <li class="never" data-hits="" data-linenumber="995">
             
 
             
 
-            <code class="ruby">    assert_nil first.min_datetime</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="996">
+          <li class="never" data-hits="" data-linenumber="996">
             
 
             
 
-            <code class="ruby">    assert_equal t1, first.max_datetime</code>
+            <code class="ruby">    # ─── Assertions for the model helpers ───────────────────────────────────────</code>
           </li>
         </div>
       
@@ -13559,17 +13559,17 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    # First visit: no previous, next is the 2nd</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="998">
+          <li class="missed" data-hits="0" data-linenumber="998">
             
 
             
 
-            <code class="ruby">    # Second visit: prev is first, next is third</code>
+            <code class="ruby">    assert_nil first.min_datetime</code>
           </li>
         </div>
       
@@ -13579,22 +13579,12 @@
 
             
 
-            <code class="ruby">    assert_equal t0, second.min_datetime</code>
+            <code class="ruby">    assert_equal t1, first.max_datetime</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1000">
-            
-
-            
-
-            <code class="ruby">    assert_equal t2, second.max_datetime</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1001">
+          <li class="never" data-hits="" data-linenumber="1000">
             
 
             
@@ -13604,12 +13594,22 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1002">
+          <li class="never" data-hits="" data-linenumber="1001">
             
 
             
 
-            <code class="ruby">    # Third visit: prev is second, no next</code>
+            <code class="ruby">    # Second visit: prev is first, next is third</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1002">
+            
+
+            
+
+            <code class="ruby">    assert_equal t0, second.min_datetime</code>
           </li>
         </div>
       
@@ -13619,17 +13619,17 @@
 
             
 
-            <code class="ruby">    assert_equal t1, third.min_datetime</code>
+            <code class="ruby">    assert_equal t2, second.max_datetime</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1004">
+          <li class="never" data-hits="" data-linenumber="1004">
             
 
             
 
-            <code class="ruby">    assert_nil third.max_datetime</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -13639,12 +13639,42 @@
 
             
 
+            <code class="ruby">    # Third visit: prev is second, no next</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1006">
+            
+
+            
+
+            <code class="ruby">    assert_equal t1, third.min_datetime</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1007">
+            
+
+            
+
+            <code class="ruby">    assert_nil third.max_datetime</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1008">
+            
+
+            
+
             <code class="ruby">  end</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1006">
+          <li class="never" data-hits="" data-linenumber="1009">
             
 
             

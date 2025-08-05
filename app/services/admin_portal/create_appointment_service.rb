@@ -66,6 +66,8 @@ module AdminPortal
         @appointment.appointment_date_time = visit_attrs[:appointment_date_time]&.in_time_zone(Time.zone.name) if visit_attrs[:appointment_date_time]
         @appointment.therapist_id = visit_attrs[:therapist_id] if visit_attrs[:therapist_id]
         @appointment.updater = @current_user
+        @appointment.status = :unscheduled if visit_attrs[:appointment_date_time].nil?
+
         @appointment.save!
 
         create_patient_medical_record_appointment
@@ -167,7 +169,6 @@ module AdminPortal
         service_id: @params[:service_id],
         package_id: @params[:package_id],
         therapist_id: @params[:therapist_id],
-        # status:,
         updater: @current_user
       }
       appointment_params = @params[:appointment] || {}

@@ -1521,8 +1521,8 @@ export function ReviewForm() {
 
 					<Table className="border rounded-lg border-border">
 						<TableBody>
-							{section.subs.map((sub) => (
-								<TableRow key={sub.key}>
+							{section.subs.map((sub, index) => (
+								<TableRow key={`${sub.key}-${index}`}>
 									<TableCell className="p-2 font-light tracking-tight md:p-4">
 										{sub.title}
 									</TableCell>

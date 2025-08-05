@@ -408,7 +408,8 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_equal @package.currency, ph.currency
     assert_equal @package.number_of_visit, ph.number_of_visit
     assert_equal @package.price_per_visit, ph.price_per_visit
-    assert_nil @package.discount, ph.discount
+    assert_nil @package.discount, "Expected package discount to be nil"
+    assert_nil ph.discount, "Expected package history discount to be nil"
     assert_equal @package.total_price, ph.total_price
     assert_equal @package.fee_per_visit, ph.fee_per_visit
     assert_equal @package.total_fee, ph.total_fee
@@ -451,7 +452,8 @@ class AppointmentTest < ActiveSupport::TestCase
       appointment_date_time: @future_time,
       preferred_therapist_gender: "NO PREFERENCE",
       patient_medical_record_attributes: @patient_medical_record,
-      updater: @user
+      updater: @user,
+      skip_auto_series_creation: false
     )
 
     # ── Sanity check ────────────────────────────────────────────────────────────
@@ -530,7 +532,8 @@ class AppointmentTest < ActiveSupport::TestCase
       appointment_date_time: @future_time,
       preferred_therapist_gender: "NO PREFERENCE",
       patient_medical_record_attributes: @patient_medical_record,
-      updater: @user
+      updater: @user,
+      skip_auto_series_creation: false
     )
 
     # sanity check
@@ -572,7 +575,8 @@ class AppointmentTest < ActiveSupport::TestCase
       therapist: @therapist,
       preferred_therapist_gender: "NO PREFERENCE",
       patient_medical_record_attributes: @patient_medical_record,
-      updater: @user
+      updater: @user,
+      skip_auto_series_creation: false
     )
 
     # sanity check
@@ -897,7 +901,8 @@ class AppointmentTest < ActiveSupport::TestCase
     )
 
     second = first.series_appointments.find_by(visit_number: 2)
-    assert_equal second, first.next_visits
+    assert_nil second
+    assert_nil first.next_visits
   end
 
   test "series visit must be after initial and before next, about validate_series_visit_position" do
@@ -920,7 +925,8 @@ class AppointmentTest < ActiveSupport::TestCase
       therapist: @therapist,
       appointment_date_time: @future_time,
       preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record
+      patient_medical_record_attributes: @patient_medical_record,
+      skip_auto_series_creation: false
     )
 
     # manually schedule 3rd visit

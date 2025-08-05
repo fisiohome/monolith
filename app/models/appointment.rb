@@ -300,7 +300,7 @@ class Appointment < ApplicationRecord
   end
 
   def enable_auto_series_creation?
-    !skip_auto_series_creation
+    !skip_auto_series_creation.nil? && skip_auto_series_creation == false
   end
 
   def initial_visit?
