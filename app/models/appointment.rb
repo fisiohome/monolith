@@ -768,7 +768,7 @@ class Appointment < ApplicationRecord
     allowed_transitions = {
       "unscheduled" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "cancelled"],
       "pending_therapist_assignment" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "cancelled"],
-      "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "cancelled"],
+      "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "cancelled", "paid"],
       "pending_payment" => ["pending_payment", "paid", "cancelled"],
       "paid" => ["paid", "cancelled"],
       "cancelled" => []  # Once cancelled, no more transitions
