@@ -302,7 +302,10 @@ export default function AppointmentIndex() {
 
 	// * pagination params management state
 	const changePageParam = useCallback(
-		(type: "prev" | "next" | "limit", value?: string) => {
+		(
+			type: "prev" | "next" | "limit" | "first" | "last" | "page",
+			value?: string,
+		) => {
 			if (!apptMetadata) {
 				console.warn("Pagination metadata not available");
 				return;
@@ -316,6 +319,12 @@ export default function AppointmentIndex() {
 				case "next":
 					url = apptMetadata.nextUrl;
 					break;
+				case "first":
+					url = apptMetadata.firstUrl;
+					break;
+				case "last":
+					url = apptMetadata.lastUrl;
+					break;
 				case "limit": {
 					if (!value) {
 						console.warn("Value required for 'limit' pagination");
@@ -323,6 +332,17 @@ export default function AppointmentIndex() {
 					}
 					const { fullUrl } = populateQueryParams(apptMetadata.pageUrl, {
 						limit: value,
+					});
+					url = fullUrl;
+					break;
+				}
+				case "page": {
+					if (!value) {
+						console.warn("Value required for 'page' pagination");
+						return;
+					}
+					const { fullUrl } = populateQueryParams(apptMetadata.pageUrl, {
+						page: value,
 					});
 					url = fullUrl;
 					break;
@@ -741,6 +761,9 @@ export default function AppointmentIndex() {
 							goToPrevpage: () => changePageParam("prev"),
 							goToNextPage: () => changePageParam("next"),
 							onChangeLimit: (value) => changePageParam("limit", value),
+							goToPage: (value) => changePageParam("page", value),
+							goToFirstPage: () => changePageParam("first"),
+							goToLastPage: () => changePageParam("last"),
 						}}
 					/>
 				</Deferred>

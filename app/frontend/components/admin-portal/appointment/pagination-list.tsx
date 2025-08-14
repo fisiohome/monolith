@@ -1,4 +1,5 @@
-import { Button } from "@/components/ui/button";
+import { type ComponentProps, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	Select,
 	SelectContent,
@@ -8,9 +9,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "@/types/pagy";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { type ComponentProps, useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import PageSelection from "./page-selection";
 
 export interface ApptPaginationProps extends ComponentProps<"div"> {
 	metadata: Metadata | null;
@@ -18,6 +17,9 @@ export interface ApptPaginationProps extends ComponentProps<"div"> {
 		goToPrevpage: () => void;
 		goToNextPage: () => void;
 		onChangeLimit: (value: string) => void;
+		goToPage: (value: string) => void;
+		goToFirstPage: () => void;
+		goToLastPage: () => void;
 	};
 }
 
@@ -30,8 +32,6 @@ export default function ApptPagination({
 	const { t: tp } = useTranslation("translation", {
 		keyPrefix: "components.pagination",
 	});
-	const isPrevDisabled = useMemo(() => !metadata?.prev, [metadata?.prev]);
-	const isNextDisabled = useMemo(() => !metadata?.next, [metadata?.next]);
 	const isLimitDisabled = useMemo(
 		() => !metadata?.limit || !metadata?.count,
 		[metadata?.limit, metadata?.count],
@@ -73,25 +73,13 @@ export default function ApptPagination({
 					{metadata?.count} {t("pagination.appointments")}
 				</span>
 
-				<div className="flex gap-2">
-					<Button
-						variant="outline"
-						className="p-0 size-8"
-						disabled={isPrevDisabled}
-						onClick={actions.goToPrevpage}
-					>
-						<ChevronLeft />
-					</Button>
-
-					<Button
-						variant="outline"
-						className="p-0 size-8"
-						disabled={isNextDisabled}
-						onClick={actions.goToNextPage}
-					>
-						<ChevronRight />
-					</Button>
-				</div>
+				{metadata?.page && metadata?.pages && (
+					<PageSelection
+						currentPage={metadata.page}
+						totalPages={metadata.pages}
+						actions={actions}
+					/>
+				)}
 			</div>
 		</div>
 	);
