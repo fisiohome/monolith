@@ -41,10 +41,8 @@ import {
 	differenceInHours,
 	format,
 	formatDistance,
-	isBefore,
 	isToday,
 	parseISO,
-	startOfToday,
 } from "date-fns";
 import {
 	Activity,
@@ -996,10 +994,10 @@ const AppointmentActionButtons = memo(function Component({
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
 
-	const isPastFromToday = useMemo(() => {
-		if (!schedule.appointmentDateTime) return false;
-		return isBefore(schedule.appointmentDateTime, startOfToday());
-	}, [schedule.appointmentDateTime]);
+	// const isPastFromToday = useMemo(() => {
+	// 	if (!schedule.appointmentDateTime) return false;
+	// 	return isBefore(schedule.appointmentDateTime, startOfToday());
+	// }, [schedule.appointmentDateTime]);
 	const isShow = useMemo(() => {
 		const updateStatus =
 			schedule.status !== "paid" &&
@@ -1113,72 +1111,68 @@ const AppointmentActionButtons = memo(function Component({
 								</Button>
 							)} */}
 
-						{!isPastFromToday && (
-							<>
-								<Button
-									variant="primary-outline"
-									className="w-full lg:w-auto"
-									size={buttonSize}
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
+						<Button
+							variant="primary-outline"
+							className="w-full lg:w-auto"
+							size={buttonSize}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
 
-										routeTo.reschedule(String(schedule.id));
-									}}
-								>
-									<Clock3 />
-									{t("button.reschedule")}
-								</Button>
+								routeTo.reschedule(String(schedule.id));
+							}}
+						>
+							<Clock3 />
+							{t("button.reschedule")}
+						</Button>
 
-								{isShow.updateStatus && (
-									<Button
-										variant="primary-outline"
-										className="w-full lg:w-auto"
-										size={buttonSize}
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
+						{isShow.updateStatus && (
+							<Button
+								variant="primary-outline"
+								className="w-full lg:w-auto"
+								size={buttonSize}
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
 
-											routeTo.updateStatus(String(schedule.id));
-										}}
-									>
-										<Activity />
-										{t("button.update_status")}
-									</Button>
-								)}
+									routeTo.updateStatus(String(schedule.id));
+								}}
+							>
+								<Activity />
+								{t("button.update_status")}
+							</Button>
+						)}
 
-								<Button
-									variant="primary-outline"
-									className="w-full lg:w-auto"
-									size={buttonSize}
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
+						<Button
+							variant="primary-outline"
+							className="w-full lg:w-auto"
+							size={buttonSize}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
 
-										routeTo.updatePic(String(schedule.id));
-									}}
-								>
-									<Cctv />
-									{t("button.update_pic")}
-								</Button>
+								routeTo.updatePic(String(schedule.id));
+							}}
+						>
+							<Cctv />
+							{t("button.update_pic")}
+						</Button>
 
-								{isShow.cancel && (
-									<Button
-										variant="destructive"
-										className="w-full lg:w-auto"
-										size={buttonSize}
-										onClick={(event) => {
-											event.preventDefault();
-											event.stopPropagation();
+						{isShow.cancel && (
+							<Button
+								variant="destructive"
+								className="w-full lg:w-auto"
+								size={buttonSize}
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
 
-											routeTo.cancel(String(schedule.id));
-										}}
-									>
-										<Ban />
-										{t("button.cancel_booking")}
-									</Button>
-								)}
-							</>
+									routeTo.cancel(String(schedule.id));
+								}}
+							>
+								<Ban />
+								{t("button.cancel_booking")}
+							</Button>
 						)}
 					</>
 				)}
