@@ -2,16 +2,16 @@ development:
   clean_up_past_availabilities:
     class: "CleanUpPastAvailabilitiesJob"
     schedule: at 1am every day
-  cancel_past_appointments:
-    class: "CancelPastAppointmentsJob"
-    schedule: at 1am every day
+  # cancel_past_appointments:
+  #   class: "CancelPastAppointmentsJob"
+  #   schedule: at 1am every day
 staging:
   clean_up_past_availabilities:
     class: "CleanUpPastAvailabilitiesJob"
     schedule: at 1am every day
-  cancel_past_appointments:
-    class: "CancelPastAppointmentsJob"
-    schedule: at 1am every day
+  # cancel_past_appointments:
+  #   class: "CancelPastAppointmentsJob"
+  #   schedule: at 1am every day
 production:
   #   periodic_cleanup:
   #     class: CleanSoftDeletedRecordsJob
@@ -25,6 +25,8 @@ production:
   clean_up_past_availabilities:
     class: "CleanUpPastAvailabilitiesJob"
     schedule: at 1am every day
-  cancel_past_appointments:
-    class: "CancelPastAppointmentsJob"
-    schedule: at 1am every day
+  # ? we disabled this for right now
+  # ? because there is request about editing the past non cancelled appointment
+  # cancel_past_appointments:
+  #   class: "CancelPastAppointmentsJob"
+  #   schedule: at 1am every day
