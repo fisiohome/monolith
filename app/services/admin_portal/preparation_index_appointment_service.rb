@@ -20,7 +20,7 @@ module AdminPortal
 
     def fetch_appointments
       page_params = @params.fetch(:page, 1).to_i
-      limit_params = @params.fetch(:limit, 5).to_i
+      limit_params = @params.fetch(:limit, 25).to_i
 
       # Filter the appointments
       filtered_appt = filtered_appointments_relation

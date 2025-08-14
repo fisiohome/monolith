@@ -1,45 +1,3 @@
-import AppointmentList from "@/components/admin-portal/appointment/appointment-list";
-import {
-	CancelAppointmentForm,
-	UpdatePICForm,
-	UpdateStatusForm,
-} from "@/components/admin-portal/appointment/feature-form";
-import FilterList from "@/components/admin-portal/appointment/filter-list";
-import ApptPagination from "@/components/admin-portal/appointment/pagination-list";
-import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import {
-	ResponsiveDialog,
-	type ResponsiveDialogProps,
-} from "@/components/shared/responsive-dialog";
-import { Button } from "@/components/ui/button";
-import {
-	Announcement,
-	AnnouncementTag,
-	AnnouncementTitle,
-} from "@/components/ui/kibo-ui/announcement";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import type { GENDERS } from "@/lib/constants";
-import { populateQueryParams } from "@/lib/utils";
-import type { Admin } from "@/types/admin-portal/admin";
-import type {
-	Appointment,
-	AppointmentStatuses,
-} from "@/types/admin-portal/appointment";
-import type { Location } from "@/types/admin-portal/location";
-import type { Package } from "@/types/admin-portal/package";
-import type { Service } from "@/types/admin-portal/service";
-import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
-import type { Metadata } from "@/types/pagy";
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
@@ -54,24 +12,66 @@ import {
 	RefreshCcw,
 } from "lucide-react";
 import {
-	type ReactNode,
 	createContext,
+	type ReactNode,
 	useCallback,
 	useContext,
 	useMemo,
 	useState,
 } from "react";
+import type { DateRange } from "react-day-picker";
 import { useTranslation } from "react-i18next";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { toast } from "sonner";
+import ApptTable from "@/components/admin-portal/appointment/appt-table";
+import {
+	CancelAppointmentForm,
+	UpdatePICForm,
+	UpdateStatusForm,
+} from "@/components/admin-portal/appointment/feature-form";
+import FilterList from "@/components/admin-portal/appointment/filter-list";
+import ApptPagination from "@/components/admin-portal/appointment/pagination-list";
+import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import {
+	ResponsiveDialog,
+	type ResponsiveDialogProps,
+} from "@/components/shared/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+	Announcement,
+	AnnouncementTag,
+	AnnouncementTitle,
+} from "@/components/ui/kibo-ui/announcement";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import type { DateRange } from "react-day-picker";
-import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import type { GENDERS } from "@/lib/constants";
+import { populateQueryParams } from "@/lib/utils";
+import type { Admin } from "@/types/admin-portal/admin";
+import type {
+	Appointment,
+	AppointmentStatuses,
+} from "@/types/admin-portal/appointment";
+import type { Location } from "@/types/admin-portal/location";
+import type { Package } from "@/types/admin-portal/package";
+import type { Service } from "@/types/admin-portal/service";
+import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import type { Metadata } from "@/types/pagy";
 
 export const PREFERENCES_STORAGE_KEY = "appointment-index-preferences";
 
@@ -242,11 +242,13 @@ export default function AppointmentIndex() {
 	const { t: tbase } = useTranslation("translation");
 	const { t } = useTranslation("appointments");
 
-	const appointments = useMemo(() => {
+	const schedules = useMemo(() => {
 		if (!globalProps?.appointments || !globalProps?.appointments?.data?.length)
 			return [];
 
-		return globalProps.appointments.data;
+		return globalProps.appointments.data.flatMap(
+			(appointment) => appointment.schedules,
+		);
 	}, [globalProps?.appointments]);
 	const apptMetadata = useMemo(() => {
 		if (!globalProps?.appointments || !globalProps?.appointments?.metadata)
@@ -703,13 +705,7 @@ export default function AppointmentIndex() {
 				>
 					<div className="grid gap-6 !mt-8 !mb-6">
 						{isAppointmentExist ? (
-							appointments?.map((appointment, index) => (
-								<AppointmentList
-									key={String(appointment.date)}
-									appointment={appointment}
-									index={index}
-								/>
-							))
+							<ApptTable data={schedules} />
 						) : (
 							<div className="flex items-center justify-center px-3 py-8 border rounded-md border-border bg-background text-muted-foreground">
 								<h2 className="w-8/12 text-sm text-center animate-bounce text-pretty">

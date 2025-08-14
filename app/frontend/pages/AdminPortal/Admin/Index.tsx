@@ -1,8 +1,28 @@
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import type {
+	ColumnDef,
+	ExpandedState,
+	Row,
+	Table as TableTanstack,
+} from "@tanstack/react-table";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns/format";
+import {
+	ChevronDown,
+	ChevronUp,
+	InfinityIcon,
+	LoaderIcon,
+	PlusCircle,
+	RefreshCcw,
+} from "lucide-react";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import DataTableActions from "@/components/admin-portal/admin/data-table-actions";
 import ExpandSubTable from "@/components/admin-portal/admin/data-table-expand";
 import ToolbarTable from "@/components/admin-portal/admin/data-table-toolbar";
 import {
 	ChangePasswordContent,
-	DeleteAdminAlert,
 	EditAdminDialogContent,
 	SuspendAdminContent,
 } from "@/components/admin-portal/admin/feature-actions";
@@ -18,15 +38,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -35,24 +46,17 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
-import { cn, populateQueryParams, removeWhiteSpaces } from "@/lib/utils";
-import { generateInitials, humanize } from "@/lib/utils";
+import {
+	cn,
+	generateInitials,
+	humanize,
+	populateQueryParams,
+	removeWhiteSpaces,
+} from "@/lib/utils";
 import type { Admin, AdminTypes } from "@/types/admin-portal/admin";
 import type { User } from "@/types/auth";
 import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
-import { Head, Link, router, usePage } from "@inertiajs/react";
-import type { ExpandedState, Row } from "@tanstack/react-table";
-import type { Table as TableTanstack } from "@tanstack/react-table";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { formatDistanceToNow } from "date-fns";
-import { format } from "date-fns/format";
-import { LoaderIcon, PlusCircle, RefreshCcw } from "lucide-react";
-import { ChevronDown, ChevronUp, Ellipsis, InfinityIcon } from "lucide-react";
-import { Fragment, useCallback, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export type SelectedAdmin = Pick<Admin, "id" | "adminType" | "name"> & {
 	user: Pick<User, "id" | "email" | "suspendAt" | "suspendEnd" | "suspended?">;
@@ -396,33 +400,31 @@ export default function Index({
 				const isSuspended = row.original.user["suspended?"];
 
 				return (
-					<>
-						<div className="flex items-center gap-2 text-sm text-left">
-							<Avatar className="w-8 h-8 border rounded-lg">
-								<AvatarImage src="#" alt={name} />
-								<AvatarFallback
-									className={cn(
-										"text-xs rounded-lg",
-										isSuspended
-											? "bg-destructive text-destructive-foreground"
-											: isCurrent
-												? "bg-primary text-primary-foreground"
-												: isOnline
-													? "bg-emerald-700 text-white"
-													: "",
-									)}
-								>
-									{initials}
-								</AvatarFallback>
-							</Avatar>
-							<div className="flex-1 space-y-1 text-sm leading-tight text-left">
-								<div>
-									<p className="font-bold uppercase truncate">{name}</p>
-									<p className="text-xs truncate">{email}</p>
-								</div>
+					<div className="flex items-center gap-2 text-sm text-left">
+						<Avatar className="w-8 h-8 border rounded-lg">
+							<AvatarImage src="#" alt={name} />
+							<AvatarFallback
+								className={cn(
+									"text-xs rounded-lg",
+									isSuspended
+										? "bg-destructive text-destructive-foreground"
+										: isCurrent
+											? "bg-primary text-primary-foreground"
+											: isOnline
+												? "bg-emerald-700 text-white"
+												: "",
+								)}
+							>
+								{initials}
+							</AvatarFallback>
+						</Avatar>
+						<div className="flex-1 space-y-1 text-sm leading-tight text-left">
+							<div>
+								<p className="font-bold uppercase truncate">{name}</p>
+								<p className="text-xs truncate">{email}</p>
 							</div>
 						</div>
-					</>
+					</div>
 				);
 			},
 		},
@@ -435,11 +437,9 @@ export default function Index({
 			enableHiding: false,
 			cell: ({ row }) => {
 				return (
-					<>
-						<Badge variant="accent" className="text-nowrap">
-							{humanize(row.original.adminType).toUpperCase()}
-						</Badge>
-					</>
+					<Badge variant="accent" className="text-nowrap">
+						{humanize(row.original.adminType).toUpperCase()}
+					</Badge>
 				);
 			},
 		},
@@ -539,85 +539,7 @@ export default function Index({
 		},
 		{
 			id: "actions",
-			cell: ({ row }) => {
-				const {
-					isShowEdit,
-					isShowChangePassword,
-					isShowSuspend,
-					isShowDelete,
-					isPermitted,
-				} = useActionPermissions({
-					currentUser: globalProps.auth.currentUser,
-					user: row.original.user,
-					adminType: row.original.adminType,
-				});
-
-				if (!isPermitted) return;
-
-				return (
-					<div className="flex items-center justify-end space-x-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="icon">
-									<Ellipsis />
-								</Button>
-							</DropdownMenuTrigger>
-
-							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>Actions</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-
-								<DropdownMenuGroup>
-									{isShowEdit && (
-										<DropdownMenuItem
-											onSelect={() => routeTo.editAdmin(row.original.id)}
-										>
-											Edit
-										</DropdownMenuItem>
-									)}
-								</DropdownMenuGroup>
-
-								{(isShowChangePassword || isShowSuspend) && (
-									<>
-										<DropdownMenuSeparator />
-										<DropdownMenuGroup>
-											{isShowChangePassword && (
-												<DropdownMenuItem
-													onSelect={() =>
-														routeTo.changePassword(row.original.id)
-													}
-												>
-													Change Password
-												</DropdownMenuItem>
-											)}
-											{isShowSuspend && (
-												<DropdownMenuItem
-													onSelect={() => routeTo.suspendAdmin(row.original.id)}
-												>
-													{row.original.user["suspended?"]
-														? "Activate"
-														: "Suspend"}
-												</DropdownMenuItem>
-											)}
-										</DropdownMenuGroup>
-									</>
-								)}
-
-								{isShowDelete && (
-									<>
-										<DropdownMenuSeparator />
-										<DeleteAdminAlert row={row}>
-											<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-												Delete
-											</DropdownMenuItem>
-										</DeleteAdminAlert>
-									</>
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				);
-			},
+			cell: (props) => <DataTableActions {...props} routeTo={routeTo} />,
 		},
 	];
 
