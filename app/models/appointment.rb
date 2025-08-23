@@ -25,6 +25,7 @@ class Appointment < ApplicationRecord
 
   STATUS_ORDER = %w[
     unscheduled
+    on_hold
     pending_therapist_assignment
     pending_patient_approval
     pending_payment
@@ -52,6 +53,10 @@ class Appointment < ApplicationRecord
       name: "Confirmed",
       description: "Appointment confirmed and paid"
     },
+    "on_hold" => {
+      name: "On Hold",
+      description: "Appointment is on hold"
+    },
     "cancelled" => {
       name: "Cancelled",
       description: "Appointment has been cancelled"
@@ -65,7 +70,8 @@ class Appointment < ApplicationRecord
     pending_patient_approval: "PENDING PATIENT APPROVAL",
     pending_payment: "PENDING PAYMENT",
     cancelled: "CANCELLED",
-    paid: "PAID"
+    paid: "PAID",
+    on_hold: "ON HOLD"
   }, prefix: true
 
   # * define the associations
@@ -119,6 +125,9 @@ class Appointment < ApplicationRecord
   # Automatic status determination for new records
   before_validation :set_auto_status, on: :create
 
+  # before every update, clear the details if the status is on hold
+  before_save :clear_details_if_on_hold, if: -> { will_save_change_to_status? && status_on_hold? }
+
   # after every create, snap a fresh history record
   after_commit :create_series_appointments, on: :create, if: -> { should_create_series? && enable_auto_series_creation? }
   after_commit :snapshot_address_history, on: [:create]
@@ -146,7 +155,7 @@ class Appointment < ApplicationRecord
     validate :validate_series_requirements
   end
 
-  with_options unless: -> { unscheduled? || status_cancelled? } do
+  with_options unless: -> { unscheduled? || status_on_hold? || status_cancelled? } do
     validates :appointment_date_time, presence: true
   end
 
@@ -242,6 +251,8 @@ class Appointment < ApplicationRecord
       cancelled
     when "unschedule"
       unscheduled
+    when "on_hold"
+      on_hold
     when "upcoming"
       # Default scope for active appointments
       future.status_paid
@@ -255,6 +266,7 @@ class Appointment < ApplicationRecord
   scope :pending_payment, -> { where(status: ["PENDING PAYMENT"]).today_and_future }
   scope :cancelled, -> { where(status: "CANCELLED").where(appointment_reference_id: nil) }
   scope :unscheduled, -> { where(status: "UNSCHEDULED") }
+  scope :on_hold, -> { where(status: "ON HOLD") }
   scope :past, -> { where("appointment_date_time < ?", Time.current.in_time_zone(Time.zone.name)).status_paid }
   scope :future, -> { where("appointment_date_time >= ?", Time.current.in_time_zone(Time.zone.name)) }
   scope :today_and_future, -> { where("appointment_date_time >= ?", Time.zone.now.beginning_of_day) }
@@ -446,6 +458,16 @@ class Appointment < ApplicationRecord
     end
   end
 
+  def cascade_hold(updater: nil, reason: nil)
+    series_appointments.where.not(status: [:on_hold, :paid]).find_each do |appt|
+      appt.update(
+        status: :on_hold,
+        status_reason: reason,
+        updater: updater
+      )
+    end
+  end
+
   # Custom status transition methods
   def assign_therapist!
     base_message = "Cannot change to needs patient approval"
@@ -526,7 +548,27 @@ class Appointment < ApplicationRecord
     end
   end
 
+  def hold!
+    transaction do
+      if initial_visit?
+        cascade_hold(updater:, reason: status_reason)
+        true
+      elsif update(status: :on_hold, status_reason:, updater:)
+        reference_appointment&.cascade_hold(updater:, reason: status_reason)
+        true
+      else
+        errors.add(:base, "Failed to hold appointment: #{errors.full_messages.join(", ")}")
+        false
+      end
+    end
+  end
+
   private
+
+  def clear_details_if_on_hold
+    self.appointment_date_time = nil
+    self.therapist_id = nil
+  end
 
   # ! To bypass the validation if updater is SUPER_ADMIN
   def updater_is_super_admin?
@@ -766,11 +808,12 @@ class Appointment < ApplicationRecord
     new_status = status
 
     allowed_transitions = {
-      "unscheduled" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "cancelled"],
-      "pending_therapist_assignment" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "cancelled"],
-      "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "cancelled", "paid"],
+      "unscheduled" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
+      "pending_therapist_assignment" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
+      "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "on_hold", "cancelled", "paid"],
       "pending_payment" => ["pending_payment", "paid", "cancelled"],
-      "paid" => ["paid", "cancelled"],
+      "paid" => ["paid", "on_hold", "cancelled"],
+      "on_hold" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval"],
       "cancelled" => []  # Once cancelled, no more transitions
     }
 

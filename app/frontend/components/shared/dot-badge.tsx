@@ -20,6 +20,7 @@ const dotBadgeVariants = cva(
 				success:
 					"bg-emerald-500 text-emerald-700 border-emerald-500 hover:bg-emerald-500/80 hover:text-emerald-700/80",
 				outline: "text-foreground border-foreground hover:text-foreground/80",
+				blue: "bg-blue-500 text-blue-700 border-blue-500 hover:bg-blue-500/80 hover:text-blue-700/80",
 			},
 			size: {
 				default: "text-sm",

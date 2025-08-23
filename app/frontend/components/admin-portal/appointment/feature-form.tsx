@@ -286,9 +286,8 @@ export function UpdateStatusForm({
 		}),
 		[isLoading, forceMode, t],
 	);
-	console.log(selectedAppointment);
 	const appointmentStatuses = useMemo(() => {
-		const statusList =
+		let statusList =
 			globalProps.optionsData?.statuses.filter(
 				(status) =>
 					status.key !== "unscheduled" &&
@@ -296,8 +295,11 @@ export function UpdateStatusForm({
 					status.key !== "pending_therapist_assignment",
 			) || [];
 
+		// remove pending payment status if the appointment is paid
 		if (selectedAppointment?.isPaid) {
-			return statusList.filter((status) => status.key !== "pending_payment");
+			statusList = statusList.filter(
+				(status) => status.key !== "pending_payment",
+			);
 		}
 
 		return statusList;

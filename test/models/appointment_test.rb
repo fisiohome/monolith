@@ -860,7 +860,6 @@ class AppointmentTest < ActiveSupport::TestCase
 
   test "blocks invalid status transitions for non-superadmin users, about valid_status_transition edge case" do
     appt = Appointment.create!(
-      therapist: @therapist,
       patient: @patient,
       service: @service,
       package: @package,
@@ -873,7 +872,7 @@ class AppointmentTest < ActiveSupport::TestCase
     appt.status = "paid"
     appt.valid?  # should trigger validation
 
-    assert_includes appt.errors[:status], "invalid transition from Awaiting Approval to Confirmed"
+    assert_includes appt.errors[:status], "invalid transition from Awaiting Therapist to Confirmed"
   end
 
   test "valid_for_scheduling? returns true only when time and therapist present, about valid_for_scheduling?" do
@@ -1005,5 +1004,220 @@ class AppointmentTest < ActiveSupport::TestCase
     # Third visit: prev is second, no next
     assert_equal t1, third.min_datetime
     assert_nil third.max_datetime
+  end
+
+  test "hold! puts a series appointment on hold and cascades to other appointments in series" do
+    # Create a package with multiple visits
+    triple_pkg = Package.create!(
+      service: @service,
+      name: "3-Visit Bundle",
+      number_of_visit: 3,
+      currency: "IDR",
+      price_per_visit: 100_000,
+      total_price: 300_000,
+      fee_per_visit: 70_000,
+      total_fee: 210_000,
+      active: true
+    )
+
+    # Create an initial appointment with auto-created series
+    initial = Appointment.create!(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: triple_pkg,
+      location: @location,
+      appointment_date_time: @future_time,
+      preferred_therapist_gender: "NO PREFERENCE",
+      patient_medical_record_attributes: @patient_medical_record,
+      updater: @user,
+      skip_auto_series_creation: false
+    )
+
+    # Ensure series appointments were created
+    series_appointments = initial.series_appointments
+    assert_equal 2, series_appointments.count
+
+    # Schedule the second appointment
+    second_appt = series_appointments.find_by(visit_number: 2)
+    second_appt.update!(
+      appointment_date_time: @future_time + 1.week,
+      therapist: @therapist,
+      status: :pending_patient_approval
+    )
+
+    # Put the second appointment on hold
+    assert second_appt.hold!
+
+    # Verify the second appointment is on hold and details are cleared
+    second_appt.reload
+    assert_equal "on_hold", second_appt.status
+    assert_nil second_appt.appointment_date_time
+    assert_nil second_appt.therapist_id
+
+    # Verify the third appointment is also on hold
+    third_appt = series_appointments.find_by(visit_number: 3)
+    third_appt.reload
+    assert_equal "on_hold", third_appt.status
+
+    # Verify the initial appointment is NOT on hold (remains in its original status)
+    initial.reload
+    assert_not_equal "on_hold", initial.status
+  end
+
+  test "cascade_hold only affects series visits with visit_number > 1 and not paid status" do
+    # Create a package with 3 visits
+    triple_pkg = Package.create!(
+      service: @service,
+      name: "3-Visit Bundle",
+      currency: "IDR",
+      number_of_visit: 3,
+      price_per_visit: 100_000,
+      total_price: 300_000,
+      fee_per_visit: 70_000,
+      total_fee: 210_000,
+      active: true
+    )
+
+    # Create initial visit
+    first_visit = Appointment.create!(
+      patient: @patient,
+      service: @service,
+      package: triple_pkg,
+      location: @location,
+      appointment_date_time: @future_time,
+      therapist: @therapist,
+      preferred_therapist_gender: "NO PREFERENCE",
+      patient_medical_record_attributes: @patient_medical_record,
+      updater: @user,
+      skip_auto_series_creation: false
+    )
+    first_visit.update!(status: :paid)
+
+    # Get series visits
+    second_visit = first_visit.series_appointments.find_by(visit_number: 2)
+    third_visit = first_visit.series_appointments.find_by(visit_number: 3)
+
+    # Set up the second visit as paid
+    second_visit.update!(
+      status: :pending_patient_approval,
+      therapist: @therapist,
+      appointment_date_time: @future_time + 2.days,
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    second_visit.update!(status: :paid)
+
+    # Set up the third visit as pending
+    third_visit.update!(
+      status: :pending_patient_approval,
+      therapist: @therapist,
+      appointment_date_time: @future_time + 4.days,
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+
+    # Put hold from first visit which should change on hold to all non-paid series visits
+    first_visit.hold!
+
+    # Reload all appointments to get updated statuses
+    first_visit.reload
+    second_visit.reload
+    third_visit.reload
+
+    # First visit should remain on hold
+    assert_equal "paid", first_visit.status, "First visit should remain on hold"
+
+    # Second visit should remain paid (not affected by cascade)
+    assert_equal "paid", second_visit.status, "Second visit should remain paid"
+
+    # Third visit should be changed to on hold
+    assert_equal "on_hold", third_visit.status, "Third visit should be changed to on hold"
+  end
+
+  test "on_hold appointments have their appointment_date_time and therapist_id cleared" do
+    # Create a package with multiple visits
+    triple_pkg = Package.create!(
+      service: @service,
+      name: "3-Visit Bundle",
+      number_of_visit: 3,
+      currency: "IDR",
+      price_per_visit: 100_000,
+      total_price: 300_000,
+      fee_per_visit: 70_000,
+      total_fee: 210_000,
+      active: true
+    )
+
+    # Create an initial appointment with auto-created series
+    initial = Appointment.create!(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: triple_pkg,
+      location: @location,
+      appointment_date_time: @future_time,
+      preferred_therapist_gender: "NO PREFERENCE",
+      patient_medical_record_attributes: @patient_medical_record,
+      updater: @user,
+      skip_auto_series_creation: false
+    )
+
+    # Schedule the second appointment
+    second_appt = initial.series_appointments.find_by(visit_number: 2)
+    second_appt.update!(
+      appointment_date_time: @future_time + 1.week,
+      therapist: @therapist,
+      status: :pending_patient_approval
+    )
+
+    # Verify it has appointment_date_time and therapist_id
+    assert_not_nil second_appt.appointment_date_time
+    assert_not_nil second_appt.therapist_id
+
+    # Update status to on_hold directly
+    second_appt.update(status: :on_hold)
+
+    # Verify appointment_date_time and therapist_id are cleared
+    second_appt.reload
+    assert_nil second_appt.appointment_date_time
+    assert_nil second_appt.therapist_id
+  end
+
+  test "unscheduled appointments can be put on hold" do
+    # Create a package with multiple visits
+    triple_pkg = Package.create!(
+      service: @service,
+      name: "3-Visit Bundle",
+      number_of_visit: 3,
+      currency: "IDR",
+      price_per_visit: 100_000,
+      total_price: 300_000,
+      fee_per_visit: 70_000,
+      total_fee: 210_000,
+      active: true
+    )
+
+    # Create an initial appointment with auto-created series
+    initial = Appointment.create!(
+      patient: @patient,
+      service: @service,
+      package: triple_pkg,
+      location: @location,
+      appointment_date_time: @future_time,
+      preferred_therapist_gender: "NO PREFERENCE",
+      patient_medical_record_attributes: @patient_medical_record,
+      updater: @user,
+      skip_auto_series_creation: false
+    )
+
+    # Get the third appointment (which should be unscheduled)
+    third_appt = initial.series_appointments.find_by(visit_number: 3)
+    assert_equal "unscheduled", third_appt.status
+
+    # Put it on hold
+    assert third_appt.hold!
+
+    # Verify it's now on hold
+    third_appt.reload
+    assert_equal "on_hold", third_appt.status
   end
 end

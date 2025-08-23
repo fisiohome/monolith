@@ -14,7 +14,8 @@
 		"pending_payment": "PENDING PAYMENT",
 		"cancelled": "CANCELLED",
 		"paid": "PAID",
-		"unscheduled": "UNSCHEDULED"
+		"unscheduled": "UNSCHEDULED",
+		"on_hold": "ON HOLD"
 	},
 	"button": {
 		"create": "Create Appointment",

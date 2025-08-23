@@ -14,7 +14,8 @@
 		"pending_payment": "PEMBAYARAN TERTUNDA",
 		"cancelled": "DIBATALKAN",
 		"paid": "TERBAYAR",
-		"unscheduled": "TIDAK TERJADWAL"
+		"unscheduled": "TIDAK TERJADWAL",
+		"on_hold": "DITANGGUHKAN"
 	},
 	"button": {
 		"create": "Buat Janji Temu",

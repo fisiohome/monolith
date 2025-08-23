@@ -47,6 +47,7 @@ import { getBrandBadgeVariant } from "@/lib/services";
 import { cn } from "@/lib/utils";
 import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
 import type { Appointment } from "@/types/admin-portal/appointment";
+import { getPermission } from "./details/action-buttons";
 
 const ExpanderHeader = memo(({ table }: { table: Table<Appointment> }) => (
 	<Button
@@ -98,23 +99,25 @@ const RegistrationNumberCell = memo(({ row }: { row: Row<Appointment> }) => (
 
 const AppointmentDateTimeCell = memo(({ row }: { row: Row<Appointment> }) => {
 	const { locale, tzDate } = useDateContext();
+	const apptDate = row.original.appointmentDateTime;
 	const date = useMemo(
 		() =>
-			format(new Date(row.original.appointmentDateTime), "PPPP", {
+			format(new Date(apptDate), "PPPP", {
 				locale,
 				...(tzDate && { timeZone: tzDate }),
 			}),
-		[row.original.appointmentDateTime, locale, tzDate],
+		[apptDate, locale, tzDate],
 	);
 	const time = useMemo(
 		() =>
-			format(new Date(row.original.appointmentDateTime), "p", {
+			format(new Date(apptDate), "p", {
 				locale,
 				...(tzDate && { timeZone: tzDate }),
 			}),
-		[row.original.appointmentDateTime, locale, tzDate],
+		[apptDate, locale, tzDate],
 	);
 
+	if (!apptDate) return "N/A";
 	return (
 		<div>
 			<p title={date} className="font-semibold line-clamp-1">
@@ -306,11 +309,8 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 	);
 
 	const isShow = useMemo(() => {
-		const updateStatus =
-			appointment.status !== "paid" &&
-			appointment.status !== "unscheduled" &&
-			appointment.status !== "pending_therapist_assignment";
-		const cancel = appointment.initialVisit;
+		const updateStatus = getPermission.updateStatus(appointment);
+		const cancel = getPermission.cancel(appointment);
 
 		return { updateStatus, cancel };
 	}, [appointment]);

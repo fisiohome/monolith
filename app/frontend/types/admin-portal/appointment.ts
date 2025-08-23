@@ -17,6 +17,7 @@ export enum AppointmentStatuses {
 	pending_patient_approval = "PENDING PATIENT APPROVAL",
 	pending_payment = "PENDING PAYMENT",
 	cancelled = "CANCELLED",
+	on_hold = "ON HOLD",
 	paid = "PAID",
 }
 

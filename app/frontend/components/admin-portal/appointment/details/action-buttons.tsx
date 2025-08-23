@@ -6,7 +6,23 @@ import { Button } from "@/components/ui/button";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
 import type { ScheduleListProps } from "../appointment-list";
+import type { Appointment } from "@/types/admin-portal/appointment";
 
+// * helper function
+export const getPermission = {
+	updateStatus: (appt: Appointment) =>
+		appt.status !== "paid" &&
+		appt.status !== "unscheduled" &&
+		appt.status !== "pending_therapist_assignment" &&
+		appt.status !== "on_hold",
+	cancel: (appt: Appointment) => appt.initialVisit,
+	createSeries: (appt: Appointment) =>
+		appt.totalPackageVisits > 1 &&
+		appt.visitNumber !== appt.totalPackageVisits &&
+		appt.nextVisitProgress,
+};
+
+// * core component
 interface AppointmentActionButtonsProps extends ComponentProps<"div"> {
 	schedule: ScheduleListProps["schedule"];
 	isExpanded: boolean;
@@ -34,17 +50,11 @@ const AppointmentActionButtons = memo(function Component({
 	// 	return isBefore(schedule.appointmentDateTime, startOfToday());
 	// }, [schedule.appointmentDateTime]);
 	const isShow = useMemo(() => {
-		const updateStatus =
-			schedule.status !== "paid" &&
-			schedule.status !== "unscheduled" &&
-			schedule.status !== "pending_therapist_assignment";
-		const cancel = schedule.initialVisit;
-		// const createSeries =
-		// 	schedule.totalPackageVisits > 1 &&
-		// 	schedule.visitNumber !== schedule.totalPackageVisits &&
-		// 	schedule.nextVisitProgress;
+		const updateStatus = getPermission.updateStatus(schedule);
+		const cancel = getPermission.cancel(schedule);
+		const createSeries = getPermission.createSeries(schedule);
 
-		return { updateStatus, cancel };
+		return { updateStatus, cancel, createSeries };
 	}, [schedule]);
 	const routeTo = {
 		cancel: (id: string) => {

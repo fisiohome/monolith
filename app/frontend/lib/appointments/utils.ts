@@ -13,6 +13,8 @@ const BADGE_STYLES: Record<Appointment["status"], string> = {
 	unscheduled:
 		"text-gray-800 bg-gray-100 border-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-500",
 	paid: "text-emerald-800 bg-emerald-100 border-emerald-400 dark:bg-emerald-900 dark:text-emerald-100 dark:border-emerald-500",
+	on_hold:
+		"text-blue-800 bg-blue-100 border-blue-400 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-500",
 };
 export const getBadgeVariantStatus = (status: Appointment["status"]) =>
 	BADGE_STYLES[status] ?? "";
@@ -24,6 +26,7 @@ const DOT_STYLES: Record<Appointment["status"], VariantDotBadge["variant"]> = {
 	unscheduled: "outline",
 	cancelled: "destructive",
 	paid: "success",
+	on_hold: "blue",
 };
 export const getDotVariantStatus = (
 	status: Appointment["status"],

@@ -5,6 +5,7 @@ module AdminPortal
       "pending_patient_approval" => :assign_therapist!,
       "pending_payment" => :patient_approve!,
       "paid" => :mark_paid!,
+      "on_hold" => :hold!,
       "cancelled" => :cancel!
     }.freeze
 

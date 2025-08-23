@@ -5,7 +5,7 @@ module AdminPortal
       @original_status = appointment.status
       @appointment_params = params
         .require(:appointment)
-        .permit(:therapist_id, :appointment_date_time, :preferred_therapist_gender, :reason)
+        .permit(:therapist_id, :appointment_date_time, :preferred_therapist_gender, :reason, :is_all_of_day)
       @current_user = user
       @updated = false
     end
@@ -45,14 +45,7 @@ module AdminPortal
       attrs[:status_reason] = reason if reason.present?
 
       # status should stay as-is once the appointment is paid
-      unless @original_status == "paid"
-        attrs[:status] =
-          case
-          when therapist_param.present? then :pending_patient_approval
-          when date_time_param.present? then :pending_therapist_assignment
-          else :unscheduled
-          end
-      end
+      attrs[:status] = determine_new_status unless @original_status == "paid"
 
       # Assign everything (but don’t touch the DB yet)
       @appointment.assign_attributes(attrs)
@@ -64,8 +57,28 @@ module AdminPortal
         # Who made the change
         @appointment.assign_attributes(updater: @current_user)
 
-        @appointment.save!
-        @updated = true
+        # Ensure we actually have something to update
+        if @appointment.valid?(:update)
+          @appointment.save!
+          @updated = true
+        else
+          raise ActiveRecord::RecordInvalid.new(@appointment)
+        end
+      end
+    end
+
+    # Determines the new status of the appointment based on the presence of a therapist and date/time.
+    # This logic is applied when the original status is not "paid".
+    def determine_new_status
+      # If a therapist is assigned, the appointment is pending patient approval.
+      if @appointment_params[:therapist_id].present?
+        :pending_patient_approval
+      # If a date/time is set but no therapist is assigned, it's pending therapist assignment.
+      elsif @appointment_params[:appointment_date_time].present?
+        :pending_therapist_assignment
+      # Otherwise, the appointment is unscheduled.
+      else
+        :unscheduled
       end
     end
   end
