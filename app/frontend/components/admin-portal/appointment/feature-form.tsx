@@ -287,23 +287,41 @@ export function UpdateStatusForm({
 		[isLoading, forceMode, t],
 	);
 	const appointmentStatuses = useMemo(() => {
-		let statusList =
-			globalProps.optionsData?.statuses.filter(
-				(status) =>
-					status.key !== "unscheduled" &&
-					status.key !== "cancelled" &&
-					status.key !== "pending_therapist_assignment",
-			) || [];
+		const { optionsData } = globalProps;
+		const { status: appointmentStatus, isPaid } = selectedAppointment || {};
 
-		// remove pending payment status if the appointment is paid
-		if (selectedAppointment?.isPaid) {
-			statusList = statusList.filter(
-				(status) => status.key !== "pending_payment",
-			);
-		}
+		if (!optionsData?.statuses) return [];
 
-		return statusList;
-	}, [globalProps.optionsData?.statuses, selectedAppointment?.isPaid]);
+		const excludedStatuses = new Set([
+			"unscheduled",
+			"cancelled",
+			...(appointmentStatus === "pending_therapist_assignment"
+				? ["pending_patient_approval", "pending_payment", "paid", "completed"]
+				: []),
+			...(appointmentStatus === "pending_patient_approval"
+				? ["pending_therapist_assignment", "completed"]
+				: []),
+			...(isPaid && appointmentStatus === "pending_patient_approval"
+				? ["pending_payment"]
+				: []),
+			...(!isPaid && appointmentStatus === "pending_patient_approval"
+				? ["paid"]
+				: []),
+			...(isPaid &&
+			appointmentStatus !== "pending_therapist_assignment" &&
+			appointmentStatus !== "pending_patient_approval"
+				? [
+						"pending_therapist_assignment",
+						"pending_patient_approval",
+						"pending_payment",
+					]
+				: []),
+		]);
+
+		return optionsData.statuses.filter(
+			(status) => !excludedStatuses.has(status.key),
+		);
+	}, [globalProps.optionsData?.statuses, selectedAppointment, globalProps]);
 	const formSchema = z.object({
 		id: z.string(),
 		status: z.enum(
@@ -398,6 +416,7 @@ export function UpdateStatusForm({
 															<CommandItem
 																value={status.value}
 																key={status.key}
+																disabled={status.key === field.value}
 																onSelect={() => {
 																	form.setValue("status", status.key);
 																}}

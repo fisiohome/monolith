@@ -5,21 +5,22 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
-import type { ScheduleListProps } from "../appointment-list";
 import type { Appointment } from "@/types/admin-portal/appointment";
+import type { ScheduleListProps } from "../appointment-list";
 
 // * helper function
 export const getPermission = {
 	updateStatus: (appt: Appointment) =>
-		appt.status !== "paid" &&
+		appt.status !== "completed" &&
 		appt.status !== "unscheduled" &&
-		appt.status !== "pending_therapist_assignment" &&
 		appt.status !== "on_hold",
-	cancel: (appt: Appointment) => appt.initialVisit,
+	cancel: (appt: Appointment) =>
+		appt.initialVisit && appt.status !== "completed",
 	createSeries: (appt: Appointment) =>
 		appt.totalPackageVisits > 1 &&
 		appt.visitNumber !== appt.totalPackageVisits &&
 		appt.nextVisitProgress,
+	reschedule: (appt: Appointment) => appt.status !== "completed",
 };
 
 // * core component
@@ -53,8 +54,9 @@ const AppointmentActionButtons = memo(function Component({
 		const updateStatus = getPermission.updateStatus(schedule);
 		const cancel = getPermission.cancel(schedule);
 		const createSeries = getPermission.createSeries(schedule);
+		const reschedule = getPermission.reschedule(schedule);
 
-		return { updateStatus, cancel, createSeries };
+		return { updateStatus, cancel, createSeries, reschedule };
 	}, [schedule]);
 	const routeTo = {
 		cancel: (id: string) => {
@@ -156,20 +158,22 @@ const AppointmentActionButtons = memo(function Component({
                 </Button>
               )} */}
 
-						<Button
-							variant="primary-outline"
-							className="w-full lg:w-auto"
-							size={buttonSize}
-							onClick={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
+						{isShow.reschedule && (
+							<Button
+								variant="primary-outline"
+								className="w-full lg:w-auto"
+								size={buttonSize}
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
 
-								routeTo.reschedule(String(schedule.id));
-							}}
-						>
-							<Clock3 />
-							{t("button.reschedule")}
-						</Button>
+									routeTo.reschedule(String(schedule.id));
+								}}
+							>
+								<Clock3 />
+								{t("button.reschedule")}
+							</Button>
+						)}
 
 						{isShow.updateStatus && (
 							<Button
@@ -189,7 +193,7 @@ const AppointmentActionButtons = memo(function Component({
 						)}
 
 						<Button
-							variant="primary-outline"
+							variant="accent-outline"
 							className="w-full lg:w-auto"
 							size={buttonSize}
 							onClick={(event) => {

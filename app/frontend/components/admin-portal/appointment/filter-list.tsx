@@ -344,9 +344,19 @@ export default function FilterList({
 	const apptStatuses = useMemo(() => {
 		return [
 			{
-				label: t("tab.title.upcoming"),
-				value: "upcoming",
-				color: "success" as const,
+				label: t("tab.title.cancelled"),
+				value: "cancel",
+				color: "destructive" as const,
+			},
+			{
+				label: t("tab.title.unschedule"),
+				value: "unschedule",
+				color: "outline" as const,
+			},
+			{
+				label: t("tab.title.on_hold"),
+				value: "on_hold",
+				color: "outline" as const,
 			},
 			{
 				label: t("tab.title.pending_payment"),
@@ -364,19 +374,19 @@ export default function FilterList({
 				color: "warning" as const,
 			},
 			{
-				label: t("tab.title.unschedule"),
-				value: "unschedule",
-				color: "outline" as const,
-			},
-			{
 				label: t("tab.title.past"),
 				value: "past",
 				color: "success" as const,
 			},
 			{
-				label: t("tab.title.cancelled"),
-				value: "cancel",
-				color: "destructive" as const,
+				label: t("tab.title.upcoming"),
+				value: "upcoming",
+				color: "success" as const,
+			},
+			{
+				label: t("tab.title.completed"),
+				value: "completed",
+				color: "success" as const,
 			},
 		];
 	}, [t]);

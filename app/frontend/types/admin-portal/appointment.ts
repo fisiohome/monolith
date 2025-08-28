@@ -12,13 +12,14 @@ import type { Service } from "./service";
 import type { Therapist } from "./therapist";
 
 export enum AppointmentStatuses {
+	cancelled = "CANCELLED",
 	unscheduled = "UNSCHEDULED",
+	on_hold = "ON HOLD",
 	pending_therapist_assignment = "PENDING THERAPIST ASSIGNMENT",
 	pending_patient_approval = "PENDING PATIENT APPROVAL",
 	pending_payment = "PENDING PAYMENT",
-	cancelled = "CANCELLED",
-	on_hold = "ON HOLD",
 	paid = "PAID",
+	completed = "COMPLETED",
 }
 
 type ProfileTypeMap = {
@@ -100,6 +101,7 @@ export interface Appointment {
 	allVisits?: Appointment[];
 	statusHistories: StatusHistory[];
 	isPaid: boolean;
+	isCompleted: boolean;
 	createdAt: string;
 	updatedAt: string;
 }

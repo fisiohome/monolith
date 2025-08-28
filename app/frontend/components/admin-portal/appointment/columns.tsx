@@ -15,7 +15,7 @@ import {
 	Stethoscope,
 	User,
 } from "lucide-react";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useDateContext } from "@/components/providers/date-provider";
@@ -64,22 +64,29 @@ const ExpanderHeader = memo(({ table }: { table: Table<Appointment> }) => (
 	</Button>
 ));
 
-const ExpanderCell = memo(({ row }: { row: Row<Appointment> }) =>
-	row.getCanExpand() ? (
+const ExpanderCell = memo(({ row }: { row: Row<Appointment> }) => {
+	const [isExpanded, setIsExpanded] = useState(() => row.getIsExpanded());
+
+	const handleToggle = () => {
+		row.toggleExpanded();
+		setIsExpanded(!isExpanded);
+	};
+
+	return row.getCanExpand() ? (
 		<Button
 			variant="ghost"
 			size="icon"
 			className="rounded-full"
-			onClick={row.getToggleExpandedHandler()}
+			onClick={handleToggle}
 		>
-			{row.getIsExpanded() ? (
+			{isExpanded ? (
 				<ChevronUp className="size-4" />
 			) : (
 				<ChevronDown className="size-4" />
 			)}
 		</Button>
-	) : null,
-);
+	) : null;
+});
 
 const RegistrationNumberCell = memo(({ row }: { row: Row<Appointment> }) => (
 	<div className="flex flex-col items-center gap-2">
@@ -120,7 +127,7 @@ const AppointmentDateTimeCell = memo(({ row }: { row: Row<Appointment> }) => {
 	if (!apptDate) return "N/A";
 	return (
 		<div>
-			<p title={date} className="font-semibold line-clamp-1">
+			<p title={date} className="font-semibold text-nowrap">
 				{date}
 			</p>
 			<p className="line-clamp-1">{time}</p>
@@ -312,7 +319,9 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 		const updateStatus = getPermission.updateStatus(appointment);
 		const cancel = getPermission.cancel(appointment);
 
-		return { updateStatus, cancel };
+		const reschedule = getPermission.reschedule(appointment);
+
+		return { updateStatus, cancel, reschedule };
 	}, [appointment]);
 
 	const handleCopy = async () => {
@@ -421,12 +430,14 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 					<>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem
-								onSelect={() => routeTo.reschedule(String(appointment.id))}
-							>
-								<Clock3 className="opacity-60" aria-hidden="true" />
-								Reschedule
-							</DropdownMenuItem>
+							{isShow.reschedule && (
+								<DropdownMenuItem
+									onSelect={() => routeTo.reschedule(String(appointment.id))}
+								>
+									<Clock3 className="opacity-60" aria-hidden="true" />
+									Reschedule
+								</DropdownMenuItem>
+							)}
 
 							{isShow.updateStatus && (
 								<DropdownMenuItem

@@ -13,7 +13,7 @@
       <img src="./assets/0.13.1/loading.gif" alt="loading"/>
     </div>
     <div id="wrapper" class="hide">
-      <div class="timestamp">Generated <abbr class="timeago" title="2025-08-23T22:51:25+00:00">2025-08-23T22:51:25+00:00</abbr></div>
+      <div class="timestamp">Generated <abbr class="timeago" title="2025-08-28T09:27:32+00:00">2025-08-28T09:27:32+00:00</abbr></div>
       <ul class="group_tabs"></ul>
 
       <div id="content">
@@ -22,7 +22,7 @@
     <span class="group_name">All Files</span>
     (<span class="covered_percent">
       <span class="red">
-  24.37%
+  24.28%
 </span>
 
      </span>
@@ -42,11 +42,11 @@
   </div>
 
   <div class="t-line-summary">
-    <b>1104</b> relevant lines,
+    <b>1108</b> relevant lines,
     <span class="green"><b>269</b> lines covered</span> and
-    <span class="red"><b>835</b> lines missed. </span>
+    <span class="red"><b>839</b> lines missed. </span>
     (<span class="red">
-  24.37%
+  24.28%
 </span>
 )
   </div>
@@ -192,11 +192,11 @@
         
           <tr class="t-file">
             <td class="strong t-file__name"><a href="#49fc1eeb8db3174f508b8df680151633cc67c764" class="src_link" title="test/models/appointment_test.rb">test/models/appointment_test.rb</a></td>
-            <td class="red strong cell--number t-file__coverage">13.49 %</td>
-            <td class="cell--number">1223</td>
-            <td class="cell--number">341</td>
+            <td class="red strong cell--number t-file__coverage">13.33 %</td>
+            <td class="cell--number">1227</td>
+            <td class="cell--number">345</td>
             <td class="cell--number">46</td>
-            <td class="cell--number">295</td>
+            <td class="cell--number">299</td>
             <td class="cell--number">0.13</td>
             
           </tr>
@@ -3488,7 +3488,7 @@
     <h3>test/models/appointment_test.rb</h3>
     <h4>
       <span class="red">
-  13.49%
+  13.33%
 </span>
 
       lines covered
@@ -3497,9 +3497,9 @@
     
 
     <div class="t-line-summary">
-      <b>341</b> relevant lines.
+      <b>345</b> relevant lines.
       <span class="green"><b>46</b> lines covered</span> and
-      <span class="red"><b>295</b> lines missed.</span>
+      <span class="red"><b>299</b> lines missed.</span>
     </div>
 
     
@@ -14543,12 +14543,32 @@
 
             
 
+            <code class="ruby">    first_visit.update!(status: :pending_payment)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1096">
+            
+
+            
+
             <code class="ruby">    first_visit.update!(status: :paid)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1096">
+          <li class="missed" data-hits="0" data-linenumber="1097">
+            
+
+            
+
+            <code class="ruby">    first_visit.update!(status: :completed)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1098">
             
 
             
@@ -14558,7 +14578,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1097">
+          <li class="never" data-hits="" data-linenumber="1099">
             
 
             
@@ -14568,7 +14588,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1098">
+          <li class="missed" data-hits="0" data-linenumber="1100">
             
 
             
@@ -14578,7 +14598,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1099">
+          <li class="missed" data-hits="0" data-linenumber="1101">
             
 
             
@@ -14588,32 +14608,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1100">
+          <li class="never" data-hits="" data-linenumber="1102">
             
 
             
 
             <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1101">
-            
-
-            
-
-            <code class="ruby">    # Set up the second visit as paid</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="1102">
-            
-
-            
-
-            <code class="ruby">    second_visit.update!(</code>
           </li>
         </div>
       
@@ -14623,17 +14623,17 @@
 
             
 
-            <code class="ruby">      status: :pending_patient_approval,</code>
+            <code class="ruby">    # Set up the second visit as completed</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1104">
+          <li class="missed" data-hits="0" data-linenumber="1104">
             
 
             
 
-            <code class="ruby">      therapist: @therapist,</code>
+            <code class="ruby">    second_visit.update!(</code>
           </li>
         </div>
       
@@ -14643,7 +14643,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time + 2.days,</code>
+            <code class="ruby">      status: :pending_patient_approval,</code>
           </li>
         </div>
       
@@ -14653,7 +14653,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
@@ -14663,82 +14663,12 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      appointment_date_time: @future_time + 2.days,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1108">
-            
-
-            
-
-            <code class="ruby">    second_visit.update!(status: :paid)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1109">
-            
-
-            
-
-            <code class="ruby"></code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1110">
-            
-
-            
-
-            <code class="ruby">    # Set up the third visit as pending</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="1111">
-            
-
-            
-
-            <code class="ruby">    third_visit.update!(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1112">
-            
-
-            
-
-            <code class="ruby">      status: :pending_patient_approval,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1113">
-            
-
-            
-
-            <code class="ruby">      therapist: @therapist,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1114">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: @future_time + 4.days,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1115">
+          <li class="never" data-hits="" data-linenumber="1108">
             
 
             
@@ -14748,7 +14678,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1116">
+          <li class="never" data-hits="" data-linenumber="1109">
             
 
             
@@ -14758,12 +14688,82 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1117">
+          <li class="missed" data-hits="0" data-linenumber="1110">
+            
+
+            
+
+            <code class="ruby">    second_visit.update!(status: :pending_payment)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1111">
+            
+
+            
+
+            <code class="ruby">    second_visit.update!(status: :paid)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1112">
+            
+
+            
+
+            <code class="ruby">    second_visit.update!(status: :completed)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1113">
             
 
             
 
             <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1114">
+            
+
+            
+
+            <code class="ruby">    # Set up the third visit as pending</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1115">
+            
+
+            
+
+            <code class="ruby">    third_visit.update!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1116">
+            
+
+            
+
+            <code class="ruby">      status: :pending_patient_approval,</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1117">
+            
+
+            
+
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
@@ -14773,17 +14773,17 @@
 
             
 
-            <code class="ruby">    # Put hold from first visit which should change on hold to all non-paid series visits</code>
+            <code class="ruby">      appointment_date_time: @future_time + 4.days,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1119">
+          <li class="never" data-hits="" data-linenumber="1119">
             
 
             
 
-            <code class="ruby">    first_visit.hold!</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;</code>
           </li>
         </div>
       
@@ -14793,7 +14793,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -14803,17 +14803,17 @@
 
             
 
-            <code class="ruby">    # Reload all appointments to get updated statuses</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1122">
+          <li class="never" data-hits="" data-linenumber="1122">
             
 
             
 
-            <code class="ruby">    first_visit.reload</code>
+            <code class="ruby">    # Put hold from first visit which should change on hold to all non-paid series visits</code>
           </li>
         </div>
       
@@ -14823,17 +14823,17 @@
 
             
 
-            <code class="ruby">    second_visit.reload</code>
+            <code class="ruby">    first_visit.hold!</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1124">
+          <li class="never" data-hits="" data-linenumber="1124">
             
 
             
 
-            <code class="ruby">    third_visit.reload</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -14843,17 +14843,17 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    # Reload all appointments to get updated statuses</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1126">
+          <li class="missed" data-hits="0" data-linenumber="1126">
             
 
             
 
-            <code class="ruby">    # First visit should remain on hold</code>
+            <code class="ruby">    first_visit.reload</code>
           </li>
         </div>
       
@@ -14863,17 +14863,17 @@
 
             
 
-            <code class="ruby">    assert_equal &quot;paid&quot;, first_visit.status, &quot;First visit should remain on hold&quot;</code>
+            <code class="ruby">    second_visit.reload</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1128">
+          <li class="missed" data-hits="0" data-linenumber="1128">
             
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    third_visit.reload</code>
           </li>
         </div>
       
@@ -14883,27 +14883,27 @@
 
             
 
-            <code class="ruby">    # Second visit should remain paid (not affected by cascade)</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="missed" data-hits="0" data-linenumber="1130">
-            
-
-            
-
-            <code class="ruby">    assert_equal &quot;paid&quot;, second_visit.status, &quot;Second visit should remain paid&quot;</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1131">
-            
-
-            
-
             <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1130">
+            
+
+            
+
+            <code class="ruby">    # First visit should remain on hold</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1131">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;completed&quot;, first_visit.status, &quot;First visit should remain completed&quot;</code>
           </li>
         </div>
       
@@ -14913,27 +14913,27 @@
 
             
 
-            <code class="ruby">    # Third visit should be changed to on hold</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1133">
+          <li class="never" data-hits="" data-linenumber="1133">
             
 
             
 
-            <code class="ruby">    assert_equal &quot;on_hold&quot;, third_visit.status, &quot;Third visit should be changed to on hold&quot;</code>
+            <code class="ruby">    # Second visit should remain paid (not affected by cascade)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1134">
+          <li class="missed" data-hits="0" data-linenumber="1134">
             
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby">    assert_equal &quot;completed&quot;, second_visit.status, &quot;Second visit should remain completed&quot;</code>
           </li>
         </div>
       
@@ -14948,7 +14948,47 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="1136">
+          <li class="never" data-hits="" data-linenumber="1136">
+            
+
+            
+
+            <code class="ruby">    # Third visit should be changed to on hold</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1137">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;on_hold&quot;, third_visit.status, &quot;Third visit should be changed to on hold&quot;</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1138">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1139">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="1140">
             
               <span class="hits">1</span>
             
@@ -14960,7 +15000,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1137">
+          <li class="never" data-hits="" data-linenumber="1141">
             
 
             
@@ -14970,7 +15010,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1138">
+          <li class="missed" data-hits="0" data-linenumber="1142">
             
 
             
@@ -14980,52 +15020,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1139">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1140">
-            
-
-            
-
-            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1141">
-            
-
-            
-
-            <code class="ruby">      number_of_visit: 3,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1142">
-            
-
-            
-
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="1143">
             
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -15035,7 +15035,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
           </li>
         </div>
       
@@ -15045,7 +15045,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -15055,7 +15055,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -15065,7 +15065,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -15075,7 +15075,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
@@ -15085,7 +15085,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
@@ -15095,17 +15095,17 @@
 
             
 
-            <code class="ruby">    # Create an initial appointment with auto-created series</code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1151">
+          <li class="never" data-hits="" data-linenumber="1151">
             
 
             
 
-            <code class="ruby">    initial = Appointment.create!(</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
@@ -15115,7 +15115,7 @@
 
             
 
-            <code class="ruby">      therapist: @therapist,</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -15125,7 +15125,7 @@
 
             
 
-            <code class="ruby">      patient: @patient,</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -15135,17 +15135,17 @@
 
             
 
-            <code class="ruby">      service: @service,</code>
+            <code class="ruby">    # Create an initial appointment with auto-created series</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1155">
+          <li class="missed" data-hits="0" data-linenumber="1155">
             
 
             
 
-            <code class="ruby">      package: triple_pkg,</code>
+            <code class="ruby">    initial = Appointment.create!(</code>
           </li>
         </div>
       
@@ -15155,7 +15155,7 @@
 
             
 
-            <code class="ruby">      location: @location,</code>
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
@@ -15165,7 +15165,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time,</code>
+            <code class="ruby">      patient: @patient,</code>
           </li>
         </div>
       
@@ -15175,7 +15175,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -15185,7 +15185,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
+            <code class="ruby">      package: triple_pkg,</code>
           </li>
         </div>
       
@@ -15195,7 +15195,7 @@
 
             
 
-            <code class="ruby">      updater: @user,</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -15205,7 +15205,7 @@
 
             
 
-            <code class="ruby">      skip_auto_series_creation: false</code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -15215,7 +15215,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
           </li>
         </div>
       
@@ -15225,7 +15225,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
           </li>
         </div>
       
@@ -15235,62 +15235,22 @@
 
             
 
-            <code class="ruby">    # Schedule the second appointment</code>
+            <code class="ruby">      updater: @user,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1165">
+          <li class="never" data-hits="" data-linenumber="1165">
             
 
             
 
-            <code class="ruby">    second_appt = initial.series_appointments.find_by(visit_number: 2)</code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1166">
-            
-
-            
-
-            <code class="ruby">    second_appt.update!(</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1167">
-            
-
-            
-
-            <code class="ruby">      appointment_date_time: @future_time + 1.week,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1168">
-            
-
-            
-
-            <code class="ruby">      therapist: @therapist,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1169">
-            
-
-            
-
-            <code class="ruby">      status: :pending_patient_approval</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1170">
+          <li class="never" data-hits="" data-linenumber="1166">
             
 
             
@@ -15300,7 +15260,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1171">
+          <li class="never" data-hits="" data-linenumber="1167">
             
 
             
@@ -15310,32 +15270,72 @@
         </div>
       
         <div>
+          <li class="never" data-hits="" data-linenumber="1168">
+            
+
+            
+
+            <code class="ruby">    # Schedule the second appointment</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1169">
+            
+
+            
+
+            <code class="ruby">    second_appt = initial.series_appointments.find_by(visit_number: 2)</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1170">
+            
+
+            
+
+            <code class="ruby">    second_appt.update!(</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1171">
+            
+
+            
+
+            <code class="ruby">      appointment_date_time: @future_time + 1.week,</code>
+          </li>
+        </div>
+      
+        <div>
           <li class="never" data-hits="" data-linenumber="1172">
             
 
             
 
-            <code class="ruby">    # Verify it has appointment_date_time and therapist_id</code>
+            <code class="ruby">      therapist: @therapist,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1173">
+          <li class="never" data-hits="" data-linenumber="1173">
             
 
             
 
-            <code class="ruby">    assert_not_nil second_appt.appointment_date_time</code>
+            <code class="ruby">      status: :pending_patient_approval</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1174">
+          <li class="never" data-hits="" data-linenumber="1174">
             
 
             
 
-            <code class="ruby">    assert_not_nil second_appt.therapist_id</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -15355,7 +15355,7 @@
 
             
 
-            <code class="ruby">    # Update status to on_hold directly</code>
+            <code class="ruby">    # Verify it has appointment_date_time and therapist_id</code>
           </li>
         </div>
       
@@ -15365,17 +15365,17 @@
 
             
 
-            <code class="ruby">    second_appt.update(status: :on_hold)</code>
+            <code class="ruby">    assert_not_nil second_appt.appointment_date_time</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1178">
+          <li class="missed" data-hits="0" data-linenumber="1178">
             
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    assert_not_nil second_appt.therapist_id</code>
           </li>
         </div>
       
@@ -15385,17 +15385,17 @@
 
             
 
-            <code class="ruby">    # Verify appointment_date_time and therapist_id are cleared</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1180">
+          <li class="never" data-hits="" data-linenumber="1180">
             
 
             
 
-            <code class="ruby">    second_appt.reload</code>
+            <code class="ruby">    # Update status to on_hold directly</code>
           </li>
         </div>
       
@@ -15405,32 +15405,12 @@
 
             
 
-            <code class="ruby">    assert_nil second_appt.appointment_date_time</code>
+            <code class="ruby">    second_appt.update(status: :on_hold)</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1182">
-            
-
-            
-
-            <code class="ruby">    assert_nil second_appt.therapist_id</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1183">
-            
-
-            
-
-            <code class="ruby">  end</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1184">
+          <li class="never" data-hits="" data-linenumber="1182">
             
 
             
@@ -15440,7 +15420,67 @@
         </div>
       
         <div>
-          <li class="covered" data-hits="1" data-linenumber="1185">
+          <li class="never" data-hits="" data-linenumber="1183">
+            
+
+            
+
+            <code class="ruby">    # Verify appointment_date_time and therapist_id are cleared</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1184">
+            
+
+            
+
+            <code class="ruby">    second_appt.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1185">
+            
+
+            
+
+            <code class="ruby">    assert_nil second_appt.appointment_date_time</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1186">
+            
+
+            
+
+            <code class="ruby">    assert_nil second_appt.therapist_id</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1187">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1188">
+            
+
+            
+
+            <code class="ruby"></code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="covered" data-hits="1" data-linenumber="1189">
             
               <span class="hits">1</span>
             
@@ -15452,7 +15492,7 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1186">
+          <li class="never" data-hits="" data-linenumber="1190">
             
 
             
@@ -15462,7 +15502,7 @@
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1187">
+          <li class="missed" data-hits="0" data-linenumber="1191">
             
 
             
@@ -15472,52 +15512,12 @@
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1188">
-            
-
-            
-
-            <code class="ruby">      service: @service,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1189">
-            
-
-            
-
-            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1190">
-            
-
-            
-
-            <code class="ruby">      number_of_visit: 3,</code>
-          </li>
-        </div>
-      
-        <div>
-          <li class="never" data-hits="" data-linenumber="1191">
-            
-
-            
-
-            <code class="ruby">      currency: &quot;IDR&quot;,</code>
-          </li>
-        </div>
-      
-        <div>
           <li class="never" data-hits="" data-linenumber="1192">
             
 
             
 
-            <code class="ruby">      price_per_visit: 100_000,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -15527,7 +15527,7 @@
 
             
 
-            <code class="ruby">      total_price: 300_000,</code>
+            <code class="ruby">      name: &quot;3-Visit Bundle&quot;,</code>
           </li>
         </div>
       
@@ -15537,7 +15537,7 @@
 
             
 
-            <code class="ruby">      fee_per_visit: 70_000,</code>
+            <code class="ruby">      number_of_visit: 3,</code>
           </li>
         </div>
       
@@ -15547,7 +15547,7 @@
 
             
 
-            <code class="ruby">      total_fee: 210_000,</code>
+            <code class="ruby">      currency: &quot;IDR&quot;,</code>
           </li>
         </div>
       
@@ -15557,7 +15557,7 @@
 
             
 
-            <code class="ruby">      active: true</code>
+            <code class="ruby">      price_per_visit: 100_000,</code>
           </li>
         </div>
       
@@ -15567,7 +15567,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      total_price: 300_000,</code>
           </li>
         </div>
       
@@ -15577,7 +15577,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      fee_per_visit: 70_000,</code>
           </li>
         </div>
       
@@ -15587,17 +15587,17 @@
 
             
 
-            <code class="ruby">    # Create an initial appointment with auto-created series</code>
+            <code class="ruby">      total_fee: 210_000,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1200">
+          <li class="never" data-hits="" data-linenumber="1200">
             
 
             
 
-            <code class="ruby">    initial = Appointment.create!(</code>
+            <code class="ruby">      active: true</code>
           </li>
         </div>
       
@@ -15607,7 +15607,7 @@
 
             
 
-            <code class="ruby">      patient: @patient,</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -15617,7 +15617,7 @@
 
             
 
-            <code class="ruby">      service: @service,</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
@@ -15627,17 +15627,17 @@
 
             
 
-            <code class="ruby">      package: triple_pkg,</code>
+            <code class="ruby">    # Create an initial appointment with auto-created series</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1204">
+          <li class="missed" data-hits="0" data-linenumber="1204">
             
 
             
 
-            <code class="ruby">      location: @location,</code>
+            <code class="ruby">    initial = Appointment.create!(</code>
           </li>
         </div>
       
@@ -15647,7 +15647,7 @@
 
             
 
-            <code class="ruby">      appointment_date_time: @future_time,</code>
+            <code class="ruby">      patient: @patient,</code>
           </li>
         </div>
       
@@ -15657,7 +15657,7 @@
 
             
 
-            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
+            <code class="ruby">      service: @service,</code>
           </li>
         </div>
       
@@ -15667,7 +15667,7 @@
 
             
 
-            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
+            <code class="ruby">      package: triple_pkg,</code>
           </li>
         </div>
       
@@ -15677,7 +15677,7 @@
 
             
 
-            <code class="ruby">      updater: @user,</code>
+            <code class="ruby">      location: @location,</code>
           </li>
         </div>
       
@@ -15687,7 +15687,7 @@
 
             
 
-            <code class="ruby">      skip_auto_series_creation: false</code>
+            <code class="ruby">      appointment_date_time: @future_time,</code>
           </li>
         </div>
       
@@ -15697,7 +15697,7 @@
 
             
 
-            <code class="ruby">    )</code>
+            <code class="ruby">      preferred_therapist_gender: &quot;NO PREFERENCE&quot;,</code>
           </li>
         </div>
       
@@ -15707,7 +15707,7 @@
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">      patient_medical_record_attributes: @patient_medical_record,</code>
           </li>
         </div>
       
@@ -15717,27 +15717,27 @@
 
             
 
-            <code class="ruby">    # Get the third appointment (which should be unscheduled)</code>
+            <code class="ruby">      updater: @user,</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1213">
+          <li class="never" data-hits="" data-linenumber="1213">
             
 
             
 
-            <code class="ruby">    third_appt = initial.series_appointments.find_by(visit_number: 3)</code>
+            <code class="ruby">      skip_auto_series_creation: false</code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1214">
+          <li class="never" data-hits="" data-linenumber="1214">
             
 
             
 
-            <code class="ruby">    assert_equal &quot;unscheduled&quot;, third_appt.status</code>
+            <code class="ruby">    )</code>
           </li>
         </div>
       
@@ -15757,7 +15757,7 @@
 
             
 
-            <code class="ruby">    # Put it on hold</code>
+            <code class="ruby">    # Get the third appointment (which should be unscheduled)</code>
           </li>
         </div>
       
@@ -15767,17 +15767,17 @@
 
             
 
-            <code class="ruby">    assert third_appt.hold!</code>
+            <code class="ruby">    third_appt = initial.series_appointments.find_by(visit_number: 3)</code>
           </li>
         </div>
       
         <div>
-          <li class="never" data-hits="" data-linenumber="1218">
+          <li class="missed" data-hits="0" data-linenumber="1218">
             
 
             
 
-            <code class="ruby"></code>
+            <code class="ruby">    assert_equal &quot;unscheduled&quot;, third_appt.status</code>
           </li>
         </div>
       
@@ -15787,17 +15787,17 @@
 
             
 
-            <code class="ruby">    # Verify it&#39;s now on hold</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
-          <li class="missed" data-hits="0" data-linenumber="1220">
+          <li class="never" data-hits="" data-linenumber="1220">
             
 
             
 
-            <code class="ruby">    third_appt.reload</code>
+            <code class="ruby">    # Put it on hold</code>
           </li>
         </div>
       
@@ -15807,7 +15807,7 @@
 
             
 
-            <code class="ruby">    assert_equal &quot;on_hold&quot;, third_appt.status</code>
+            <code class="ruby">    assert third_appt.hold!</code>
           </li>
         </div>
       
@@ -15817,12 +15817,52 @@
 
             
 
-            <code class="ruby">  end</code>
+            <code class="ruby"></code>
           </li>
         </div>
       
         <div>
           <li class="never" data-hits="" data-linenumber="1223">
+            
+
+            
+
+            <code class="ruby">    # Verify it&#39;s now on hold</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1224">
+            
+
+            
+
+            <code class="ruby">    third_appt.reload</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="missed" data-hits="0" data-linenumber="1225">
+            
+
+            
+
+            <code class="ruby">    assert_equal &quot;on_hold&quot;, third_appt.status</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1226">
+            
+
+            
+
+            <code class="ruby">  end</code>
+          </li>
+        </div>
+      
+        <div>
+          <li class="never" data-hits="" data-linenumber="1227">
             
 
             

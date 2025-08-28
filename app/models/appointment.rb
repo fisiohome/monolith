@@ -24,18 +24,27 @@ class Appointment < ApplicationRecord
   FISIOHOME_PARTNER_NAMES = ["Cosmart", "KlinikGo", "The Asian Parent", "Orami Circle", "Ibu2canggih", "Ibu Bayi Canggih", "Kompas myValue", "Blibli", "LoveCare", "Medlife", "Medikids", "Bumi Health", "Other"].freeze
 
   STATUS_ORDER = %w[
+    cancelled
     unscheduled
     on_hold
     pending_therapist_assignment
     pending_patient_approval
     pending_payment
     paid
-    cancelled
+    completed
   ].freeze
   STATUS_METADATA = {
+    "cancelled" => {
+      name: "Cancelled",
+      description: "Appointment has been cancelled"
+    },
     "unscheduled" => {
       name: "Unscheduled",
       description: "Appointment has not been scheduled yet"
+    },
+    "on_hold" => {
+      name: "On Hold",
+      description: "Appointment is on hold"
     },
     "pending_therapist_assignment" => {
       name: "Awaiting Therapist",
@@ -53,25 +62,22 @@ class Appointment < ApplicationRecord
       name: "Confirmed",
       description: "Appointment confirmed and paid"
     },
-    "on_hold" => {
-      name: "On Hold",
-      description: "Appointment is on hold"
-    },
-    "cancelled" => {
-      name: "Cancelled",
-      description: "Appointment has been cancelled"
+    "completed" => {
+      name: "Completed",
+      description: "Appointment has been completed"
     }
   }.freeze
 
   # * define enums
   enum :status, {
+    cancelled: "CANCELLED",
     unscheduled: "UNSCHEDULED",
+    on_hold: "ON HOLD",
     pending_therapist_assignment: "PENDING THERAPIST ASSIGNMENT",
     pending_patient_approval: "PENDING PATIENT APPROVAL",
     pending_payment: "PENDING PAYMENT",
-    cancelled: "CANCELLED",
     paid: "PAID",
-    on_hold: "ON HOLD"
+    completed: "COMPLETED"
   }, prefix: true
 
   # * define the associations
@@ -253,12 +259,14 @@ class Appointment < ApplicationRecord
       unscheduled
     when "on_hold"
       on_hold
+    when "completed"
+      completed
     when "upcoming"
       # Default scope for active appointments
       future.status_paid
     else
-      # Default: today and future, excluding unscheduled and cancelled
-      today_and_future.where.not(status: ["UNSCHEDULED", "CANCELLED"])
+      # Default: today and future, excluding unscheduled, cancelled, and on hold
+      today_and_future.where.not(status: ["UNSCHEDULED", "CANCELLED", "ON_HOLD"])
     end
   }
   scope :pending_therapist, -> { where(status: ["PENDING THERAPIST ASSIGNMENT"]).today_and_future }
@@ -267,7 +275,8 @@ class Appointment < ApplicationRecord
   scope :cancelled, -> { where(status: "CANCELLED").where(appointment_reference_id: nil) }
   scope :unscheduled, -> { where(status: "UNSCHEDULED") }
   scope :on_hold, -> { where(status: "ON HOLD") }
-  scope :past, -> { where("appointment_date_time < ?", Time.current.in_time_zone(Time.zone.name)).status_paid }
+  scope :completed, -> { where(status: "COMPLETED") }
+  scope :past, -> { where("appointment_date_time < ?", Time.current.in_time_zone(Time.zone.name)) }
   scope :future, -> { where("appointment_date_time >= ?", Time.current.in_time_zone(Time.zone.name)) }
   scope :today_and_future, -> { where("appointment_date_time >= ?", Time.zone.now.beginning_of_day) }
 
@@ -443,7 +452,11 @@ class Appointment < ApplicationRecord
 
   # Check if this appointment or its reference (first visit) is paid
   def paid?
-    status_paid? || reference_appointment&.status_paid?
+    status_paid? || reference_appointment&.status_paid? || reference_appointment&.status_completed?
+  end
+
+  def completed?
+    status_completed?
   end
 
   def cascade_cancellation(updater: nil, reason: nil)
@@ -459,7 +472,7 @@ class Appointment < ApplicationRecord
   end
 
   def cascade_hold(updater: nil, reason: nil)
-    series_appointments.where.not(status: [:on_hold, :paid]).find_each do |appt|
+    series_appointments.where.not(status: [:on_hold, :completed]).find_each do |appt|
       appt.update(
         status: :on_hold,
         status_reason: reason,
@@ -524,6 +537,17 @@ class Appointment < ApplicationRecord
         true
       else
         errors.add(:base, "Failed to mark paid appointment: #{errors.full_messages.join(", ")}")
+        false
+      end
+    end
+  end
+
+  def mark_completed!
+    transaction do
+      if update(status: :completed, status_reason:, updater:)
+        true
+      else
+        errors.add(:base, "Failed to mark completed appointment: #{errors.full_messages.join(", ")}")
         false
       end
     end
@@ -619,7 +643,7 @@ class Appointment < ApplicationRecord
     return if appointment_date_time.blank? || patient.blank? || status_cancelled?
 
     current_start = appointment_date_time
-    current_end = current_start + total_duration_minutes.minutes
+    current_end = current_start + (total_duration_minutes || 0).minutes
 
     Appointment.where(patient: patient)
       .where.not(id: id)
@@ -628,8 +652,12 @@ class Appointment < ApplicationRecord
       next unless existing.therapist&.therapist_appointment_schedule
 
       # Calculate existing appointment time range
-      existing_total_duration_minutes = existing.total_duration_minutes
+      existing_total_duration_minutes = existing.total_duration_minutes || 0
       existing_start = existing.appointment_date_time
+
+      # Skip if appointment_date_time is nil
+      next if existing_start.blank?
+
       existing_end = existing_start + existing_total_duration_minutes.minutes
 
       overlapping = current_start < existing_end && current_end > existing_start
@@ -808,13 +836,14 @@ class Appointment < ApplicationRecord
     new_status = status
 
     allowed_transitions = {
+      "cancelled" => [],  # Once cancelled, no more transitions
       "unscheduled" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
+      "on_hold" => ["unscheduled", "on_hold", "pending_therapist_assignment", "pending_patient_approval"],
       "pending_therapist_assignment" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
       "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "on_hold", "cancelled", "paid"],
       "pending_payment" => ["pending_payment", "paid", "cancelled"],
-      "paid" => ["paid", "on_hold", "cancelled"],
-      "on_hold" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval"],
-      "cancelled" => []  # Once cancelled, no more transitions
+      "paid" => ["on_hold", "paid", "completed", "cancelled"],
+      "completed" => []
     }
 
     previous_status_name = STATUS_METADATA[previous_status][:name]

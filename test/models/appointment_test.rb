@@ -1092,20 +1092,24 @@ class AppointmentTest < ActiveSupport::TestCase
       updater: @user,
       skip_auto_series_creation: false
     )
+    first_visit.update!(status: :pending_payment)
     first_visit.update!(status: :paid)
+    first_visit.update!(status: :completed)
 
     # Get series visits
     second_visit = first_visit.series_appointments.find_by(visit_number: 2)
     third_visit = first_visit.series_appointments.find_by(visit_number: 3)
 
-    # Set up the second visit as paid
+    # Set up the second visit as completed
     second_visit.update!(
       status: :pending_patient_approval,
       therapist: @therapist,
       appointment_date_time: @future_time + 2.days,
       preferred_therapist_gender: "NO PREFERENCE"
     )
+    second_visit.update!(status: :pending_payment)
     second_visit.update!(status: :paid)
+    second_visit.update!(status: :completed)
 
     # Set up the third visit as pending
     third_visit.update!(
@@ -1124,10 +1128,10 @@ class AppointmentTest < ActiveSupport::TestCase
     third_visit.reload
 
     # First visit should remain on hold
-    assert_equal "paid", first_visit.status, "First visit should remain on hold"
+    assert_equal "completed", first_visit.status, "First visit should remain completed"
 
     # Second visit should remain paid (not affected by cascade)
-    assert_equal "paid", second_visit.status, "Second visit should remain paid"
+    assert_equal "completed", second_visit.status, "Second visit should remain completed"
 
     # Third visit should be changed to on hold
     assert_equal "on_hold", third_visit.status, "Third visit should be changed to on hold"

@@ -15,7 +15,8 @@
 		"cancelled": "CANCELLED",
 		"paid": "PAID",
 		"unscheduled": "UNSCHEDULED",
-		"on_hold": "ON HOLD"
+		"on_hold": "ON HOLD",
+		"completed": "COMPLETED"
 	},
 	"button": {
 		"create": "Create Appointment",
@@ -23,6 +24,7 @@
 		"reschedule": "Reschedule",
 		"series": "Create Series",
 		"update_pic": "Update PIC(s)",
+		"on_hold": "Hold All Visit",
 		"update_status": "Update Status",
 		"detail": "Detail",
 		"filter": "Filter",
@@ -56,7 +58,9 @@
 			"pending_payment": "Pending Payment",
 			"past": "Past",
 			"cancelled": "Cancelled",
-			"unschedule": "Unschedule"
+			"unschedule": "Unschedule",
+			"on_hold": "On Hold",
+			"completed": "Completed"
 		},
 		"no_content": {
 			"upcoming": "There are no upcoming appointments scheduled.",
