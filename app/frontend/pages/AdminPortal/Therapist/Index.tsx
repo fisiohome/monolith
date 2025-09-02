@@ -148,314 +148,6 @@ export default function Index({
 
 		return adminsIndex;
 	}, [pageURL, therapists.data]);
-	const columns = useMemo<
-		ColumnDef<PageProps["therapists"]["data"][number]>[]
-	>(() => {
-		const items: ColumnDef<PageProps["therapists"]["data"][number]>[] = [
-			{
-				accessorKey: "profile",
-				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title="Profile" />
-				),
-				enableSorting: false,
-				enableHiding: false,
-				cell: ({ row }) => {
-					const name = row.original.name;
-					const initials = generateInitials(name);
-					const registrationNumber = row.original.registrationNumber;
-					const isOnline = row.original.user["isOnline?"];
-					const isCurrent =
-						row.original.user.email ===
-						globalProps.auth.currentUser?.user.email;
-					const isSuspended = row.original.user["suspended?"];
-
-					return (
-						<>
-							<div className="flex items-center gap-2 text-sm text-left">
-								<Avatar className="w-8 h-8 border rounded-lg bg-muted">
-									<AvatarImage src="#" alt={name} />
-									<AvatarFallback
-										className={cn(
-											"text-xs rounded-lg",
-											isSuspended
-												? "bg-destructive text-destructive-foreground"
-												: isCurrent
-													? "bg-primary text-primary-foreground"
-													: isOnline
-														? "bg-emerald-700 text-white"
-														: "bg-muted",
-										)}
-									>
-										{initials}
-									</AvatarFallback>
-								</Avatar>
-								<div className="flex-1 space-y-0.5 text-sm leading-tight text-left">
-									<p className="font-bold uppercase truncate max-w-52 md:max-w-full">
-										{name}
-									</p>
-									<p className="text-xs font-light">#{registrationNumber}</p>
-								</div>
-							</div>
-						</>
-					);
-				},
-			},
-		];
-
-		if (!isMobile) {
-			items.push(
-				{
-					accessorKey: "gender",
-					header: ({ column }) => (
-						<DataTableColumnHeader column={column} title="Gender" />
-					),
-					enableSorting: true,
-					enableHiding: false,
-					cell: ({ row }) => {
-						const gender = row.original.gender;
-
-						return (
-							<Badge variant="outline">
-								<div className="flex items-center gap-1">
-									{getGenderIcon(
-										gender,
-										"size-4 text-muted-foreground/75 shrink-0",
-									)}
-									<span>{gender}</span>
-								</div>
-							</Badge>
-						);
-					},
-				},
-				{
-					accessorKey: "type",
-					header: ({ column }) => (
-						<DataTableColumnHeader column={column} title="Type" />
-					),
-					enableSorting: true,
-					enableHiding: false,
-					cell: ({ row }) => {
-						const employmentType = row.original.employmentType;
-
-						return (
-							<Badge
-								variant={employmentType === "KARPIS" ? "accent" : "secondary"}
-							>
-								{employmentType}
-							</Badge>
-						);
-					},
-				},
-				{
-					accessorKey: "service",
-					header: ({ column }) => (
-						<DataTableColumnHeader column={column} title="Service" />
-					),
-					enableSorting: true,
-					enableHiding: false,
-					cell: ({ row }) => {
-						const serviceName = row.original.service.name.replaceAll("_", " ");
-						const serviceCode = row.original.service.code;
-						const brandBadgeVariant = useMemo(
-							() => getBrandBadgeVariant(serviceCode),
-							[serviceCode],
-						);
-
-						return (
-							<Badge variant="outline" className={cn("", brandBadgeVariant)}>
-								{serviceName}
-							</Badge>
-						);
-					},
-				},
-				{
-					accessorKey: "status",
-					header: ({ column }) => (
-						<DataTableColumnHeader column={column} title="Status" />
-					),
-					enableSorting: true,
-					enableHiding: false,
-					cell: ({ row }) => {
-						const variant = useMemo(
-							() => getEmpStatusBadgeVariant(row.original.employmentStatus),
-							[row.original.employmentStatus],
-						);
-
-						return (
-							<Badge className={variant}>{row.original.employmentStatus}</Badge>
-						);
-					},
-				},
-				{
-					accessorKey: "activity",
-					header: ({ column }) => (
-						<DataTableColumnHeader column={column} title="Activity" />
-					),
-					enableSorting: true,
-					enableHiding: false,
-					cell: ({ row }) => {
-						const isOnline = row.original.user["isOnline?"];
-						const currentIP = row.original.user.currentSignInIp;
-						const lastIP = row.original.user.lastSignInIp;
-						const lastOnlineAt = row.original.user.lastOnlineAt;
-						const isSuspended = row.original.user["suspended?"];
-						const suspendedAt = row.original.user.suspendAt;
-						const suspendEnd = row.original.user.suspendEnd;
-
-						if (isSuspended) {
-							return (
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger>
-											<DotBadgeWithLabel variant="destructive">
-												<span>Suspended</span>
-											</DotBadgeWithLabel>
-										</TooltipTrigger>
-										<TooltipContent side="bottom">
-											<div className="flex flex-col">
-												{suspendedAt && (
-													<span>
-														Suspend on: <b>{format(suspendedAt, "PP")}</b>
-													</span>
-												)}
-												<span className="flex items-center">
-													Suspend until:{" "}
-													<b>
-														{suspendEnd ? (
-															format(suspendEnd, "PP")
-														) : (
-															<InfinityIcon className="ml-1 size-4" />
-														)}
-													</b>
-												</span>
-											</div>
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							);
-						}
-
-						if (globalProps.auth.currentUser?.["isSuperAdmin?"]) {
-							return (
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger className="space-x-1">
-											<DotBadgeWithLabel
-												variant={isOnline ? "success" : "outline"}
-											>
-												<span>{isOnline ? "Online" : "Offline"}</span>
-											</DotBadgeWithLabel>
-										</TooltipTrigger>
-										<TooltipContent>
-											{isOnline ? (
-												<span>
-													Current IP: <b>{currentIP}</b>
-												</span>
-											) : (
-												<div className="flex flex-col">
-													<span>
-														Last IP: <b>{lastIP}</b>
-													</span>
-													{lastOnlineAt && (
-														<span>
-															Last Online Session:{" "}
-															<b>
-																{formatDistanceToNow(lastOnlineAt, {
-																	includeSeconds: true,
-																	addSuffix: true,
-																})}
-															</b>
-														</span>
-													)}
-												</div>
-											)}
-										</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
-							);
-						}
-
-						return (
-							<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
-								<span>{isOnline ? "Online" : "Offline"}</span>
-							</DotBadgeWithLabel>
-						);
-					},
-				},
-			);
-		}
-
-		items.push({
-			id: "actions",
-			cell: ({ row }) => {
-				const { isShowEdit, isShowChangePassword, isShowDelete, isPermitted } =
-					useActionPermissions({
-						authData: globalProps.auth,
-						user: row.original.user,
-					});
-
-				if (!isPermitted) return;
-
-				return (
-					<div className="flex items-center justify-end space-x-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="icon">
-									<Ellipsis />
-								</Button>
-							</DropdownMenuTrigger>
-
-							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>Actions</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-
-								<DropdownMenuGroup>
-									<DropdownMenuItem
-										onSelect={() => routeTo.detail(row.original.id)}
-									>
-										<Info />
-										<span>Details</span>
-									</DropdownMenuItem>
-
-									{isShowEdit && (
-										<DropdownMenuItem
-											onSelect={() => routeTo.edit(row.original.id)}
-										>
-											<SquarePen />
-											<span>Edit</span>
-										</DropdownMenuItem>
-									)}
-
-									{isShowChangePassword && (
-										<DropdownMenuItem
-											onSelect={() => routeTo.changePassword(row.original.id)}
-										>
-											<LockIcon />
-											<span>Change Password</span>
-										</DropdownMenuItem>
-									)}
-								</DropdownMenuGroup>
-
-								{isShowDelete && (
-									<>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onSelect={() => routeTo.delete(row.original.id)}
-										>
-											<Trash2 />
-											<span>Delete</span>
-										</DropdownMenuItem>
-									</>
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				);
-			},
-		});
-
-		return items;
-	}, [globalProps.auth, isMobile]);
 
 	// * for table actions management state
 	const routeTo = {
@@ -577,6 +269,316 @@ export default function Index({
 			},
 		};
 	}, [pageURL, globalProps.adminPortal?.currentQuery]);
+	const columns = useMemo<
+		ColumnDef<PageProps["therapists"]["data"][number]>[]
+	>(() => {
+		const items: ColumnDef<PageProps["therapists"]["data"][number]>[] = [
+			{
+				accessorKey: "profile",
+				header: ({ column }) => (
+					<DataTableColumnHeader column={column} title="Profile" />
+				),
+				enableSorting: false,
+				enableHiding: false,
+				cell: ({ row }) => {
+					const name = row.original.name;
+					const initials = generateInitials(name);
+					const registrationNumber = row.original.registrationNumber;
+					const isOnline = row.original.user["isOnline?"];
+					const isCurrent =
+						row.original.user.email ===
+						globalProps.auth.currentUser?.user.email;
+					const isSuspended = row.original.user["suspended?"];
+
+					return (
+						<div className="flex items-center gap-2 text-sm text-left">
+							<Avatar className="w-8 h-8 border rounded-lg bg-muted">
+								<AvatarImage src="#" alt={name} />
+								<AvatarFallback
+									className={cn(
+										"text-xs rounded-lg",
+										isSuspended
+											? "bg-destructive text-destructive-foreground"
+											: isCurrent
+												? "bg-primary text-primary-foreground"
+												: isOnline
+													? "bg-emerald-700 text-white"
+													: "bg-muted",
+									)}
+								>
+									{initials}
+								</AvatarFallback>
+							</Avatar>
+							<div className="flex-1 space-y-0.5 text-sm leading-tight text-left">
+								<p className="font-bold uppercase truncate max-w-52 md:max-w-full">
+									{name}
+								</p>
+								<p className="text-xs font-light">#{registrationNumber}</p>
+							</div>
+						</div>
+					);
+				},
+			},
+		];
+
+		if (!isMobile) {
+			items.push(
+				{
+					accessorKey: "gender",
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title="Gender" />
+					),
+					enableSorting: true,
+					enableHiding: false,
+					cell: ({ row }) => {
+						const gender = row.original.gender;
+
+						return (
+							<Badge variant="outline">
+								<div className="flex items-center gap-1">
+									{getGenderIcon(
+										gender,
+										"size-4 text-muted-foreground/75 shrink-0",
+									)}
+									<span>{gender}</span>
+								</div>
+							</Badge>
+						);
+					},
+				},
+				{
+					accessorKey: "type",
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title="Type" />
+					),
+					enableSorting: true,
+					enableHiding: false,
+					cell: ({ row }) => {
+						const employmentType = row.original.employmentType;
+
+						return (
+							<Badge
+								variant={employmentType === "KARPIS" ? "accent" : "secondary"}
+							>
+								{employmentType}
+							</Badge>
+						);
+					},
+				},
+				{
+					accessorKey: "service",
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title="Service" />
+					),
+					enableSorting: true,
+					enableHiding: false,
+					cell: ({ row }) => {
+						const serviceName = row.original.service.name.replaceAll("_", " ");
+						const serviceCode = row.original.service.code;
+						const brandBadgeVariant = getBrandBadgeVariant(serviceCode);
+
+						return (
+							<Badge variant="outline" className={cn("", brandBadgeVariant)}>
+								{serviceName}
+							</Badge>
+						);
+					},
+				},
+				{
+					accessorKey: "status",
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title="Status" />
+					),
+					enableSorting: true,
+					enableHiding: false,
+					cell: ({ row }) => {
+						const variant = getEmpStatusBadgeVariant(
+							row.original.employmentStatus,
+						);
+
+						return (
+							<Badge className={variant}>{row.original.employmentStatus}</Badge>
+						);
+					},
+				},
+				{
+					accessorKey: "activity",
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title="Activity" />
+					),
+					enableSorting: true,
+					enableHiding: false,
+					cell: ({ row }) => {
+						const isOnline = row.original.user["isOnline?"];
+						const currentIP = row.original.user.currentSignInIp;
+						const lastIP = row.original.user.lastSignInIp;
+						const lastOnlineAt = row.original.user.lastOnlineAt;
+						const isSuspended = row.original.user["suspended?"];
+						const suspendedAt = row.original.user.suspendAt;
+						const suspendEnd = row.original.user.suspendEnd;
+
+						if (isSuspended) {
+							return (
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger>
+											<DotBadgeWithLabel variant="destructive">
+												<span>Suspended</span>
+											</DotBadgeWithLabel>
+										</TooltipTrigger>
+										<TooltipContent side="bottom">
+											<div className="flex flex-col">
+												{suspendedAt && (
+													<span>
+														Suspend on: <b>{format(suspendedAt, "PP")}</b>
+													</span>
+												)}
+												<span className="flex items-center">
+													Suspend until:{" "}
+													<b>
+														{suspendEnd ? (
+															format(suspendEnd, "PP")
+														) : (
+															<InfinityIcon className="ml-1 size-4" />
+														)}
+													</b>
+												</span>
+											</div>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							);
+						}
+
+						if (globalProps.auth.currentUser?.["isSuperAdmin?"]) {
+							return (
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger className="space-x-1">
+											<DotBadgeWithLabel
+												variant={isOnline ? "success" : "outline"}
+											>
+												<span>{isOnline ? "Online" : "Offline"}</span>
+											</DotBadgeWithLabel>
+										</TooltipTrigger>
+										<TooltipContent>
+											{isOnline ? (
+												<span>
+													Current IP: <b>{currentIP}</b>
+												</span>
+											) : (
+												<div className="flex flex-col">
+													<span>
+														Last IP: <b>{lastIP}</b>
+													</span>
+													{lastOnlineAt && (
+														<span>
+															Last Online Session:{" "}
+															<b>
+																{formatDistanceToNow(lastOnlineAt, {
+																	includeSeconds: true,
+																	addSuffix: true,
+																})}
+															</b>
+														</span>
+													)}
+												</div>
+											)}
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							);
+						}
+
+						return (
+							<DotBadgeWithLabel variant={isOnline ? "success" : "outline"}>
+								<span>{isOnline ? "Online" : "Offline"}</span>
+							</DotBadgeWithLabel>
+						);
+					},
+				},
+			);
+		}
+
+		items.push({
+			id: "actions",
+			cell: ({ row }) => {
+				const { isShowEdit, isShowChangePassword, isShowDelete, isPermitted } =
+					// biome-ignore lint/correctness/useHookAtTopLevel: <->
+					useActionPermissions({
+						authData: globalProps.auth,
+						user: row.original.user,
+					});
+
+				if (!isPermitted) return;
+
+				return (
+					<div className="flex items-center justify-end space-x-2">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="outline" size="icon">
+									<Ellipsis />
+								</Button>
+							</DropdownMenuTrigger>
+
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>Actions</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+
+								<DropdownMenuGroup>
+									<DropdownMenuItem
+										onSelect={() => routeTo.detail(row.original.id)}
+									>
+										<Info />
+										<span>Details</span>
+									</DropdownMenuItem>
+
+									{isShowEdit && (
+										<DropdownMenuItem
+											onSelect={() => routeTo.edit(row.original.id)}
+										>
+											<SquarePen />
+											<span>Edit</span>
+										</DropdownMenuItem>
+									)}
+
+									{isShowChangePassword && (
+										<DropdownMenuItem
+											onSelect={() => routeTo.changePassword(row.original.id)}
+										>
+											<LockIcon />
+											<span>Change Password</span>
+										</DropdownMenuItem>
+									)}
+								</DropdownMenuGroup>
+
+								{isShowDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onSelect={() => routeTo.delete(row.original.id)}
+										>
+											<Trash2 />
+											<span>Delete</span>
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			},
+		});
+
+		return items;
+	}, [
+		globalProps.auth,
+		isMobile,
+		routeTo.changePassword,
+		routeTo.edit,
+		routeTo.delete,
+		routeTo.detail,
+	]);
 
 	return (
 		<>

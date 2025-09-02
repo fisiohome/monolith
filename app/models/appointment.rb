@@ -208,7 +208,12 @@ class Appointment < ApplicationRecord
   }
   scope :filter_by_name, ->(name, association) {
     return self if name.blank?
-    joins(association).where("#{association.to_s.pluralize}.name ILIKE ?", "%#{name}%")
+
+    reflection = reflect_on_association(association)
+    return self unless reflection
+
+    table_name = reflection.klass.table_name
+    joins(association).where("#{table_name}.name ILIKE ?", "%#{name}%")
   }
   scope :filter_by_registration, ->(reg_number) {
     return self if reg_number.blank?
