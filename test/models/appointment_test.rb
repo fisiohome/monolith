@@ -105,11 +105,22 @@ class AppointmentTest < ActiveSupport::TestCase
   end
 
   test "validates uniqueness of registration_number and visit_number combination" do
+    multi_visit_package = Package.create!(
+      service: @service,
+      name: "Paket 2 Kunjungan",
+      currency: "IDR",
+      number_of_visit: 2,
+      price_per_visit: 100_000,
+      total_price: 200_000,
+      fee_per_visit: 70_000,
+      total_fee: 140_000,
+      active: true
+    )
     # First appointment is valid
-    Appointment.create!(
+    first_appt = Appointment.create!(
       patient: @patient,
       service: @service,
-      package: @package,
+      package: multi_visit_package,
       location: @location,
       registration_number: "UNIQUE_REG",
       visit_number: 1,
@@ -135,12 +146,13 @@ class AppointmentTest < ActiveSupport::TestCase
     series_appt = Appointment.new(
       patient: @patient,
       service: @service,
-      package: @package,
+      package: multi_visit_package,
       location: @location,
       registration_number: "UNIQUE_REG",
       visit_number: 2,
       appointment_date_time: @future_time.change(hour: 14),
-      preferred_therapist_gender: "NO PREFERENCE"
+      preferred_therapist_gender: "NO PREFERENCE",
+      appointment_reference_id: first_appt.id
     )
     assert series_appt.valid?
   end
