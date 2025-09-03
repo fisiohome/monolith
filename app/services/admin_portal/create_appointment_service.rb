@@ -57,7 +57,7 @@ module AdminPortal
       @params[:appointment][:series_visits].each do |visit_attrs|
         @appointment = Appointment.new(
           reference_appointment.attributes.except(
-            "id", "registration_number", "visit_number", "appointment_reference_id",
+            "id", "visit_number", "appointment_reference_id",
             "therapist_id", "appointment_date_time", "status", "created_at", "updated_at"
           ).merge(visit_attrs)
         )
@@ -214,6 +214,7 @@ module AdminPortal
         service: @appt_ref.service,
         package: @appt_ref.package,
         updater: @current_user,
+        registration_number: @appt_ref.registration_number,
         appointment_reference_id: @appt_ref.id,
         therapist_id: @params[:therapist_id],
         visit_number: next_visit,

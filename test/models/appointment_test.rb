@@ -104,29 +104,45 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_includes appt.errors[:appointment_date_time], "must be in the future"
   end
 
-  test "validates uniqueness of registration_number, about registration_number" do
+  test "validates uniqueness of registration_number and visit_number combination" do
+    # First appointment is valid
     Appointment.create!(
-      therapist: @therapist,
       patient: @patient,
       service: @service,
       package: @package,
       location: @location,
       registration_number: "UNIQUE_REG",
+      visit_number: 1,
       appointment_date_time: @future_time.change(hour: 10),
       preferred_therapist_gender: "NO PREFERENCE"
     )
-    appt = Appointment.new(
-      therapist: @therapist,
+
+    # Duplicate registration_number and visit_number is invalid
+    duplicate_appt = Appointment.new(
       patient: @patient,
       service: @service,
       package: @package,
       location: @location,
       registration_number: "UNIQUE_REG",
+      visit_number: 1,
       appointment_date_time: @future_time.change(hour: 12),
       preferred_therapist_gender: "NO PREFERENCE"
     )
-    assert_not appt.valid?
-    assert_includes appt.errors[:registration_number], "has already been taken"
+    assert_not duplicate_appt.valid?
+    assert_includes duplicate_appt.errors[:registration_number], "has already been taken"
+
+    # Same registration_number but different visit_number is valid
+    series_appt = Appointment.new(
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      registration_number: "UNIQUE_REG",
+      visit_number: 2,
+      appointment_date_time: @future_time.change(hour: 14),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert series_appt.valid?
   end
 
   test "auto-generates a registration_number if none is provided, about generate_registration_number" do
@@ -306,6 +322,9 @@ class AppointmentTest < ActiveSupport::TestCase
 
     # ─── Expectations ────────────────────────────────────────────────────────────
     assert_equal 2, first_visit.series_appointments.count, "should create two follow-up visits"
+
+    assert first_visit.series_appointments.all? { |c| c.registration_number == first_visit.registration_number },
+      "all series appointments should have the same registration number as the initial visit"
 
     visit_numbers = first_visit.series_appointments.order(:visit_number).pluck(:visit_number)
     assert_equal [2, 3], visit_numbers, "follow-ups should be visit #2 and #3"

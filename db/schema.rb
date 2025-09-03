@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_08_28_004934) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_03_100541) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -122,7 +122,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_08_28_004934) do
     t.index ["location_id"], name: "index_appointments_on_location_id"
     t.index ["package_id"], name: "index_appointments_on_package_id"
     t.index ["patient_id"], name: "index_appointments_on_patient_id"
-    t.index ["registration_number"], name: "index_appointments_on_registration_number", unique: true
+    t.index ["registration_number", "visit_number"], name: "index_appointments_on_registration_number_and_visit_number", unique: true
     t.index ["service_id"], name: "index_appointments_on_service_id"
     t.index ["therapist_id"], name: "index_appointments_on_therapist_id"
     t.index ["visit_number"], name: "index_appointments_on_visit_number"

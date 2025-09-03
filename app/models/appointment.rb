@@ -141,7 +141,7 @@ class Appointment < ApplicationRecord
   after_commit :track_status_change, on: [:create, :update], if: -> { saved_change_to_status? && updater.present? }
 
   # * define the validations
-  validates :registration_number, uniqueness: true
+  validates :registration_number, uniqueness: {scope: :visit_number}
   validates :visit_number, numericality: {
     only_integer: true,
     greater_than: 0,
@@ -988,7 +988,7 @@ class Appointment < ApplicationRecord
 
     # Scrub columns that would violate PK/FK constraints or business rules
     scrubbed_template = template.except(
-      "id", "registration_number", "visit_number", "appointment_reference_id",
+      "id", "visit_number", "appointment_reference_id",
       "therapist_id", "appointment_date_time", "status", "created_at", "updated_at"
     )
 
