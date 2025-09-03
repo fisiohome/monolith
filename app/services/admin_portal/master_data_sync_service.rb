@@ -678,7 +678,7 @@ module AdminPortal
       required_headers = [
         "Contact Name", "Contact Number", "Email", "Patient Full Name", "DOB", "Age",
         "Gender", "Condition", "Complaint Description", "Region", "Address Line", "Latitude",	"Longitude",
-        "Brand",	"Package",	"Preferred Therapist Gender", "Visit Date", "Visit Time",	"Therapist"
+        "Brand",	"Package",	"Preferred Therapist Gender", "Visit Date", "Visit Time",	"Therapist", "PIC"
       ]
       validate_headers(csv, required_headers)
 
@@ -687,6 +687,7 @@ module AdminPortal
       packages = Package.includes(:service).index_by { |p| "#{p.service.name}_#{p.name}" }
       therapists = Therapist.all.index_by(&:name)
       locations = Location.all.index_by(&:city)
+      admins = Admin.all.index_by { |a| a.name.downcase }
       existing_appointments = Appointment.where(registration_number: csv.map { |r| r["Reg Number"]&.strip }.compact)
         .index_by(&:registration_number)
 
@@ -732,6 +733,17 @@ module AdminPortal
             results[:skipped] << {
               registration_number: registration_number,
               reason: "Therapist '#{therapist_name}' not found"
+            }
+            next
+          end
+
+          # validate admin
+          admin_name = row["PIC"]&.strip&.downcase
+          admin = admins[admin_name] if admin_name.present?
+          if admin.blank? && admin_name.present?
+            results[:skipped] << {
+              registration_number: registration_number,
+              reason: "Admin with name '#{admin_name}' not found"
             }
             next
           end
@@ -787,6 +799,7 @@ module AdminPortal
             service:,
             package:,
             therapist:,
+            admin:,
             location:,
             visit_number:,
             contact_data: {
@@ -940,9 +953,9 @@ module AdminPortal
               patient_medical.save! if patient_medical.changed? || patient_medical.new_record?
 
               # * process admin pics
-              admin = @current_user.admin
+              admin_to_assign = extracted_data[:admin] || @current_user.admin
               admin_pic = AppointmentAdmin.find_or_initialize_by(appointment: appointment)
-              admin_pic.assign_attributes(admin: admin)
+              admin_pic.assign_attributes(admin: admin_to_assign)
               admin_pic.save! if admin_pic.changed? || admin_pic.new_record?
 
               # * snapshot the address history
