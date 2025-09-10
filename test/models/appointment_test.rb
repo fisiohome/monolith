@@ -1255,4 +1255,40 @@ class AppointmentTest < ActiveSupport::TestCase
     third_appt.reload
     assert_equal "on_hold", third_appt.status
   end
+
+  test "generates incremental registration_number" do
+    # First appointment for a service
+    appt1 = Appointment.create!(
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time,
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert_equal "#{@service.code.upcase}-000001", appt1.registration_number
+
+    # Second appointment for the same service
+    appt2 = Appointment.create!(
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time + 1.hour,
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert_equal "#{@service.code.upcase}-000002", appt2.registration_number
+
+    # Appointment for a different service
+    other_service = Service.create!(name: "Other Service", code: "OTH", active: true)
+    appt3 = Appointment.create!(
+      patient: @patient,
+      service: other_service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time + 2.hours,
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert_equal "#{other_service.code.upcase}-000001", appt3.registration_number
+  end
 end
