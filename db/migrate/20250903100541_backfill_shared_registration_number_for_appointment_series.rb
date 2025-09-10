@@ -14,6 +14,6 @@ class BackfillSharedRegistrationNumberForAppointmentSeries < ActiveRecord::Migra
   end
 
   def down
-    raise ActiveRecord::IrreversibleMigration, "This migration backfills data to conform to new application logic and cannot be easily reversed."
+    Rails.logger.info "This migration backfills data to conform to new application logic and cannot be easily reversed."
   end
 end
