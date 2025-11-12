@@ -55,7 +55,7 @@ class BackfillRegistrationNumbersJob < ApplicationJob
     Rails.logger.info "Analyzing appointments for registration number regeneration..."
 
     initial_visits_count = Appointment.initial_visits.count
-    series_appointments_count = Appointment.joins(:initial_appointment).where.not(initial_appointment_id: nil).count
+    series_appointments_count = Appointment.where.not(appointment_reference_id: nil).count
 
     Rails.logger.info "Found #{initial_visits_count} initial visits"
     Rails.logger.info "Found #{series_appointments_count} series appointments"
