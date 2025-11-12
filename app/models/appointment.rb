@@ -141,7 +141,7 @@ class Appointment < ApplicationRecord
   after_commit :track_status_change, on: [:create, :update], if: -> { saved_change_to_status? && updater.present? }
 
   # * define the validations
-  validates :registration_number, uniqueness: true
+  validates :registration_number, uniqueness: {scope: :visit_number}
   validates :visit_number, numericality: {
     only_integer: true,
     greater_than: 0,
@@ -890,19 +890,24 @@ class Appointment < ApplicationRecord
     end
   end
 
-  # * define the callback methods
-  # Generates a unique registration number based on the service code and a random number.
   def generate_registration_number
     return if registration_number.present? || service.blank?
 
     service_code = service.code.upcase
-    loop do
-      random_number = SecureRandom.random_number(10**6).to_s.rjust(6, "0") # 6-digit random number
-      candidate = "#{service_code}-#{random_number}"
-      unless Appointment.exists?(registration_number: candidate)
-        self.registration_number = candidate
-        break
+
+    Appointment.transaction do
+      last_appointment = Appointment.where("registration_number LIKE ?", "#{service_code}-%").order(registration_number: :desc).first
+
+      if last_appointment
+        last_number = last_appointment.registration_number.split("-").last.to_i
+        new_number = last_number + 1
+      else
+        new_number = 1
       end
+
+      new_registration_number = "#{service_code}-#{new_number.to_s.rjust(6, "0")}"
+
+      self.registration_number = new_registration_number
     end
   end
 
@@ -988,7 +993,7 @@ class Appointment < ApplicationRecord
 
     # Scrub columns that would violate PK/FK constraints or business rules
     scrubbed_template = template.except(
-      "id", "registration_number", "visit_number", "appointment_reference_id",
+      "id", "visit_number", "appointment_reference_id",
       "therapist_id", "appointment_date_time", "status", "created_at", "updated_at"
     )
 

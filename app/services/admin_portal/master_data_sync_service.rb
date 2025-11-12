@@ -688,8 +688,15 @@ module AdminPortal
       therapists = Therapist.all.index_by(&:name)
       locations = Location.all.index_by(&:city)
       admins = Admin.all.index_by { |a| a.name.downcase }
-      existing_appointments = Appointment.where(registration_number: csv.map { |r| r["Reg Number"]&.strip }.compact)
-        .index_by(&:registration_number)
+
+      # Create a composite key for lookup
+      composite_keys = csv.map do |r|
+        [r["Reg Number"]&.strip, r["Visit Number"]&.strip&.to_i]
+      end.compact.uniq
+
+      # Fetch existing appointments using composite keys
+      existing_appointments = Appointment.where("(registration_number, visit_number) IN (?)", composite_keys)
+        .index_by { |a| [a.registration_number, a.visit_number] }
 
       # track results
       results = {created: [], updated: [], skipped: [], failed: [], unchanged: []}
@@ -899,8 +906,7 @@ module AdminPortal
                 location_id: extracted_data[:location].id,
                 therapist_id: extracted_data[:therapist]&.id
               )
-              existing_appointment = existing_appointments[registration_number]
-              visit_number = extracted_data[:visit_number]
+              existing_appointment = existing_appointments[[registration_number, visit_number]]
               # Add reference to first appointment in batch if needed
               if visit_number > 1 && batch_first_appointment_ids[batch_number].present?
                 appointment_data[:appointment_reference_id] = batch_first_appointment_ids[batch_number]

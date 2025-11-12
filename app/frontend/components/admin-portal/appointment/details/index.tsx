@@ -232,21 +232,19 @@ const AppointmentListItemDetails = memo(function Component({
 				{schedule?.allVisits?.map((visit: any) => (
 					<SeriesItem key={visit.id} parentAppt={schedule} appointment={visit}>
 						<div className="flex mt-2">
-							{visit.registrationNumber !== schedule.registrationNumber && (
-								<Button
-									size={isMobile ? "sm" : "xs"}
-									type="button"
-									variant="primary-outline"
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
+							<Button
+								size={isMobile ? "sm" : "xs"}
+								type="button"
+								variant="primary-outline"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
 
-										seeDetailVisitSeries(visit.registrationNumber);
-									}}
-								>
-									{t("button.detail")}
-								</Button>
-							)}
+									seeDetailVisitSeries(visit.registrationNumber);
+								}}
+							>
+								{t("button.detail")}
+							</Button>
 						</div>
 						{/* <AppointmentActionButtons
 								schedule={visit}
