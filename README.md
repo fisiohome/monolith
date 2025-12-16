@@ -1,178 +1,218 @@
-# README
+# FisioHome Monolith - Admin Dashboard
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+A Rails 8 monolith application with Vite for frontend assets and SolidQueue for background job processing.
 
-Things you may want to cover:
+## Features
 
-* Ruby version
+For detailed information about the application's features and implementation, see the [Feature Documentation](./docs/features.md).
 
-* System dependencies
+## Overview
 
-* Configuration
+- **Backend**: Ruby on Rails 8.0.1
+- **Frontend**: React with Vite
+- **Database**: PostgreSQL
+- **Job Queue**: SolidQueue
+- **Styling**: TailwindCSS
+- **Package Manager**: Bun (for frontend dependencies)
 
-* Database creation
+## Development Setup
 
-* Database initialization
+### Prerequisites
 
-* How to run the test suite
+- Ruby 3.3.5
+- PostgreSQL 16+
+- Bun 1.0+
+- Git
 
-* Services (job queues, cache servers, search engines, etc.)
+### Quick Start
 
-* Deployment instructions
+Choose one of the following development environments:
 
-* ...
+#### Option 1: Local Development
 
-# Feature Overview
+1. **Clone and prepare**
+   ```bash
+   git clone <repository-url>
+   cd monolith
+   ```
 
-## HERE Maps Isoline Implementation
-
-Our HERE Maps isoline implementation provides intelligent routing and coverage area calculations specifically designed for therapist availability and home healthcare service mapping. This system addresses the unique challenges of home healthcare logistics by using constraint-specific optimizations to deliver accurate, practical results.
-
-### Why We Use Two Constraints
-
-In home healthcare, particularly for therapist services, we need to consider both **time** and **distance** constraints because they serve different but complementary purposes:
-
-**Time Constraints** focus on practical travel time, accounting for real-world factors like traffic, road conditions, and route efficiency. This is crucial for appointment scheduling and ensuring therapists can arrive on time. A 25km journey might take 30 minutes on a highway but 60 minutes through city streets.
-
-**Distance Constraints** define the maximum service coverage area, regardless of travel time. This helps determine the geographic boundaries of service availability and ensures we don't exclude therapists who might be slightly further but can still provide timely service through efficient routes.
-
-By using both constraints simultaneously, we create a more nuanced understanding of service availability that reflects real-world conditions rather than just straight-line distances.
-
-### Why Each Constraint Has Different Query Parameters
-
-Our constraint-specific parameter optimization is based on the fundamental differences between time and distance calculations:
-
-**Time-based isolines** require high precision and real-time data because they directly impact appointment scheduling and patient satisfaction. We use quality-focused parameters with fine granularity to capture the subtle variations in travel time caused by traffic patterns, road conditions, and route choices.
-
-**Distance-based isolines** prioritize performance and coverage area accuracy. Since distance calculations don't need real-time traffic data, we can optimize for speed while maintaining sufficient precision for service area mapping. This allows us to process larger coverage areas efficiently.
-
-### Why Query Parameters Can Be Optimized for Each Constraint
-
-The HERE Maps API provides extensive customization options that allow us to tailor each isoline calculation to its specific purpose:
-
-**Routing Mode Optimization**: Time calculations use "short" routing to find the most direct paths, while distance calculations use "fast" routing to optimize for speed and efficiency.
-
-**Traffic Data Strategy**: Real-time traffic is essential for accurate time calculations but unnecessary for distance mapping. By enabling traffic only when needed, we reduce API costs and improve performance.
-
-**Shape Parameter Tuning**: Time isolines use higher point counts and finer resolution to capture precise boundaries, while distance isolines use optimized parameters for better performance on larger areas.
-
-**Avoid Feature Selection**: Different avoid features are prioritized based on the constraint type. Time calculations avoid features that cause delays (toll booths, ferries, tunnels), while distance calculations avoid features that limit accessibility (highways, restricted areas).
-
-### Real-World Benefits
-
-This constraint-specific approach delivers tangible benefits for home healthcare operations:
-
-**More Accurate Scheduling**: Time-based isolines with real-time traffic data provide reliable travel time estimates, reducing late arrivals and improving patient satisfaction.
-
-**Better Resource Allocation**: Distance-based isolines help identify optimal therapist placement and service area boundaries, improving operational efficiency.
-
-**Cost Optimization**: By using appropriate parameters for each constraint type, we minimize API usage while maximizing accuracy and performance.
-
-**Improved User Experience**: The combination of both constraints provides a more realistic and practical view of service availability, helping patients and administrators make better decisions.
-
-### Performance and Scalability
-
-Our implementation is designed to handle the demands of a growing home healthcare network:
-
-**Efficient Processing**: Constraint-specific optimizations reduce calculation time and API costs while maintaining accuracy.
-
-**Scalable Architecture**: The system can handle multiple concurrent isoline calculations for different service areas and time periods.
-
-**Intelligent Caching**: Results are cached appropriately to avoid redundant calculations for similar parameters.
-
-**Error Resilience**: Comprehensive error handling ensures the system continues to function even when individual calculations fail.
-
-### Integration with Therapist Availability
-
-The isoline system integrates seamlessly with our therapist availability management:
-
-**Dynamic Constraints**: Isoline parameters are automatically adjusted based on therapist availability rules and service requirements.
-
-**Feasibility Checking**: The system can determine which therapists are within reach of specific patients, considering both time and distance constraints.
-
-**Real-Time Updates**: As therapist availability changes, isoline calculations can be updated to reflect current service capacity.
-
-**Multi-Service Support**: The system can handle different types of home healthcare services with varying time and distance requirements.
-
-This sophisticated approach to isoline calculation ensures that our home healthcare platform provides accurate, practical, and efficient service area mapping that reflects real-world conditions and operational needs.
-
----
-
-## Authentication and Authorization
-
-Authentication and authorization are implemented using **Role-Based Access Control (RBAC)**, where each user is assigned a single role that determines their permissions within the system.
-
-### Roles and Permissions
-
-Each role is predefined to ensure proper segregation of duties. Below is the list of available roles and their hierarchy:
-
-1. **SUPER ADMIN**  
-   - The highest level of access in the system.
-   - Full control over admin accounts and system configurations.
+2. **Configure environment variables**
+   ```bash
+   cp .env.example .env
+   ```
    
-2. **ADMIN SUPERVISOR**  
-   - Higher-level admin with access to specific management features.
+   Required variables:
+   - `RAILS_MASTER_KEY` - Rails encryption key
+   - `VITE_RUBY_HERE_MAPS_API_KEY` - HERE Maps API key
    
-3. **ADMIN**  
-   - Entry-level admin with minimal privileges.
+   Database configuration (choose one):
+   - `MONOLITH_DATABASE_URL` (full connection string)
+   - Or individual variables:
+     - `DB_HOST`
+     - `MONOLITH_DATABASE_PORT`
+     - `MONOLITH_DATABASE_USERNAME`
+     - `MONOLITH_DATABASE_PASSWORD`
+
+3. **Start PostgreSQL**
+   ```bash
+   docker compose up db-postgresql -d
+   ```
+   This runs PostgreSQL on `localhost:7432`.
+
+4. **Install dependencies and setup database**
+   ```bash
+   bin/setup --skip-server
+   bun install
+   ```
+
+5. **Start development servers**
+   ```bash
+   bin/dev
+   ```
    
----
+   Services started:
+   - Rails server: http://localhost:3000
+   - Vite dev server: http://localhost:3036
+   - SolidQueue worker
 
-## Admin Management
+#### Option 2: VS Code Dev Container
 
-The **Admin Management** section is accessible to all admin users. However, the features available depend on the role of the user. Below is a detailed breakdown of the features and their role-based permissions:
+1. **Open in VS Code**
+   ```bash
+   code .
+   ```
 
-### Features
+2. **Reopen in Container**
+   - Press `Cmd+Shift+P` (macOS) or `Ctrl+Shift+P` (Windows/Linux)
+   - Select "Dev Containers: Reopen in Container"
 
-#### 1. Add Admin Account  
-   - **Accessible to:** SUPER ADMIN only.  
-   - **Description:**  
-     Allows the creation of new admin accounts. SUPER ADMIN can assign roles during account creation.  
+3. **Start the application**
+   ```bash
+   bin/dev
+   ```
 
-#### 2. Edit Admin Profile  
-   - **Accessible to:**  
-     - **SUPER ADMIN:** Can edit profiles of all admin accounts, including their roles, contact details, and permissions.  
-     - **Other Admins:** Can only edit their own profile information, such as their contact details.  
+   The Dev Container includes:
+   - PostgreSQL (pre-configured)
+   - Selenium WebDriver
+   - Bun
+   - All Ruby dependencies
 
-   - **Description:**  
-     Enables admins to update relevant profile information. SUPER ADMIN can use this feature to manage the system's overall user integrity.
+### Environment Variables
 
-#### 3. Change Admin Password  
-   - **Accessible to:** SUPER ADMIN only.  
-   - **Description:**  
-     Allows SUPER ADMIN to reset passwords for any admin account. This is especially useful if an admin is locked out or has forgotten their password.  
+#### Generating RAILS_MASTER_KEY
 
-#### 4. Suspend Admin Account  
-   - **Accessible to:** SUPER ADMIN only.  
-   - **Description:**  
-     Enables SUPER ADMIN to suspend an admin account, effectively disabling their access to the system until reactivated.  
+The `RAILS_MASTER_KEY` decrypts encrypted credentials in `config/credentials.yml.enc`.
 
-#### 5. Delete Admin Account  
-   - **Accessible to:** SUPER ADMIN only.  
-   - **Description:**  
-     Allows SUPER ADMIN to permanently remove an admin account from the system.  
-     - **Important Limitation:** SUPER ADMIN cannot delete their own account to ensure continuity of the role.
+**Important**: Never commit `config/master.key` to version control. It's included in `.gitignore`.
 
-Upcoming list:
+To generate a new master key:
+```bash
+# Generate and display
+bin/rails secret
 
-- Filter by admin type
-- Filter Status
-- Selectable item (all/per item) & actions (suspend, delete, or can be mass change password)
-- Suspend by date
+# Copy to clipboard (macOS)
+bin/rails secret | pbcopy
 
----
+# Copy to clipboard (Linux)
+bin/rails secret | xclip -selection clipboard
+```
 
-## Summary of Role-Based Access in Admin Management
+For local development, you can use the existing key:
+```bash
+export RAILS_MASTER_KEY="$(cat config/master.key)"
+```
 
-| Feature               | SUPER ADMIN | ADMIN SUPERVISOR | ADMIN   |
-| --------------------- | ----------- | ---------------- | ------- |
-| Add Admin Account     | ✅           | ❌                | ❌       |
-| Edit Admin Profile    | ✅ (All)     | ✅ (Own)          | ✅ (Own) |
-| Change Admin Password | ✅ (Not own) | ❌                | ❌       |
-| Suspend Admin Account | ✅ (Not own) | ❌                | ❌       |
-| Delete Admin Account  | ✅ (Not own) | ❌                | ❌       |
+### Architecture
 
----
+#### Directory Structure
 
-This document outlines the features and permissions for the admin management system with clarity and detail. If additional features or permissions need to be documented, feel free to share!
+```
+monolith/
+├── app/
+│   ├── frontend/          # React components and assets
+│   ├── models/           # ActiveRecord models
+│   ├── controllers/      # Rails controllers
+│   └── views/            # Rails views
+├── config/
+│   ├── credentials.yml.enc  # Encrypted secrets
+│   ├── database.yml         # Database configuration
+│   └── vite.json            # Vite configuration
+├── db/
+│   ├── migrate/          # Database migrations
+│   └── seeds/            # Seed data
+├── lib/                  # Library code
+├── public/               # Static assets
+└── test/                 # Test files
+```
+
+#### Key Components
+
+- **`bin/setup`**: Initializes the development environment
+- **`bin/dev`**: Starts all development processes via `Procfile.dev`
+- **`Procfile.dev`**: Defines development process configuration
+- **`docker-compose.yml`**: Local development database setup
+- **`.devcontainer/`**: VS Code Dev Container configuration
+
+### Testing
+
+Run the test suite:
+```bash
+# Run all tests
+bundle exec rails test
+
+# Run specific test file
+bundle exec rails test test/models/user_test.rb
+
+# Run system tests
+bundle exec rails test:system
+```
+
+### Code Quality
+
+- **Ruby**: StandardRB for linting and formatting
+  ```bash
+  bundle exec standard
+  ```
+- **JavaScript/TypeScript**: Biome for linting and formatting
+  ```bash
+  bun run check
+  ```
+
+### Deployment
+
+The application is configured for deployment via Kamal. See `config/deploy.yml` for configuration details.
+
+## Troubleshooting
+
+### Common Issues
+
+**Database connection errors**
+- Verify PostgreSQL is running on the correct port
+- Check environment variables in `.env`
+- For Docker PostgreSQL: ensure port 7432 is available
+
+**Vite/Bun not found**
+- Install Bun: `curl -fsSL https://bun.sh/install | bash`
+- Verify installation: `bun --version`
+
+**Missing RAILS_MASTER_KEY**
+- Generate a new key with `bin/rails secret`
+- Or use existing key from `config/master.key`
+
+**Frontend assets not loading**
+- Ensure Vite server is running (check port 3036)
+- Run `bun install` to install frontend dependencies
+
+### Getting Help
+
+- Check the [Rails Guides](https://guides.rubyonrails.org/)
+- Review [Vite documentation](https://vitejs.dev/)
+- Consult the project's issue tracker
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and code quality checks
+5. Submit a pull request
