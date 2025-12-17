@@ -53,7 +53,32 @@ Choose one of the following development environments:
      - `MONOLITH_DATABASE_USERNAME`
      - `MONOLITH_DATABASE_PASSWORD`
 
-3. **Start PostgreSQL**
+3. **Set up Rails credentials**
+   
+   The application uses encrypted credentials for sensitive data. After setting up your `.env` file:
+   
+   ```bash
+   # View decrypted credentials (for debugging)
+   bin/rails credentials:show
+   ```
+
+   ```bash
+   # Edit encrypted credentials with your actual values
+   bin/rails credentials:edit
+   ```
+   
+   Example structure (replace with your actual keys):
+   ```yaml
+   secret_key_base: <your_secret_key_base>
+   here_map: { api_key: <your_here_maps_api_key> }
+   resend: { api_key: <your_resend_api_key> }
+   
+   mission_control:
+     http_basic_auth_user: <your_mission_control_user>
+     http_basic_auth_password: <your_mission_control_password>
+   ```
+
+4. **Start PostgreSQL**
    ```bash
    docker compose up db-postgresql -d
    ```
