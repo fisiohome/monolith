@@ -18,22 +18,20 @@ module FisiohomeApi
 
       # Performs a GET request to the external API
       # @param path [String] the API endpoint path
-      # @param token [String] the authentication token
       # @param params [Hash] query parameters
       # @param headers [Hash] additional headers
       # @return [Faraday::Response] the HTTP response
-      def get(path, token:, params: {}, headers: {})
-        connection.get(path, params, auth_headers(token).merge(headers))
+      def get(path, params: {}, headers: {})
+        connection.get(path, params, auth_headers.merge(headers))
       end
 
       # Performs a POST request to the external API
       # @param path [String] the API endpoint path
-      # @param token [String] the authentication token
       # @param body [Hash] request body
       # @param headers [Hash] additional headers
       # @return [Faraday::Response] the HTTP response
-      def post(path, token:, body: {}, headers: {})
-        connection.post(path, body, auth_headers(token).merge(headers))
+      def post(path, body: {}, headers: {})
+        connection.post(path, body, auth_headers.merge(headers))
       end
 
       # Authenticates a user with email and password
@@ -95,8 +93,25 @@ module FisiohomeApi
       # Generates authorization headers with Bearer token
       # @param token [String] the access token
       # @return [Hash] headers with Authorization key
-      def auth_headers(token)
-        {"Authorization" => "Bearer #{token}"}
+      def auth_headers
+        {
+          "X-Service-Name" => service_name,
+          "X-Service-Token" => service_token
+        }
+      end
+
+      def service_name
+        ENV.fetch("FISIOHOME_EXTERNAL_API_SERVICE_NAME")
+      rescue KeyError => e
+        Rails.logger.error("[FisiohomeApi::Client] Missing FISIOHOME_EXTERNAL_API_SERVICE_NAME: #{e.message}")
+        raise
+      end
+
+      def service_token
+        ENV.fetch("FISIOHOME_EXTERNAL_API_SERVICE_TOKEN")
+      rescue KeyError => e
+        Rails.logger.error("[FisiohomeApi::Client] Missing FISIOHOME_EXTERNAL_API_SERVICE_TOKEN: #{e.message}")
+        raise
       end
 
       # Retrieves the base URL from environment variables

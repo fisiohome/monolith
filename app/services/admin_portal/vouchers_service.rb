@@ -1,7 +1,6 @@
 module AdminPortal
   class VouchersService
-    def initialize(token:, client: FisiohomeApi::Client, key_format: :snake)
-      @token = token
+    def initialize(client: FisiohomeApi::Client, key_format: :snake)
       @client = client
       @key_format = key_format
     end
@@ -10,7 +9,7 @@ module AdminPortal
     # Handles various error scenarios and returns a consistent response format
     # @return [Hash] hash containing vouchers array and metadata, or empty defaults on error
     def list
-      response = client.get("/api/v1/vouchers", token: token)
+      response = client.get("/api/v1/vouchers")
 
       if response.success?
         build_response(response.body)
@@ -34,7 +33,7 @@ module AdminPortal
     # @param id [String, Integer] the voucher ID to fetch
     # @return [Hash] hash containing the voucher or nil on error
     def find(id)
-      response = client.get("/api/v1/vouchers/#{id}", token: token)
+      response = client.get("/api/v1/vouchers/#{id}")
 
       if response.success?
         build_single_response(response.body)
@@ -55,7 +54,7 @@ module AdminPortal
 
     private
 
-    attr_reader :token, :client, :key_format
+    attr_reader :client, :key_format
 
     # Combines the fetched vouchers data and metadata, then formats keys.
     # Ensures the caller receives the desired casing (camelCase / snake_case).

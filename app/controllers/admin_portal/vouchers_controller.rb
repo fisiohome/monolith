@@ -1,7 +1,5 @@
 module AdminPortal
   class VouchersController < ApplicationController
-    include ExternalApiAuth
-
     before_action :ensure_admin!
 
     def index
@@ -20,7 +18,7 @@ module AdminPortal
     private
 
     def vouchers_service
-      @vouchers_service ||= AdminPortal::VouchersService.new(token: external_api_token, key_format: :camel)
+      @vouchers_service ||= AdminPortal::VouchersService.new(key_format: :camel)
     end
 
     def vouchers_list
