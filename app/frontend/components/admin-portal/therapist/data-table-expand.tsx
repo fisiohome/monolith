@@ -1,3 +1,25 @@
+import { usePage } from "@inertiajs/react";
+import { format, formatDistanceToNow } from "date-fns";
+import {
+	Activity,
+	BriefcaseMedical,
+	CreditCard,
+	Dot,
+	Fingerprint,
+	Group,
+	Hospital,
+	InfinityIcon,
+	Mail,
+	MapPinHouse,
+	Microscope,
+	Pencil,
+	Phone,
+	Stethoscope,
+	Trash2,
+	Users,
+} from "lucide-react";
+import { Fragment, useMemo } from "react";
+import { formatPhoneNumberIntl } from "react-phone-number-input";
 import {
 	Accordion,
 	AccordionContent,
@@ -27,28 +49,6 @@ import { getEmpStatusBadgeVariant } from "@/lib/therapists";
 import { cn, generateInitials } from "@/lib/utils";
 import type { TableRowDataProps } from "@/pages/AdminPortal/Therapist/Index";
 import type { GlobalPageProps } from "@/types/globals";
-import { usePage } from "@inertiajs/react";
-import { format, formatDistanceToNow } from "date-fns";
-import {
-	Activity,
-	BriefcaseMedical,
-	CreditCard,
-	Dot,
-	Fingerprint,
-	Group,
-	Hospital,
-	InfinityIcon,
-	Mail,
-	MapPinHouse,
-	Microscope,
-	Pencil,
-	Phone,
-	Stethoscope,
-	Trash2,
-	Users,
-} from "lucide-react";
-import { Fragment, useMemo } from "react";
-import { formatPhoneNumberIntl } from "react-phone-number-input";
 
 export interface ExpandSubTableProps {
 	row: TableRowDataProps;

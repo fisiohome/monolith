@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
 import { LoaderIcon, type LucideIcon } from "lucide-react";
 import * as React from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
 export interface IconProps {
@@ -29,12 +29,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 					>
 						<StartIcon.icon size={16} className="text-muted-foreground" />
 					</Button>
-				) : StartIcon?.icon ? (
-					<div className="absolute transform -translate-y-1/2 left-3 top-1/2">
-						<StartIcon.icon size={16} className="text-muted-foreground" />
-					</div>
 				) : (
-					<></>
+					StartIcon?.icon && (
+						<div className="absolute transform -translate-y-1/2 left-3 top-1/2">
+							<StartIcon.icon size={16} className="text-muted-foreground" />
+						</div>
+					)
 				)}
 
 				<input
@@ -64,16 +64,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 							<EndIcon.icon className="text-muted-foreground" size={16} />
 						)}
 					</Button>
-				) : EndIcon?.icon ? (
-					<div className="absolute transform -translate-y-1/2 right-3 top-1/2">
-						{isLoading ? (
-							<LoaderIcon className="animate-spin" />
-						) : (
-							<EndIcon.icon className="text-muted-foreground" size={16} />
-						)}
-					</div>
 				) : (
-					<></>
+					EndIcon?.icon && (
+						<div className="absolute transform -translate-y-1/2 right-3 top-1/2">
+							{isLoading ? (
+								<LoaderIcon className="animate-spin" />
+							) : (
+								<EndIcon.icon className="text-muted-foreground" size={16} />
+							)}
+						</div>
+					)
 				)}
 			</div>
 		);

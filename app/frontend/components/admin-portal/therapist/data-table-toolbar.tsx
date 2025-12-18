@@ -1,3 +1,6 @@
+import { Deferred, router, usePage } from "@inertiajs/react";
+import { Check, ChevronsUpDown, Dot, Search } from "lucide-react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -30,9 +33,6 @@ import type {
 	TableToolbarDataProps,
 	TherapistIndexGlobalPageProps,
 } from "@/pages/AdminPortal/Therapist/Index";
-import { Deferred, router, usePage } from "@inertiajs/react";
-import { Check, ChevronsUpDown, Dot, Search } from "lucide-react";
-import { Fragment, useCallback, useMemo, useState } from "react";
 
 export interface ToolbarTableProps {
 	table: TableToolbarDataProps;
@@ -96,7 +96,10 @@ export default function ToolbarTable({ table: _ }: ToolbarTableProps) {
 	const handleFilterBy = ({
 		value,
 		type,
-	}: { value: string; type: keyof typeof filterBy }) => {
+	}: {
+		value: string;
+		type: keyof typeof filterBy;
+	}) => {
 		setFilterBy({ ...filterBy, [type]: value });
 		updateQueryParams(
 			deepTransformKeysToSnakeCase({ ...filterBy, [type]: value }),

@@ -1,5 +1,5 @@
-import type { Therapist } from "@/types/admin-portal/therapist";
 import { z } from "zod";
+import type { Therapist } from "@/types/admin-portal/therapist";
 import { DAY_NAMES, DEFAULT_TIMEZONE } from "./constants";
 import { timeSchema } from "./validation";
 
@@ -148,16 +148,48 @@ export const getDefaultValues = ({
 	}: Partial<Therapist["availability"]> = availability;
 
 	// Convert backend availability rules format to frontend format
-	const convertedAvailabilityRules = availabilityRules && Array.isArray(availabilityRules) && availabilityRules.length > 0 
-		? [availabilityRules.reduce((acc: { distanceInMeters?: number; durationInMinutes?: number; useLocationRules?: boolean }, rule: { distanceInMeters?: number; durationInMinutes?: number; location?: boolean }) => {
-			if (rule && typeof rule === 'object') {
-				if (rule.distanceInMeters) acc.distanceInMeters = rule.distanceInMeters;
-				if (rule.durationInMinutes) acc.durationInMinutes = rule.durationInMinutes;
-				if (rule.location !== undefined) acc.useLocationRules = rule.location;
-			}
-			return acc;
-		}, {} as { distanceInMeters?: number; durationInMinutes?: number; useLocationRules?: boolean })]
-		: [{ distanceInMeters: 0, durationInMinutes: 0, useLocationRules: false }];
+	const convertedAvailabilityRules =
+		availabilityRules &&
+		Array.isArray(availabilityRules) &&
+		availabilityRules.length > 0
+			? [
+					availabilityRules.reduce(
+						(
+							acc: {
+								distanceInMeters?: number;
+								durationInMinutes?: number;
+								useLocationRules?: boolean;
+							},
+							rule: {
+								distanceInMeters?: number;
+								durationInMinutes?: number;
+								location?: boolean;
+							},
+						) => {
+							if (rule && typeof rule === "object") {
+								if (rule.distanceInMeters)
+									acc.distanceInMeters = rule.distanceInMeters;
+								if (rule.durationInMinutes)
+									acc.durationInMinutes = rule.durationInMinutes;
+								if (rule.location !== undefined)
+									acc.useLocationRules = rule.location;
+							}
+							return acc;
+						},
+						{} as {
+							distanceInMeters?: number;
+							durationInMinutes?: number;
+							useLocationRules?: boolean;
+						},
+					),
+				]
+			: [
+					{
+						distanceInMeters: 0,
+						durationInMinutes: 0,
+						useLocationRules: false,
+					},
+				];
 
 	return {
 		therapistId: therapist?.id || "",
@@ -172,26 +204,34 @@ export const getDefaultValues = ({
 			: undefined,
 		endDateWindow: endDateWindow ? new Date(String(endDateWindow)) : undefined,
 
-		weeklyAvailabilities: Array.isArray(weeklyAvailabilities) ? days.map((day) => ({
-			dayOfWeek: day,
-			times: weeklyAvailabilities
-				.filter(
-					({ dayOfWeek }) => dayOfWeek && dayOfWeek.toLowerCase() === day.toLowerCase(),
-				)
-				.map(({ startTime, endTime }) => ({ startTime, endTime })),
-		})) : days.map((day) => ({
-			dayOfWeek: day,
-			times: [],
-		})) satisfies AvailabilityFormSchema["weeklyAvailabilities"],
+		weeklyAvailabilities: Array.isArray(weeklyAvailabilities)
+			? days.map((day) => ({
+					dayOfWeek: day,
+					times: weeklyAvailabilities
+						.filter(
+							({ dayOfWeek }) =>
+								dayOfWeek && dayOfWeek.toLowerCase() === day.toLowerCase(),
+						)
+						.map(({ startTime, endTime }) => ({ startTime, endTime })),
+				}))
+			: (days.map((day) => ({
+					dayOfWeek: day,
+					times: [],
+				})) satisfies AvailabilityFormSchema["weeklyAvailabilities"]),
 
-		adjustedAvailabilities: Array.isArray(adjustedAvailabilities) ? adjustedAvailabilities.map((adj) => ({
-			specificDate: adj.specificDate ? new Date(String(adj.specificDate)) : null,
-			reason: adj.reason || "",
-			times: adj.times?.map((time: { startTime: string; endTime: string }) => ({
-				startTime: time.startTime,
-				endTime: time.endTime,
-			})) || null,
-		})) : [] satisfies AvailabilityFormSchema["adjustedAvailabilities"],
+		adjustedAvailabilities: Array.isArray(adjustedAvailabilities)
+			? adjustedAvailabilities.map((adj) => ({
+					specificDate: adj.specificDate
+						? new Date(String(adj.specificDate))
+						: null,
+					reason: adj.reason || "",
+					times:
+						adj.times?.map((time: { startTime: string; endTime: string }) => ({
+							startTime: time.startTime,
+							endTime: time.endTime,
+						})) || null,
+				}))
+			: ([] satisfies AvailabilityFormSchema["adjustedAvailabilities"]),
 
 		availabilityRules: convertedAvailabilityRules,
 	};

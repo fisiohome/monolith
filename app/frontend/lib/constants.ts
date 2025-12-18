@@ -1,6 +1,6 @@
 import { tz } from "@date-fns/tz";
 import { type ContextFn, format } from "date-fns";
-import { type Locale, enUS, id } from "date-fns/locale";
+import { enUS, id, type Locale } from "date-fns/locale";
 
 // * for user preferencecs
 export const USER_PREF_STORAGE_KEY = "user-preferences";
@@ -38,7 +38,10 @@ export const LOCALES = { enUS, id };
 export const CURRENT_DATE_TOPBAR = ({
 	locale = enUS,
 	timezone = tz(DEFAULT_TIMEZONE),
-}: { locale?: Locale; timezone?: ContextFn<Date> }) => {
+}: {
+	locale?: Locale;
+	timezone?: ContextFn<Date>;
+}) => {
 	const timeLabel = locale.code === "id" ? "pukul" : "at";
 
 	return format(new Date(), `PPPP '${timeLabel}' p`, { locale, in: timezone });

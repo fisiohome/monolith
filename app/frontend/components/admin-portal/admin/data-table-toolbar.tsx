@@ -1,3 +1,6 @@
+import { router, usePage } from "@inertiajs/react";
+import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -19,9 +22,6 @@ import { cn, debounce, humanize, populateQueryParams } from "@/lib/utils";
 import type { TableToolbarDataProps } from "@/pages/AdminPortal/Admin/Index";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
-import { router, usePage } from "@inertiajs/react";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
-import { useCallback, useState } from "react";
 
 export interface ToolbarTableProps {
 	table: TableToolbarDataProps;
@@ -56,7 +56,10 @@ export default function ToolbarTable({
 	const handleFilterBy = ({
 		value,
 		type,
-	}: { value: string; type: keyof typeof filterBy }) => {
+	}: {
+		value: string;
+		type: keyof typeof filterBy;
+	}) => {
 		setFilterBy({ ...filterBy, [type]: value });
 		updateQueryParams(deepTransformKeysToSnakeCase({ [type]: value }));
 	};

@@ -1,3 +1,14 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Head, router, usePage } from "@inertiajs/react";
+import {
+	type ReactElement,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	AdditionalSettingsForm,
 	AppointmentSchedulingForm,
@@ -27,8 +38,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import {
 	APPOINTMENT_BOOKING_SCHEMA,
 	type AppointmentBookingSchema,
+	buildAppointmentPayload,
 } from "@/lib/appointments/form";
-import { buildAppointmentPayload } from "@/lib/appointments/form";
 import type {
 	FISIOHOME_PARTNER,
 	GENDERS,
@@ -42,17 +53,6 @@ import type { Package } from "@/types/admin-portal/package";
 import type { Patient } from "@/types/admin-portal/patient";
 import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Head, router, usePage } from "@inertiajs/react";
-import {
-	type ReactElement,
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-} from "react";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
 export type ServiceOption = Pick<
 	Service,

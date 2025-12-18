@@ -1,8 +1,8 @@
 import { useForm } from "@inertiajs/react";
 
-export default function Form({ user, onSubmit, submitText }: any) {
+export default function Form({ user: _user, onSubmit, submitText }: any) {
 	const form = useForm({});
-	const { data, setData, errors, processing } = form;
+	const { data: _data, setData: _setData, errors: _errors, processing } = form;
 
 	const handleSubmit = (e: any) => {
 		e.preventDefault();

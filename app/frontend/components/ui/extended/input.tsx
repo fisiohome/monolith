@@ -2,11 +2,11 @@
  * * Docs: https://www.extend-ui.com/docs/components/input-extended
  */
 
-import { hasNestedElementOfType } from "@/lib/input-extended-helper";
-import { cn } from "@/lib/utils";
-import { type VariantProps, cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import { Eye, EyeOff, X } from "lucide-react";
 import * as React from "react";
+import { hasNestedElementOfType } from "@/lib/input-extended-helper";
+import { cn } from "@/lib/utils";
 
 const inputVariants = cva(
 	"h-9 shadow w-full rounded-md border py-2 text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-muted-foreground",

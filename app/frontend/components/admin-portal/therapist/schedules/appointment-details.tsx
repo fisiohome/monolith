@@ -1,3 +1,14 @@
+import { format } from "date-fns";
+import {
+	Building,
+	CreditCard,
+	Hash,
+	MapPinIcon,
+	TicketPercent,
+	User,
+} from "lucide-react";
+import type { ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
 import { LoadingBasic } from "@/components/shared/loading";
 import {
@@ -21,17 +32,6 @@ import type {
 	PatientMedicalRecord,
 } from "@/types/admin-portal/patient";
 import type { Therapist } from "@/types/admin-portal/therapist";
-import { format } from "date-fns";
-import {
-	Building,
-	CreditCard,
-	Hash,
-	MapPinIcon,
-	TicketPercent,
-	User,
-} from "lucide-react";
-import type { ComponentProps } from "react";
-import { useTranslation } from "react-i18next";
 
 // * for the appointment details section
 export interface AppointmentDetailsSectionProps extends ComponentProps<"div"> {

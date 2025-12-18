@@ -1,8 +1,8 @@
+import type { LucideProps } from "lucide-react";
+import { type ComponentProps, useMemo } from "react";
 import { useMotion } from "@/components/providers/motion-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { LucideProps } from "lucide-react";
-import { type ComponentProps, useMemo } from "react";
 
 export interface StatCardProps extends ComponentProps<"div"> {
 	data: {

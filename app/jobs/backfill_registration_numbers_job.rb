@@ -62,7 +62,7 @@ class BackfillRegistrationNumbersJob < ApplicationJob
 
     # Analyze by service
     service_breakdown = Appointment.initial_visits.includes(:service).group_by { |a| a.service&.code&.upcase || "UNKNOWN" }
-    
+
     Rails.logger.info "\nBreakdown by service:"
     service_breakdown.each do |service_code, appointments|
       Rails.logger.info "  #{service_code}: #{appointments.count} initial visits"
@@ -91,7 +91,7 @@ class BackfillRegistrationNumbersJob < ApplicationJob
 
       Appointment.initial_visits.includes(:service).order(created_at: :asc).find_each do |appointment|
         service = appointment.service
-        
+
         unless service
           Rails.logger.warn "  Skipping appointment #{appointment.id} - no service associated"
           skipped_count += 1
@@ -107,7 +107,7 @@ class BackfillRegistrationNumbersJob < ApplicationJob
 
         loop do
           new_registration_number = "#{service_code}-#{counter.to_s.rjust(6, "0")}"
-          
+
           begin
             ActiveRecord::Base.transaction(requires_new: true) do
               appointment.update_column(:registration_number, new_registration_number)
@@ -115,17 +115,17 @@ class BackfillRegistrationNumbersJob < ApplicationJob
 
             service_counters[service_code] = counter + 1
             processed_count += 1
-            
+
             if processed_count % 100 == 0
               Rails.logger.info "  Processed #{processed_count} initial visits..."
             end
-            
+
             break # Exit loop on success
           rescue ActiveRecord::RecordNotUnique
             # If the registration number is already taken, increment counter and retry
             counter += 1
             retry_count += 1
-            
+
             if retry_count >= max_retries
               Rails.logger.error "  Failed to assign registration number for appointment #{appointment.id} after #{max_retries} attempts"
               raise
@@ -154,7 +154,7 @@ class BackfillRegistrationNumbersJob < ApplicationJob
         if series_to_update.any?
           update_count = series_to_update.update_all(registration_number: shared_registration_number)
           series_updated_count += update_count
-          
+
           if series_updated_count % 100 == 0
             Rails.logger.info "  Updated #{series_updated_count} series appointments..."
           end
@@ -170,8 +170,7 @@ class BackfillRegistrationNumbersJob < ApplicationJob
       Rails.logger.info "  Total appointments affected: #{processed_count + series_updated_count}"
       Rails.logger.info "=" * 80
     end
-
-  rescue StandardError => e
+  rescue => e
     Rails.logger.error "=" * 80
     Rails.logger.error "BACKFILL FAILED - Transaction rolled back"
     Rails.logger.error "Error: #{e.class} - #{e.message}"

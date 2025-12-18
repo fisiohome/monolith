@@ -1,3 +1,11 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Head, router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { Eye, EyeClosed, Info } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 import {
 	SettingLayout,
 	SettingSectionLayout,
@@ -17,14 +25,6 @@ import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import type { User } from "@/types/auth";
 import type { GlobalPageProps } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Head, router, usePage } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { Eye, EyeClosed, Info } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { z } from "zod";
 
 export interface EditPasswordPageProps {
 	user: Pick<User, "id" | "email">;

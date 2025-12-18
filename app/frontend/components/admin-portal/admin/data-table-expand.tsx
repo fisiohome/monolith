@@ -1,7 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
-import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
-import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import { formatDistanceToNow } from "date-fns";
 import { format } from "date-fns/format";
@@ -14,6 +10,10 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { useActionPermissions } from "@/hooks/admin-portal/use-admin-utils";
+import type { TableRowDataProps } from "@/pages/AdminPortal/Admin/Index";
+import type { GlobalPageProps } from "@/types/globals";
 import { DeleteAdminAlert } from "./feature-actions";
 
 interface ExpandSubTableProps {

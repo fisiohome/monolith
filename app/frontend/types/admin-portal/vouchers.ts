@@ -1,4 +1,3 @@
-
 export type VouchersMeta = {
 	page: number;
 	pageSize: number;

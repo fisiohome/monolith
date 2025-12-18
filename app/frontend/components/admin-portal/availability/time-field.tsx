@@ -1,3 +1,6 @@
+import { Copy, MinusCircle, PlusCircle, X } from "lucide-react";
+import { type ComponentProps, useMemo } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -10,9 +13,6 @@ import {
 } from "@/components/ui/tooltip";
 import type { AvailabilityFormSchema } from "@/lib/availabilities";
 import { cn } from "@/lib/utils";
-import { Copy, MinusCircle, PlusCircle, X } from "lucide-react";
-import { type ComponentProps, useMemo } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
 
 function TimeInput({
 	name,

@@ -1,3 +1,5 @@
+import { Head } from "@inertiajs/react";
+import { useMemo } from "react";
 import {
 	FormPageContainer,
 	FormPageHeader,
@@ -10,8 +12,6 @@ import type {
 	TherapistEmploymentType,
 	TherapistGender,
 } from "@/types/admin-portal/therapist";
-import { Head } from "@inertiajs/react";
-import { useMemo } from "react";
 import FormTherapist from "../../../components/admin-portal/therapist/upsert-form";
 
 export type FormMode = "create" | "update";

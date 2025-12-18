@@ -1,3 +1,8 @@
+import { Deferred, usePage } from "@inertiajs/react";
+import { AlertCircle, Pencil } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,11 +27,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
-import { Deferred, usePage } from "@inertiajs/react";
-import { AlertCircle, Pencil } from "lucide-react";
-import { Fragment, useMemo, useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
 export default function PatientMedicalForm() {
 	const { t } = useTranslation("appointments-form");

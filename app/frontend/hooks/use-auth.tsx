@@ -1,6 +1,6 @@
+import { useMemo } from "react";
 import type { UserSerialize } from "@/types/auth";
 import type { Auth } from "@/types/globals";
-import { useMemo } from "react";
 
 export interface UseAuthProps {
 	auth: Auth;

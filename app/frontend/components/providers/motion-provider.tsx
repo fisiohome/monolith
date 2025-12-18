@@ -1,12 +1,12 @@
+import { useLocalStorage } from "@uidotdev/usehooks";
+import { MotionGlobalConfig } from "framer-motion";
+import type React from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import {
 	DEFAULT_USER_PREFERENCES,
 	type MotionPreference,
 	USER_PREF_STORAGE_KEY,
 } from "@/lib/constants";
-import { useLocalStorage } from "@uidotdev/usehooks";
-import { MotionGlobalConfig } from "framer-motion";
-import type React from "react";
-import { createContext, useContext, useEffect, useMemo } from "react";
 
 export const STORAGE_KEY = "portal-ui-motion";
 

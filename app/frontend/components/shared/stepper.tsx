@@ -1,11 +1,12 @@
 /**
  * * Docs: https://nyxbui.design/docs/components/stepper
  */
-import { cn } from "@/lib/utils";
+
 import { cva } from "class-variance-authority";
 import type { LucideIcon } from "lucide-react";
 import { CheckIcon, Loader2, X } from "lucide-react";
 import * as React from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Collapsible, CollapsibleContent } from "../ui/collapsible";
 
@@ -102,7 +103,7 @@ function useStepper() {
 	if (context === undefined)
 		throw new Error("useStepper must be used within a StepperProvider");
 
-	const { children, className, ...rest } = context;
+	const { children: _children, className: _className, ...rest } = context;
 
 	const isLastStep = context.activeStep === context.steps.length - 1;
 	const hasCompletedAllSteps = context.activeStep === context.steps.length;
@@ -567,32 +568,37 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>(
 			return children;
 		};
 
+		const isStepClickable = clickable || !!onClickStep;
+		const stepIndex = index ?? 0;
+
+		const triggerStepChange = () => {
+			if (onClickStep) onClickStep(stepIndex, setStep);
+			else onClickStepGeneral?.(stepIndex, setStep);
+		};
+
+		const Comp = isStepClickable ? "button" : "div";
+
 		return (
-			<div
-				ref={ref}
+			<Comp
+				ref={ref as React.Ref<HTMLButtonElement & HTMLDivElement>}
+				type={isStepClickable ? "button" : undefined}
 				className={cn(
 					"stepper__vertical-step",
 					verticalStepVariants({
 						variant: variant?.includes("circle") ? "circle" : "line",
 					}),
 					isLastStepCurrentStep && "gap-[var(--step-gap)]",
+					isStepClickable &&
+						"cursor-pointer appearance-none border-none bg-transparent p-0 text-left",
 					styles?.["vertical-step"],
 				)}
-				data-optional={steps[index || 0]?.optional}
+				data-optional={steps[stepIndex]?.optional}
 				data-completed={isCompletedStep}
 				data-active={active}
-				data-clickable={clickable || !!onClickStep}
+				data-clickable={isStepClickable}
 				data-invalid={localIsError}
-				onClick={() => {
-					if (onClickStep) onClickStep(index || 0, setStep);
-					else onClickStepGeneral?.(index || 0, setStep);
-				}}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						if (onClickStep) onClickStep(index || 0, setStep);
-						else onClickStepGeneral?.(index || 0, setStep);
-					}
-				}}
+				tabIndex={isStepClickable ? 0 : -1}
+				onClick={isStepClickable ? triggerStepChange : undefined}
 			>
 				<div
 					data-vertical
@@ -642,7 +648,7 @@ const VerticalStep = React.forwardRef<HTMLDivElement, VerticalStepProps>(
 				>
 					{renderChildren()}
 				</div>
-			</div>
+			</Comp>
 		);
 	},
 );
@@ -689,9 +695,15 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(
 		const checkIcon = checkIconProp || checkIconContext;
 		const errorIcon = errorIconProp || errorIconContext;
 
+		const isStepClickable = clickable || !!onClickStep;
+
+		const Comp = isStepClickable ? "button" : "div";
+
 		return (
-			<div
-				aria-disabled={!hasVisited}
+			<Comp
+				ref={ref as React.Ref<HTMLButtonElement & HTMLDivElement>}
+				type={isStepClickable ? "button" : undefined}
+				aria-disabled={isStepClickable ? !hasVisited : undefined}
 				className={cn(
 					"stepper__horizontal-step",
 					"relative flex items-center transition-all duration-200",
@@ -706,6 +718,8 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(
 						"[&:not(:last-child)]:after:me-[var(--step-gap)] [&:not(:last-child)]:after:ms-[var(--step-gap)] [&:not(:last-child)]:after:flex-1",
 					variant === "line" &&
 						"data-[active=true]:border-primary flex-1 flex-col border-t-[3px]",
+					isStepClickable &&
+						"cursor-pointer appearance-none border-none bg-transparent p-0 text-left",
 					styles?.["horizontal-step"],
 				)}
 				data-optional={steps[index || 0]?.optional}
@@ -713,13 +727,10 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(
 				data-active={active}
 				data-invalid={localIsError}
 				data-clickable={clickable}
-				onClick={() => onClickStep?.(index || 0, setStep)}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						onClickStep?.(index || 0, setStep);
-					}
-				}}
-				ref={ref}
+				tabIndex={isStepClickable ? 0 : -1}
+				onClick={
+					isStepClickable ? () => onClickStep?.(index || 0, setStep) : undefined
+				}
 			>
 				<div
 					className={cn(
@@ -757,7 +768,7 @@ const HorizontalStep = React.forwardRef<HTMLDivElement, StepSharedProps>(
 						{...{ isCurrentStep, opacity }}
 					/>
 				</div>
-			</div>
+			</Comp>
 		);
 	},
 );

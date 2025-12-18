@@ -1,8 +1,14 @@
+import { tz } from "@date-fns/tz";
+import { usePage } from "@inertiajs/react";
+import { useLocalStorage } from "@uidotdev/usehooks";
+import type { ContextFn, Locale } from "date-fns";
+import { enUS } from "date-fns/locale";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
-	DEFAULT_TIMEZONE,
 	DEFAULT_TIME_FORMAT_12,
 	DEFAULT_TIME_FORMAT_12_DATE_FNS,
 	DEFAULT_TIME_FORMAT_24_DATE_FNS,
+	DEFAULT_TIMEZONE,
 	DEFAULT_USER_PREFERENCES,
 	LOCALES,
 	type TimeFormat,
@@ -11,12 +17,6 @@ import {
 } from "@/lib/constants";
 import i18n from "@/lib/i18n";
 import type { GlobalPageProps } from "@/types/globals";
-import { tz } from "@date-fns/tz";
-import { usePage } from "@inertiajs/react";
-import { useLocalStorage } from "@uidotdev/usehooks";
-import type { ContextFn, Locale } from "date-fns";
-import { enUS } from "date-fns/locale";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type DateProviderProps = {
 	children: React.ReactNode;

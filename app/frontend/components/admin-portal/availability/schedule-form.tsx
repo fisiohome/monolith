@@ -1,3 +1,15 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router, usePage } from "@inertiajs/react";
+import { LoaderIcon } from "lucide-react";
+import {
+	type ComponentProps,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import {
 	Accordion,
 	AccordionContent,
@@ -16,18 +28,6 @@ import type { DAY_NAMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { router, usePage } from "@inertiajs/react";
-import { LoaderIcon } from "lucide-react";
-import {
-	type ComponentProps,
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-} from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import AdjustedAvailabilityForm from "./adjusted-availability";
 import AppointmentSettingsForm from "./appointment-settings";
 import WeeklyAvailabilityForm from "./weekly-availability";

@@ -1,3 +1,15 @@
+import { Link } from "@inertiajs/react";
+import {
+	ChevronsUpDown,
+	Languages,
+	LogOut,
+	Moon,
+	Settings,
+	Sun,
+	SunMoon,
+} from "lucide-react";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigation } from "@/components/providers/navigation-provider";
 import { useTheme } from "@/components/providers/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,18 +37,6 @@ import {
 import type { Theme } from "@/lib/constants";
 import { generateInitials } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
-import { Link } from "@inertiajs/react";
-import {
-	ChevronsUpDown,
-	Languages,
-	LogOut,
-	Moon,
-	Settings,
-	Sun,
-	SunMoon,
-} from "lucide-react";
-import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
 export interface NavUserProps {
 	userData: {

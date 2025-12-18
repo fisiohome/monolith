@@ -1,3 +1,6 @@
+import { Head } from "@inertiajs/react";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
 	SettingLayout,
 	SettingSectionLayout,
@@ -15,9 +18,6 @@ import {
 	type Theme,
 	type TimeFormat,
 } from "@/lib/constants";
-import { Head } from "@inertiajs/react";
-import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
 export default function SettingsAppearance() {
 	const { t, i18n } = useTranslation("settings", {

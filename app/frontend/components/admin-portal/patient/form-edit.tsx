@@ -1,3 +1,14 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Deferred, router, usePage } from "@inertiajs/react";
+import { format } from "date-fns";
+import {
+	AlertCircle,
+	CalendarIcon,
+	IdCard,
+	LoaderIcon,
+	SquarePen,
+	X,
+} from "lucide-react";
 import {
 	Fragment,
 	memo,
@@ -6,8 +17,16 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { isValidPhoneNumber } from "react-phone-number-input";
+import { Drawer as DrawerPrimitive } from "vaul";
+import { z } from "zod";
+import { LoadingBasic } from "@/components/shared/loading";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Calendar, type CalendarProps } from "@/components/ui/calendar";
 import {
 	Drawer,
 	DrawerClose,
@@ -17,7 +36,6 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
-import { Drawer as DrawerPrimitive } from "vaul";
 import {
 	Form,
 	FormControl,
@@ -27,40 +45,22 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import type { PatientIndexGlobalPageProps } from "@/pages/AdminPortal/Patient/Index";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { isValidPhoneNumber } from "react-phone-number-input";
-import { GENDERS } from "@/lib/constants";
-import { idSchema } from "@/lib/validation";
-import { Deferred, router, usePage } from "@inertiajs/react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-	AlertCircle,
-	CalendarIcon,
-	IdCard,
-	LoaderIcon,
-	SquarePen,
-	X,
-} from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { LoadingBasic } from "@/components/shared/loading";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { calculateAge, cn, populateQueryParams } from "@/lib/utils";
-import { format } from "date-fns";
-import { Calendar, type CalendarProps } from "@/components/ui/calendar";
-import { Skeleton } from "@/components/ui/skeleton";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { getGenderIcon } from "@/hooks/use-gender";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { getGenderIcon } from "@/hooks/use-gender";
+import { GENDERS } from "@/lib/constants";
+import { calculateAge, cn, populateQueryParams } from "@/lib/utils";
+import { idSchema } from "@/lib/validation";
+import type { PatientIndexGlobalPageProps } from "@/pages/AdminPortal/Patient/Index";
 
 const FORM_SCHEMA = z.object({
 	contact: z.object({
@@ -565,8 +565,9 @@ const ProfileSection = memo(function Component() {
 												</p>
 
 												{field.value ? (
-													// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-													<div
+													<button
+														type="button"
+														aria-label={tpp("fields.dob.clear")}
 														className="cursor-pointer"
 														onClick={(event) => {
 															event.preventDefault();
@@ -580,7 +581,7 @@ const ProfileSection = memo(function Component() {
 														}}
 													>
 														<X className="opacity-50" />
-													</div>
+													</button>
 												) : (
 													<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
 												)}

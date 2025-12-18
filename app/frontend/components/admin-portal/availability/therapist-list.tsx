@@ -1,3 +1,8 @@
+import { router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { motion } from "framer-motion";
+import { Info, Search, X } from "lucide-react";
+import { type ComponentProps, useCallback, useMemo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,11 +22,6 @@ import {
 } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
-import { router, usePage } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { motion } from "framer-motion";
-import { Info, Search, X } from "lucide-react";
-import { type ComponentProps, useCallback, useMemo, useState } from "react";
 
 interface TherapistListCardProps {
 	therapist: Therapist;

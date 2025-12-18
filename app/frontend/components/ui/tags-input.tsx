@@ -1,8 +1,8 @@
+import { Plus, X as RemoveIcon } from "lucide-react";
+import React, { useCallback, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Plus, X as RemoveIcon } from "lucide-react";
-import React, { useCallback, useEffect } from "react";
 
 /**
  * used for identifying the split char and use will pasting
@@ -81,7 +81,6 @@ export const TagsInput = React.forwardRef<HTMLDivElement, TagsInputProps>(
 				e.preventDefault();
 				const tags = e.clipboardData.getData("text").split(SPLITTER_REGEX);
 				const newValue = [...value];
-				// biome-ignore lint/complexity/noForEach: <explanation>
 				tags.forEach((item) => {
 					const parsedItem = item.replaceAll(FORMATTING_REGEX, "").trim();
 					if (

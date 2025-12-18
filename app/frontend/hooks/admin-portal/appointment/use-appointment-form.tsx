@@ -1,3 +1,10 @@
+import { router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { format, startOfDay } from "date-fns";
+import { MapPin } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
 import { useDateContext } from "@/components/providers/date-provider";
 import { useStepper } from "@/components/shared/stepper";
@@ -13,13 +20,6 @@ import {
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { cn, goBackHandler, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
-import { router, usePage } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { format, startOfDay } from "date-fns";
-import { MapPin } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import {
 	usePreferredTherapistGender,
 	useTherapistAvailability,

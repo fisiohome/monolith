@@ -1,6 +1,6 @@
+import * as React from "react";
 import { Label } from "@/components/ui/label";
 import type { Period } from "@/lib/time-picker-utils";
-import * as React from "react";
 import { TimePickerInput } from "./input";
 import { TimePeriodSelect } from "./period-select";
 

@@ -1,7 +1,3 @@
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { humanize, populateQueryParams } from "@/lib/utils";
-import type { AdminTypes } from "@/types/admin-portal/admin";
-import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import {
 	Calendar1,
@@ -12,6 +8,10 @@ import {
 } from "lucide-react";
 import { createContext, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { humanize, populateQueryParams } from "@/lib/utils";
+import type { AdminTypes } from "@/types/admin-portal/admin";
+import type { GlobalPageProps } from "@/types/globals";
 import type { NavMainProps } from "../admin-portal/sidebar/nav-main";
 import type { NavUserProps } from "../admin-portal/sidebar/nav-user";
 

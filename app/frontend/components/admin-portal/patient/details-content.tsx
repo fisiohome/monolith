@@ -1,33 +1,33 @@
-import { Fragment, memo, Suspense, useMemo } from "react";
-import {
-	Drawer,
-	DrawerClose,
-	DrawerContent,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle,
-	DrawerDescription,
-} from "@/components/ui/drawer";
-import { Button } from "@/components/ui/button";
-import { useTranslation } from "react-i18next";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { generateInitials } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { getGenderIcon } from "@/hooks/use-gender";
 import { format } from "date-fns";
-import { useDateContext } from "@/components/providers/date-provider";
 import { Cake, Dot, Link, Mail, MapPinIcon, Phone } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Fragment, memo, Suspense, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useDateContext } from "@/components/providers/date-provider";
+import ApptCard from "@/components/shared/appt-card";
+import { LoadingBasic } from "@/components/shared/loading";
 import {
 	Accordion,
 	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
 } from "@/components/ui/accordion";
-import { LoadingBasic } from "@/components/shared/loading";
-import type { PatientIndexGlobalPageProps } from "@/pages/AdminPortal/Patient/Index";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import ApptCard from "@/components/shared/appt-card";
+import {
+	Drawer,
+	DrawerClose,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
+import { Separator } from "@/components/ui/separator";
+import { getGenderIcon } from "@/hooks/use-gender";
+import { generateInitials } from "@/lib/utils";
+import type { PatientIndexGlobalPageProps } from "@/pages/AdminPortal/Patient/Index";
 
 export interface DetailsContentProps {
 	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
@@ -135,7 +135,9 @@ export default DetailsContent;
 
 const ProfileCard = memo(function Component({
 	patient,
-}: { patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]> }) {
+}: {
+	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
+}) {
 	const { locale, tzDate } = useDateContext();
 	const { t: tpl } = useTranslation("patients", { keyPrefix: "list" });
 	const initials = useMemo(
@@ -228,7 +230,9 @@ const ProfileCard = memo(function Component({
 
 const ContactCard = memo(function Component({
 	patient,
-}: { patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]> }) {
+}: {
+	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
+}) {
 	const { t: tpl } = useTranslation("patients", { keyPrefix: "list" });
 	const initialsContact = useMemo(() => {
 		if (!patient.contact?.contactName) return "N/A";
@@ -304,7 +308,9 @@ const ContactCard = memo(function Component({
 
 const AddressCard = memo(function Component({
 	patient,
-}: { patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]> }) {
+}: {
+	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
+}) {
 	const { t: tpl } = useTranslation("patients", { keyPrefix: "list" });
 	const addresses = useMemo(
 		() => patient?.patientAddresses || [],

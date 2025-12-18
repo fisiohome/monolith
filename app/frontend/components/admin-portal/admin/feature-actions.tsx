@@ -1,3 +1,19 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router, usePage } from "@inertiajs/react";
+import {
+	Check,
+	ChevronsUpDown,
+	Clipboard,
+	Eye,
+	EyeClosed,
+	Info,
+	Loader2,
+	PartyPopper,
+} from "lucide-react";
+import type React from "react";
+import { type ComponentProps, type Dispatch, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -55,22 +71,6 @@ import type {
 } from "@/pages/AdminPortal/Admin/Index";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { router, usePage } from "@inertiajs/react";
-import {
-	Check,
-	ChevronsUpDown,
-	Clipboard,
-	Eye,
-	EyeClosed,
-	Info,
-	Loader2,
-	PartyPopper,
-} from "lucide-react";
-import type React from "react";
-import { type ComponentProps, type Dispatch, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 /* change password feature */
 export interface ChangePasswordContentProps extends ComponentProps<"div"> {

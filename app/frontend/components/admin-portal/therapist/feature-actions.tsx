@@ -1,43 +1,7 @@
-import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
-import {
-	AlertDialog,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { DialogClose, DialogFooter } from "@/components/ui/dialog";
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import {
-	cn,
-	copyToClipboard,
-	generateInitials,
-	populateQueryParams,
-} from "@/lib/utils";
-import { PASSWORD_WITH_CONFIRMATION_SCHEMA } from "@/lib/validation";
-import type { Therapist } from "@/types/admin-portal/therapist";
-import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Deferred, router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { format, formatDistanceToNow } from "date-fns";
 import {
 	Activity,
 	BriefcaseMedical,
@@ -66,10 +30,30 @@ import {
 	useState,
 } from "react";
 import { useForm } from "react-hook-form";
+import { formatPhoneNumberIntl } from "react-phone-number-input";
 import { toast } from "sonner";
 import { z } from "zod";
-import i18n from "@/lib/i18n";
-import { useMediaQuery } from "@uidotdev/usehooks";
+import ApptCard from "@/components/shared/appt-card";
+import { LoadingBasic } from "@/components/shared/loading";
+import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -77,23 +61,39 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/hooks/use-auth";
-import { format, formatDistanceToNow } from "date-fns";
-import { formatPhoneNumberIntl } from "react-phone-number-input";
-import { getEmpStatusBadgeVariant } from "@/lib/therapists";
-import { Badge } from "@/components/ui/badge";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-} from "@/components/ui/accordion";
-import { getGenderIcon } from "@/hooks/use-gender";
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/use-auth";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { getGenderIcon } from "@/hooks/use-gender";
+import i18n from "@/lib/i18n";
+import { getEmpStatusBadgeVariant } from "@/lib/therapists";
+import {
+	cn,
+	copyToClipboard,
+	generateInitials,
+	populateQueryParams,
+} from "@/lib/utils";
+import { PASSWORD_WITH_CONFIRMATION_SCHEMA } from "@/lib/validation";
 import type { TherapistIndexGlobalPageProps } from "@/pages/AdminPortal/Therapist/Index";
-import { LoadingBasic } from "@/components/shared/loading";
-import ApptCard from "@/components/shared/appt-card";
+import type { Therapist } from "@/types/admin-portal/therapist";
+import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
 
 /* change password feature */
 export interface ChangePasswordContentProps extends ComponentProps<"div"> {

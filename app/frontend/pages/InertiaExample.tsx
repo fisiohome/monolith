@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import type { GlobalPageProps } from "@/types/globals";
 import { Head, usePage } from "@inertiajs/react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import type { GlobalPageProps } from "@/types/globals";
 import inertiaSvg from "/assets/inertia.svg";
 import reactSvg from "/assets/react.svg";
 import viteRubySvg from "/assets/vite_ruby.svg";

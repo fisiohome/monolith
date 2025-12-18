@@ -1,21 +1,8 @@
-import { Fragment, memo, useCallback, useMemo, useState } from "react";
-import type {
-	PatientIndexGlobalPageProps,
-	TableToolbarDataProps,
-} from "@/pages/AdminPortal/Patient/Index";
-import { Input } from "@/components/ui/input";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
 import { Deferred, router, usePage } from "@inertiajs/react";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { cn, debounce, populateQueryParams } from "@/lib/utils";
+import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import { Fragment, memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { groupLocationsByCountry } from "@/lib/locations";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import {
 	Command,
 	CommandEmpty,
@@ -25,7 +12,20 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { groupLocationsByCountry } from "@/lib/locations";
+import { cn, debounce, populateQueryParams } from "@/lib/utils";
+import type {
+	PatientIndexGlobalPageProps,
+	TableToolbarDataProps,
+} from "@/pages/AdminPortal/Patient/Index";
 
 export interface ToolbarTableProps {
 	table: TableToolbarDataProps;

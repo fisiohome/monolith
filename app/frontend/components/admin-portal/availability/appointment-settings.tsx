@@ -1,3 +1,6 @@
+import { Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
+import type { ComponentProps } from "react";
+import { useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -27,9 +30,6 @@ import { useTimeAPI } from "@/hooks/use-time-api";
 import type { AvailabilityFormSchema } from "@/lib/availabilities";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
-import { Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
-import type { ComponentProps } from "react";
-import { useFormContext } from "react-hook-form";
 
 export interface AppointmentSettingsFormProps extends ComponentProps<"div"> {
 	selectedTherapist: Therapist | null;

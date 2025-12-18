@@ -1,3 +1,36 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { router, usePage } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import {
+	AlertCircle,
+	Check,
+	ChevronsUpDown,
+	CreditCard,
+	Dot,
+	Eye,
+	EyeClosed,
+	LoaderIcon,
+	MapPinHouse,
+	Plus,
+} from "lucide-react";
+import {
+	type ComponentProps,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import {
+	type UseFieldArrayReturn,
+	useFieldArray,
+	useForm,
+	useFormContext,
+	useWatch,
+} from "react-hook-form";
+import { toast } from "sonner";
+import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
+import HereMap, { type HereMaphandler } from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,7 +71,7 @@ import { TagsInput } from "@/components/ui/tags-input";
 import { Textarea } from "@/components/ui/textarea";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { groupLocationsByCountry } from "@/lib/locations";
-import { type TherapistFormSchema, getFormSchema } from "@/lib/therapists";
+import { getFormSchema, type TherapistFormSchema } from "@/lib/therapists";
 import { cn, goBackHandler } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
 import type { Service } from "@/types/admin-portal/service";
@@ -49,41 +82,7 @@ import type {
 	TherapistGender,
 } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { router, usePage } from "@inertiajs/react";
-import {
-	AlertCircle,
-	Check,
-	ChevronsUpDown,
-	CreditCard,
-	Dot,
-	Eye,
-	EyeClosed,
-	LoaderIcon,
-	MapPinHouse,
-	Plus,
-} from "lucide-react";
-import {
-	type ComponentProps,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
-import {
-	type UseFieldArrayReturn,
-	useFieldArray,
-	useForm,
-	useFormContext,
-	useWatch,
-} from "react-hook-form";
 import type { FormMode } from "../../../pages/AdminPortal/Therapist/Upsert";
-
-import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
-import HereMap, { type HereMaphandler } from "@/components/shared/here-map";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { toast } from "sonner";
 
 // * for section container'
 interface FormSectionContainerProps extends ComponentProps<"div"> {

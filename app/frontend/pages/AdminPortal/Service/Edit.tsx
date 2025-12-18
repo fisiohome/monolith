@@ -1,3 +1,9 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Head, router, usePage } from "@inertiajs/react";
+import { Dot, LoaderIcon, Plus } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { z } from "zod";
 import {
 	FormPageContainer,
 	FormPageHeader,
@@ -61,12 +67,6 @@ import { goBackHandler } from "@/lib/utils";
 import type { Location } from "@/types/admin-portal/location";
 import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Head, router, usePage } from "@inertiajs/react";
-import { Dot, LoaderIcon, Plus } from "lucide-react";
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
-import { z } from "zod";
 
 export interface EditPageProps {
 	service: Service;

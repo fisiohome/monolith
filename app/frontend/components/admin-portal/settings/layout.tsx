@@ -1,10 +1,10 @@
+import { router, usePage } from "@inertiajs/react";
+import { type ComponentProps, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { GlobalPageProps } from "@/types/globals";
-import { router, usePage } from "@inertiajs/react";
-import { type ComponentProps, useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import {
 	FormPageContainer,
 	FormPageHeaderGridPattern,

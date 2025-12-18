@@ -1,3 +1,9 @@
+import { Deferred, usePage } from "@inertiajs/react";
+import { format } from "date-fns";
+import { AlertCircle, Cake, CalendarIcon, Pencil, User, X } from "lucide-react";
+import { type ComponentProps, Fragment, memo, useMemo, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,12 +43,6 @@ import type { GENDERS } from "@/lib/constants";
 import i18n from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
-import { Deferred, usePage } from "@inertiajs/react";
-import { format } from "date-fns";
-import { AlertCircle, Cake, CalendarIcon, Pencil, User, X } from "lucide-react";
-import { type ComponentProps, Fragment, memo, useMemo, useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
 export interface CardPatientBasicInfoFormProps extends ComponentProps<"div"> {
 	isNotCompletedForm: boolean;

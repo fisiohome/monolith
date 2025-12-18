@@ -1,14 +1,14 @@
-import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast";
-import type { GlobalPageProps } from "@/types/globals";
 import { usePage } from "@inertiajs/react";
 import {
-	type PropsWithChildren,
 	createContext,
+	type PropsWithChildren,
 	useContext,
 	useEffect,
 } from "react";
 import { Toaster as ToasterSonner } from "sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
+import type { GlobalPageProps } from "@/types/globals";
 
 interface ToastContextProps {
 	toast: ReturnType<typeof useToast>["toast"];
@@ -20,7 +20,7 @@ export const ToastProvider = ({ children }: PropsWithChildren) => {
 	const { toast } = useToast();
 	const props = usePage<GlobalPageProps>().props;
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <->
 	useEffect(() => {
 		const isSuccess = !!props?.flash?.success;
 		const message = props?.flash?.success || props?.flash?.alert;

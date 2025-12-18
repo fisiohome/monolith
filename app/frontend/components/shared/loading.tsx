@@ -1,7 +1,7 @@
-import { cn } from "@/lib/utils";
 import type { ComponentProps } from "react";
-import { Spinner } from "../ui/kibo-ui/spinner";
 import i18n from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import { Spinner } from "../ui/kibo-ui/spinner";
 
 export interface LoadingBasicProps extends ComponentProps<"div"> {
 	text?: string;

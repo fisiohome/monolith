@@ -1,7 +1,3 @@
-import { useDateContext } from "@/components/providers/date-provider";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { CURRENT_DATE_TOPBAR, INTERVAL_TOPBAR_DATE } from "@/lib/constants";
 import {
 	Clock1,
 	Clock2,
@@ -17,6 +13,10 @@ import {
 	Clock12,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useDateContext } from "@/components/providers/date-provider";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { CURRENT_DATE_TOPBAR, INTERVAL_TOPBAR_DATE } from "@/lib/constants";
 
 const CLOCK_ICONS = [
 	Clock1,

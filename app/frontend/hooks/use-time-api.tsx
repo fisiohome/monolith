@@ -81,7 +81,7 @@ export const useTimeAPI = () => {
 
 	// Trigger the timezone fetch once when the component mounts.
 	// (The empty dependency array ensures this effect runs only once.)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <->
 	useEffect(() => {
 		getTimezones();
 

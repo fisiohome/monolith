@@ -1,5 +1,6 @@
+import { Link } from "@inertiajs/react";
 import { ChevronRight, type LucideIcon } from "lucide-react";
-
+import { useMemo } from "react";
 import { useNavigation } from "@/components/providers/navigation-provider";
 import {
 	Collapsible,
@@ -18,8 +19,6 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Link } from "@inertiajs/react";
-import { useMemo } from "react";
 
 export interface NavMainProps {
 	items: {

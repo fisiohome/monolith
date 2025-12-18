@@ -1,7 +1,7 @@
-import type { FormMode } from "@/pages/AdminPortal/Therapist/Upsert";
-import type { Therapist } from "@/types/admin-portal/therapist";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import { z } from "zod";
+import type { FormMode } from "@/pages/AdminPortal/Therapist/Upsert";
+import type { Therapist } from "@/types/admin-portal/therapist";
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, GENDERS } from "./constants";
 
 /**

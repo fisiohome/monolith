@@ -1,3 +1,36 @@
+import { router, usePage } from "@inertiajs/react";
+import { format, isSameDay } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+	AlertCircle,
+	Cake,
+	IdCard,
+	Info,
+	Link,
+	LoaderIcon,
+	Mail,
+	MapPinHouse,
+	MapPinIcon,
+	MapPinned,
+	MousePointerClick,
+	Pencil,
+	Phone,
+	Search,
+	User,
+	UserRoundPlus,
+	X,
+} from "lucide-react";
+import {
+	type Dispatch,
+	Fragment,
+	memo,
+	type SetStateAction,
+	useCallback,
+	useMemo,
+	useState,
+} from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -40,41 +73,8 @@ import {
 import { cn, debounce, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import type { Patient } from "@/types/admin-portal/patient";
-import { router, usePage } from "@inertiajs/react";
-import { format, isSameDay } from "date-fns";
-import {
-	AlertCircle,
-	Cake,
-	IdCard,
-	Info,
-	Link,
-	LoaderIcon,
-	Mail,
-	MapPinHouse,
-	MapPinIcon,
-	MapPinned,
-	MousePointerClick,
-	Pencil,
-	Phone,
-	Search,
-	User,
-	UserRoundPlus,
-	X,
-} from "lucide-react";
-import {
-	type Dispatch,
-	Fragment,
-	type SetStateAction,
-	memo,
-	useCallback,
-	useMemo,
-	useState,
-} from "react";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 import { useFormProvider } from "../new-appointment-form";
 import { CardPatientBasicInfoForm } from "./patient-basic-info";
-import { AnimatePresence, motion } from "framer-motion";
 
 interface CardSelectionProps {
 	patient: Patient;

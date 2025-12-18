@@ -1,3 +1,9 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Head, router, usePage } from "@inertiajs/react";
+import { Check, ChevronsUpDown, Eye, EyeClosed } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -26,12 +32,6 @@ import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { cn, humanize } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Head, router, usePage } from "@inertiajs/react";
-import { Check, ChevronsUpDown, Eye, EyeClosed } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 export interface NewAdminPageProps {
 	adminTypeList: AdminTypes;

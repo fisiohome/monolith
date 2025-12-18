@@ -1,3 +1,24 @@
+import { Deferred, router, usePage } from "@inertiajs/react";
+import { useHover } from "@uidotdev/usehooks";
+import { format, isSameHour, isToday, parse } from "date-fns";
+import {
+	CalendarIcon,
+	Check,
+	ChevronLeft,
+	ChevronRight,
+	ChevronsUpDown,
+	Hash,
+	Search,
+} from "lucide-react";
+import {
+	type ComponentProps,
+	Fragment,
+	Suspense,
+	useCallback,
+	useMemo,
+	useState,
+} from "react";
+import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
 import { LoadingBasic } from "@/components/shared/loading";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,13 +58,13 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-	INTERVAL_MINUTES,
-	SLOT_HEIGHT,
-	START_HOUR,
 	checkPastTimeSlot,
 	checkUnder2Hours,
 	formatTimeLabel,
 	getTherapistAvailabilityForDate,
+	INTERVAL_MINUTES,
+	SLOT_HEIGHT,
+	START_HOUR,
 } from "@/hooks/use-calendar-schedule";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -59,27 +80,6 @@ import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
-import { Deferred, router, usePage } from "@inertiajs/react";
-import { useHover } from "@uidotdev/usehooks";
-import { format, isSameHour, isToday, parse } from "date-fns";
-import {
-	CalendarIcon,
-	Check,
-	ChevronLeft,
-	ChevronRight,
-	ChevronsUpDown,
-	Hash,
-	Search,
-} from "lucide-react";
-import {
-	type ComponentProps,
-	Fragment,
-	Suspense,
-	useCallback,
-	useMemo,
-	useState,
-} from "react";
-import { useTranslation } from "react-i18next";
 import PatientDetailsSection, {
 	AppointmentDetailsSection,
 	PICDetailsSection,

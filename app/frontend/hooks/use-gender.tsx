@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { Ban, Mars, Venus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const getGenderIcon = (gender: string, classname?: string) => {
 	const lower = gender.toLowerCase();

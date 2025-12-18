@@ -1,8 +1,9 @@
 /**
  * * Docs: https://nyxbui.design/docs/components/grid-pattern
  */
-import { cn } from "@/lib/utils";
+
 import { useId } from "react";
+import { cn } from "@/lib/utils";
 
 // import { ny } from "~/components/lib/utils";
 

@@ -1,3 +1,13 @@
+import { Command as CommandPrimitive } from "cmdk";
+import { Check, X as RemoveIcon } from "lucide-react";
+import React, {
+	createContext,
+	forwardRef,
+	type KeyboardEvent,
+	useCallback,
+	useContext,
+	useState,
+} from "react";
 import { Badge } from "@/components/ui/badge";
 import {
 	Command,
@@ -6,16 +16,6 @@ import {
 	CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { Command as CommandPrimitive } from "cmdk";
-import { Check, X as RemoveIcon } from "lucide-react";
-import React, {
-	type KeyboardEvent,
-	createContext,
-	forwardRef,
-	useCallback,
-	useContext,
-	useState,
-} from "react";
 
 interface MultiSelectorProps
 	extends React.ComponentPropsWithoutRef<typeof CommandPrimitive> {

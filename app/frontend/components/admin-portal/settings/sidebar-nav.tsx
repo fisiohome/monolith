@@ -1,6 +1,6 @@
+import { Link } from "@inertiajs/react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Link } from "@inertiajs/react";
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
 	items: {

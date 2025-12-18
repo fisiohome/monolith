@@ -1,3 +1,4 @@
+import { usePage } from "@inertiajs/react";
 import { CheckIcon, ChevronsUpDown } from "lucide-react";
 /**
  * * Docs: https://shadcn-phone-input.vercel.app/
@@ -5,7 +6,6 @@ import { CheckIcon, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 import * as RPNInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
-
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { usePage } from "@inertiajs/react";
 
 type PhoneInputProps = Omit<
 	React.ComponentProps<"input">,

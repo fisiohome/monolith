@@ -2,7 +2,7 @@
  * * Effect docs: https://enhanced-button.vercel.app/
  */
 import { Slot, Slottable } from "@radix-ui/react-slot";
-import { type VariantProps, cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -64,23 +64,21 @@ const buttonVariants = cva(
 
 export type ButtonVariant = VariantProps<typeof buttonVariants>;
 
-interface IconProps {
-	icon: React.ElementType;
-	iconPlacement: "left" | "right";
-}
-
-interface IconRefProps {
-	icon?: never;
-	iconPlacement?: undefined;
-}
-
 export interface ButtonProps
 	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
 		ButtonVariant {
 	asChild?: boolean;
 }
 
-export type ButtonIconProps = IconProps | IconRefProps;
+export type ButtonIconProps =
+	| {
+			icon: React.ElementType;
+			iconPlacement: "left" | "right";
+	  }
+	| {
+			icon?: never;
+			iconPlacement?: undefined;
+	  };
 
 const Button = React.forwardRef<
 	HTMLButtonElement,

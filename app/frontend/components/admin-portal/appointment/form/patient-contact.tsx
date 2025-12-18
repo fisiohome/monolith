@@ -1,40 +1,3 @@
-import { LoadingBasic } from "@/components/shared/loading";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/ui/phone-input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-	Sheet,
-	SheetClose,
-	SheetContent,
-	SheetFooter,
-	SheetHeader,
-	SheetTitle,
-} from "@/components/ui/sheet";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { useIsMobile } from "@/hooks/use-mobile";
-import {
-	defineAppointmentFormDefaultValues,
-	type AppointmentBookingSchema,
-} from "@/lib/appointments/form";
-import {
-	cn,
-	debounce,
-	generateInitials,
-	populateQueryParams,
-} from "@/lib/utils";
-import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
-import type { Patient } from "@/types/admin-portal/patient";
 import { router, usePage } from "@inertiajs/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -61,6 +24,43 @@ import {
 } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { LoadingBasic } from "@/components/shared/loading";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+	Sheet,
+	SheetClose,
+	SheetContent,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+	type AppointmentBookingSchema,
+	defineAppointmentFormDefaultValues,
+} from "@/lib/appointments/form";
+import {
+	cn,
+	debounce,
+	generateInitials,
+	populateQueryParams,
+} from "@/lib/utils";
+import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
+import type { Patient } from "@/types/admin-portal/patient";
 
 export default function PatientContactForm() {
 	const { t } = useTranslation("appointments-form");

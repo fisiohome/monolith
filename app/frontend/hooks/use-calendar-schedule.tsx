@@ -1,20 +1,20 @@
 import {
+	type ContextFn,
+	differenceInCalendarDays,
+	differenceInMinutes,
+	format,
+	isPast,
+	type Locale,
+	parse,
+	startOfDay,
+} from "date-fns";
+import { useEffect, useMemo, useState } from "react";
+import {
 	DEFAULT_TIME_FORMAT_24_DATE_FNS,
 	type TimeFormat,
 	type TimeFormatDateFns,
 } from "@/lib/constants";
 import type { Therapist } from "@/types/admin-portal/therapist";
-import {
-	type ContextFn,
-	type Locale,
-	differenceInCalendarDays,
-	differenceInMinutes,
-	format,
-	isPast,
-	parse,
-	startOfDay,
-} from "date-fns";
-import { useEffect, useMemo, useState } from "react";
 
 export const SLOT_HEIGHT = 48; // Height of each time slot row in pixels (for UI rendering)
 export const INTERVAL_MINUTES = 60; // Default interval between time slots

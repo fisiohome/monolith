@@ -1,11 +1,12 @@
 /**
  * * Docs: https://nyxbui.design/docs/components/timeline
  **/
-import { cn } from "@/lib/utils";
+
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import { CheckIcon, X } from "lucide-react";
 import React from "react";
+import { cn } from "@/lib/utils";
 
 const timelineVariants = cva("grid", {
 	variants: {

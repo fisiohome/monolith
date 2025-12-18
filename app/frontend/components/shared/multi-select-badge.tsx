@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 
 type WithLabel = {
@@ -43,10 +43,10 @@ export default function MultiSelectBadges({
 									+ {items.length - maxShows} items
 								</span>
 
-								{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-								<span
+								<button
+									type="button"
 									aria-label="Remove rest all option"
-									aria-roledescription="button to remove rest all option"
+									className="inline-flex"
 									onClick={(event) => {
 										event.preventDefault();
 										event.stopPropagation();
@@ -59,7 +59,7 @@ export default function MultiSelectBadges({
 								>
 									<span className="sr-only">Remove rest all option</span>
 									<X className="w-4 h-4 hover:stroke-destructive" />
-								</span>
+								</button>
 							</Badge>
 						);
 					}
@@ -75,10 +75,10 @@ export default function MultiSelectBadges({
 						>
 							<span className="text-xs">{service.label}</span>
 
-							{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-							<span
+							<button
+								type="button"
 								aria-label={`Remove ${service.label} option`}
-								aria-roledescription="button to remove option"
+								className="inline-flex"
 								onClick={(event) => {
 									event.preventDefault();
 									event.stopPropagation();
@@ -91,7 +91,7 @@ export default function MultiSelectBadges({
 							>
 								<span className="sr-only">Remove {service.label} option</span>
 								<X className="w-4 h-4 hover:stroke-destructive" />
-							</span>
+							</button>
 						</Badge>
 					);
 				})

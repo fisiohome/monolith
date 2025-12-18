@@ -1,3 +1,15 @@
+import { type ComponentProps, useMemo, useState } from "react";
+import {
+	Label,
+	LabelList,
+	Pie,
+	PieChart,
+	PolarRadiusAxis,
+	RadialBar,
+	RadialBarChart,
+	Sector,
+} from "recharts";
+import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 import {
 	Card,
 	CardContent,
@@ -21,18 +33,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { type ComponentProps, useMemo, useState } from "react";
-import {
-	Label,
-	LabelList,
-	PieChart,
-	PolarRadiusAxis,
-	RadialBar,
-	RadialBarChart,
-	Sector,
-} from "recharts";
-import { Pie } from "recharts";
-import type { PieSectorDataItem } from "recharts/types/polar/Pie";
 
 // admin by role type distribution chart
 export interface AdminByRoleChartProps extends ComponentProps<"div"> {
@@ -225,12 +225,10 @@ export function TherapistByEmploymentTypeChart({
 	data,
 }: TherapistByEmploymentTypeChartProps) {
 	const chart = useMemo(() => {
-		const adminTypeData = Object.entries(data).map(([type, count]) => ({
-			[type.toLowerCase()]: count,
-		}));
-		const transformedData = adminTypeData.reduce(
-			(acc, curr) => {
-				return Object.assign(acc, curr);
+		const transformedData = Object.entries(data).reduce(
+			(acc, [type, count]) => {
+				acc[type.toLowerCase()] = count;
+				return acc;
 			},
 			{} as Record<string, number>,
 		);
@@ -373,12 +371,10 @@ export function TherapistByGenderChart({
 	data,
 }: TherapistByEmploymentTypeChartProps) {
 	const chart = useMemo(() => {
-		const adminTypeData = Object.entries(data).map(([type, count]) => ({
-			[type.toLowerCase()]: count,
-		}));
-		const transformedData = adminTypeData.reduce(
-			(acc, curr) => {
-				return Object.assign(acc, curr);
+		const transformedData = Object.entries(data).reduce(
+			(acc, [type, count]) => {
+				acc[type.toLowerCase()] = count;
+				return acc;
 			},
 			{} as Record<string, number>,
 		);

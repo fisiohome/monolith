@@ -1,15 +1,17 @@
-import { Input } from "@/components/ui/input";
-import { debounce, populateQueryParams } from "@/lib/utils";
-import type { TableToolbarDataProps } from "@/pages/AdminPortal/Location/Index";
-import type { GlobalPageProps } from "@/types/globals";
 import { router, usePage } from "@inertiajs/react";
 import { Search } from "lucide-react";
 import { type ChangeEvent, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Input } from "@/components/ui/input";
+import { debounce, populateQueryParams } from "@/lib/utils";
+import type { TableToolbarDataProps } from "@/pages/AdminPortal/Location/Index";
+import type { GlobalPageProps } from "@/types/globals";
 
 export default function ToolbarTable({
 	table: _,
-}: { table: TableToolbarDataProps }) {
+}: {
+	table: TableToolbarDataProps;
+}) {
 	const { url: pageURL, props: globalProps } = usePage<GlobalPageProps>();
 	const { t: tl } = useTranslation("locations");
 

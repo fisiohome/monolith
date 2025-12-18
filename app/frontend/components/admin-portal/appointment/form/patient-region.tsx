@@ -1,3 +1,15 @@
+import { Deferred } from "@inertiajs/react";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import {
+	AlertCircle,
+	Check,
+	ChevronsUpDown,
+	LoaderIcon,
+	MapPin,
+	X,
+} from "lucide-react";
+import { Fragment, useMemo } from "react";
+import { useFormContext } from "react-hook-form";
 import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
 import HereMap from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -44,18 +56,6 @@ import {
 } from "@/lib/appointments/form";
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { Deferred } from "@inertiajs/react";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import {
-	AlertCircle,
-	Check,
-	ChevronsUpDown,
-	LoaderIcon,
-	MapPin,
-	X,
-} from "lucide-react";
-import { Fragment, useMemo } from "react";
-import { useFormContext } from "react-hook-form";
 
 export default function PatientRegionForm() {
 	const {

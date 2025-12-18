@@ -2,17 +2,17 @@
  * * docs: https://time.openstatus.dev/
  * This component is used to input time in the time picker.
  */
-import { Input } from "@/components/ui/input";
 
+import React from "react";
+import { Input } from "@/components/ui/input";
 import {
-	type Period,
-	type TimePickerType,
 	getArrowByType,
 	getDateByType,
+	type Period,
 	setDateByType,
+	type TimePickerType,
 } from "@/lib/time-picker-utils";
 import { cn } from "@/lib/utils";
-import React from "react";
 
 export interface TimePickerInputProps
 	extends React.InputHTMLAttributes<HTMLInputElement> {

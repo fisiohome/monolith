@@ -1,26 +1,26 @@
-import type { Appointment } from "@/types/admin-portal/appointment";
+import { router, usePage } from "@inertiajs/react";
+import { format } from "date-fns";
+import { ArrowUpRight, Hash } from "lucide-react";
 import { type ComponentProps, memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useDateContext } from "../providers/date-provider";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { router, usePage } from "@inertiajs/react";
-import type { VariantDotBadge } from "./dot-badge";
-import { getDotVariantStatus } from "@/lib/appointments/utils";
-import { format } from "date-fns";
-import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { cn } from "@/lib/utils";
-import { Badge } from "../ui/badge";
-import { ArrowUpRight, Hash } from "lucide-react";
-import { getBrandBadgeVariant } from "@/lib/services";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import DotBadgeWithLabel from "./dot-badge";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { getDotVariantStatus } from "@/lib/appointments/utils";
+import { getBrandBadgeVariant } from "@/lib/services";
+import { cn } from "@/lib/utils";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import { useDateContext } from "../providers/date-provider";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import type { VariantDotBadge } from "./dot-badge";
+import DotBadgeWithLabel from "./dot-badge";
 
 interface AppointmentCardProps extends ComponentProps<"div"> {
 	appt: Appointment;

@@ -1,3 +1,8 @@
+import { Head, router, usePage } from "@inertiajs/react";
+import type { ColumnDef, Table as TableTanstack } from "@tanstack/react-table";
+import { Ellipsis, LoaderIcon, PlusCircle, RefreshCcw } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ToolbarTable from "@/components/admin-portal/location/data-table-toolbar";
 import {
 	DeleteLocationAlert,
@@ -27,11 +32,6 @@ import { populateQueryParams } from "@/lib/utils";
 import type { Location, StateID } from "@/types/admin-portal/location";
 import type { GlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
-import { Head, router, usePage } from "@inertiajs/react";
-import type { ColumnDef, Table as TableTanstack } from "@tanstack/react-table";
-import { Ellipsis, LoaderIcon, PlusCircle, RefreshCcw } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export interface PageProps {
 	locations: {

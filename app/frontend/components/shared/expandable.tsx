@@ -1,10 +1,9 @@
-import { cn } from "@/lib/utils";
 import { useMeasure } from "@uidotdev/usehooks";
 import {
 	AnimatePresence,
 	type HTMLMotionProps,
-	type TargetAndTransition,
 	motion,
+	type TargetAndTransition,
 	useMotionValue,
 	useSpring,
 } from "framer-motion";
@@ -12,13 +11,14 @@ import {
  * * Docs: https://www.cult-ui.com/docs/components/expandable
  */
 import React, {
-	type ReactNode,
 	createContext,
+	type ReactNode,
 	useContext,
 	useEffect,
 	useMemo,
 	useState,
 } from "react";
+import { cn } from "@/lib/utils";
 import { useMotion } from "../providers/motion-provider";
 
 const springConfig = { stiffness: 200, damping: 20, bounce: 0.2 };
@@ -208,14 +208,6 @@ const ANIMATION_PRESETS: Record<string, AnimationPreset> = {
 		animate: { opacity: 1, filter: "blur(0px)" },
 		exit: { opacity: 0, filter: "blur(16px)" },
 	},
-};
-
-// Update type definitions
-// @ts-ignore
-type AnimationConfig = {
-	initial: { [key: string]: number | string };
-	animate: { [key: string]: number | string };
-	exit: { [key: string]: number | string };
 };
 
 // Props for defining custom animations
@@ -461,19 +453,20 @@ ExpandableCard.displayName = "ExpandableCard";
 
 // I'm telling you we just have to expand 🤌💵
 const ExpandableTrigger = React.forwardRef<
-	HTMLDivElement,
-	React.HTMLAttributes<HTMLDivElement>
->(({ children, ...props }, ref) => {
+	HTMLButtonElement,
+	React.ButtonHTMLAttributes<HTMLButtonElement>
+>(({ children, className, type = "button", ...props }, ref) => {
 	const { toggleExpand } = useExpandable();
 	return (
-		<div
+		<button
 			ref={ref}
 			onClick={toggleExpand}
-			className="w-full cursor-pointer"
+			type={type}
+			className={cn("w-full cursor-pointer text-left", className)}
 			{...props}
 		>
 			{children}
-		</div>
+		</button>
 	);
 });
 

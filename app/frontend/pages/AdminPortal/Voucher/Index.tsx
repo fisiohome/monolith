@@ -25,10 +25,10 @@ import {
 	populateQueryParams,
 } from "@/lib/utils";
 import { formatVouchersMetaToMetadata } from "@/lib/vouchers/meta-formatter";
+import type { Package } from "@/types/admin-portal/package";
+import type { Voucher, VouchersMeta } from "@/types/admin-portal/vouchers";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
-import type { Voucher, VouchersMeta } from "@/types/admin-portal/vouchers";
-import type { Package } from "@/types/admin-portal/package";
 
 export interface PageProps {
 	vouchers: Voucher[];

@@ -1,3 +1,13 @@
+import { router } from "@inertiajs/react";
+import type { Table } from "@tanstack/react-table";
+import {
+	ChevronLeft,
+	ChevronRight,
+	ChevronsLeft,
+	ChevronsRight,
+} from "lucide-react";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,16 +32,6 @@ import {
 } from "@/components/ui/select";
 import { populateQueryParams } from "@/lib/utils";
 import type { Metadata } from "@/types/pagy";
-import { router } from "@inertiajs/react";
-import type { Table } from "@tanstack/react-table";
-import {
-	ChevronLeft,
-	ChevronRight,
-	ChevronsLeft,
-	ChevronsRight,
-} from "lucide-react";
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 
 interface DataTablePaginationProps<TData> {
 	table: Table<TData>;
@@ -60,7 +60,7 @@ export default function PaginationTable<TData>({
 				) : (
 					<div className="flex-1 text-sm">
 						<div>
-							{metadata.count} {t("records_found")}
+							{metadata.count || 0} {t("records_found")}
 						</div>
 					</div>
 				)}

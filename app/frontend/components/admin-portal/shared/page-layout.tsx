@@ -1,9 +1,9 @@
+import { Hash } from "lucide-react";
+import type { ComponentProps } from "react";
 import { GridPattern } from "@/components/shared/grid-pattern";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Hash } from "lucide-react";
-import type { ComponentProps } from "react";
 
 // * for page container
 export interface PageContainerProps extends ComponentProps<"article"> {}

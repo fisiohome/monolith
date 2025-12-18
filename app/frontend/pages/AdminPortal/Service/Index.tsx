@@ -1,3 +1,23 @@
+import { Deferred, Head, router, usePage } from "@inertiajs/react";
+import type {
+	ColumnDef,
+	ExpandedState,
+	Row,
+	Table as TableTanstack,
+} from "@tanstack/react-table";
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+	ChevronDown,
+	ChevronUp,
+	Ellipsis,
+	Info,
+	LoaderIcon,
+	PlusCircle,
+	RefreshCcw,
+} from "lucide-react";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ExpandSubTable from "@/components/admin-portal/service/data-table-expand";
 import ToolbarTable from "@/components/admin-portal/service/data-table-toolbar";
 import {
@@ -33,7 +53,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	Tooltip,
@@ -45,26 +64,6 @@ import { getBrandBadgeVariant } from "@/lib/services";
 import { cn, populateQueryParams, removeWhiteSpaces } from "@/lib/utils";
 import type { Service } from "@/types/admin-portal/service";
 import type { GlobalPageProps } from "@/types/globals";
-import { Deferred, Head, router, usePage } from "@inertiajs/react";
-import type {
-	ExpandedState,
-	Row,
-	Table as TableTanstack,
-} from "@tanstack/react-table";
-import type { ColumnDef } from "@tanstack/react-table";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-	ChevronDown,
-	ChevronUp,
-	Ellipsis,
-	Info,
-	LoaderIcon,
-	PlusCircle,
-	RefreshCcw,
-} from "lucide-react";
-import { Fragment, useCallback, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export interface PageProps {
 	services: Service[];
@@ -331,18 +330,9 @@ export default function Index({ services, selectedService }: PageProps) {
 			),
 			enableHiding: false,
 			cell: ({ row }) => {
-				const brandName = useMemo(
-					() => row.original.name.replaceAll("_", " ").toLowerCase(),
-					[row.original.name],
-				);
-				const brandCode = useMemo(
-					() => row.original.code.toUpperCase(),
-					[row.original.code],
-				);
-				const brandBadgeVariant = useMemo(
-					() => getBrandBadgeVariant(brandCode),
-					[brandCode],
-				);
+				const brandName = row.original.name.replaceAll("_", " ").toLowerCase();
+				const brandCode = row.original.code.toUpperCase();
+				const brandBadgeVariant = getBrandBadgeVariant(brandCode);
 
 				return (
 					<div className="flex items-center space-x-2">
@@ -380,14 +370,8 @@ export default function Index({ services, selectedService }: PageProps) {
 			),
 			enableHiding: false,
 			cell: ({ row }) => {
-				const packages = useMemo(
-					() => row.original?.packages?.list || [],
-					[row.original.packages],
-				);
-				const packagesActive = useMemo(
-					() => packages.filter((item) => item.active) || [],
-					[packages],
-				);
+				const packages = row.original?.packages?.list || [];
+				const packagesActive = packages.filter((item) => item.active);
 				const toggleExpand = () => {
 					row.toggleExpanded();
 
@@ -442,17 +426,10 @@ export default function Index({ services, selectedService }: PageProps) {
 			),
 			enableHiding: false,
 			cell: ({ row }) => {
-				const locations = useMemo(
-					() => row.original.locations || [],
-					[row.original.locations],
-				);
-				const locationsActive = useMemo(
-					() => locations.filter((location) => location.active) || [],
-					[locations],
-				);
-				const locationInactive = useMemo(
-					() => locations.filter((location) => !location.active) || [],
-					[locations],
+				const locations = row.original.locations || [];
+				const locationsActive = locations.filter((location) => location.active);
+				const locationInactive = locations.filter(
+					(location) => !location.active,
 				);
 
 				if (!locations?.length) {

@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
-import { type VariantProps, cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import { useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 const dotBadgeVariants = cva(
 	"text-center font-semibold transition-all duration-300 ease-in-out",

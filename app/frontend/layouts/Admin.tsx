@@ -1,3 +1,5 @@
+import Cookies from "js-cookie";
+import { type PropsWithChildren, useMemo } from "react";
 import AppSidebar from "@/components/admin-portal/sidebar/app-sidebar";
 import AppTopBar from "@/components/admin-portal/topbar/app-topbar";
 import { DateProvider } from "@/components/providers/date-provider";
@@ -7,12 +9,10 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/providers/toast-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SIDEBAR_WIDTH, SIDEBAR_WIDTH_MOBILE } from "@/lib/constants";
-import Cookies from "js-cookie";
-import { type PropsWithChildren, useMemo } from "react";
 
 function LayoutProviders({ children }: PropsWithChildren) {
 	const defaultOpen = Cookies.get("sidebar:state") === "true";
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: -
 	const sidebarStyle = useMemo(
 		() =>
 			({

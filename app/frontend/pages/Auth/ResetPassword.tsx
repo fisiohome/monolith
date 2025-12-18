@@ -1,3 +1,9 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import { ChevronLeft, Eye, EyeClosed, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -17,12 +23,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type { GlobalPageProps } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Head, Link, router, usePage } from "@inertiajs/react";
-import { ChevronLeft, Eye, EyeClosed, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
 const formSchema = z
 	.object({

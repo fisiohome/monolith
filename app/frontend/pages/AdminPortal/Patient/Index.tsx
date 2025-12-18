@@ -1,25 +1,23 @@
-import { PageContainer } from "@/components/admin-portal/shared/page-layout";
-import { Button } from "@/components/ui/button";
 import { Head, router, usePage } from "@inertiajs/react";
+import type {
+	ColumnDef,
+	ExpandedState,
+	Row,
+	Table as TableTanstack,
+} from "@tanstack/react-table";
 import { Ellipsis, IdCard, Info, SquarePen } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
-import type { Metadata } from "@/types/pagy";
-import type { Patient } from "@/types/admin-portal/patient";
-import { Separator } from "@/components/ui/separator";
 import { useCallback, useMemo } from "react";
-import type { ColumnDef, ExpandedState, Row } from "@tanstack/react-table";
-import type { Table as TableTanstack } from "@tanstack/react-table";
-import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
-import { DataTable } from "@/components/ui/data-table";
-import {
-	generateInitials,
-	populateQueryParams,
-	removeWhiteSpaces,
-} from "@/lib/utils";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
+import ToolbarTable from "@/components/admin-portal/patient/data-table-toolbar";
+import DetailsContent from "@/components/admin-portal/patient/details-content";
+import FormEdit from "@/components/admin-portal/patient/form-edit";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
+import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -29,14 +27,20 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import DetailsContent from "@/components/admin-portal/patient/details-content";
-import type { Appointment } from "@/types/admin-portal/appointment";
-import ToolbarTable from "@/components/admin-portal/patient/data-table-toolbar";
-import type { Location } from "@/types/admin-portal/location";
-import FormEdit from "@/components/admin-portal/patient/form-edit";
-import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { getGenderIcon } from "@/hooks/use-gender";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { GENDERS } from "@/lib/constants";
+import {
+	generateInitials,
+	populateQueryParams,
+	removeWhiteSpaces,
+} from "@/lib/utils";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import type { Location } from "@/types/admin-portal/location";
+import type { Patient } from "@/types/admin-portal/patient";
+import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import type { Metadata } from "@/types/pagy";
 
 interface PageProps {
 	patients: {

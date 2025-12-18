@@ -1,14 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/ui/data-table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { User } from "@/types/admin-portal/user";
-import type { GlobalPageProps } from "@/types/globals";
 import { Head, Link, usePage } from "@inertiajs/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
-import { Fragment } from "react";
-import UserDetail from "./User";
+import { Button } from "@/components/ui/button";
+import { DataTable } from "@/components/ui/data-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { User } from "@/types/auth";
+import type { GlobalPageProps } from "@/types/globals";
 
 export default function Index({ users }: { users: User[] }) {
 	const { props: globalProps } = usePage<GlobalPageProps>();
@@ -53,7 +51,7 @@ export default function Index({ users }: { users: User[] }) {
 			accessorKey: "actions",
 			header: "",
 			cell: () => {
-				return <>actions</>;
+				return "actions";
 			},
 		},
 	];
@@ -65,7 +63,11 @@ export default function Index({ users }: { users: User[] }) {
 				<div className="flex items-center justify-between">
 					<h1 className="text-2xl font-bold tracking-tight">Accounts</h1>
 					<Button asChild>
-						<Link href={globalProps.adminPortal.router.accountManagement.new}>
+						<Link
+							href={
+								globalProps.adminPortal.router.adminPortal.adminManagement.new
+							}
+						>
 							<Plus />
 							Add user
 						</Link>

@@ -1,3 +1,14 @@
+import { useMediaQuery } from "@uidotdev/usehooks";
+import { AlertCircle, PlusCircle } from "lucide-react";
+import {
+	type ComponentProps,
+	Fragment,
+	useCallback,
+	useMemo,
+	useState,
+} from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -11,17 +22,6 @@ import type { AvailabilityFormSchema } from "@/lib/availabilities";
 import { IS_MOBILE_MEDIA_QUERY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
-import { useMediaQuery } from "@uidotdev/usehooks";
-import { AlertCircle, PlusCircle } from "lucide-react";
-import {
-	type ComponentProps,
-	Fragment,
-	useCallback,
-	useMemo,
-	useState,
-} from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
-import { toast } from "sonner";
 import BaseAvailabilityTimeField from "./time-field";
 
 // * for weekly availability field

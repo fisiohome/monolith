@@ -1,3 +1,24 @@
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import type {
+	ColumnDef,
+	ExpandedState,
+	Row,
+	Table as TableTanstack,
+} from "@tanstack/react-table";
+import { format, formatDistanceToNow } from "date-fns";
+import {
+	Ellipsis,
+	InfinityIcon,
+	Info,
+	LoaderIcon,
+	LockIcon,
+	PlusCircle,
+	RefreshCcw,
+	SquarePen,
+	Trash2,
+} from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import ToolbarTable from "@/components/admin-portal/therapist/data-table-toolbar";
@@ -53,23 +74,6 @@ import type {
 } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
-import { Head, Link, router, usePage } from "@inertiajs/react";
-import type { Table as TableTanstack } from "@tanstack/react-table";
-import type { ColumnDef, ExpandedState, Row } from "@tanstack/react-table";
-import { format, formatDistanceToNow } from "date-fns";
-import {
-	Ellipsis,
-	InfinityIcon,
-	Info,
-	LoaderIcon,
-	PlusCircle,
-	RefreshCcw,
-	SquarePen,
-	Trash2,
-	LockIcon,
-} from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 
 export interface PageProps {
 	therapists: {

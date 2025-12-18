@@ -1,11 +1,11 @@
+import { router, usePage } from "@inertiajs/react";
+import { Search } from "lucide-react";
+import { useCallback, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { debounce, populateQueryParams } from "@/lib/utils";
 import type { TableToolbarDataProps } from "@/pages/AdminPortal/Service/Index";
 import type { GlobalPageProps } from "@/types/globals";
-import { router, usePage } from "@inertiajs/react";
-import { Search } from "lucide-react";
-import { useCallback, useState } from "react";
 
 export interface ToolbarTableProps {
 	table: TableToolbarDataProps;
@@ -34,7 +34,10 @@ export default function ToolbarTable({ table: _ }: ToolbarTableProps) {
 	const handleFilterBy = ({
 		value,
 		type,
-	}: { value: string; type: keyof typeof filterBy }) => {
+	}: {
+		value: string;
+		type: keyof typeof filterBy;
+	}) => {
 		setFilterBy({ ...filterBy, [type]: value });
 		updateQueryParams(deepTransformKeysToSnakeCase({ [type]: value }));
 	};

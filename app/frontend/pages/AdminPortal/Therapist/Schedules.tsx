@@ -1,3 +1,7 @@
+import { Head, router, usePage } from "@inertiajs/react";
+import { addDays, format, subDays } from "date-fns";
+import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
 	CalendarBodyContainer,
@@ -19,10 +23,6 @@ import type {
 } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
-import { Head, router, usePage } from "@inertiajs/react";
-import { addDays, format, subDays } from "date-fns";
-import { useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
 interface SchedulesPageProps {
 	params: {
@@ -95,10 +95,6 @@ export default function SchedulesPage({
 	);
 
 	// * pagination params management state
-	// @ts-ignore
-	const pageParam = useMemo(() => params.page, [params.page]);
-	// @ts-ignore
-	const limitParam = useMemo(() => params.limit, [params.limit]);
 	const changePageParam = useCallback(
 		(type: "prev" | "next") => {
 			let url = "";
@@ -163,19 +159,17 @@ export default function SchedulesPage({
 						<CalendarHeader therapists={therapists.data} />
 
 						<CalendarBodyContainer>
-							<>
-								<CalendarTimeSlot
-									selectedDate={dateParam}
-									timeSlots={timeSlots}
-									currentTimeSlot={currentTimeSlot}
-								/>
+							<CalendarTimeSlot
+								selectedDate={dateParam}
+								timeSlots={timeSlots}
+								currentTimeSlot={currentTimeSlot}
+							/>
 
-								<CalendarTherapistSlot
-									therapists={therapists.data}
-									timeSlots={timeSlots}
-									selectedDate={dateParam}
-								/>
-							</>
+							<CalendarTherapistSlot
+								therapists={therapists.data}
+								timeSlots={timeSlots}
+								selectedDate={dateParam}
+							/>
 						</CalendarBodyContainer>
 					</CalendarContainer>
 				</div>

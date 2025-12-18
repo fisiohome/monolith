@@ -1,21 +1,20 @@
-import {
-	FormPageContainer,
-	FormPageHeaderGridPattern,
-} from "@/components/admin-portal/shared/page-layout";
-import type { Appointment } from "@/types/admin-portal/appointment";
-import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import { Head } from "@inertiajs/react";
 import { Fragment, useMemo } from "react";
-
+import { useTranslation } from "react-i18next";
 import {
 	FormActionButtons,
 	RescheduleFields,
 } from "@/components/admin-portal/appointment/reschedule-appointment";
+import {
+	FormPageContainer,
+	FormPageHeaderGridPattern,
+} from "@/components/admin-portal/shared/page-layout";
 import { Form } from "@/components/ui/form";
 import { useRescheduleForm } from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import type { AppointmentRescheduleSchema } from "@/lib/appointments/form-reschedule";
 import type { PREFERRED_THERAPIST_GENDER } from "@/lib/constants";
-import { useTranslation } from "react-i18next";
+import type { Appointment } from "@/types/admin-portal/appointment";
+import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 
 export interface AppointmentReschedulePageProps {
 	appointment: Appointment;

@@ -1,3 +1,13 @@
+import { Deferred, router, usePage } from "@inertiajs/react";
+import { Check, ChevronsUpDown, Search, User, Users, X } from "lucide-react";
+import {
+	type ComponentProps,
+	Fragment,
+	useCallback,
+	useMemo,
+	useState,
+} from "react";
+import { useTranslation } from "react-i18next";
 import DotBadgeWithLabel from "@/components/shared/dot-badge";
 import MultiSelectBadges, {
 	type MultiSelectBadgesProps,
@@ -32,16 +42,6 @@ import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { groupLocationsByCountry } from "@/lib/locations";
 import { cn, debounce, populateQueryParams } from "@/lib/utils";
 import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
-import { Deferred, router, usePage } from "@inertiajs/react";
-import { Check, ChevronsUpDown, Search, User, Users, X } from "lucide-react";
-import {
-	type ComponentProps,
-	Fragment,
-	useCallback,
-	useMemo,
-	useState,
-} from "react";
-import { useTranslation } from "react-i18next";
 
 export interface FilterListProps extends ComponentProps<"section"> {
 	isShow: boolean;

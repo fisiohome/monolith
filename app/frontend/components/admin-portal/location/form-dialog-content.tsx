@@ -1,3 +1,10 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Deferred, router, usePage } from "@inertiajs/react";
+import { Check, ChevronsUpDown, LoaderIcon, Plus, X } from "lucide-react";
+import { type ComponentProps, useEffect, useMemo, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
 import {
 	AlertDialog,
@@ -37,13 +44,6 @@ import { cn } from "@/lib/utils";
 import type { LocationGlobalPageProps } from "@/pages/AdminPortal/Location/Index";
 import type { Location, StateID } from "@/types/admin-portal/location";
 import type { GlobalPageProps, ResponsiveDialogMode } from "@/types/globals";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Deferred, router, usePage } from "@inertiajs/react";
-import { Check, ChevronsUpDown, LoaderIcon, Plus, X } from "lucide-react";
-import { type ComponentProps, useEffect, useMemo, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { z } from "zod";
 
 const FORM_SCHEMA = z.object({
 	locations: z

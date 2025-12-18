@@ -1,3 +1,6 @@
+import { Deferred, Head } from "@inertiajs/react";
+import { HandPlatter, MapPinned, ShieldCheck, Stethoscope } from "lucide-react";
+import { useMemo } from "react";
 import {
 	AdminByRoleChart,
 	TherapistByEmploymentTypeChart,
@@ -6,9 +9,6 @@ import {
 import StatCard from "@/components/admin-portal/dashboard/stat-card";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Deferred, Head } from "@inertiajs/react";
-import { HandPlatter, MapPinned, ShieldCheck, Stethoscope } from "lucide-react";
-import { useMemo } from "react";
 
 export interface DashboardAdmins {
 	total: number;

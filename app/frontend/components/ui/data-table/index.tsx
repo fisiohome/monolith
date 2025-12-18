@@ -107,8 +107,9 @@ export function DataTable<TData, TValue>({
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
 								{headerGroup.headers.map((header) => {
-									const meta = header.column
-										.columnDef.meta as DataTableColumnMeta | undefined;
+									const meta = header.column.columnDef.meta as
+										| DataTableColumnMeta
+										| undefined;
 									return (
 										<TableHead
 											key={header.id}
@@ -134,10 +135,14 @@ export function DataTable<TData, TValue>({
 								<React.Fragment key={row.id}>
 									<TableRow data-state={row.getIsSelected() && "selected"}>
 										{row.getVisibleCells().map((cell) => {
-											const meta = cell.column
-												.columnDef.meta as DataTableColumnMeta | undefined;
+											const meta = cell.column.columnDef.meta as
+												| DataTableColumnMeta
+												| undefined;
 											return (
-												<TableCell key={cell.id} className={meta?.cellClassName}>
+												<TableCell
+													key={cell.id}
+													className={meta?.cellClassName}
+												>
 													{flexRender(
 														cell.column.columnDef.cell,
 														cell.getContext(),

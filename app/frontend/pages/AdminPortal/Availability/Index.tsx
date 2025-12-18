@@ -1,3 +1,5 @@
+import { Deferred, Head } from "@inertiajs/react";
+import { useTranslation } from "react-i18next";
 import ScheduleForm from "@/components/admin-portal/availability/schedule-form";
 import { TherapistList } from "@/components/admin-portal/availability/therapist-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
@@ -6,8 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { DAY_NAMES } from "@/lib/constants";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
-import { Deferred, Head } from "@inertiajs/react";
-import { useTranslation } from "react-i18next";
 
 export interface PageProps {
 	therapists: Therapist[];

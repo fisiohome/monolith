@@ -1,9 +1,9 @@
-import i18n from "@/lib/i18n";
-import { cn } from "@/lib/utils";
-import type { ResponsiveDialogMode } from "@/types/globals";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { Loader2, type LucideIcon } from "lucide-react";
 import type { ComponentProps } from "react";
+import i18n from "@/lib/i18n";
+import { cn } from "@/lib/utils";
+import type { ResponsiveDialogMode } from "@/types/globals";
 import { Button } from "../ui/button";
 import {
 	Dialog,
