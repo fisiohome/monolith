@@ -6,8 +6,17 @@ import type {
 	Table as TanstackTable,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { ChevronDown, ChevronUp, PlusIcon } from "lucide-react";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+	ChevronDown,
+	ChevronUp,
+	ListFilterIcon,
+	PencilIcon,
+	PlusIcon,
+	Trash2Icon,
+	XIcon,
+} from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
@@ -16,6 +25,14 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
 import { DataTablePagination } from "@/components/ui/data-table/pagination";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -53,6 +70,12 @@ export default function Index({
 		usePage<VoucherIndexGlobalPageProps>();
 	const { t: tv } = useTranslation("vouchers");
 
+	const { queryParams } = useMemo(
+		() => populateQueryParams(pageURL),
+		[pageURL],
+	);
+	const selectedId = queryParams?.id;
+
 	const vouchersData = useMemo(
 		() => (Array.isArray(vouchers) ? vouchers : []),
 		[vouchers],
@@ -74,8 +97,6 @@ export default function Index({
 	);
 
 	const currentExpanded = useMemo<ExpandedState>(() => {
-		const { queryParams } = populateQueryParams(pageURL);
-		const selectedId = queryParams?.id;
 		if (!selectedId) return {};
 
 		const rowIndex = vouchersData.findIndex(
@@ -85,7 +106,7 @@ export default function Index({
 		if (rowIndex < 0) return {};
 
 		return { [rowIndex]: true };
-	}, [pageURL, vouchersData]);
+	}, [selectedId, vouchersData]);
 
 	const handleRowExpandToggle = useCallback(
 		(row: Row<Voucher>) => {
@@ -152,31 +173,18 @@ export default function Index({
 					data={["vouchers"]}
 					fallback={<Skeleton className="w-2/12 h-4 rounded-sm" />}
 				>
-					<div className="grid gap-4">
-						<div className="z-10 flex flex-col gap-2 md:justify-end md:flex-row">
-							<div className="flex flex-col items-center gap-2 md:flex-row">
-								<Button asChild className="w-full md:w-fit">
-									<Link
-										href={
-											globalProps.adminPortal.router.adminPortal.vouchers.new
-										}
-									>
-										<PlusIcon />
-										Create Voucher
-									</Link>
-								</Button>
-							</div>
-						</div>
-					</div>
+					<FiltersPanel
+						pageURL={globalProps.adminPortal.router.adminPortal.vouchers.index}
+						queryParams={queryParams}
+						newVoucherHref={
+							globalProps.adminPortal.router.adminPortal.vouchers.new
+						}
+					/>
 				</Deferred>
 
 				<Deferred
 					data={["vouchers"]}
-					fallback={
-						<div className="flex flex-col self-end gap-6 mt-6">
-							<Skeleton className="relative w-full h-32 rounded-xl" />
-						</div>
-					}
+					fallback={<Skeleton className="relative w-full h-32 rounded-xl" />}
 				>
 					<DataTable
 						columns={columns}
@@ -550,14 +558,33 @@ function VoucherDetails({
 				</div>
 			</div>
 
-			<div className="mt-4">
+			<div className="mt-4 flex flex-col md:flex-row gap-4 md:gap-2">
 				<Button
 					variant="outline"
 					size="sm"
 					className="w-full md:w-fit"
 					onClick={onClose}
 				>
+					<XIcon />
 					Close
+				</Button>
+				<Button
+					variant="primary-outline"
+					size="sm"
+					className="w-full md:w-fit"
+					onClick={onClose}
+				>
+					<PencilIcon />
+					Edit
+				</Button>
+				<Button
+					variant="destructive"
+					size="sm"
+					className="w-full md:w-fit"
+					onClick={onClose}
+				>
+					<Trash2Icon />
+					Remove
 				</Button>
 			</div>
 		</div>
@@ -586,3 +613,190 @@ const Pagination = memo(
 		return <PaginationTable table={table} metadata={formattedMetadata} />;
 	},
 );
+
+// * filters panel component
+type FiltersPanelProps = {
+	pageURL: string;
+	queryParams?: Record<string, unknown>;
+	newVoucherHref: string;
+};
+
+const FiltersPanel = memo(function FiltersPanel({
+	pageURL,
+	queryParams,
+	newVoucherHref,
+}: FiltersPanelProps) {
+	const ALL_OPTION = "ALL";
+	const [showFilters, setShowFilters] = useState(false);
+	const [codeFilter, setCodeFilter] = useState<string>(
+		String(queryParams?.code ?? ""),
+	);
+	const [isActiveFilter, setIsActiveFilter] = useState<string>(
+		String(queryParams?.is_active ?? ALL_OPTION),
+	);
+	const [discountTypeFilter, setDiscountTypeFilter] = useState<string>(
+		String(queryParams?.discount_type ?? ALL_OPTION),
+	);
+
+	useEffect(() => {
+		setCodeFilter(String(queryParams?.code ?? ""));
+		setIsActiveFilter(String(queryParams?.is_active ?? ALL_OPTION));
+		setDiscountTypeFilter(String(queryParams?.discount_type ?? ALL_OPTION));
+	}, [queryParams?.code, queryParams?.is_active, queryParams?.discount_type]);
+
+	const filtersInitializedRef = useRef(false);
+	const lastAppliedFiltersRef = useRef<string | null>(null);
+
+	const sanitizedFilters = useMemo(() => {
+		const sanitizedCode = codeFilter.trim();
+		const sanitizedIsActive =
+			isActiveFilter === ALL_OPTION ? "" : isActiveFilter;
+		const sanitizedDiscountType =
+			discountTypeFilter === ALL_OPTION ? "" : discountTypeFilter;
+
+		return {
+			code: sanitizedCode.length ? sanitizedCode : null,
+			is_active: sanitizedIsActive.length ? sanitizedIsActive : null,
+			discount_type: sanitizedDiscountType.length
+				? sanitizedDiscountType
+				: null,
+		};
+	}, [codeFilter, discountTypeFilter, isActiveFilter]);
+
+	useEffect(() => {
+		const serializedFilters = JSON.stringify(sanitizedFilters);
+
+		if (!filtersInitializedRef.current) {
+			filtersInitializedRef.current = true;
+			lastAppliedFiltersRef.current = serializedFilters;
+			return;
+		}
+
+		if (lastAppliedFiltersRef.current === serializedFilters) {
+			return;
+		}
+
+		lastAppliedFiltersRef.current = serializedFilters;
+
+		const { fullUrl, queryParams: nextQueryParams } = populateQueryParams(
+			pageURL,
+			{
+				...sanitizedFilters,
+				page: 1,
+			},
+		);
+
+		router.get(fullUrl, nextQueryParams, {
+			only: ["flash", "adminPortal", "vouchers", "vouchersMeta"],
+			preserveScroll: true,
+			preserveState: true,
+			replace: true,
+		});
+	}, [pageURL, sanitizedFilters]);
+
+	return (
+		<div className="grid gap-4">
+			<div className="z-10 flex flex-col gap-2 md:justify-between md:flex-row items-center">
+				<Button
+					variant={showFilters ? "default" : "outline"}
+					className="w-full md:w-fit"
+					onClick={() => setShowFilters((prev) => !prev)}
+				>
+					<ListFilterIcon />
+					{showFilters ? "Close" : "Filters"}
+				</Button>
+
+				<Button asChild className="w-full md:w-fit order-first md:order-last">
+					<Link href={newVoucherHref}>
+						<PlusIcon />
+						Create Voucher
+					</Link>
+				</Button>
+			</div>
+
+			<AnimatePresence initial={false} mode="wait">
+				{showFilters ? (
+					<motion.section
+						key="voucher-filters"
+						initial={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+						animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+						exit={{ opacity: 0, y: -10, filter: "blur(8px)" }}
+						transition={{ duration: 0.25, ease: "easeOut" }}
+					>
+						<div className="p-3 border shadow-inner rounded-xl bg-background">
+							<div className="grid gap-4 md:grid-cols-12">
+								<div className="md:col-span-6">
+									<Input
+										value={codeFilter}
+										onChange={(e) => setCodeFilter(e.target.value)}
+										placeholder="Search by code"
+										className="bg-input"
+									/>
+								</div>
+
+								<div className="md:col-span-3">
+									<Select
+										value={isActiveFilter}
+										onValueChange={(value) => {
+											setIsActiveFilter(value);
+										}}
+									>
+										<SelectTrigger className="bg-input">
+											<SelectValue placeholder="All" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value={ALL_OPTION}>All</SelectItem>
+											<SelectItem value="true">Active</SelectItem>
+											<SelectItem value="false">Inactive</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+
+								<div className="md:col-span-3">
+									<Select
+										value={discountTypeFilter}
+										onValueChange={(value) => {
+											setDiscountTypeFilter(value);
+										}}
+									>
+										<SelectTrigger className="bg-input">
+											<SelectValue placeholder="All" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value={ALL_OPTION}>All</SelectItem>
+											<SelectItem value="PERCENTAGE">Percentage</SelectItem>
+											<SelectItem value="FIXED_AMOUNT">Fixed Amount</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
+
+							<div className="mt-4 flex flex-col gap-4 md:gap-2 md:flex-row md:justify-end">
+								<Button
+									variant="ghost"
+									size="sm"
+									className="w-full md:w-fit"
+									onClick={() => setShowFilters(false)}
+								>
+									Close
+								</Button>
+								<Button
+									variant="ghost-destructive"
+									size="sm"
+									className="w-full md:w-fit"
+									onClick={() => {
+										setCodeFilter("");
+										setIsActiveFilter(ALL_OPTION);
+										setDiscountTypeFilter(ALL_OPTION);
+									}}
+								>
+									Clear All
+								</Button>
+							</div>
+						</div>
+					</motion.section>
+				) : null}
+			</AnimatePresence>
+		</div>
+	);
+});

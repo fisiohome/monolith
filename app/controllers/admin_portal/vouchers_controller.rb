@@ -22,7 +22,13 @@ module AdminPortal
     end
 
     def vouchers_list
-      @vouchers_list ||= vouchers_service.list
+      @vouchers_list ||= vouchers_service.list(
+        code: params[:code],
+        is_active: params[:is_active],
+        discount_type: params[:discount_type],
+        page: params[:page],
+        limit: params[:limit]
+      )
     end
 
     def packages_list

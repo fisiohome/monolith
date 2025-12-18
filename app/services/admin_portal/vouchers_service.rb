@@ -8,8 +8,19 @@ module AdminPortal
     # Fetches a list of vouchers from the external API
     # Handles various error scenarios and returns a consistent response format
     # @return [Hash] hash containing vouchers array and metadata, or empty defaults on error
-    def list
-      response = client.get("/api/v1/vouchers")
+    def list(code: nil, is_active: nil, discount_type: nil, page: nil, limit: nil)
+      normalized_page = normalize_integer(page) || 1
+      normalized_limit = normalize_integer(limit) || 10
+
+      query = {
+        code: code.presence,
+        is_active: normalize_boolean(is_active),
+        discount_type: discount_type.presence,
+        page: normalized_page,
+        limit: normalized_limit
+      }.compact
+
+      response = client.get("/api/v1/vouchers", params: query)
 
       if response.success?
         build_response(response.body)
@@ -55,6 +66,24 @@ module AdminPortal
     private
 
     attr_reader :client, :key_format
+
+    def normalize_boolean(value)
+      return nil if value.nil? || (value.respond_to?(:empty?) && value.empty?)
+      return value if value == true || value == false
+
+      case value.to_s.strip.downcase
+      when "true", "1", "yes", "y" then true
+      when "false", "0", "no", "n" then false
+      end
+    end
+
+    def normalize_integer(value)
+      return nil if value.nil? || (value.respond_to?(:empty?) && value.empty?)
+
+      Integer(value)
+    rescue ArgumentError, TypeError
+      nil
+    end
 
     # Combines the fetched vouchers data and metadata, then formats keys.
     # Ensures the caller receives the desired casing (camelCase / snake_case).

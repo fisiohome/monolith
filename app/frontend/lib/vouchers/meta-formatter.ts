@@ -17,61 +17,67 @@ export function formatVouchersMetaToMetadata(
 	meta: VouchersMeta,
 	baseUrl: string = "",
 ): Metadata {
+	const safePage = Number(meta?.page ?? 1) || 1;
+	const safeLimit = Number(meta?.pageSize ?? 10) || 10;
+	const safeCount = Number(meta?.totalItems ?? 0) || 0;
+	const safePages = Number(meta?.totalPages ?? 1) || 1;
+
 	const headers: Headers = {
 		page: "1",
-		limit: meta.pageSize.toString(),
-		count: meta.totalItems.toString(),
-		pages: meta.totalPages.toString(),
+		limit: safeLimit.toString(),
+		count: safeCount.toString(),
+		pages: safePages.toString(),
 	};
 
 	const vars: Vars = {
 		countArgs: [],
 		ends: false,
-		limit: meta.pageSize,
+		limit: safeLimit,
 		outset: 0,
-		page: meta.page,
+		page: safePage,
 		pageParam: "page",
-		size: meta.pageSize,
+		size: safeLimit,
 		countlessMinimal: false,
 		headers,
 		metadata: [],
 		steps: false,
 		limitParam: "limit",
-		limitMax: meta.pageSize,
+		limitMax: safeLimit,
 		limitExtra: false,
-		items: meta.totalItems,
-		count: meta.totalItems,
+		items: safeCount,
+		count: safeCount,
 	};
 
 	// Generate pagination URLs if baseUrl is provided
 	const generateUrl = (page: number) => {
 		if (!baseUrl) return "";
-		const separator = baseUrl.includes("?") ? "&" : "?";
-		return `${baseUrl}${separator}page=${page}`;
+		const url = new URL(baseUrl, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+		url.searchParams.set("page", String(page));
+		return `${url.pathname}${url.search}`;
 	};
 
 	return {
 		scaffoldUrl: baseUrl,
 		firstUrl: generateUrl(1),
-		prevUrl: meta.page > 1 ? generateUrl(meta.page - 1) : "",
-		pageUrl: generateUrl(meta.page),
-		nextUrl: meta.page < meta.totalPages ? generateUrl(meta.page + 1) : "",
-		lastUrl: generateUrl(meta.totalPages),
-		count: meta.totalItems,
-		page: meta.page,
-		limit: meta.pageSize,
+		prevUrl: safePage > 1 ? generateUrl(safePage - 1) : "",
+		pageUrl: generateUrl(safePage),
+		nextUrl: safePage < safePages ? generateUrl(safePage + 1) : "",
+		lastUrl: generateUrl(safePages),
+		count: safeCount,
+		page: safePage,
+		limit: safeLimit,
 		vars,
-		pages: meta.totalPages,
-		last: meta.totalPages,
+		pages: safePages,
+		last: safePages,
 		in: Math.min(
-			meta.pageSize,
-			meta.totalItems - (meta.page - 1) * meta.pageSize,
+			safeLimit,
+			safeCount - (safePage - 1) * safeLimit,
 		),
-		from: (meta.page - 1) * meta.pageSize + 1,
-		to: Math.min(meta.page * meta.pageSize, meta.totalItems),
-		prev: meta.page > 1 ? { page: meta.page - 1 } : null,
-		next: meta.page < meta.totalPages ? { page: meta.page + 1 } : null,
-		series: Array.from({ length: meta.totalPages }, (_, i) =>
+		from: (safePage - 1) * safeLimit + 1,
+		to: Math.min(safePage * safeLimit, safeCount),
+		prev: safePage > 1 ? { page: safePage - 1 } : null,
+		next: safePage < safePages ? { page: safePage + 1 } : null,
+		series: Array.from({ length: safePages }, (_, i) =>
 			(i + 1).toString(),
 		),
 	};
