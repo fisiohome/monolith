@@ -81,6 +81,10 @@ export interface AdminPortal {
 				updateBulk: string;
 				deleteBulk: string;
 			};
+			vouchers: {
+				index: string;
+				new: string;
+			};
 			appointment: {
 				index: string;
 				new: string;

@@ -51,6 +51,7 @@ module InertiaAdminPortal
                 update_bulk: update_bulk_admin_portal_locations_path,
                 delete_bulk: delete_bulk_admin_portal_locations_path
               },
+              vouchers: vouchers_menu,
               appointment: {
                 index: admin_portal_appointments_path,
                 new: new_admin_portal_appointment_path,
@@ -85,6 +86,17 @@ module InertiaAdminPortal
           }
         }
       )
+    }
+  end
+
+  private
+
+  def vouchers_menu
+    return if current_user&.admin.blank?
+
+    {
+      index: admin_portal_vouchers_path,
+      new: new_admin_portal_voucher_path
     }
   end
 end

@@ -211,3 +211,88 @@ export function calculateAge(dateOfBirth: Date): number {
 
 	return age;
 }
+
+/**
+ * Formats a numeric value as currency with customizable options.
+ *
+ * @param value - The value to format. Can be a number, string, null, or undefined.
+ * @param options - Configuration options for formatting.
+ * @param options.emptyValue - The string to return when value is null, undefined, or empty. Defaults to "—".
+ * @param options.maximumFractionDigits - Maximum number of decimal places to display. Defaults to 0.
+ * @param options.locales - The locale(s) to use for formatting. Defaults to "id-ID".
+ * @param options.currency - The currency code to use (e.g., "IDR", "USD"). Defaults to "IDR".
+ * @returns The formatted currency string, or the emptyValue if input is invalid.
+ *
+ * @example
+ * ```typescript
+ * formatCurrency(1000000); // "Rp1.000.000"
+ * formatCurrency(null); // "—"
+ * formatCurrency(1234.56, { maximumFractionDigits: 2 }); // "Rp1.234,56"
+ * formatCurrency("5000", { currency: "USD", locales: "en-US" }); // "$5,000"
+ * ```
+ */
+export function formatCurrency(
+	value?: number | string | null,
+	{
+		emptyValue = "—",
+		maximumFractionDigits = 0,
+		locales = "id-ID",
+		currency = "IDR",
+	}: {
+		emptyValue?: string;
+		maximumFractionDigits?: number;
+		locales?: Intl.LocalesArgument;
+		currency?: string;
+	} = {},
+) {
+	// Return empty value placeholder for null, undefined, or empty string
+	if (value === null || value === undefined || value === "") return emptyValue;
+
+	// Convert string values to numbers, handle numeric types directly
+	const numeric =
+		typeof value === "string" ? Number.parseFloat(value) : Number(value);
+
+	// If conversion results in NaN, return the original value as string
+	if (Number.isNaN(numeric)) {
+		return typeof value === "string" ? value : `${value}`;
+	}
+
+	// Format the numeric value using Intl.NumberFormat with specified options
+	return new Intl.NumberFormat(locales, {
+		style: "currency",
+		currency,
+		maximumFractionDigits,
+	}).format(numeric);
+}
+
+/**
+ * Formats a numeric value as a percentage with customizable decimal places.
+ *
+ * @param value - The numeric value to format as a percentage (e.g., 0.5 for 50%).
+ * @param options - Configuration options for formatting.
+ * @param options.minimumFractionDigits - Minimum number of decimal places to display. Defaults to 0.
+ * @param options.maximumFractionDigits - Maximum number of decimal places to display. Defaults to 2.
+ * @returns The formatted percentage string.
+ *
+ * @example
+ * ```typescript
+ * formatPercentage(0.5); // "50%"
+ * formatPercentage(0.1234); // "12.34%"
+ * formatPercentage(0.1234, { maximumFractionDigits: 3 }); // "12.34%"
+ * formatPercentage(0.1, { minimumFractionDigits: 2 }); // "10.00%"
+ * ```
+ */
+export function formatPercentage(
+	value: number,
+	{
+		minimumFractionDigits = 0,
+		maximumFractionDigits = 2,
+	}: { minimumFractionDigits?: number; maximumFractionDigits?: number } = {},
+): string {
+	// Format the numeric value as a percentage using Intl.NumberFormat with specified decimal options
+	return new Intl.NumberFormat(undefined, {
+		style: "percent",
+		minimumFractionDigits,
+		maximumFractionDigits,
+	}).format(value);
+}

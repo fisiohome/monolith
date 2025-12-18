@@ -41,7 +41,7 @@ group :development, :test do
   gem "debug", platforms: %i[mri windows], require: "debug/prelude"
 
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
-  gem "brakeman", "~> 7.0.0", require: false
+  gem "brakeman", "~> 7.1.1", require: false
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   # gem "rubocop-rails-omakase", require: false
@@ -87,3 +87,5 @@ gem "open-uri", "~> 0.5.0"
 gem "csv", "~> 3.3"
 
 gem "simplecov", "~> 0.22.0"
+
+gem "faraday", "~> 2.0"

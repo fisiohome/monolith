@@ -44,6 +44,7 @@ Choose one of the following development environments:
    Required variables:
    - `RAILS_MASTER_KEY` - Rails encryption key
    - `VITE_RUBY_HERE_MAPS_API_KEY` - HERE Maps API key
+   - `FISIOHOME_EXTERNAL_API_URL` - Base URL for the external Fisiohome API
    
    Database configuration (choose one):
    - `MONOLITH_DATABASE_URL` (full connection string)

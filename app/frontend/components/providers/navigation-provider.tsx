@@ -101,75 +101,76 @@ export function NavigationProvider({
 			subItems,
 		});
 
-		// * Build menus
-		const dashboardMenu = createMenuItem(
-			"Dashboard",
-			authenticatedRootPath,
-			LayoutDashboard,
-		);
-		// Use the utility to append the additional param
-		const { fullUrl } = populateQueryParams(
-			adminPortal.appointment.index,
-			deepTransformKeysToSnakeCase({
-				assignedTo: "me",
-			}),
-		);
-		const appointmentMenu = createMenuItem(
-			t("appointment"),
-			fullUrl,
-			Calendar1,
-		);
-		const bookingsSubItems = [
-			{
-				title: t("therapist_calendar"),
-				url: adminPortal.therapistManagement.schedules,
-				isActive: false,
-			},
-			{
-				title: t("availability_settings"),
-				url: adminPortal.availability.index,
-				isActive: false,
-			},
-		];
-		const bookingsMenu = createMenuItem(
-			t("bookings"),
-			adminPortal.therapistManagement.schedules,
-			CalendarCheck,
-			bookingsSubItems,
-		);
-		// filter the sub items of user management for therapist user
-		const userManagementSubItems = [
-			{
-				title: t("admins"),
-				url: adminPortal.adminManagement.index,
-				isActive: false,
-			},
-			{
-				title: t("therapists"),
-				url: adminPortal.therapistManagement.index,
-				isActive: false,
-			},
-			{
-				title: t("patients"),
-				url: adminPortal.patientManagement.index,
-				isActive: false,
-			},
-		];
-		const filteredUserSubItems =
-			currentUserType === "THERAPIST"
-				? userManagementSubItems.filter((item) => item.title !== t("admins"))
-				: userManagementSubItems;
-		const userManagementMenu = createMenuItem(
-			t("user_management"),
-			adminPortal.adminManagement.index,
-			Users,
-			filteredUserSubItems,
-		);
-		const serviceManagementMenu = createMenuItem(
-			t("brand_and_location"),
-			adminPortal.serviceManagement.index,
-			Hospital,
-			[
+		const buildDashboardMenu = () =>
+			createMenuItem("Dashboard", authenticatedRootPath, LayoutDashboard);
+
+		const buildAppointmentMenu = () => {
+			const { fullUrl } = populateQueryParams(
+				adminPortal.appointment.index,
+				deepTransformKeysToSnakeCase({
+					assignedTo: "me",
+				}),
+			);
+
+			return createMenuItem(t("appointment"), fullUrl, Calendar1);
+		};
+
+		const buildBookingsMenu = () => {
+			const subItems = [
+				{
+					title: t("therapist_calendar"),
+					url: adminPortal.therapistManagement.schedules,
+					isActive: false,
+				},
+				{
+					title: t("availability_settings"),
+					url: adminPortal.availability.index,
+					isActive: false,
+				},
+			];
+
+			return createMenuItem(
+				t("bookings"),
+				adminPortal.therapistManagement.schedules,
+				CalendarCheck,
+				subItems,
+			);
+		};
+
+		const buildUserManagementMenu = () => {
+			const baseSubItems = [
+				{
+					title: t("admins"),
+					url: adminPortal.adminManagement.index,
+					isActive: false,
+				},
+				{
+					title: t("therapists"),
+					url: adminPortal.therapistManagement.index,
+					isActive: false,
+				},
+				{
+					title: t("patients"),
+					url: adminPortal.patientManagement.index,
+					isActive: false,
+				},
+			];
+
+			const subItems =
+				currentUserType === "THERAPIST"
+					? baseSubItems.filter((item) => item.title !== t("admins"))
+					: baseSubItems;
+
+			return createMenuItem(
+				t("user_management"),
+				adminPortal.adminManagement.index,
+				Users,
+				subItems,
+			);
+		};
+
+		const buildServiceManagementMenu = () => {
+			const subItems = [
 				{
 					title: t("brands"),
 					url: adminPortal.serviceManagement.index,
@@ -180,18 +181,35 @@ export function NavigationProvider({
 					url: adminPortal.locationManagement.index,
 					isActive: false,
 				},
-			],
-		);
+			];
 
-		// * Construct menu based on user type
-		const allMenus = [dashboardMenu];
-		if (currentUserType === "ADMIN") {
-			allMenus.push(appointmentMenu, bookingsMenu);
-		}
-		allMenus.push(userManagementMenu, serviceManagementMenu);
+			if (currentUserType === "ADMIN") {
+				subItems.push({
+					title: t("vouchers"),
+					url: adminPortal.vouchers.index,
+					isActive: false,
+				});
+			}
+
+			return createMenuItem(
+				t("brand_and_location"),
+				adminPortal.serviceManagement.index,
+				Hospital,
+				subItems,
+			);
+		};
+
+		const menus = [
+			buildDashboardMenu(),
+			...(currentUserType === "ADMIN"
+				? [buildAppointmentMenu(), buildBookingsMenu()]
+				: []),
+			buildUserManagementMenu(),
+			buildServiceManagementMenu(),
+		];
 
 		// * Determine which items are active
-		const finalItems = allMenus.map((menu) => {
+		const finalItems = menus.map((menu) => {
 			const updatedMenu = { ...menu, isActive: false };
 
 			if (menu.subItems.length) {

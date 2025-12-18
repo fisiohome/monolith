@@ -18,6 +18,12 @@ export type Package = {
 	formattedTotalFee?: string;
 	formattedTotalPrice?: string;
 	formattedTotalPriceWithoutDiscount?: string;
+	service?: {
+		id: number | string;
+		name: string;
+		description?: string | null;
+		slug?: string | null;
+	};
 } & Timestamp;
 
 export type PackageTotalPrice = {

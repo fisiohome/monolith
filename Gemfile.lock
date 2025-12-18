@@ -87,7 +87,7 @@ GEM
     bindex (0.8.1)
     bootsnap (1.18.4)
       msgpack (~> 1.2)
-    brakeman (7.1.0)
+    brakeman (7.1.1)
       racc
     builder (3.3.0)
     capybara (3.40.0)
@@ -121,6 +121,12 @@ GEM
     erubi (1.13.1)
     et-orbi (1.2.11)
       tzinfo
+    faraday (2.14.0)
+      faraday-net_http (>= 2.0, < 3.5)
+      json
+      logger
+    faraday-net_http (3.4.2)
+      net-http (~> 0.5)
     fugit (1.11.1)
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
@@ -189,6 +195,8 @@ GEM
     msgpack (1.7.3)
     multi_xml (0.7.1)
       bigdecimal (~> 3.1)
+    net-http (0.8.0)
+      uri (>= 0.11.1)
     net-imap (0.5.4)
       date
       net-protocol
@@ -428,11 +436,12 @@ PLATFORMS
 DEPENDENCIES
   activerecord-import (~> 2.0)
   bootsnap
-  brakeman (~> 7.0.0)
+  brakeman (~> 7.1.1)
   capybara
   csv (~> 3.3)
   debug
   devise (~> 4.9)
+  faraday (~> 2.0)
   inertia_rails (~> 3.6)
   inertia_rails-contrib (~> 0.3.0)
   jbuilder

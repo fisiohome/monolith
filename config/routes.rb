@@ -81,6 +81,8 @@ Rails.application.routes.draw do
 
         resources :patients, path: "patient-management", only: [:index, :update]
 
+        resources :vouchers
+
         resources :services, only: [:index, :create, :update, :edit, :destroy] do
           collection do
             put "update-status" => "services#update_status"

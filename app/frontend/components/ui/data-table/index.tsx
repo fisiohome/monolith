@@ -1,11 +1,3 @@
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@/components/ui/table";
 import type {
 	ColumnDef,
 	ColumnFiltersState,
@@ -28,7 +20,20 @@ import {
 } from "@tanstack/react-table";
 import { MousePointerClick } from "lucide-react";
 import * as React from "react";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { DataTablePagination } from "./pagination";
+
+type DataTableColumnMeta = {
+	headerClassName?: string;
+	cellClassName?: string;
+};
 
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
@@ -45,7 +50,7 @@ export function DataTable<TData, TValue>({
 	subComponent,
 	toolbar,
 	customPagination,
-	currentExpanded = {},
+	currentExpanded,
 }: DataTableProps<TData, TValue>) {
 	const [rowSelection, setRowSelection] = React.useState({});
 	const [columnVisibility, setColumnVisibility] =
@@ -54,8 +59,17 @@ export function DataTable<TData, TValue>({
 		[],
 	);
 	const [sorting, setSorting] = React.useState<SortingState>([]);
-	const [expanded, setExpanded] =
-		React.useState<ExpandedState>(currentExpanded);
+	const [expanded, setExpanded] = React.useState<ExpandedState>(
+		currentExpanded ?? {},
+	);
+
+	React.useEffect(() => {
+		if (typeof currentExpanded === "undefined") {
+			return;
+		}
+
+		setExpanded(currentExpanded);
+	}, [currentExpanded]);
 
 	const table = useReactTable({
 		data,
@@ -80,7 +94,7 @@ export function DataTable<TData, TValue>({
 		getFacetedUniqueValues: getFacetedUniqueValues(),
 		onExpandedChange: setExpanded,
 		getExpandedRowModel: getExpandedRowModel(),
-		getRowCanExpand: (_row) => true,
+		getRowCanExpand: () => Boolean(subComponent),
 	});
 
 	return (
@@ -93,8 +107,14 @@ export function DataTable<TData, TValue>({
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
 								{headerGroup.headers.map((header) => {
+									const meta = header.column
+										.columnDef.meta as DataTableColumnMeta | undefined;
 									return (
-										<TableHead key={header.id} colSpan={header.colSpan}>
+										<TableHead
+											key={header.id}
+											colSpan={header.colSpan}
+											className={meta?.headerClassName}
+										>
 											{header.isPlaceholder
 												? null
 												: flexRender(
@@ -113,14 +133,18 @@ export function DataTable<TData, TValue>({
 							table.getRowModel().rows.map((row) => (
 								<React.Fragment key={row.id}>
 									<TableRow data-state={row.getIsSelected() && "selected"}>
-										{row.getVisibleCells().map((cell) => (
-											<TableCell key={cell.id}>
-												{flexRender(
-													cell.column.columnDef.cell,
-													cell.getContext(),
-												)}
-											</TableCell>
-										))}
+										{row.getVisibleCells().map((cell) => {
+											const meta = cell.column
+												.columnDef.meta as DataTableColumnMeta | undefined;
+											return (
+												<TableCell key={cell.id} className={meta?.cellClassName}>
+													{flexRender(
+														cell.column.columnDef.cell,
+														cell.getContext(),
+													)}
+												</TableCell>
+											);
+										})}
 									</TableRow>
 
 									{row.getIsExpanded() && subComponent && (
