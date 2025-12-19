@@ -51,7 +51,12 @@ export function formatVouchersMetaToMetadata(
 	// Generate pagination URLs if baseUrl is provided
 	const generateUrl = (page: number) => {
 		if (!baseUrl) return "";
-		const url = new URL(baseUrl, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+		const url = new URL(
+			baseUrl,
+			typeof window !== "undefined"
+				? window.location.origin
+				: "http://localhost",
+		);
 		url.searchParams.set("page", String(page));
 		return `${url.pathname}${url.search}`;
 	};
@@ -69,16 +74,11 @@ export function formatVouchersMetaToMetadata(
 		vars,
 		pages: safePages,
 		last: safePages,
-		in: Math.min(
-			safeLimit,
-			safeCount - (safePage - 1) * safeLimit,
-		),
+		in: Math.min(safeLimit, safeCount - (safePage - 1) * safeLimit),
 		from: (safePage - 1) * safeLimit + 1,
 		to: Math.min(safePage * safeLimit, safeCount),
 		prev: safePage > 1 ? { page: safePage - 1 } : null,
 		next: safePage < safePages ? { page: safePage + 1 } : null,
-		series: Array.from({ length: safePages }, (_, i) =>
-			(i + 1).toString(),
-		),
+		series: Array.from({ length: safePages }, (_, i) => (i + 1).toString()),
 	};
 }
