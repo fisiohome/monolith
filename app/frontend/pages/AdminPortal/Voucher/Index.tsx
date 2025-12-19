@@ -5,7 +5,7 @@ import type {
 	Row,
 	Table as TanstackTable,
 } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { type ContextFn, format, type Locale } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	ChevronDown,
@@ -20,6 +20,12 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import NewVoucherFormFields from "@/components/admin-portal/vouchers/upsert-form-fields";
+import { useDateContext } from "@/components/providers/date-provider";
+import {
+	ResponsiveDialog,
+	type ResponsiveDialogProps,
+} from "@/components/shared/responsive-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -68,6 +74,7 @@ export default function Index({
 }: PageProps) {
 	const { props: globalProps, url: pageURL } =
 		usePage<VoucherIndexGlobalPageProps>();
+	const { locale, tzDate } = useDateContext();
 	const { t: tv } = useTranslation("vouchers");
 
 	const { queryParams } = useMemo(
@@ -146,8 +153,95 @@ export default function Index({
 	);
 
 	const columns = useMemo<ColumnDef<Voucher>[]>(
-		() => getColumns(handleRowExpandToggle),
-		[handleRowExpandToggle],
+		() => getColumns(handleRowExpandToggle, { locale, tzDate }),
+		[handleRowExpandToggle, locale, tzDate],
+	);
+
+	const formDialogMode = useMemo(() => {
+		const isCreateMode =
+			globalProps.adminPortal?.currentQuery?.new === "voucher";
+		const editVoucherId = globalProps.adminPortal?.currentQuery?.edit ?? null;
+		return { isCreateMode, editVoucherId };
+	}, [globalProps.adminPortal?.currentQuery]);
+
+	const createVoucherDialog = useMemo<ResponsiveDialogProps>(() => {
+		return {
+			title: "Create Voucher",
+			description: "Fill in the details to create a new voucher.",
+			isOpen: formDialogMode.isCreateMode,
+			dialogWidth: "640px",
+			onOpenChange: () => {
+				const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+					new: null,
+				});
+
+				router.get(
+					fullUrl,
+					{ ...queryParams },
+					{
+						only: ["flash", "adminPortal", "packages"],
+						preserveScroll: true,
+						preserveState: true,
+						replace: true,
+					},
+				);
+			},
+		};
+	}, [formDialogMode.isCreateMode, pageURL]);
+
+	const editVoucherDialog = useMemo<ResponsiveDialogProps>(() => {
+		const isOpen = Boolean(formDialogMode.editVoucherId);
+		return {
+			title: "Edit Voucher",
+			description: "Update the voucher details.",
+			isOpen,
+			dialogWidth: "640px",
+			onOpenChange: () => {
+				const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+					edit: null,
+					id: null,
+				});
+
+				router.get(
+					fullUrl,
+					{ ...queryParams },
+					{
+						only: ["flash", "adminPortal", "selectedVoucher", "packages"],
+						preserveScroll: true,
+						preserveState: true,
+						replace: true,
+					},
+				);
+			},
+		};
+	}, [formDialogMode.editVoucherId, pageURL]);
+
+	const voucherForEdit =
+		formDialogMode.editVoucherId &&
+		selectedVoucher &&
+		String(selectedVoucher.id) === String(formDialogMode.editVoucherId)
+			? selectedVoucher
+			: undefined;
+
+	const handleEditVoucher = useCallback(
+		(voucherId: string | number) => {
+			const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+				edit: voucherId,
+				id: voucherId,
+			});
+
+			router.get(
+				fullUrl,
+				{ ...queryParams },
+				{
+					only: ["flash", "adminPortal", "selectedVoucher", "packages"],
+					preserveScroll: true,
+					preserveState: true,
+					replace: true,
+				},
+			);
+		},
+		[pageURL],
 	);
 
 	return (
@@ -177,7 +271,7 @@ export default function Index({
 						pageURL={globalProps.adminPortal.router.adminPortal.vouchers.index}
 						queryParams={queryParams}
 						newVoucherHref={
-							globalProps.adminPortal.router.adminPortal.vouchers.new
+							globalProps.adminPortal.router.adminPortal.vouchers.index
 						}
 					/>
 				</Deferred>
@@ -202,6 +296,7 @@ export default function Index({
 							<VoucherDetails
 								row={row}
 								onClose={() => handleRowClose(row)}
+								onEdit={() => handleEditVoucher(row.original.id)}
 								packagesById={packagesById}
 								selectedVoucher={
 									selectedVoucher && selectedVoucher.id === row.original.id
@@ -213,6 +308,27 @@ export default function Index({
 						currentExpanded={currentExpanded}
 					/>
 				</Deferred>
+
+				{createVoucherDialog.isOpen && (
+					<ResponsiveDialog {...createVoucherDialog}>
+						<NewVoucherFormFields
+							packages={packagesData}
+							forceMode={createVoucherDialog.forceMode}
+							handleOpenChange={createVoucherDialog.onOpenChange}
+						/>
+					</ResponsiveDialog>
+				)}
+
+				{editVoucherDialog.isOpen && (
+					<ResponsiveDialog {...editVoucherDialog}>
+						<NewVoucherFormFields
+							packages={packagesData}
+							forceMode={editVoucherDialog.forceMode}
+							handleOpenChange={editVoucherDialog.onOpenChange}
+							voucher={voucherForEdit}
+						/>
+					</ResponsiveDialog>
+				)}
 			</PageContainer>
 		</>
 	);
@@ -220,6 +336,7 @@ export default function Index({
 
 function getColumns(
 	handleRowExpandToggle: (row: Row<Voucher>) => void,
+	{ locale, tzDate }: { locale: Locale; tzDate: ContextFn<Date> },
 ): ColumnDef<Voucher>[] {
 	return [
 		{
@@ -309,7 +426,10 @@ function getColumns(
 			},
 			cell: ({ row }) =>
 				row?.original?.validFrom
-					? format(new Date(row.original.validFrom), "PPP")
+					? format(new Date(row.original.validFrom), "PPPp", {
+							locale,
+							in: tzDate,
+						})
 					: "N/A",
 		},
 		{
@@ -323,7 +443,10 @@ function getColumns(
 			},
 			cell: ({ row }) =>
 				row?.original?.validUntil
-					? format(new Date(row.original.validUntil), "PPP")
+					? format(new Date(row.original.validUntil), "PPPp", {
+							locale,
+							in: tzDate,
+						})
 					: "N/A",
 		},
 	];
@@ -333,6 +456,7 @@ type VoucherDetailsProps = {
 	row: Row<Voucher>;
 	selectedVoucher?: Voucher;
 	onClose: () => void;
+	onEdit: () => void;
 	packagesById: Record<string, Package>;
 };
 
@@ -340,8 +464,10 @@ function VoucherDetails({
 	row,
 	selectedVoucher,
 	onClose,
+	onEdit,
 	packagesById,
 }: VoucherDetailsProps) {
+	const { locale, tzDate } = useDateContext();
 	const [showAllPackages, setShowAllPackages] = useState(false);
 
 	const hasSelectedVoucher =
@@ -419,13 +545,13 @@ function VoucherDetails({
 		{
 			label: "Valid From",
 			value: voucher?.validFrom
-				? format(new Date(voucher.validFrom), "PPP")
+				? format(new Date(voucher.validFrom), "PPPp", { locale, in: tzDate })
 				: "N/A",
 		},
 		{
 			label: "Valid Until",
 			value: voucher?.validUntil
-				? format(new Date(voucher.validUntil), "PPP")
+				? format(new Date(voucher.validUntil), "PPPp", { locale, in: tzDate })
 				: "N/A",
 		},
 	];
@@ -458,7 +584,7 @@ function VoucherDetails({
 						<p className="text-xs uppercase text-muted-foreground">
 							{item.label}
 						</p>
-						<p className="font-semibold">{item.value ?? "—"}</p>
+						<p className="font-semibold text-pretty">{item.value ?? "N/A"}</p>
 					</div>
 				))}
 			</div>
@@ -572,7 +698,7 @@ function VoucherDetails({
 					variant="primary-outline"
 					size="sm"
 					className="w-full md:w-fit"
-					onClick={onClose}
+					onClick={onEdit}
 				>
 					<PencilIcon />
 					Edit
@@ -707,7 +833,11 @@ const FiltersPanel = memo(function FiltersPanel({
 				</Button>
 
 				<Button asChild className="w-full md:w-fit order-first md:order-last">
-					<Link href={newVoucherHref}>
+					<Link
+						href={
+							populateQueryParams(newVoucherHref, { new: "voucher" }).fullUrl
+						}
+					>
 						<PlusIcon />
 						Create Voucher
 					</Link>
