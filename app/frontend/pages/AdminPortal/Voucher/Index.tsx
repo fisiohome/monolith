@@ -656,6 +656,36 @@ function VoucherDetails({
 	const hasSelectedVoucher =
 		selectedVoucher && selectedVoucher.id === row.original.id;
 	const voucher = hasSelectedVoucher ? selectedVoucher : null;
+	const voucherPackages = useMemo(() => {
+		if (!voucher) return [];
+
+		return (voucher.packages ?? []).map((pkg) => {
+			const packageDetails = packagesById?.[String(pkg.packageId)];
+			return {
+				...pkg,
+				details: packageDetails,
+			};
+		});
+	}, [voucher, packagesById]);
+	const packagesGroupedByService = useMemo(() => {
+		if (!voucherPackages.length) return [];
+
+		const groups = voucherPackages.reduce<
+			Record<string, { serviceName: string; packages: typeof voucherPackages }>
+		>((acc, pkg) => {
+			const serviceName =
+				pkg.details?.service?.name?.replaceAll("_", " ") || "Other Services";
+			if (!acc[serviceName]) {
+				acc[serviceName] = { serviceName, packages: [] };
+			}
+			acc[serviceName].packages.push(pkg);
+			return acc;
+		}, {});
+
+		return Object.values(groups).sort((a, b) =>
+			a.serviceName.localeCompare(b.serviceName),
+		);
+	}, [voucherPackages]);
 
 	useEffect(() => {
 		if (!voucher) return;
@@ -700,15 +730,24 @@ function VoucherDetails({
 		voucher.discountType === "PERCENTAGE"
 			? formatPercentage((voucher.discountValue ?? 0) / 100)
 			: formatCurrency(voucher.discountValue, { emptyValue: "N/A" });
-	const voucherPackages = (voucher.packages ?? []).map((pkg) => {
-		const packageDetails = packagesById?.[String(pkg.packageId)];
-		return {
-			...pkg,
-			details: packageDetails,
-		};
-	});
 	const infoBlocks = [
 		{ label: "Code", value: voucher.code },
+		{
+			label: "Status",
+			value: (
+				<Badge
+					variant="outline"
+					className={cn(
+						"border rounded-full text-xs font-semibold uppercase mt-1.5",
+						row.original.isActive
+							? "bg-emerald-50 text-emerald-700 border-emerald-200"
+							: "bg-rose-50 text-rose-700 border-rose-200",
+					)}
+				>
+					{voucher.isActive ? "Active" : "Inactive"}
+				</Badge>
+			),
+		},
 		{
 			label: "Discount Type",
 			value: voucher.discountType.replaceAll("_", " "),
@@ -737,12 +776,37 @@ function VoucherDetails({
 				? format(new Date(voucher.validUntil), "PPPp", { locale, in: tzDate })
 				: "N/A",
 		},
+		{
+			label: "Summary",
+			value: (
+				<div className="font-normal">
+					<p className="text-muted-foreground">
+						<span className="font-semibold">{voucher?.usedCount ?? 0}</span> of{" "}
+						<span className="font-semibold">{voucher?.quota ?? 0}</span>{" "}
+						booking(s) used
+					</p>
+					<p className="text-muted-foreground">
+						Remaining quota:{" "}
+						<span className="font-semibold">
+							{voucher.quota && voucher.usedCount !== null
+								? Math.max(voucher.quota - voucher.usedCount, 0)
+								: "N/A"}
+						</span>{" "}
+						booking(s)
+					</p>
+				</div>
+			),
+		},
 	];
-	const visiblePackages = showAllPackages
-		? voucherPackages
-		: voucherPackages.slice(0, 2);
-	const extraPackagesCount = Math.max(voucherPackages.length - 2, 0);
-	const showToggle = extraPackagesCount > 0;
+	const VISIBLE_GROUP_LIMIT = 1;
+	const visiblePackagesGroups = showAllPackages
+		? packagesGroupedByService
+		: packagesGroupedByService.slice(0, VISIBLE_GROUP_LIMIT);
+	const remainingPackagesCount = packagesGroupedByService
+		.slice(VISIBLE_GROUP_LIMIT)
+		.reduce((total, group) => total + group.packages.length, 0);
+	const hasMorePackages = remainingPackagesCount > 0;
+	const showToggle = hasMorePackages || showAllPackages;
 
 	return (
 		<div className="p-4 space-y-4 rounded-xl border bg-card text-card-foreground md:p-6 text-sm">
@@ -762,7 +826,10 @@ function VoucherDetails({
 				{infoBlocks.map((item) => (
 					<div
 						key={item.label}
-						className="space-y-1 rounded-lg bg-background p-3"
+						className={cn(
+							"space-y-1 rounded-lg bg-background p-3",
+							item.label === "Summary" ? "col-span-2" : "",
+						)}
 					>
 						<p className="text-xs uppercase text-muted-foreground">
 							{item.label}
@@ -773,76 +840,42 @@ function VoucherDetails({
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-12">
-				<div className="space-y-2 col-span-full md:col-span-4">
-					<p className="text-xs font-semibold uppercase text-muted-foreground">
-						Usage Summary
-					</p>
-					<div className="flex flex-wrap gap-4 text-sm">
-						<div>
-							<p className="text-muted-foreground">Status</p>
-							<Badge
-								variant="outline"
-								className={cn(
-									"border rounded-full text-xs font-semibold uppercase mt-1.5",
-									row.original.isActive
-										? "bg-emerald-50 text-emerald-700 border-emerald-200"
-										: "bg-rose-50 text-rose-700 border-rose-200",
-								)}
-							>
-								{voucher.isActive ? "Active" : "Inactive"}
-							</Badge>
-						</div>
-						<div className="space-y-2">
-							<p className="text-muted-foreground">
-								<span className="font-semibold">{voucher?.usedCount ?? 0}</span>{" "}
-								of <span className="font-semibold">{voucher?.quota ?? 0}</span>{" "}
-								booking(s) used
-							</p>
-							<p className="text-muted-foreground">
-								Remaining quota:{" "}
-								<span className="font-semibold">
-									{voucher.quota && voucher.usedCount !== null
-										? Math.max(voucher.quota - voucher.usedCount, 0)
-										: "N/A"}
-								</span>{" "}
-								booking(s)
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<div className="space-y-2 col-span-full md:col-span-8">
+				<div className="space-y-2 col-span-full">
 					<p className="text-xs font-semibold uppercase text-muted-foreground">
 						Packages
 					</p>
-					{voucherPackages.length ? (
+					{packagesGroupedByService.length ? (
 						<div className="flex flex-col gap-2">
-							<div className="flex flex-wrap gap-2 mt-1">
-								{visiblePackages.map((item) => (
-									<Badge
-										key={item.id}
-										variant="accent"
-										className="flex flex-wrap items-center gap-1 px-3 py-2 text-left leading-tight whitespace-normal break-all"
+							<div className="flex flex-col gap-3 mt-1">
+								{visiblePackagesGroups.map((group) => (
+									<div
+										key={group.serviceName}
+										className="space-y-1 rounded-lg border border-border/60 bg-background/60 p-3"
 									>
-										<span className="text-sm font-semibold">
-											{item.details?.name || `Package #${item.packageId}`}
-										</span>
-										<span className="text-xs italic text-muted-foreground">
-											(
-											{item.details?.numberOfVisit
-												? `${item.details.numberOfVisit} visit(s)`
-												: "N/A visits"}
-											)
-										</span>
-										<span aria-hidden="true" className="mx-1.5">
-											&bull;
-										</span>
-										<span className="text-xs text-muted-foreground">
-											{item.details?.service?.name
-												? item.details.service.name.replaceAll("_", " ")
-												: "N/A service"}
-										</span>
-									</Badge>
+										<p className="text-xs font-semibold uppercase text-muted-foreground">
+											{group.serviceName}
+										</p>
+										<div className="flex flex-wrap gap-2">
+											{group.packages.map((item) => (
+												<Badge
+													key={item.id}
+													variant="accent"
+													className="flex flex-wrap items-center gap-1 px-3 py-2 text-left leading-tight whitespace-normal break-all"
+												>
+													<span className="text-sm font-semibold">
+														{item.details?.name || `Package #${item.packageId}`}
+													</span>
+													<span className="text-xs italic text-muted-foreground">
+														(
+														{item.details?.numberOfVisit
+															? `${item.details.numberOfVisit} visit(s)`
+															: "N/A visits"}
+														)
+													</span>
+												</Badge>
+											))}
+										</div>
+									</div>
 								))}
 							</div>
 
@@ -855,7 +888,7 @@ function VoucherDetails({
 								>
 									{showAllPackages
 										? "Show fewer packages"
-										: `Show ${extraPackagesCount} more package(s)`}
+										: `Show ${remainingPackagesCount} more package(s)`}
 								</Button>
 							) : null}
 						</div>
