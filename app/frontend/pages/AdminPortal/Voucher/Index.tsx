@@ -11,6 +11,8 @@ import {
 	ChevronDown,
 	ChevronUp,
 	ListFilterIcon,
+	Loader2,
+	MoreHorizontal,
 	PencilIcon,
 	PlusIcon,
 	Trash2Icon,
@@ -26,11 +28,28 @@ import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
 } from "@/components/shared/responsive-dialog";
+import {
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
 import { DataTablePagination } from "@/components/ui/data-table/pagination";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -76,6 +95,8 @@ export default function Index({
 		usePage<VoucherIndexGlobalPageProps>();
 	const { locale, tzDate } = useDateContext();
 	const { t: tv } = useTranslation("vouchers");
+	const vouchersIndexRoute =
+		globalProps.adminPortal?.router?.adminPortal?.vouchers?.index;
 
 	const { queryParams } = useMemo(
 		() => populateQueryParams(pageURL),
@@ -101,6 +122,22 @@ export default function Index({
 				return acc;
 			}, {}),
 		[packagesData],
+	);
+
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const [voucherIdPendingDelete, setVoucherIdPendingDelete] = useState<
+		string | number | null
+	>(null);
+	const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+
+	const voucherPendingDelete = useMemo(
+		() =>
+			voucherIdPendingDelete == null
+				? null
+				: (vouchersData.find(
+						(voucher) => String(voucher.id) === String(voucherIdPendingDelete),
+					) ?? null),
+		[voucherIdPendingDelete, vouchersData],
 	);
 
 	const currentExpanded = useMemo<ExpandedState>(() => {
@@ -152,9 +189,76 @@ export default function Index({
 		[pageURL],
 	);
 
+	const handleEditVoucher = useCallback(
+		(voucherId: string | number) => {
+			const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+				edit: voucherId,
+				id: voucherId,
+			});
+
+			router.get(
+				fullUrl,
+				{ ...queryParams },
+				{
+					only: ["flash", "adminPortal", "selectedVoucher", "packages"],
+					preserveScroll: true,
+					preserveState: true,
+					replace: true,
+				},
+			);
+		},
+		[pageURL],
+	);
+
+	const handleDeleteVoucher = useCallback((voucherId: string | number) => {
+		setVoucherIdPendingDelete(voucherId);
+		setIsDeleteLoading(false);
+		setIsDeleteDialogOpen(true);
+	}, []);
+
+	const handleDeleteDialogOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open && isDeleteLoading) {
+				return;
+			}
+			setIsDeleteDialogOpen(open);
+			if (!open) {
+				setVoucherIdPendingDelete(null);
+			}
+		},
+		[isDeleteLoading],
+	);
+
+	const handleConfirmDelete = useCallback(() => {
+		if (!voucherIdPendingDelete || !vouchersIndexRoute) return;
+
+		router.delete(`${vouchersIndexRoute}/${voucherIdPendingDelete}`, {
+			preserveScroll: true,
+			preserveState: true,
+			onStart: () => setIsDeleteLoading(true),
+			onFinish: () => {
+				setIsDeleteLoading(false);
+				setIsDeleteDialogOpen(false);
+				setVoucherIdPendingDelete(null);
+			},
+		});
+	}, [voucherIdPendingDelete, vouchersIndexRoute]);
+
 	const columns = useMemo<ColumnDef<Voucher>[]>(
-		() => getColumns(handleRowExpandToggle, { locale, tzDate }),
-		[handleRowExpandToggle, locale, tzDate],
+		() =>
+			getColumns(handleRowExpandToggle, {
+				locale,
+				tzDate,
+				onEditVoucher: handleEditVoucher,
+				onDeleteVoucher: handleDeleteVoucher,
+			}),
+		[
+			handleDeleteVoucher,
+			handleEditVoucher,
+			handleRowExpandToggle,
+			locale,
+			tzDate,
+		],
 	);
 
 	const formDialogMode = useMemo(() => {
@@ -222,27 +326,6 @@ export default function Index({
 		String(selectedVoucher.id) === String(formDialogMode.editVoucherId)
 			? selectedVoucher
 			: undefined;
-
-	const handleEditVoucher = useCallback(
-		(voucherId: string | number) => {
-			const { fullUrl, queryParams } = populateQueryParams(pageURL, {
-				edit: voucherId,
-				id: voucherId,
-			});
-
-			router.get(
-				fullUrl,
-				{ ...queryParams },
-				{
-					only: ["flash", "adminPortal", "selectedVoucher", "packages"],
-					preserveScroll: true,
-					preserveState: true,
-					replace: true,
-				},
-			);
-		},
-		[pageURL],
-	);
 
 	return (
 		<>
@@ -329,14 +412,67 @@ export default function Index({
 						/>
 					</ResponsiveDialog>
 				)}
+
+				<AlertDialog
+					open={isDeleteDialogOpen}
+					onOpenChange={handleDeleteDialogOpenChange}
+				>
+					<AlertDialogContent>
+						<AlertDialogHeader>
+							<AlertDialogTitle>Delete voucher?</AlertDialogTitle>
+							<AlertDialogDescription>
+								{voucherPendingDelete ? (
+									<>
+										This action will permanently delete{" "}
+										<span className="font-semibold">
+											{voucherPendingDelete.name ?? voucherPendingDelete.code}
+										</span>{" "}
+										and all of its associated data.
+									</>
+								) : (
+									"This action cannot be undone."
+								)}
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel disabled={isDeleteLoading}>
+								Cancel
+							</AlertDialogCancel>
+							<Button
+								variant="destructive"
+								disabled={isDeleteLoading}
+								onClick={(event) => {
+									event.preventDefault();
+									handleConfirmDelete();
+								}}
+							>
+								{isDeleteLoading ? (
+									<>
+										<Loader2 className="mr-2 size-4 animate-spin" />
+										Deleting...
+									</>
+								) : (
+									"Delete"
+								)}
+							</Button>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 			</PageContainer>
 		</>
 	);
 }
 
+type VoucherColumnContext = {
+	locale: Locale;
+	tzDate: ContextFn<Date>;
+	onEditVoucher: (voucherId: string | number) => void;
+	onDeleteVoucher: (voucherId: string | number) => void;
+};
+
 function getColumns(
 	handleRowExpandToggle: (row: Row<Voucher>) => void,
-	{ locale, tzDate }: { locale: Locale; tzDate: ContextFn<Date> },
+	{ locale, tzDate, onEditVoucher, onDeleteVoucher }: VoucherColumnContext,
 ): ColumnDef<Voucher>[] {
 	return [
 		{
@@ -346,7 +482,7 @@ function getColumns(
 				<Button
 					variant="ghost"
 					size="icon"
-					className="border size-8 shadow-none"
+					className="border size-8 shadow-none bg-card border-none"
 					onClick={() => handleRowExpandToggle(row)}
 					aria-label={row.getIsExpanded() ? "Collapse row" : "Expand row"}
 				>
@@ -359,7 +495,6 @@ function getColumns(
 			),
 			enableSorting: false,
 			enableHiding: false,
-			size: 48,
 		},
 		{
 			accessorKey: "code",
@@ -421,8 +556,8 @@ function getColumns(
 				<DataTableColumnHeader column={column} title="Valid From" />
 			),
 			meta: {
-				headerClassName: "hidden md:table-cell",
-				cellClassName: "hidden md:table-cell text-nowrap",
+				headerClassName: "hidden lg:table-cell",
+				cellClassName: "hidden lg:table-cell text-nowrap",
 			},
 			cell: ({ row }) =>
 				row?.original?.validFrom
@@ -438,8 +573,8 @@ function getColumns(
 				<DataTableColumnHeader column={column} title="Valid Until" />
 			),
 			meta: {
-				headerClassName: "hidden md:table-cell",
-				cellClassName: "hidden md:table-cell text-nowrap",
+				headerClassName: "hidden lg:table-cell",
+				cellClassName: "hidden lg:table-cell text-nowrap",
 			},
 			cell: ({ row }) =>
 				row?.original?.validUntil
@@ -448,6 +583,54 @@ function getColumns(
 							in: tzDate,
 						})
 					: "N/A",
+		},
+		{
+			id: "actions",
+			header: () => <span className="sr-only">Actions</span>,
+			meta: {
+				headerClassName: "hidden md:table-cell",
+				cellClassName: "hidden md:table-cell text-nowrap",
+			},
+			cell: ({ row }) => (
+				<div className="flex justify-end">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="border size-8 shadow-none"
+								aria-label="Open voucher actions"
+							>
+								<MoreHorizontal className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuLabel>Actions</DropdownMenuLabel>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								onSelect={(event) => {
+									event.preventDefault();
+									onEditVoucher(row.original.id);
+								}}
+							>
+								<PencilIcon className="size-4" />
+								Edit
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="text-destructive focus:text-destructive"
+								onSelect={(event) => {
+									event.preventDefault();
+									onDeleteVoucher(row.original.id);
+								}}
+							>
+								<Trash2Icon className="size-4" />
+								Remove
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+			),
+			enableSorting: false,
 		},
 	];
 }

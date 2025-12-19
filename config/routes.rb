@@ -81,7 +81,7 @@ Rails.application.routes.draw do
 
         resources :patients, path: "patient-management", only: [:index, :update]
 
-        resources :vouchers
+        resources :vouchers, only: [:index, :create, :update, :destroy]
 
         resources :services, only: [:index, :create, :update, :edit, :destroy] do
           collection do

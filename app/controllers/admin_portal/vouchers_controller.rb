@@ -37,6 +37,22 @@ module AdminPortal
       end
     end
 
+    def destroy
+      result = vouchers_service.destroy(params[:id])
+
+      if result[:success]
+        redirect_to admin_portal_vouchers_path, notice: "Voucher deleted successfully."
+      else
+        handle_voucher_failure(
+          result[:errors],
+          redirect_params: {id: params[:id]}
+        )
+      end
+    end
+
+    def delete
+    end
+
     private
 
     def vouchers_service

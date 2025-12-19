@@ -96,6 +96,28 @@ module AdminPortal
       handle_mutation_exception("update", e)
     end
 
+    # Deletes an existing voucher via the external API
+    # Sends a DELETE request and handles the response
+    # @param id [String, Integer] the voucher ID to delete
+    # @return [Hash] hash with :success boolean and optional :errors
+    def destroy(id)
+      response = client.delete("/api/v1/vouchers/#{id}")
+
+      if response.success?
+        {success: true}
+      else
+        Rails.logger.error("[VouchersService] Failed to delete voucher #{id}: #{response.status} - #{response.body}")
+        errors = normalize_errors(response.body, fallback: "Failed to delete voucher.")
+        {success: false, errors: format_errors(errors)}
+      end
+    rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
+      handle_mutation_exception("delete", e)
+    rescue Faraday::Error => e
+      handle_mutation_exception("delete", e)
+    rescue => e
+      handle_mutation_exception("delete", e)
+    end
+
     private
 
     attr_reader :client, :key_format

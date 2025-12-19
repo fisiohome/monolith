@@ -94,9 +94,6 @@ module InertiaAdminPortal
   def vouchers_menu
     return if current_user&.admin.blank?
 
-    {
-      index: admin_portal_vouchers_path,
-      new: new_admin_portal_voucher_path
-    }
+    {index: admin_portal_vouchers_path}
   end
 end

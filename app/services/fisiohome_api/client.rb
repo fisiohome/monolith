@@ -47,6 +47,15 @@ module FisiohomeApi
         connection.put(path, body, auth_headers.merge(headers))
       end
 
+      # Performs a DELETE request to the external API
+      # @param path [String] the API endpoint path
+      # @param params [Hash] query parameters
+      # @param headers [Hash] additional headers
+      # @return [Faraday::Response] the HTTP response
+      def delete(path, params: {}, headers: {})
+        connection.delete(path, params, auth_headers.merge(headers))
+      end
+
       private
 
       # Generates authorization headers with Bearer token
