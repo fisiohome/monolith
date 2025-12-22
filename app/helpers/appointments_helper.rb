@@ -29,12 +29,15 @@ module AppointmentsHelper
         serialized["service"] = appointment.service.as_json(only: options[:service_only])
       end
 
-      # Serialize package details.
-      if options.fetch(:include_package, true) && appointment&.package_history&.present?
-        serialized["package"] = serialize_package(
-          appointment.package_history,
-          options.fetch(:package_options, options.slice(:include_packages_formatted))
-        )
+      # Serialize package details (prefer history snapshot, fallback to live package).
+      if options.fetch(:include_package, true)
+        package_source = appointment&.package_history || appointment&.package
+        if package_source.present?
+          serialized["package"] = serialize_package(
+            package_source,
+            options.fetch(:package_options, options.slice(:include_packages_formatted))
+          )
+        end
       end
 
       # Serialize location details.

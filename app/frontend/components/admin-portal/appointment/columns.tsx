@@ -93,7 +93,7 @@ const RegistrationNumberCell = memo(({ row }: { row: Row<Appointment> }) => (
 		<Badge
 			variant="outline"
 			className={cn(
-				"text-pretty font-bold",
+				"inline-flex shrink-0 text-pretty font-bold",
 				row.original?.service?.code &&
 					getBrandBadgeVariant(row.original.service.code),
 			)}
@@ -109,7 +109,7 @@ const AppointmentDateTimeCell = memo(({ row }: { row: Row<Appointment> }) => {
 	const apptDate = row.original.appointmentDateTime;
 	const date = useMemo(
 		() =>
-			format(new Date(apptDate), "PPPP", {
+			format(new Date(apptDate), "PP", {
 				locale,
 				...(tzDate && { timeZone: tzDate }),
 			}),
@@ -123,14 +123,21 @@ const AppointmentDateTimeCell = memo(({ row }: { row: Row<Appointment> }) => {
 			}),
 		[apptDate, locale, tzDate],
 	);
+	const full = useMemo(
+		() =>
+			format(new Date(apptDate), "PPPp", {
+				locale,
+				...(tzDate && { timeZone: tzDate }),
+			}),
+		[apptDate, locale, tzDate],
+	);
 
 	if (!apptDate) return "N/A";
+
 	return (
-		<div>
-			<p title={date} className="font-semibold text-nowrap">
-				{date}
-			</p>
-			<p className="line-clamp-1">{time}</p>
+		<div title={full}>
+			<p className="font-semibold text-nowrap">{date}</p>
+			<p className="text-nowrap">{time}</p>
 		</div>
 	);
 });
@@ -252,20 +259,24 @@ const TherapistCell = memo(({ row }: { row: Row<Appointment> }) => {
 
 const ServiceCell = memo(({ row }: { row: Row<Appointment> }) => {
 	const { service, package: servicePackage } = row.original;
-	if (!service || !servicePackage) return null;
+	const serviceName = service?.name?.replaceAll("_", " ") || null;
+	const packageName = servicePackage?.name || null;
+	const visitLabel = servicePackage
+		? `${servicePackage.numberOfVisit} visit(s)`
+		: null;
 
-	const serviceName = service.name.replaceAll("_", " ");
-	const packageName = servicePackage.name || "N/A";
-	const visitLabel = `${servicePackage.numberOfVisit} visit(s)`;
+	if (!serviceName) return null;
 
 	return (
-		<div title={serviceName}>
+		<div title={`${serviceName} | ${packageName} - ${visitLabel}`}>
 			<p className="font-semibold line-clamp-1">{serviceName}</p>
-			<p className="line-clamp-1">
-				<span>{packageName}</span>
-				<span className="mx-0.5">-</span>
-				<span className="italic">{visitLabel}</span>
-			</p>
+			{packageName ? (
+				<p className="line-clamp-1">
+					<span>{packageName}</span>
+					<span className="mx-0.5">-</span>
+					<span className="italic">{visitLabel}</span>
+				</p>
+			) : null}
 		</div>
 	);
 });
