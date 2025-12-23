@@ -1,18 +1,28 @@
 ENV["RAILS_ENV"] ||= "test"
+
+# SimpleCov must start BEFORE loading the app
+require "simplecov"
+SimpleCov.start "rails" do
+  enable_coverage :branch
+end
+
 require_relative "../config/environment"
 require "rails/test_help"
-require "simplecov"
 
 module ActiveSupport
   class TestCase
-    # Run tests in parallel with specified workers
-    parallelize(workers: :number_of_processors)
+    # Limit parallel workers to reduce memory usage (or use 2 for constrained environments)
+    parallelize(workers: ENV.fetch("PARALLEL_WORKERS", 2).to_i)
+
+    # Clean up after parallel tests to free memory
+    parallelize_teardown do |worker|
+      GC.start
+    end
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
     # fixtures :therapists, :addresses, :therapist_addresses, :users
 
     # Add more helper methods to be used by all tests here...
-    SimpleCov.start
   end
 end
