@@ -39,7 +39,7 @@ import { TimeSlotButton } from "./date-time";
 type TherapistSelectButtonProps = {
 	selected: boolean;
 	onSelect: () => void;
-	regNumbers?: string[];
+	badgeItems?: string[];
 	className?: string;
 	children: React.ReactNode;
 } & React.ComponentPropsWithoutRef<"button">;
@@ -47,7 +47,7 @@ type TherapistSelectButtonProps = {
 const TherapistSelectButton = forwardRef<
 	HTMLButtonElement,
 	TherapistSelectButtonProps
->(({ selected, onSelect, regNumbers, className, children, ...props }, ref) => (
+>(({ selected, onSelect, badgeItems, className, children, ...props }, ref) => (
 	<button
 		ref={ref}
 		type="button"
@@ -64,7 +64,7 @@ const TherapistSelectButton = forwardRef<
 		}}
 		{...props}
 	>
-		{!!regNumbers?.length && (
+		{!!badgeItems?.length && (
 			<div
 				className={cn(
 					"absolute top-0 left-0 z-10 flex items-center p-0 px-1 rounded-br-md text-[10px] lowercase border-b border-r",
@@ -76,16 +76,15 @@ const TherapistSelectButton = forwardRef<
 				}}
 			>
 				<Sparkles className="flex-shrink-0 size-3 text-yellow-700 mt-0.5 mr-1" />
-				{regNumbers.map((reg, idx) => (
-					<span
-						key={reg}
-						className={cn(
-							"font-semibold uppercase",
-							idx > 0 && "before:content-['/'] before:mx-0.5",
+				{badgeItems.map((label, index) => (
+					<Fragment key={label}>
+						{index > 0 && (
+							<span className="mx-0.5 text-yellow-700" aria-hidden="true">
+								&ndash;
+							</span>
 						)}
-					>
-						{reg}
-					</span>
+						<span className="font-semibold uppercase">{label}</span>
+					</Fragment>
 				))}
 			</div>
 		)}
@@ -257,19 +256,35 @@ const TherapistSelection = memo(function Component({
 			),
 		[filteredTherapists, allVisitIds],
 	);
-	// Helper to get appointemnt registration numbers for a therapist assigned in this appointment's series
-	const getAssignedRegistrationNumbers = useCallback(
+	// Helper to get visit progress labels for a therapist assigned in this appointment's series to show in the suggested badge
+	const getAssignedVisitProgress = useCallback(
 		(therapist: TherapistOption, appt?: Appointment) => {
 			if (!therapist?.appointments || !appt?.allVisits) return [];
 
 			const assigned = therapist.appointments.filter((ap) =>
 				appt?.allVisits?.some((v) => v.id === ap.id),
 			);
-			// Collect unique appointemnt registration numbers
-			const regNumbers = Array.from(
-				new Set(assigned.map((ap) => ap.registrationNumber).filter(Boolean)),
+
+			const visitProgressLabels = Array.from(
+				new Set(
+					assigned
+						.map((ap) => {
+							const progress =
+								ap.visitProgress ||
+								(ap.visitNumber &&
+								(ap.totalPackageVisits || appt?.totalPackageVisits)
+									? `${ap.visitNumber}/${
+											ap.totalPackageVisits || appt?.totalPackageVisits
+										}`
+									: null);
+
+							return progress ? `Visit ${progress}` : null;
+						})
+						.filter((progress): progress is string => Boolean(progress)),
+				),
 			);
-			return regNumbers.length > 0 ? regNumbers : [];
+
+			return visitProgressLabels.length > 0 ? visitProgressLabels : [];
 		},
 		[],
 	);
@@ -387,10 +402,7 @@ const TherapistSelection = memo(function Component({
 
 									<div className="grid gap-3">
 										{suggestedTherapists.map((t) => {
-											const regNumbers = getAssignedRegistrationNumbers(
-												t,
-												appt,
-											);
+											const visitLabels = getAssignedVisitProgress(t, appt);
 
 											return (
 												<div key={t.id}>
@@ -398,7 +410,7 @@ const TherapistSelection = memo(function Component({
 														ref={(el) => {
 															therapistRefs.current[t.id] = el;
 														}}
-														regNumbers={regNumbers}
+														badgeItems={visitLabels}
 														selected={selectedTherapistName === t.name}
 														onSelect={() => {
 															// save values for react-hook-form
@@ -422,7 +434,7 @@ const TherapistSelection = memo(function Component({
 																registrationNumber: t.registrationNumber,
 																employmentType: t.employmentType,
 															}}
-															className={cn(!!regNumbers?.length && "mt-5")}
+															className={cn(!!visitLabels?.length && "mt-5")}
 														/>
 													</TherapistSelectButton>
 

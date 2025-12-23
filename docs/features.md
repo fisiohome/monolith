@@ -138,6 +138,99 @@ Upcoming list:
 
 ---
 
+## Appointment Management
+
+The appointment system manages home healthcare visits between therapists and patients, supporting multi-visit packages with sophisticated scheduling and status tracking.
+
+### Appointment Structure
+
+**Initial Visit vs Series Appointments**: Appointments are organized into series based on packages. The first appointment is the **initial visit** (reference appointment), and subsequent visits are **series appointments** linked to the initial visit via `appointment_reference_id`.
+
+**Multi-Visit Packages**: Packages can include multiple visits (e.g., 5 sessions). The system automatically creates series appointments when an initial visit is created, tracking progress via `visit_number` and `total_package_visits`.
+
+### Status Workflow
+
+Appointments follow a defined status lifecycle:
+
+| Status | Description |
+|--------|-------------|
+| **Unscheduled** | Appointment has not been scheduled yet |
+| **On Hold** | Appointment is temporarily paused |
+| **Pending Therapist Assignment** | Waiting for therapist to be assigned |
+| **Pending Patient Approval** | Waiting for patient confirmation |
+| **Pending Payment** | Waiting for payment processing |
+| **Paid** | Appointment confirmed and paid |
+| **Completed** | Appointment has been completed |
+| **Cancelled** | Appointment has been cancelled |
+
+**Status Transition Rules**:
+- Status transitions are validated to prevent invalid state changes
+- Series appointments cannot have a status ahead of their initial visit
+- SUPER ADMIN and ADMIN SUPERVISOR can bypass certain status restrictions
+- Cancelling an initial visit cascades cancellation to all series appointments
+
+### Key Validations
+
+- **Time Collision Prevention**: Prevents overlapping appointments for the same patient or therapist
+- **Visit Sequence**: Ensures visit numbers don't exceed package limits
+- **Therapist Daily Limit**: Enforces maximum daily appointments per therapist schedule
+- **Series Integrity**: Series appointments must match the reference appointment's patient and package
+
+### Historical Data Tracking
+
+The system maintains historical snapshots for audit and reference:
+- **Address History**: Patient address at time of appointment creation
+- **Package History**: Package details at time of creation
+- **Status History**: Track of all status changes with timestamps and updater information
+
+---
+
+## Appointment Rescheduling
+
+The reschedule feature allows administrators to change appointment date/time and therapist assignments while maintaining data integrity across multi-visit series.
+
+### Dynamic Visit Reordering
+
+When an appointment is rescheduled to a different date/time, the system automatically reorders visit numbers based on chronological order:
+
+**Example**:
+- Before: Visit 3 (Dec 23) moved to Dec 30 (after Visit 5)
+- After: Visit 4 & 5 become Visit 3 & 4, original Visit 3 becomes Visit 5
+
+This ensures visit numbers always reflect the actual chronological order of appointments.
+
+### Time Collision Detection
+
+Before applying any reschedule, the system validates:
+- **Same-Series Collision**: Prevents scheduling at times that overlap with other visits in the same series
+- **Patient Overlap**: Prevents the same patient from having overlapping appointments
+- **Therapist Availability**: Checks if the selected therapist is available at the proposed time
+
+**Overlap Calculation**: Two time slots overlap if `Start_A < End_B AND End_A > Start_B`, accounting for appointment duration plus buffer time.
+
+### Reschedule Preparation
+
+The `PreparationRescheduleAppointmentService` provides:
+- **Available Therapists**: Filtered by location, service, and availability
+- **Date Constraints**: Minimum date based on previous visits in the series
+- **Disabled Visits**: List of dates/times where other series visits are scheduled (to prevent UI selection)
+
+### Status Handling During Reschedule
+
+- **Paid Appointments**: Status remains as "paid" when rescheduled
+- **Unpaid Appointments**: Status is automatically determined based on therapist assignment:
+  - With therapist → Pending Patient Approval
+  - Without therapist (date only) → Pending Therapist Assignment
+  - No date/time → Unscheduled
+
+### Reschedule Constraints
+
+- Appointment date/time must be in the future
+- Paid appointments require a therapist to be selected
+- Series appointments respect their relationship to the initial visit
+
+---
+
 ## Summary of Role-Based Access in Admin Management
 
 | Feature               | SUPER ADMIN | ADMIN SUPERVISOR | ADMIN   |

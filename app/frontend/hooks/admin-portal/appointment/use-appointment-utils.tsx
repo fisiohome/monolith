@@ -449,6 +449,13 @@ export const usePreferredTherapistGender = ({
 };
 
 // * hooks about appointment date time field
+export interface DisabledVisit {
+	date: string;
+	startTime: string;
+	endTime: string;
+	visitNumber: number;
+}
+
 export interface useAppointmentDateTimeProps {
 	sourceValue?: {
 		date?: Date;
@@ -456,11 +463,13 @@ export interface useAppointmentDateTimeProps {
 	};
 	min: Date | null;
 	max: Date | null;
+	disabledVisits?: DisabledVisit[];
 }
 export const useAppointmentDateTime = ({
 	sourceValue,
 	min,
 	max,
+	disabledVisits = [],
 }: useAppointmentDateTimeProps) => {
 	const { locale, tzDate } = useDateContext();
 	const [isOpenAppointmentDate, setIsOpenAppointmentDate] = useState(false);
@@ -478,24 +487,30 @@ export const useAppointmentDateTime = ({
 	const [_isAllOfDay, _setisAllOfDay] = useState(!!sourceValue?.isAllOfDay);
 	// Memoized calendar properties for the appointment date field
 	const appointmentDateCalendarProps = useMemo<CalendarProps>(() => {
-		// normalize “today” to midnight
+		// normalize "today" to midnight
 		const today = startOfDay(new Date());
 
 		// Define the range of years to be displayed in the calendar
-		const twoMonthsFromToday = new Date();
-		twoMonthsFromToday.setMonth(today.getMonth() + 2);
+		// For dynamic ordering: extend to 6 months when no max is set
+		const sixMonthsFromToday = new Date();
+		sixMonthsFromToday.setMonth(today.getMonth() + 6);
 
-		// efective bounds
-		const isMinMaxExist = min || max;
+		// Effective min bound (past dates disabled)
 		const minDate = min
 			? isBefore(startOfDay(min), today)
 				? subDays(today, 1)
 				: min
 			: subDays(today, 1);
+
+		// For dynamic ordering: use max if provided, otherwise allow up to 6 months
 		const maxDate = max
 			? sub(startOfDay(max), { days: 1 })
-			: twoMonthsFromToday;
-		const bookedDates: Date[] = [min, max].filter((d): d is Date => d !== null);
+			: sixMonthsFromToday;
+
+		// Collect dates from disabledVisits for visual indication (booked dates)
+		const bookedDates: Date[] = disabledVisits.map(
+			(visit) => new Date(visit.date),
+		);
 
 		return {
 			// Close the calendar popover when a day is clicked
@@ -503,20 +518,23 @@ export const useAppointmentDateTime = ({
 			// Set the range of years to be displayed
 			fromYear: minDate.getFullYear(),
 			toYear: maxDate.getFullYear(),
-			// Disable dates that are in the past or more than 3 months in the future
+			// Disable dates that are in the past
+			// Note: dates with visits are NOT disabled, only their specific time slots are
 			disabled: (date) => date <= minDate || date > maxDate,
-			modifiers: isMinMaxExist
-				? {
-						booked: bookedDates,
-					}
-				: undefined,
-			modifiersClassNames: isMinMaxExist
-				? {
-						booked: "line-through",
-					}
-				: undefined,
+			modifiers:
+				bookedDates.length > 0
+					? {
+							booked: bookedDates,
+						}
+					: undefined,
+			modifiersClassNames:
+				bookedDates.length > 0
+					? {
+							booked: "ring-2 ring-orange-400 ring-inset",
+						}
+					: undefined,
 		};
-	}, [max, min]);
+	}, [max, min, disabledVisits]);
 	const onSelectAppointmentDate = useCallback(
 		(date?: Date) => {
 			if (appointmentTime) {

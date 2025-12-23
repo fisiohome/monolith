@@ -744,56 +744,38 @@ class Appointment < ApplicationRecord
       return true
     end
 
-    # This series visit must come strictly after the first visit
-    if appointment_date_time <= initial.appointment_date_time
-      formatted_initial_start_date = initial.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-      formatted_initial_end_date = (
-        initial.appointment_date_time + initial.total_duration_minutes.minutes
-      ).strftime("%I:%M %p")
-      errors.add(
-        :appointment_date_time,
-        "must be after the first visit (#{initial.registration_number}) on " \
-        "#{formatted_initial_start_date} — #{formatted_initial_end_date}"
-      )
-      return true
-    end
+    # Dynamic ordering: Instead of enforcing strict chronological order,
+    # only prevent scheduling at overlapping times with other visits
+    validate_no_overlapping_visits(initial)
+  end
 
-    # This visit must be after the previous visit in the series (if any)
-    prev = initial.series_appointments
-      .where("visit_number < ?", visit_number)
-      .order(visit_number: :desc)
-      .first
-    if prev&.appointment_date_time.present? && appointment_date_time <= prev.appointment_date_time
-      formatted_prev_visit_date = prev.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-      formatted_prev_end_date = (
-        prev.appointment_date_time + prev.total_duration_minutes.minutes
-      ).strftime("%I:%M %p")
-      errors.add(
-        :appointment_date_time,
-        "must be after visit #{prev.visit_number}/#{total_package_visits} " \
-        "(#{prev.registration_number}) on " \
-        "#{formatted_prev_visit_date} — #{formatted_prev_end_date}"
-      )
-      return true
-    end
+  def validate_no_overlapping_visits(initial)
+    # Get all other visits in the series (excluding current) that have scheduled times
+    other_visits = ([initial] + initial.series_appointments.to_a)
+      .reject { |appt| appt.id == id }
+      .select { |appt| appt.appointment_date_time.present? }
 
-    # This visit must be before the next visit in the series (if any)
-    nxt = initial.series_appointments
-      .where("visit_number > ?", visit_number)
-      .order(visit_number: :asc)
-      .first
-    if nxt&.appointment_date_time.present? && appointment_date_time >= nxt.appointment_date_time
-      formatted_nxt_visit_date = nxt.appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
-      formatted_nxt_end_date = (
-        nxt.appointment_date_time + nxt.total_duration_minutes.minutes
-      ).strftime("%I:%M %p")
-      errors.add(
-        :appointment_date_time,
-        "must be before visit #{nxt.visit_number}/#{total_package_visits} " \
-        "(#{nxt.registration_number}) on " \
-        "#{formatted_nxt_visit_date} — #{formatted_nxt_end_date}"
-      )
-      return true
+    # Calculate this visit's time range
+    my_start = appointment_date_time
+    my_end = appointment_date_time + total_duration_minutes.minutes
+
+    # Check for overlapping times with other visits
+    other_visits.each do |other|
+      other_start = other.appointment_date_time
+      other_end = other.appointment_date_time + other.total_duration_minutes.minutes
+
+      # Check if time ranges overlap
+      if my_start < other_end && my_end > other_start
+        formatted_other_start = other_start.strftime("%B %d, %Y at %I:%M %p")
+        formatted_other_end = other_end.strftime("%I:%M %p")
+        errors.add(
+          :appointment_date_time,
+          "overlaps with visit #{other.visit_number}/#{total_package_visits} " \
+          "(#{other.registration_number}) on " \
+          "#{formatted_other_start} — #{formatted_other_end}"
+        )
+        return true
+      end
     end
 
     false

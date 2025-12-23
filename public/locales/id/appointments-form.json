@@ -3,7 +3,8 @@
 	"page_title": {
 		"new": "Buat Janji Temu Baru",
 		"series": "Seri Jadwalkan Janji Temu",
-		"reschedule": "Penjadwalan Ulang {{regNumber}}"
+		"reschedule": "Penjadwalan Ulang {{regNumber}}",
+		"visit_progress": "Kunjungan {{current}}/{{total}}"
 	},
 	"page_description": {
 		"new": "Jadwalkan sesi janji temu antara terapis dan pasien.",

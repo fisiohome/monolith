@@ -76,6 +76,8 @@
 		"@types/bun": "^1.1.13"
 	},
 	"scripts": {
-		"check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json"
+		"check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+		"lint": "bunx biome check app/frontend",
+		"lint:fix": "bunx biome check app/frontend --write"
 	}
 }

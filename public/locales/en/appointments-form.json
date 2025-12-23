@@ -3,7 +3,8 @@
 	"page_title": {
 		"new": "Book a New Appointment",
 		"series": "Schedule Appointment Series",
-		"reschedule": "Reschedule {{regNumber}}"
+		"reschedule": "Reschedule {{regNumber}}",
+		"visit_progress": "Visit {{current}}/{{total}}"
 	},
 	"page_description": {
 		"new": "Schedule a appointment session between therapist and patient.",

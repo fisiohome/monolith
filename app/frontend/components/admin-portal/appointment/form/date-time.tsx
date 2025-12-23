@@ -1,4 +1,4 @@
-import { format, parse } from "date-fns";
+import { format, isAfter, isBefore, isEqual, isSameDay, parse } from "date-fns";
 import {
 	type ComponentProps,
 	memo,
@@ -13,7 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useAppointmentDateTime } from "@/hooks/admin-portal/appointment/use-appointment-utils";
+import {
+	type DisabledVisit,
+	useAppointmentDateTime,
+} from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import {
 	checkPastTimeSlot,
 	generateTimeSlots,
@@ -74,6 +77,7 @@ export interface DateTimePickerProps extends ComponentProps<"div"> {
 	value: Date | null;
 	min?: Date | null;
 	max?: Date | null;
+	disabledVisits?: DisabledVisit[];
 	onChangeValue: (...event: any[]) => void;
 	callbackOnChange: () => void;
 	isAllOfDay?: boolean;
@@ -84,6 +88,7 @@ export default function DateTimePicker({
 	value,
 	min = null,
 	max = null,
+	disabledVisits = [],
 	isAllOfDay = false,
 	autoScroll = true,
 	onChangeValue,
@@ -99,6 +104,7 @@ export default function DateTimePicker({
 		sourceValue: { date: value || undefined, isAllOfDay },
 		min,
 		max,
+		disabledVisits,
 	});
 	const calendarRef = useRef<HTMLDivElement>(null);
 	const selectedButtonRef = useRef<HTMLButtonElement>(null);
@@ -140,13 +146,34 @@ export default function DateTimePicker({
 				return true;
 			}
 
+			// Check if this time slot is disabled due to another visit being scheduled
+			// A time slot is disabled if it falls within the range [startTime, endTime) of any visit
+			const isDisabledByVisit = disabledVisits.some((visit) => {
+				const visitDate = new Date(visit.date);
+				if (!isSameDay(appointmentDate, visitDate)) return false;
+
+				const slotDate = parse(time, "HH:mm", appointmentDate);
+				const visitStartDate = parse(visit.startTime, "HH:mm", appointmentDate);
+				const visitEndDate = parse(visit.endTime, "HH:mm", appointmentDate);
+
+				return (
+					(isEqual(slotDate, visitStartDate) ||
+						isAfter(slotDate, visitStartDate)) &&
+					isBefore(slotDate, visitEndDate)
+				);
+			});
+
+			if (isDisabledByVisit) {
+				return true;
+			}
+
 			return checkPastTimeSlot({
 				time,
 				date: appointmentDate,
 				dateOpt: { locale, in: tzDate },
 			});
 		},
-		[isAllOfDay, appointmentDate, locale, tzDate],
+		[isAllOfDay, appointmentDate, locale, tzDate, disabledVisits],
 	);
 
 	// * measure calendar height whenever it renders or resizes

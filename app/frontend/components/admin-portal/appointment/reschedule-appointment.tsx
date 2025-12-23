@@ -180,12 +180,12 @@ export const RescheduleFields = memo(function Component({
 						</p>
 
 						<div className="flex items-center gap-1 mt-2 text-xs">
-							<p className="font-light text-pretty">
+							<p className="text-pretty">
 								<span className="uppercase">
 									{formHooks.brandPackagesSource.packageName}
 								</span>
-								<span className="mx-2">&#x2022;</span>
-								<span className="italic font-light">
+								<span className="mx-1">&#x2022;</span>
+								<span className="italic">
 									{formHooks.brandPackagesSource.packageVisit}
 								</span>
 							</p>
@@ -293,20 +293,23 @@ export const RescheduleFields = memo(function Component({
 									)}
 								/>
 							</FormLabel>
+
 							{formHooks.apptDateTime?.message && (
 								<Alert className="text-xs">
 									<Info className="size-3.5 shrink-0" />
 									<AlertTitle>Info</AlertTitle>
-									<AlertDescription className="text-xs">
+									<AlertDescription className="text-xs text-pretty">
 										{formHooks.apptDateTime.message}
 									</AlertDescription>
 								</Alert>
 							)}
+
 							<FormControl>
 								<DateTimePicker
 									value={field.value}
 									min={formHooks.apptDateTime.min}
 									max={formHooks.apptDateTime.max}
+									disabledVisits={formHooks.apptDateTime.disabledVisits}
 									onChangeValue={field.onChange}
 									isAllOfDay={!!formHooks.watchAllOfDayValue}
 									callbackOnChange={() => {
