@@ -193,12 +193,18 @@ export const getTherapistAvailabilityForDate = ({
 				in: dateOpt.in,
 			}),
 	);
+
+	// If there's an adjusted availability for this specific date
 	if (adjusted) {
-		// If marked as unavailable, do not display an available block.
+		// If the therapist is marked as unavailable on this date, return null
+		// (no time slots should be shown)
 		if (adjusted.isUnavailable) {
 			return null;
 		}
-		if (adjusted.startTime && adjusted.endTime) {
+
+		// If the adjusted availability has specific time ranges defined,
+		// return them as an array of time slots
+		if (adjusted?.startTime && adjusted?.endTime) {
 			return [{ startTime: adjusted.startTime, endTime: adjusted.endTime }];
 		}
 	}

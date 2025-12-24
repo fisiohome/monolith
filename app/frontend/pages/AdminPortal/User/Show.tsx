@@ -1,8 +1,18 @@
 import { Head, Link } from "@inertiajs/react";
+import type { MouseEvent } from "react";
 import UserDetail from "./User";
 
-export default function Show({ user, flash }: any) {
-	const onDestroy = (e) => {
+type ShowProps = {
+	user: {
+		id: number;
+	};
+	flash: {
+		notice?: string;
+	};
+};
+
+export default function Show({ user, flash }: ShowProps) {
+	const onDestroy = (e: MouseEvent<Element>) => {
 		if (!confirm("Are you sure you want to delete this user?")) {
 			e.preventDefault();
 		}

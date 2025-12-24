@@ -560,12 +560,13 @@ const useSeriesVisitForm = (index: number) => {
 	const onSelectAllOfDay = useCallback(
 		(value: boolean) => {
 			const selectedDate = form.getValues(`${fieldPath}.appointmentDateTime`);
+			const selectedDateOrToday = selectedDate ?? new Date();
 			form.setValue(`${fieldPath}.findTherapistsAllOfDay`, value);
 
 			if (value) {
 				form.setValue(
 					`${fieldPath}.appointmentDateTime`,
-					startOfDay(selectedDate, { in: tzDate }),
+					startOfDay(selectedDateOrToday, { in: tzDate }),
 					{ shouldValidate: false },
 				);
 			} else {
@@ -582,7 +583,7 @@ const useSeriesVisitForm = (index: number) => {
 				}
 
 				// Create new date with selected date and rounded time
-				const selectedDateObj = new Date(selectedDate);
+				const selectedDateObj = new Date(selectedDateOrToday);
 				const nextHalfHour = new Date(
 					selectedDateObj.getFullYear(),
 					selectedDateObj.getMonth(),
@@ -863,71 +864,68 @@ export function SeriesScheduler() {
 			type="multiple"
 			className="w-full space-y-2 col-span-full"
 		>
-			{fields.map((field, index) => (
-				<AccordionItem
-					value={field.id}
-					key={field.id}
-					className="bg-sidebar text-muted-foreground border border-border rounded-md has-focus-visible:border-ring has-focus-visible:ring-ring/50 px-4 py-1 outline-none last:border-b has-focus-visible:ring-[3px]"
-				>
-					<AccordionPrimitive.Header className="flex">
-						<AccordionPrimitive.Trigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between rounded-md py-2 text-left text-[15px] leading-6 font-semibold transition-all outline-none focus-visible:ring-[3px] [&[data-state=open]>svg]:rotate-180">
-							<div className="flex items-center gap-3">
-								<span
-									className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-primary/75 text-primary-foreground"
-									aria-hidden="true"
-								>
-									{getValues(
-										`appointmentScheduling.seriesVisits.${index}.visitNumber`,
-									)}
-								</span>
-								<span className="flex flex-col space-y-1">
-									<span>
-										Visit{" "}
-										{getValues(
-											`appointmentScheduling.seriesVisits.${index}.visitNumber`,
+			{fields.map((field, index) => {
+				const visitNumber = getValues(
+					`appointmentScheduling.seriesVisits.${index}.visitNumber`,
+				);
+				const appointmentDateTime = getValues(
+					`appointmentScheduling.seriesVisits.${index}.appointmentDateTime`,
+				);
+
+				return (
+					<AccordionItem
+						value={field.id}
+						key={field.id}
+						className="bg-sidebar text-muted-foreground border border-border rounded-md has-focus-visible:border-ring has-focus-visible:ring-ring/50 px-4 py-1 outline-none last:border-b has-focus-visible:ring-[3px]"
+					>
+						<AccordionPrimitive.Header className="flex">
+							<AccordionPrimitive.Trigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between rounded-md py-2 text-left text-[15px] leading-6 font-semibold transition-all outline-none focus-visible:ring-[3px] [&[data-state=open]>svg]:rotate-180">
+								<div className="flex items-center gap-3">
+									<span
+										className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-primary/75 text-primary-foreground"
+										aria-hidden="true"
+									>
+										{visitNumber}
+									</span>
+									<span className="flex flex-col space-y-1">
+										<span>Visit {visitNumber}</span>
+										{appointmentDateTime ? (
+											<span className="text-sm font-normal">
+												{format(appointmentDateTime, "MMM d, yyyy h:mm a", {
+													locale,
+													in: tzDate,
+												})}
+											</span>
+										) : (
+											<span className="text-sm font-normal">Unscheduled</span>
 										)}
 									</span>
-									{getValues(
-										`appointmentScheduling.seriesVisits.${index}.appointmentDateTime`,
-									) ? (
-										<span className="text-sm font-normal">
-											{format(
-												getValues(
-													`appointmentScheduling.seriesVisits.${index}.appointmentDateTime`,
-												),
-												"MMM d, yyyy h:mm a",
-												{ locale, in: tzDate },
-											)}
-										</span>
-									) : (
-										<span className="text-sm font-normal">Unscheduled</span>
-									)}
-								</span>
-							</div>
+								</div>
 
-							<div className="flex items-center gap-3 uppercase">
-								{getStatusBadge(index)}
+								<div className="flex items-center gap-3 uppercase">
+									{getStatusBadge(index)}
 
-								<ChevronDownIcon
-									size={16}
-									className="pointer-events-none shrink-0 opacity-60 transition-transform duration-200"
-									aria-hidden="true"
-								/>
-							</div>
-						</AccordionPrimitive.Trigger>
-					</AccordionPrimitive.Header>
-					<AccordionContent className="text-muted-foreground pb-2">
-						<VisitForm
-							index={index}
-							field={field}
-							isLoading={isLoading}
-							isResetting={isResetting}
-							onReset={() => resetVisit(index)}
-							onClose={() => onCloseAccordionItem(field.id)}
-						/>
-					</AccordionContent>
-				</AccordionItem>
-			))}
+									<ChevronDownIcon
+										size={16}
+										className="pointer-events-none shrink-0 opacity-60 transition-transform duration-200"
+										aria-hidden="true"
+									/>
+								</div>
+							</AccordionPrimitive.Trigger>
+						</AccordionPrimitive.Header>
+						<AccordionContent className="text-muted-foreground pb-2">
+							<VisitForm
+								index={index}
+								field={field}
+								isLoading={isLoading}
+								isResetting={isResetting}
+								onReset={() => resetVisit(index)}
+								onClose={() => onCloseAccordionItem(field.id)}
+							/>
+						</AccordionContent>
+					</AccordionItem>
+				);
+			})}
 		</Accordion>
 	);
 }

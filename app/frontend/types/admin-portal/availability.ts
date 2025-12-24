@@ -29,6 +29,8 @@ export interface AdjustedAvailability {
 	specificDate: string;
 	reason?: string;
 	isUnavailable: boolean;
+	startTime?: string;
+	endTime?: string;
 	times?: Array<{
 		startTime: string;
 		endTime: string;
