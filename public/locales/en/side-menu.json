@@ -11,6 +11,8 @@
 	"brands": "Brands",
 	"locations": "Locations",
 	"vouchers": "Vouchers",
+	"apps": "Apps",
+	"feature_flags": "Feature Flags",
 	"toggle_theme": "Toggle Theme",
 	"settings": "Settings",
 	"logout": "Log Out"

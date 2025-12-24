@@ -84,6 +84,9 @@ export interface AdminPortal {
 			vouchers: {
 				index: string;
 			};
+			featureFlags: {
+				index: string;
+			};
 			appointment: {
 				index: string;
 				new: string;

@@ -10,6 +10,9 @@
 	"brand_and_location": "Merek & Lokasi",
 	"brands": "Merek",
 	"locations": "Lokasi",
+	"vouchers": "Voucher",
+	"apps": "Aplikasi",
+	"feature_flags": "Fitur Flag",
 	"toggle_theme": "Beralih Tema",
 	"settings": "Pengaturan",
 	"logout": "Keluar"

@@ -136,6 +136,16 @@ Upcoming list:
 - Selectable item (all/per item) & actions (suspend, delete, or can be mass change password)
 - Suspend by date
 
+## Summary of Role-Based Access in Admin Management
+
+| Feature               | SUPER ADMIN | ADMIN SUPERVISOR | ADMIN   |
+| --------------------- | ----------- | ---------------- | ------- |
+| Add Admin Account     | ✅           | ❌                | ❌       |
+| Edit Admin Profile    | ✅ (All)     | ✅ (Own)          | ✅ (Own) |
+| Change Admin Password | ✅ (Not own) | ❌                | ❌       |
+| Suspend Admin Account | ✅ (Not own) | ❌                | ❌       |
+| Delete Admin Account  | ✅ (Not own) | ❌                | ❌       |
+
 ---
 
 ## Appointment Management
@@ -231,14 +241,156 @@ The `PreparationRescheduleAppointmentService` provides:
 
 ---
 
-## Summary of Role-Based Access in Admin Management
+## Feature Flags Management
 
-| Feature               | SUPER ADMIN | ADMIN SUPERVISOR | ADMIN   |
-| --------------------- | ----------- | ---------------- | ------- |
-| Add Admin Account     | ✅           | ❌                | ❌       |
-| Edit Admin Profile    | ✅ (All)     | ✅ (Own)          | ✅ (Own) |
-| Change Admin Password | ✅ (Not own) | ❌                | ❌       |
-| Suspend Admin Account | ✅ (Not own) | ❌                | ❌       |
-| Delete Admin Account  | ✅ (Not own) | ❌                | ❌       |
+Feature Flags let Admin teams turn specific product behaviors on or off instantly, without waiting for a new deployment. This makes it safer to launch changes gradually, test in non‑production environments, and quickly roll back a problematic release.
+
+### What you can do with Feature Flags
+
+- **Roll out new functionality safely** by enabling it in DEV or STAGING first.
+- **Turn off a feature quickly** if it causes unexpected issues.
+- **Keep environments independent**, so testing changes doesn’t affect production users.
+
+### Access Control
+
+| Feature | SUPER ADMIN | ADMIN SUPERVISOR | ADMIN | THERAPIST |
+|---------|-------------|------------------|-------|-----------|
+| View Feature Flags | ✅ | ✅ | ✅ | ❌ |
+| Create Feature Flag | ✅ | ✅ | ✅ | ❌ |
+| Toggle Feature Flag | ✅ | ✅ | ✅ | ❌ |
+| Edit Feature Flag | ✅ | ✅ | ✅ | ❌ |
+| Delete Feature Flag | ✅ | ✅ | ✅ | ❌ |
+
+> **Note**: Feature Flags Management is only accessible to users with Admin roles. Therapist accounts do not have access to this feature.
+
+### Navigation
+
+The Feature Flags Management is located under the **Apps** submenu in the Admin Portal sidebar:
+
+```
+Admin Portal
+└── Apps
+    └── Feature Flags
+```
+
+### Environments
+
+Feature flags are environment-specific. The same flag key can be enabled in one environment and disabled in another.
+
+| Environment | Purpose |
+|-------------|---------|
+| **DEV** | Local development and testing |
+| **STAGING** | Pre-production testing and QA |
+| **PROD** | Live production environment |
+
+A typical rollout looks like:
+- **DEV**: create the flag and confirm it works
+- **STAGING**: validate end‑to‑end and QA
+- **PROD**: enable when ready (and disable quickly if needed)
+
+### Feature Flag Structure
+
+Each feature flag has:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| **Key** | Unique name that represents what is being controlled | `ENABLE_VOUCHER_SYSTEM` |
+| **Environment** | Target environment | `PROD` |
+| **Is Enabled** | Whether the feature is currently active | `true` |
+| **Created At** | When it was created | `2025-12-23T19:40:51.225Z` |
+| **Updated At** | When it was last changed | `2025-12-23T19:42:16.398Z` |
+
+### Operations
+
+#### Viewing Feature Flags
+
+The main screen shows the feature flags for the selected environment. From here you can:
+- See which flags are **Enabled** or **Disabled**
+- Check when a flag was last updated
+- Use the **toggle** to switch a flag on or off quickly
+- Open the **actions menu** to edit or remove a flag
+
+**Switch environments** using the tabs at the top (DEV / STAGING / PROD).
+
+#### Creating Feature Flags
+
+You can create a flag for a single environment, or create the same key across multiple environments.
+
+1. Click **"Create Feature Flag"** button
+2. Fill in the form:
+  - **Key**: choose a clear, descriptive name
+  - **Environment**: Select target environment
+  - **Enabled**: Toggle initial state
+3. Click **"Create Feature Flag"** to save
+
+**Naming tip**: Use clear, action-oriented names so anyone can understand what the flag controls.
+- ✅ `ENABLE_NEW_BOOKING_FLOW`
+- ✅ `SHOW_PROMOTIONAL_BANNER`
+- ❌ `enableFeature` (wrong case)
+- ❌ `new-feature` (wrong format)
+
+#### Quick Toggle (Enable/Disable)
+
+Each row includes a toggle switch to enable or disable the flag immediately. This is the fastest way to turn a feature on/off during testing or a production incident.
+
+#### Editing a Feature Flag
+
+To edit an existing flag:
+
+1. Click the **Actions menu** (⋮) on the flag row
+2. Select **"Edit"**
+3. Update the enabled state
+4. Click **"Update Feature Flag"** to save
+
+> **Note**: The key and environment fields are locked during editing because they form the unique identifier for the flag. To change these, delete the flag and create a new one.
+
+#### Deleting a Feature Flag
+
+To delete a flag:
+
+1. Click the **Actions menu** (⋮) on the flag row
+2. Select **"Remove"**
+3. Confirm deletion in the dialog
+
+> **Warning**: Deletion is permanent. Ensure the flag is no longer referenced in application code before removing.
+
+### Best Practices
+
+#### Naming Conventions
+- Use descriptive, action-oriented names: `ENABLE_`, `SHOW_`, `USE_`, `ALLOW_`
+- Include the feature domain: `BOOKING_ENABLE_WAITLIST`, `PAYMENT_USE_NEW_GATEWAY`
+- Keep names concise but meaningful
+
+#### Lifecycle Management
+1. **Create** flag in Development first
+2. **Test** thoroughly in Development/Staging
+3. **Enable** in Production when ready
+4. **Clean up** unused flags periodically to avoid technical debt
+
+#### Safety Guidelines
+- Always test in lower environments before Production
+- Keep internal notes (e.g., ticket link or release note) for what the flag controls
+- Have a rollback plan before enabling critical features
+- Monitor application behavior after toggling Production flags
+
+### Common Use Cases
+
+| Use Case | Example Flag |
+|----------|--------------|
+| New feature rollout | `ENABLE_NEW_APPOINTMENT_FLOW` |
+| A/B testing | `SHOW_ALTERNATE_CHECKOUT` |
+| Maintenance mode | `ENABLE_MAINTENANCE_BANNER` |
+| Third-party integration | `USE_NEW_PAYMENT_PROVIDER` |
+| Promotional features | `SHOW_HOLIDAY_PROMOTION` |
+| Beta features | `ENABLE_BETA_DASHBOARD` |
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Flag not appearing | Verify correct environment is selected |
+| Toggle not working | Check network connectivity and API status |
+| Cannot delete flag | Ensure no active references in codebase |
+| Duplicate key error | Keys must be unique per environment |
 
 ---

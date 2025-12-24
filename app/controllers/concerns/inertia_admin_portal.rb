@@ -52,6 +52,7 @@ module InertiaAdminPortal
                 delete_bulk: delete_bulk_admin_portal_locations_path
               },
               vouchers: vouchers_menu,
+              feature_flags: feature_flags_menu,
               appointment: {
                 index: admin_portal_appointments_path,
                 new: new_admin_portal_appointment_path,
@@ -91,9 +92,18 @@ module InertiaAdminPortal
 
   private
 
+  # Returns voucher menu routes if user is an admin
   def vouchers_menu
     return if current_user&.admin.blank?
 
     {index: admin_portal_vouchers_path}
+  end
+
+  # Returns feature flags menu routes if user is a super admin
+  def feature_flags_menu
+    admin = current_user&.admin
+    return if admin.blank? || !admin.is_super_admin?
+
+    {index: admin_portal_feature_flags_path}
   end
 end

@@ -83,6 +83,8 @@ Rails.application.routes.draw do
 
         resources :vouchers, only: [:index, :create, :update, :destroy]
 
+        resources :feature_flags, path: "feature-flags", only: [:index, :create, :update, :destroy]
+
         resources :services, only: [:index, :create, :update, :edit, :destroy] do
           collection do
             put "update-status" => "services#update_status"

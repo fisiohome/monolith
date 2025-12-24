@@ -1,5 +1,6 @@
 import { usePage } from "@inertiajs/react";
 import {
+	AppWindow,
 	Calendar1,
 	CalendarCheck,
 	Hospital,
@@ -199,6 +200,27 @@ export function NavigationProvider({
 			);
 		};
 
+		const isSuperAdmin =
+			globalProps.auth.currentUserType === "ADMIN" &&
+			globalProps.auth.currentUser?.["isSuperAdmin?"];
+
+		const buildAppsMenu = () => {
+			const subItems = [
+				{
+					title: t("feature_flags"),
+					url: adminPortal.featureFlags.index,
+					isActive: false,
+				},
+			];
+
+			return createMenuItem(
+				t("apps"),
+				adminPortal.featureFlags.index,
+				AppWindow,
+				subItems,
+			);
+		};
+
 		const menus = [
 			buildDashboardMenu(),
 			...(currentUserType === "ADMIN"
@@ -206,6 +228,7 @@ export function NavigationProvider({
 				: []),
 			buildUserManagementMenu(),
 			buildServiceManagementMenu(),
+			...(isSuperAdmin ? [buildAppsMenu()] : []),
 		];
 
 		// * Determine which items are active
