@@ -152,6 +152,9 @@
 		"reg_number": {
 			"placeholder": "By reg number"
 		},
+		"invoice_number": {
+			"placeholder": "By invoice number"
+		},
 		"region": {
 			"placeholder": "By region",
 			"search": {

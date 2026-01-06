@@ -152,6 +152,9 @@
 		"reg_number": {
 			"placeholder": "Berdasarkan nomor registrasi"
 		},
+		"invoice_number": {
+			"placeholder": "Berdasarkan nomor invoice"
+		},
 		"region": {
 			"placeholder": "Berdasarkan wilayah",
 			"search": {

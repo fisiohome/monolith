@@ -121,6 +121,10 @@ class Appointment < ApplicationRecord
     dependent: :destroy,
     inverse_of: :appointment
 
+  has_one :order, class_name: "Order", foreign_key: "registration_number", primary_key: "registration_number"
+  has_one :order_detail, class_name: "OrderDetail"
+  has_many :order_details, through: :order
+
   # * define the delegations
   delegate :preferred_therapist_gender, :patient, :service, :package, :location, :admins, :address_history, :package_history,
     to: :reference_appointment, prefix: true, allow_nil: true
@@ -187,7 +191,7 @@ class Appointment < ApplicationRecord
   scope :apply_filters, ->(params, current_user = nil) {
     other_filters_blank = [
       params[:registration_number], params[:therapist], params[:patient],
-      params[:city], params[:patient_genders], params[:service_ids], params[:package_ids]
+      params[:city], params[:patient_genders], params[:service_ids], params[:package_ids], params[:invoice_number]
     ].all?(&:blank?)
 
     # Chain scopes based on parameters
@@ -198,6 +202,7 @@ class Appointment < ApplicationRecord
       .filter_by_patient_genders(params[:patient_genders])
       .filter_by_service_ids(params[:service_ids])
       .filter_by_package_ids(params[:package_ids])
+      .filter_by_invoice_number(params[:invoice_number])
       .assigned_to(current_user)
 
     if params[:status].present? || other_filters_blank
@@ -237,6 +242,11 @@ class Appointment < ApplicationRecord
   scope :filter_by_package_ids, ->(package_ids) {
     return self if package_ids.blank?
     where(package_id: package_ids.strip.split(/\s*,\s*/))
+  }
+  # Filter appointments by invoice number
+  scope :filter_by_invoice_number, ->(invoice_number) {
+    return self if invoice_number.blank?
+    joins(:order).where("orders.invoice_number ILIKE ?", "%#{invoice_number}%")
   }
   # Scope: appointments assigned to a given user (therapist or admin)
   # Usage: Appointment.assigned_to(user)

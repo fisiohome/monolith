@@ -66,6 +66,7 @@ export default function FilterList({
 			patient: currentQuery?.patient || "",
 			therapist: currentQuery?.therapist || "",
 			registrationNumber: currentQuery?.registrationNumber || "",
+			invoiceNumber: currentQuery?.invoiceNumber || "",
 			city: currentQuery?.city || "",
 			assignedTo: currentQuery?.assignedTo || "",
 			serviceIds: currentQuery?.serviceIds || "",
@@ -119,6 +120,7 @@ export default function FilterList({
 			patient: "",
 			therapist: "",
 			registrationNumber: "",
+			invoiceNumber: "",
 			city: "",
 			assignedTo: "",
 			serviceIds: "",
@@ -568,6 +570,35 @@ export default function FilterList({
 						event.preventDefault();
 						handleFilterBy({
 							type: "registrationNumber",
+							value: event.target.value,
+						});
+					}}
+				/>
+			</div>
+
+			<div className="col-span-full md:col-span-1">
+				<Input
+					type="text"
+					className="shadow-inner bg-input"
+					placeholder={`${taf("invoice_number.placeholder")}...`}
+					value={filterBy.invoiceNumber}
+					StartIcon={{ icon: Search }}
+					isLoading={isSearching}
+					EndIcon={
+						filterBy.invoiceNumber
+							? {
+									icon: X,
+									isButton: true,
+									handleOnClick: () => {
+										handleFilterBy({ type: "invoiceNumber", value: "" });
+									},
+								}
+							: undefined
+					}
+					onChange={(event) => {
+						event.preventDefault();
+						handleFilterBy({
+							type: "invoiceNumber",
 							value: event.target.value,
 						});
 					}}

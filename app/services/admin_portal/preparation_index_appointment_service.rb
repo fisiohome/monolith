@@ -70,7 +70,7 @@ module AdminPortal
       sort_params = get_sort_params
       Appointment
         # Eager load all required associations
-        .includes(:therapist, :patient, :service, :package, :location, :admins)
+        .includes(:therapist, :patient, :service, :package, :location, :admins, :order)
         # apply the filter
         .apply_filters(@params, @current_user)
         # sorting, ensure everything is sorted based on sort params selected
