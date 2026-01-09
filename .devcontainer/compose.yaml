@@ -20,10 +20,24 @@ services:
     depends_on:
     - selenium
     - postgres
+    
+    # Memory limits to prevent infinite growth
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
 
   selenium:
     image: selenium/standalone-chromium
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
 
   postgres:
     image: postgres:16.1
@@ -37,6 +51,12 @@ services:
         POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
       
 volumes:
   postgres-data:

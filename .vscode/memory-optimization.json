@@ -1,0 +1,39 @@
+{
+  "typescript.tsserver.maxTsServerMemory": 3072,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "typescript.suggest.autoImports": false,
+  
+  "rubyLsp.enableExperimentalFeatures": false,
+  "rubyLsp.maxMemoryUsage": 2048,
+  
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": false
+  },
+  "editor.bracketPairColorization.enabled": false,
+  "editor.guides.bracketPairs": false,
+  "editor.minimap.enabled": false,
+  "editor.renderLineHighlight": "gutter",
+  "editor.renderWhitespace": "selection",
+  
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/tmp/**": true,
+    "**/log/**": true,
+    "**/coverage/**": true
+  },
+  
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/tmp": true,
+    "**/log": true,
+    "**/coverage": true,
+    "**/.git": true
+  },
+  
+  "windsurf.maxMemoryUsage": 4096,
+  "windsurf.disableTelemetry": true,
+  "windsurf.disableIndexing": false,
+  "windsurf.indexingMaxFileSize": 1048576
+}
