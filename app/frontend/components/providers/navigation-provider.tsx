@@ -205,21 +205,34 @@ export function NavigationProvider({
 			globalProps.auth.currentUser?.["isSuperAdmin?"];
 
 		const buildAppsMenu = () => {
-			const subItems = [
-				{
+			const subItems: {
+				title: string;
+				url: string;
+				isActive: boolean;
+			}[] = [];
+
+			if (isSuperAdmin) {
+				subItems.push({
 					title: t("feature_flags"),
 					url: adminPortal.featureFlags.index,
 					isActive: false,
-				},
-			];
+				});
+			}
 
-			return createMenuItem(
-				t("apps"),
-				adminPortal.featureFlags.index,
-				AppWindow,
-				subItems,
-			);
+			if (currentUserType === "ADMIN") {
+				subItems.push({
+					title: t("telegram_broadcasts"),
+					url: adminPortal.telegramBroadcasts.index,
+					isActive: false,
+				});
+			}
+
+			if (!subItems.length) return null;
+
+			return createMenuItem(t("apps"), subItems[0].url, AppWindow, subItems);
 		};
+
+		const appsMenu = buildAppsMenu();
 
 		const menus = [
 			buildDashboardMenu(),
@@ -228,7 +241,7 @@ export function NavigationProvider({
 				: []),
 			buildUserManagementMenu(),
 			buildServiceManagementMenu(),
-			...(isSuperAdmin ? [buildAppsMenu()] : []),
+			...(appsMenu ? [appsMenu] : []),
 		];
 
 		// * Determine which items are active

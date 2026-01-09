@@ -55,6 +55,21 @@ export const ADMIN_TYPES = [
 
 export const GENDERS = ["MALE", "FEMALE"] as const;
 
+export const GENDER_LABELS = GENDERS.map((p) => {
+	const title = p;
+	let titleId = "";
+
+	if (p === "MALE") {
+		titleId = "Laki-Laki";
+	}
+
+	if (p === "FEMALE") {
+		titleId = "Perempuan";
+	}
+
+	return { title, titleId };
+});
+
 export const EMPLOYMENT_STATUSES = ["ACTIVE", "HOLD", "INACTIVE"] as const;
 export const EMPLOYMENT_TYPES = ["KARPIS", "FLAT"] as const;
 
@@ -73,6 +88,27 @@ export const PREFERRED_THERAPIST_GENDER = [
 	"FEMALE",
 	"NO PREFERENCE",
 ] as const;
+
+export const PREFERRED_THERAPIST_GENDER_LABELS = PREFERRED_THERAPIST_GENDER.map(
+	(p) => {
+		const title = p;
+		let titleId = "";
+
+		if (p === "NO PREFERENCE") {
+			titleId = "Tidak ada preferensi";
+		}
+
+		if (p === "MALE") {
+			titleId = "Laki-Laki";
+		}
+
+		if (p === "FEMALE") {
+			titleId = "Perempuan";
+		}
+
+		return { title, titleId };
+	},
+);
 
 export const PATIENT_REFERRAL_OPTIONS = [
 	"Instagram",
@@ -106,22 +142,35 @@ export const PATIENT_CONDITIONS = [
 
 export const PATIENT_CONDITIONS_WITH_DESCRIPTION = PATIENT_CONDITIONS.map(
 	(condition) => {
+		let title = "";
 		let description = "";
+		let titleId = "";
+		let descriptionId = "";
 
 		switch (condition) {
 			case "NORMAL":
+				title = condition;
 				description = "Fully mobile with no restrictions.";
+				titleId = "NORMAL";
+				descriptionId = "Pasien dapat bergerak dengan bebas tanpa batasan";
 				break;
 			case "ONLY ABLE TO SIT":
+				title = condition;
 				description =
 					"Limited mobility, the patient can sit but not stand or walk.";
+				titleId = "HANYA BISA DUDUK";
+				descriptionId =
+					"Mobilitas terbatas, pasien hanya bisa duduk tapi tidak bisa berdiri atau berjalan";
 				break;
 			case "BEDRIDDEN":
+				title = condition;
 				description = "The patient is confined to bed.";
+				titleId = "TIDURAN";
+				descriptionId = "Pasien terbaring di tempat tidur";
 				break;
 		}
 
-		return { title: condition, description };
+		return { title, description, titleId, descriptionId };
 	},
 );
 

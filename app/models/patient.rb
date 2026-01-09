@@ -16,6 +16,10 @@ class Patient < ApplicationRecord
       .where(Location.arel_table[:city].matches("%#{city}%"))
   }
 
+  # * define the constants
+  GenderStruct = Struct.new(:title, :title_id)
+  GENDER_LABELS = [GenderStruct.new("MALE", "Laki-Laki"), GenderStruct.new("FEMALE", "Perempuan")].freeze
+
   # * define the associations
   belongs_to :patient_contact
   accepts_nested_attributes_for :patient_contact

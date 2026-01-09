@@ -160,7 +160,9 @@
 			"age": {
 				"label": "Age",
 				"placeholder": "Enter the age...",
-				"description": "Your date of birth is used to calculate your age."
+				"placeholder2": "e.g: 21",
+				"description": "Your date of birth is used to calculate your age.",
+				"description2": "Enter the patient age in numbers, e.g: 21."
 			},
 			"gender": {
 				"label": "Gender",

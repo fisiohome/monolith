@@ -87,6 +87,10 @@ export interface AdminPortal {
 			featureFlags: {
 				index: string;
 			};
+			telegramBroadcasts: {
+				index: string;
+				new: string;
+			};
 			appointment: {
 				index: string;
 				new: string;

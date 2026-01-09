@@ -160,10 +160,12 @@
 			"age": {
 				"label": "Usia",
 				"placeholder": "Masukan usia...",
-				"description": "Tanggal lahir Anda digunakan untuk menghitung usia Anda."
+				"placeholder2": "Misalnya: 21",
+				"description": "Tanggal lahir Anda digunakan untuk menghitung usia Anda.",
+				"description2": "Masukan usia pasien dalam angka, misalnya: 21."
 			},
 			"gender": {
-				"label": "Gender",
+				"label": "Jenis Kelamin",
 				"options": {
 					"male": "Laki-Laki",
 					"female": "Perempuan"
@@ -239,7 +241,7 @@
 				"options": {
 					"normal": {
 						"label": "Normal",
-						"description": "Sepenuhnya mobile tanpa batasan."
+						"description": "Pasien dapat bergerak dengan bebas tanpa batasan."
 					},
 					"only able to sit": {
 						"label": "Hanya bisa duduk",

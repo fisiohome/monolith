@@ -85,6 +85,8 @@ Rails.application.routes.draw do
 
         resources :feature_flags, path: "feature-flags", only: [:index, :create, :update, :destroy]
 
+        resources :telegram_broadcasts, path: "telegram-broadcasts", only: [:index, :create]
+
         resources :services, only: [:index, :create, :update, :edit, :destroy] do
           collection do
             put "update-status" => "services#update_status"

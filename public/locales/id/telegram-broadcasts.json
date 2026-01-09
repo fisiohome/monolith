@@ -1,0 +1,31 @@
+{
+	"head_title": "Pengiriman Broadcast Telegram",
+	"page_title": "Pengiriman Broadcast Telegram",
+	"page_description": "Kirim pesan ke grup Telegram yang terdaftar",
+	"form": {
+		"new": {
+			"compose_section": {
+				"title": "Tulis Pesan",
+				"description": "Isi formulir dengan informasi tentang kunjungan dan pasien."
+			},
+			"preview_section": {
+				"title": "Pratinjau",
+				"description": "Pratinjau pesan yang akan dikirim ke grup Telegram.",
+				"fields": {
+					"group_info": {
+						"title": "Info Grup",
+						"empty": "Pilih grup untuk melihat detailnya."
+					},
+					"message_preview": {
+						"title": "Pratinjau Pesan",
+						"empty": "Isi formulir untuk melihat pratinjau pesan."
+					}
+				}
+			},
+			"note": {
+				"title": "Catatan",
+				"description": "Gunakan pratinjau ini untuk memastikan setiap detail—ini persis seperti tampilan siaran saat ditampilkan di obrolan Telegram Anda."
+			}
+		}
+	}
+}

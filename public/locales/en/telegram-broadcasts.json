@@ -1,0 +1,31 @@
+{
+	"head_title": "Telegram Broadcasts",
+	"page_title": "Telegram Broadcasts",
+	"page_description": "Send messages to the Telegram groups",
+	"form": {
+		"new": {
+			"compose_section": {
+				"title": "Compose Message",
+				"description": "Fill out the form with information about the visit and the patient."
+			},
+			"preview_section": {
+				"title": "Preview",
+				"description": "Preview of the message to be sent to the Telegram group.",
+				"fields": {
+					"group_info": {
+						"title": "Group info",
+						"empty": "Select a group to view details."
+					},
+					"message_preview": {
+						"title": "Message Preview",
+						"empty": "Fill in the form to see message preview."
+					}
+				}
+			},
+			"note": {
+				"title": "Catatan",
+				"description": "Use this preview to confirm every detail—this is exactly how the broadcast will render when it lands in your Telegram chat."
+			}
+		}
+	}
+}

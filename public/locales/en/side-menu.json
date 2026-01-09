@@ -13,6 +13,7 @@
 	"vouchers": "Vouchers",
 	"apps": "Apps",
 	"feature_flags": "Feature Flags",
+	"telegram_broadcasts": "Telegram Broadcasts",
 	"toggle_theme": "Toggle Theme",
 	"settings": "Settings",
 	"logout": "Log Out"

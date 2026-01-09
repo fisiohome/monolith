@@ -10,14 +10,35 @@ class Appointment < ApplicationRecord
   end
 
   # * define the constants
-  PatientCondition = Struct.new(:title, :description)
+  PatientCondition = Struct.new(:title, :description, :title_id, :description_id)
   PATIENT_CONDITION = [
-    PatientCondition.new("NORMAL", "Fully mobile with no restrictions"),
-    PatientCondition.new("ONLY ABLE TO SIT", "Limited mobility, the patient can sit but not stand or walk"),
-    PatientCondition.new("BEDRIDDEN", "The patient is confined to bed")
+    PatientCondition.new(
+      "NORMAL",
+      "Fully mobile with no restrictions",
+      "NORMAL",
+      "Pasien dapat bergerak dengan bebas tanpa batasan"
+    ),
+    PatientCondition.new(
+      "ONLY ABLE TO SIT",
+      "Limited mobility, the patient can sit but not stand or walk",
+      "HANYA BISA DUDUK",
+      "Mobilitas terbatas, pasien hanya bisa duduk tapi tidak bisa berdiri atau berjalan"
+    ),
+    PatientCondition.new(
+      "BEDRIDDEN",
+      "The patient is confined to bed",
+      "TIDURAN",
+      "Pasien terbaring di tempat tidur"
+    )
   ].freeze
 
+  PreferredTherapistGenderStruct = Struct.new(:title, :title_id)
   PREFERRED_THERAPIST_GENDER = ["MALE", "FEMALE", "NO PREFERENCE"].freeze
+  PREFERRED_THERAPIST_GENDER_LABELS = [
+    PreferredTherapistGenderStruct.new("MALE", "Laki-Laki"),
+    PreferredTherapistGenderStruct.new("FEMALE", "Perempuan"),
+    PreferredTherapistGenderStruct.new("NO PREFERENCE", "Tidak ada preferensi")
+  ].freeze
 
   REFERRAL_SOURCES = ["Instagram", "Facebook", "Family or Close Related Person", "Other"].freeze
 

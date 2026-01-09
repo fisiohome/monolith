@@ -53,6 +53,7 @@ module InertiaAdminPortal
               },
               vouchers: vouchers_menu,
               feature_flags: feature_flags_menu,
+              telegram_broadcasts: telegram_broadcasts_menu,
               appointment: {
                 index: admin_portal_appointments_path,
                 new: new_admin_portal_appointment_path,
@@ -97,6 +98,15 @@ module InertiaAdminPortal
     return if current_user&.admin.blank?
 
     {index: admin_portal_vouchers_path}
+  end
+
+  # Returns telegram broadcasts menu routes if user is an admin
+  def telegram_broadcasts_menu
+    return if current_user&.admin.blank?
+
+    {
+      index: admin_portal_telegram_broadcasts_path
+    }
   end
 
   # Returns feature flags menu routes if user is a super admin
