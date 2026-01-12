@@ -22,14 +22,42 @@ module AdminPortal
         {feature_flags: []}
       end
     rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-      Rails.logger.error("[FeatureFlagsService] Network error when fetching feature flags: #{e.message}")
-      {feature_flags: []}
+      handle_fetch_network_error("fetch feature flags", e) { {feature_flags: []} }
     rescue Faraday::Error => e
-      Rails.logger.error("[FeatureFlagsService] Faraday error when fetching feature flags: #{e.message}")
-      {feature_flags: []}
+      handle_fetch_faraday_error("fetch feature flags", e) { {feature_flags: []} }
     rescue => e
-      Rails.logger.error("[FeatureFlagsService] Unexpected error when fetching feature flags: #{e.message}")
-      {feature_flags: []}
+      handle_fetch_unexpected_error("fetch feature flags", e) { {feature_flags: []} }
+    end
+
+    # Fetches a single feature flag by key/environment
+    # GET /api/v1/feature-flags/:key/:env
+    # @param key [String] the feature flag key
+    # @param env [String] the environment (DEV, STAGING, PROD)
+    # @return [Hash] hash with :success boolean and either :feature_flag or :errors
+    def find(key:, env:)
+      response = client.get("/api/v1/feature-flags/#{key}/#{env}")
+
+      if response.success?
+        feature_flag = build_feature_flag(extract_data(response.body))
+        formatted = deep_transform_keys_format({feature_flag: feature_flag}, format: key_format)
+        {success: true, feature_flag: formatted[:feature_flag]}
+      else
+        Rails.logger.error("[FeatureFlagsService] Failed to fetch feature flag #{key}/#{env}: #{response.status} - #{response.body}")
+        errors = normalize_errors(response.body, fallback: "Failed to fetch feature flag.")
+        {success: false, errors: format_errors(errors)}
+      end
+    rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
+      handle_fetch_network_error("fetch feature flag #{key}/#{env}", e) do
+        {success: false, errors: format_errors({full_messages: ["Network error when fetching feature flag."]})}
+      end
+    rescue Faraday::Error => e
+      handle_fetch_faraday_error("fetch feature flag #{key}/#{env}", e) do
+        {success: false, errors: format_errors({full_messages: ["Failed to fetch feature flag."]})}
+      end
+    rescue => e
+      handle_fetch_unexpected_error("fetch feature flag #{key}/#{env}", e) do
+        {success: false, errors: format_errors({full_messages: ["Unexpected error when fetching feature flag."]})}
+      end
     end
 
     # Creates or updates feature flags via the external API
@@ -275,6 +303,21 @@ module AdminPortal
     def handle_mutation_exception(action, error)
       Rails.logger.error("[FeatureFlagsService] #{action.capitalize} feature flag error: #{error.message}")
       {success: false, errors: format_errors({full_messages: ["Unable to #{action} feature flag. Please try again."]})}
+    end
+
+    def handle_fetch_network_error(action, error, &fallback)
+      Rails.logger.error("[FeatureFlagsService] Network error when #{action}: #{error.message}")
+      fallback&.call
+    end
+
+    def handle_fetch_faraday_error(action, error, &fallback)
+      Rails.logger.error("[FeatureFlagsService] Faraday error when #{action}: #{error.message}")
+      fallback&.call
+    end
+
+    def handle_fetch_unexpected_error(action, error, &fallback)
+      Rails.logger.error("[FeatureFlagsService] Unexpected error when #{action}: #{error.message}")
+      fallback&.call
     end
   end
 end

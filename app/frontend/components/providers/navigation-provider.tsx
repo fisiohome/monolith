@@ -210,6 +210,8 @@ export function NavigationProvider({
 				url: string;
 				isActive: boolean;
 			}[] = [];
+			const telegramBroadcastEnabled =
+				!!globalProps.adminPortal.featureFlags?.telegramBroadcastsEnabled;
 
 			if (isSuperAdmin) {
 				subItems.push({
@@ -219,7 +221,7 @@ export function NavigationProvider({
 				});
 			}
 
-			if (currentUserType === "ADMIN") {
+			if (currentUserType === "ADMIN" && telegramBroadcastEnabled) {
 				subItems.push({
 					title: t("telegram_broadcasts"),
 					url: adminPortal.telegramBroadcasts.index,

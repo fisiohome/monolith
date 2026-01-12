@@ -80,6 +80,9 @@ module InertiaAdminPortal
               }
             }
           },
+          feature_flags: {
+            telegram_broadcasts_enabled: telegram_broadcast_feature_flag_enabled?
+          },
           current_query: request.query_parameters.presence,
           current_locale: I18n.locale,
           current_timezone: Time.zone.name,
@@ -115,5 +118,9 @@ module InertiaAdminPortal
     return if admin.blank? || !admin.is_super_admin?
 
     {index: admin_portal_feature_flags_path}
+  end
+
+  def telegram_broadcast_feature_flag_enabled?
+    @telegram_broadcast_feature_flag_enabled ||= FeatureFlagChecker.enabled?(FeatureFlagChecker::TELEGRAM_BROADCASTS_KEY)
   end
 end

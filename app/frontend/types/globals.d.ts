@@ -112,6 +112,9 @@ export interface AdminPortal {
 	protect: {
 		hereMapApiKey: string;
 	};
+	featureFlags?: {
+		telegramBroadcastsEnabled?: boolean;
+	};
 }
 export type GlobalPageProps = {
 	auth: Auth;

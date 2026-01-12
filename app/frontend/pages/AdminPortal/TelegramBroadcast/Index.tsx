@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Deferred, Head, router, usePage } from "@inertiajs/react";
 import { format, parse } from "date-fns";
 import {
-	ArrowLeftIcon,
 	Check,
 	ChevronsUpDown,
 	Loader2Icon,
@@ -519,7 +518,7 @@ export default function Index({ groups }: PageProps) {
 																		{globalProps.optionsData?.patientGenders.map(
 																			(gender) => (
 																				<Fragment key={gender.title}>
-																					<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar">
+																					<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-background">
 																						<FormControl>
 																							<RadioGroupItem
 																								value={gender.title}
@@ -575,7 +574,7 @@ export default function Index({ groups }: PageProps) {
 																			(gender) => (
 																				<FormItem
 																					key={gender.title}
-																					className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+																					className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-background"
 																				>
 																					<FormControl>
 																						<RadioGroupItem
@@ -644,7 +643,7 @@ export default function Index({ groups }: PageProps) {
 																			(condition) => (
 																				<FormItem
 																					key={condition.title}
-																					className="flex items-start p-4 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+																					className="flex items-start p-4 space-x-3 space-y-0 border rounded-md border-input bg-background"
 																				>
 																					<FormControl>
 																						<RadioGroupItem
@@ -887,86 +886,66 @@ export default function Index({ groups }: PageProps) {
 									</AlertDescription>
 								</Alert>
 
-								<div className="flex flex-col gap-4 md:flex-row md:justify-between md:gap-2">
-									<div>
-										<Button
-											className="group w-full md:w-fit shadow-none"
-											variant="outline"
-											asChild
-										>
-											<a href={telegramBroadcastsRoute}>
-												<ArrowLeftIcon
-													aria-hidden="true"
-													className="-ms-1 group-hover:-translate-x-0.5 opacity-60 transition-transform"
-													size={16}
-												/>
-												Back
-											</a>
-										</Button>
-									</div>
+								<div className="flex flex-col gap-4 md:flex-row md:justify-end md:gap-2">
+									<Button
+										className="w-full md:w-fit"
+										type="button"
+										variant="ghost"
+										onClick={() => form.reset()}
+										disabled={isSubmitting}
+									>
+										Reset
+									</Button>
 
-									<div className="flex flex-col gap-4 md:flex-row md:justify-end md:gap-2">
-										<Button
-											className="w-full md:w-fit"
-											type="button"
-											variant="ghost"
-											onClick={() => form.reset()}
-											disabled={isSubmitting}
-										>
-											Reset
-										</Button>
-										<AlertDialog
-											open={confirmOpen}
-											onOpenChange={(open) => setConfirmOpen(open)}
-										>
-											<AlertDialogTrigger asChild>
-												<Button
-													type="button"
-													disabled={isSubmitting || !selectedGroup}
-													onClick={() => setConfirmOpen(true)}
+									<AlertDialog
+										open={confirmOpen}
+										onOpenChange={(open) => setConfirmOpen(open)}
+									>
+										<AlertDialogTrigger asChild>
+											<Button
+												type="button"
+												disabled={isSubmitting || !selectedGroup}
+												onClick={() => setConfirmOpen(true)}
+											>
+												Send Message
+												<SendHorizonalIcon className="w-4 h-4" />
+											</Button>
+										</AlertDialogTrigger>
+										<AlertDialogContent>
+											<AlertDialogHeader>
+												<AlertDialogTitle>
+													Confirm Telegram Broadcast
+												</AlertDialogTitle>
+												<AlertDialogDescription>
+													Please review the preview card carefully. Once you
+													send this broadcast it will be delivered to{" "}
+													<strong>{selectedGroup?.name ?? "the group"}</strong>.
+													This action cannot be undone.
+												</AlertDialogDescription>
+											</AlertDialogHeader>
+											<AlertDialogFooter>
+												<AlertDialogCancel disabled={isSubmitting}>
+													Cancel
+												</AlertDialogCancel>
+												<AlertDialogAction
+													disabled={isSubmitting}
+													onClick={(event) => {
+														event.preventDefault();
+														form.handleSubmit(onSubmit)();
+													}}
 												>
-													Send Message
-													<SendHorizonalIcon className="w-4 h-4" />
-												</Button>
-											</AlertDialogTrigger>
-											<AlertDialogContent>
-												<AlertDialogHeader>
-													<AlertDialogTitle>
-														Confirm Telegram Broadcast
-													</AlertDialogTitle>
-													<AlertDialogDescription>
-														Please review the preview card carefully. Once you
-														send this broadcast it will be delivered to{" "}
-														<strong>
-															{selectedGroup?.name ?? "the group"}
-														</strong>
-														. This action cannot be undone.
-													</AlertDialogDescription>
-												</AlertDialogHeader>
-												<AlertDialogFooter>
-													<AlertDialogCancel disabled={isSubmitting}>
-														Cancel
-													</AlertDialogCancel>
-													<AlertDialogAction
-														disabled={isSubmitting}
-														onClick={(event) => {
-															event.preventDefault();
-															form.handleSubmit(onSubmit)();
-														}}
-													>
-														{isSubmitting ? (
-															<>
-																Sending...
-																<Loader2Icon className="w-4 h-4 animate-spin" />
-															</>
-														) : (
-															"Yes, send it"
-														)}
-													</AlertDialogAction>
-												</AlertDialogFooter>
-											</AlertDialogContent>
-										</AlertDialog>
-									</div>
+													{isSubmitting ? (
+														<>
+															Sending...
+															<Loader2Icon className="w-4 h-4 animate-spin" />
+														</>
+													) : (
+														"Yes, send it"
+													)}
+												</AlertDialogAction>
+											</AlertDialogFooter>
+										</AlertDialogContent>
+									</AlertDialog>
 								</div>
 							</div>
 						</fieldset>

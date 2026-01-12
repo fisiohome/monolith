@@ -344,6 +344,33 @@ To edit an existing flag:
 
 > **Note**: The key and environment fields are locked during editing because they form the unique identifier for the flag. To change these, delete the flag and create a new one.
 
+### Consuming Feature Flags in the Monolith
+
+Once a flag is created you can enforce it from Ruby or pass it down to the frontend.
+
+#### Ruby (controllers, services, jobs)
+
+Use `FeatureFlagChecker.enabled?` to resolve a flag for the current environment:
+
+```ruby
+if FeatureFlagChecker.enabled?(FeatureFlagChecker::TELEGRAM_BROADCASTS_KEY)
+  # run gated logic
+else
+  redirect_to authenticated_root_path, alert: "This feature is disabled."
+end
+```
+
+- Automatically resolves the correct env (`DEV/STAGING/PROD`).
+- Logs failures and returns `false` when the flag can’t be fetched.
+- You can memoize the result in your controller if multiple checks are needed in one request.
+
+#### Frontend (Inertia)
+
+If a flag needs to control UI elements, share it through Inertia:
+
+1. Fetch it server-side (e.g., in `InertiaAdminPortal`) and include it in `adminPortal.featureFlags`.
+2. On the client, read it via `usePage<GlobalPageProps>()` and conditionally render components, e.g. hide the Telegram Broadcast menu when `adminPortal.featureFlags.telegramBroadcastsEnabled` is `false`.
+
 #### Deleting a Feature Flag
 
 To delete a flag:

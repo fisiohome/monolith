@@ -1,6 +1,7 @@
 module AdminPortal
   class TelegramBroadcastsController < ApplicationController
     before_action :ensure_admin!
+    before_action :ensure_telegram_broadcast_enabled!
 
     def index
       render inertia: "AdminPortal/TelegramBroadcast/Index", props: deep_transform_keys_to_camel_case({
@@ -67,6 +68,14 @@ module AdminPortal
       return if current_user&.admin.present?
 
       redirect_to authenticated_root_path, alert: "You do not have access to this resource."
+    end
+
+    def ensure_telegram_broadcast_enabled!
+      @telegram_broadcast_enabled ||= FeatureFlagChecker.enabled?(FeatureFlagChecker::TELEGRAM_BROADCASTS_KEY)
+
+      return if @telegram_broadcast_enabled
+
+      redirect_to authenticated_root_path, alert: "Telegram broadcasts are currently disabled."
     end
   end
 end
