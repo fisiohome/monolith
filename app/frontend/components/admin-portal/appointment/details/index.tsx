@@ -6,6 +6,7 @@ import {
 	Hash,
 	Info,
 	MapPinIcon,
+	ReceiptTextIcon,
 	Sparkles,
 	TicketIcon,
 	TicketPercent,
@@ -278,6 +279,16 @@ const AppointmentListItemDetails = memo(function Component({
 				<h4 className="text-xs font-light uppercase">
 					{t("list.payment_details")}
 				</h4>
+
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2">
+						<ReceiptTextIcon className="size-4 text-muted-foreground/75" />
+						<span className="font-light">{t("list.invoice_number")}:</span>
+					</div>
+					<span className="font-semibold">
+						{schedule.invoiceNumber || "N/A"}
+					</span>
+				</div>
 
 				<div className="grid gap-4 p-3 border rounded-lg md:grid-cols-2 border-border bg-input">
 					<div className="flex gap-2">

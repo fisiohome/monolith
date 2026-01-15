@@ -82,6 +82,8 @@ module AppointmentsHelper
         formatted_discount: appointment.formatted_discount,
         total_price: appointment.total_price,
         formatted_total_price: appointment.formatted_total_price,
+        invoice_number: appointment.order&.invoice_number,
+        invoice_url: appointment.order&.invoice_url,
         start_time: appointment.start_time,
         end_time: appointment.end_time,
         is_paid: appointment.paid?,

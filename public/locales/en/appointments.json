@@ -99,6 +99,7 @@
 		"referral_source": "Referral source",
 		"notes": "Notes",
 		"payment_details": "Payment Details",
+		"invoice_number": "No. Invoice",
 		"booking_partner": "Booking partner",
 		"voucher": "Voucher",
 		"price": "Price",

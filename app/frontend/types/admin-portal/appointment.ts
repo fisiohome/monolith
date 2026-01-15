@@ -72,6 +72,8 @@ export interface Appointment {
 	formattedDiscount: string;
 	totalPrice: string;
 	formattedTotalPrice: string;
+	invoiceNumber?: string | null;
+	invoiceUrl?: string | null;
 	startTime?: string;
 	endTime?: string;
 	patientMedicalRecord?: PatientMedicalRecord;

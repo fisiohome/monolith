@@ -377,6 +377,22 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 		);
 	}, [appointment.therapist?.registrationNumber, copyRegistrationNumber]);
 
+	const onCopyInvoiceNumber = useCallback(() => {
+		if (!appointment.invoiceNumber) {
+			toast.error("Invoice number unavailable");
+			return;
+		}
+		copyRegistrationNumber(appointment.invoiceNumber, "Invoice number");
+	}, [appointment.invoiceNumber, copyRegistrationNumber]);
+
+	const onCopyInvoiceUrl = useCallback(() => {
+		if (!appointment.invoiceUrl) {
+			toast.error("Invoice URL unavailable");
+			return;
+		}
+		copyRegistrationNumber(appointment.invoiceUrl, "Invoice URL");
+	}, [appointment.invoiceUrl, copyRegistrationNumber]);
+
 	const routeTo = useMemo(
 		() => ({
 			cancel: (id: string) =>
@@ -450,8 +466,20 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 						</DropdownMenuSubTrigger>
 						<DropdownMenuPortal>
 							<DropdownMenuSubContent>
+								<DropdownMenuItem
+									onSelect={onCopyInvoiceUrl}
+									disabled={!appointment.invoiceUrl}
+								>
+									Invoice URL
+								</DropdownMenuItem>
 								<DropdownMenuItem onSelect={onCopyRegNumber}>
 									Appt Reg. Number
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={onCopyInvoiceNumber}
+									disabled={!appointment.invoiceNumber}
+								>
+									No. Invoice
 								</DropdownMenuItem>
 								<DropdownMenuItem onSelect={onCopyPatientNumber}>
 									Patient ID

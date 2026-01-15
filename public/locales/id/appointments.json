@@ -99,6 +99,7 @@
 		"referral_source": "Sumber rujukan",
 		"notes": "Catatan",
 		"payment_details": "Rincian Pembayaran",
+		"invoice_number": "Nomor Invoice",
 		"booking_partner": "Mitra pemesanan",
 		"voucher": "Kupon",
 		"price": "Harga",
