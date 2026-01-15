@@ -1,10 +1,12 @@
 import { format, formatDistance } from "date-fns";
 import {
+	BadgePercent,
 	Building,
 	CreditCard,
 	Info,
 	MapPinIcon,
 	Sparkles,
+	TicketIcon,
 	TicketPercent,
 } from "lucide-react";
 import { memo, useMemo } from "react";
@@ -280,7 +282,7 @@ const AppointmentListItemDetails = memo(function Component({
 					</div>
 
 					<div className="flex gap-2">
-						<TicketPercent className="mt-0.5 size-4 text-muted-foreground/75" />
+						<TicketIcon className="mt-0.5 size-4 text-muted-foreground/75" />
 						<div>
 							<p className="font-light">{t("list.voucher")}:</p>
 							<p className="font-semibold capitalize">
@@ -315,7 +317,7 @@ const AppointmentListItemDetails = memo(function Component({
 				{schedule?.service?.code && (
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<TicketPercent className="size-4 text-muted-foreground/75" />
+							<BadgePercent className="size-4 text-muted-foreground/75" />
 							<span className="font-light">{t("list.discount")}:</span>
 							<Badge
 								variant="outline"

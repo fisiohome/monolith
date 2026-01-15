@@ -243,7 +243,7 @@ class Appointment < ApplicationRecord
   }
   scope :filter_by_registration, ->(reg_number) {
     return self if reg_number.blank?
-    where("registration_number ILIKE ?", "%#{reg_number}%")
+    where("appointments.registration_number ILIKE ?", "%#{reg_number}%")
   }
   scope :filter_by_city, ->(city) {
     return self if city.blank?
@@ -319,7 +319,7 @@ class Appointment < ApplicationRecord
   # * define the helper methods
   # Financial calculations group
   def voucher_discount
-    0
+    order&.discount_amount || BigDecimal(0)
   end
 
   def formatted_discount
