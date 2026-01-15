@@ -74,6 +74,7 @@
 	},
 	"list": {
 		"patient_details": "Patient Details",
+		"patient_number": "Reg. Number",
 		"contact": "Contact",
 		"contact_name": "Contact Name",
 		"contact_phone": "Contact Phone",

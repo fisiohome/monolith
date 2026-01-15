@@ -3,6 +3,7 @@ import {
 	BadgePercent,
 	Building,
 	CreditCard,
+	Hash,
 	Info,
 	MapPinIcon,
 	Sparkles,
@@ -112,6 +113,16 @@ const AppointmentListItemDetails = memo(function Component({
 					</div>
 				</div>
 
+				<div>
+					<p className="font-light">{t("list.reg_number")}:</p>
+					<div className="font-semibold uppercase">
+						<p className="flex items-center justify-start gap-1 text-pretty">
+							<Hash className="size-3 text-muted-foreground/75" />
+							{schedule.registrationNumber || "N/A"}
+						</p>
+					</div>
+				</div>
+
 				<div className="col-span-full md:col-span-1">
 					<p className="font-light">{t("list.visit_service")}:</p>
 					<p className="font-semibold">
@@ -127,7 +138,7 @@ const AppointmentListItemDetails = memo(function Component({
 					</p>
 				</div>
 
-				<div>
+				<div className="col-span-full">
 					<p className="font-light">{t("list.visit_region")}:</p>
 					<p className="font-semibold uppercase">
 						{[

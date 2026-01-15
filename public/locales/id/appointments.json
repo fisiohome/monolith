@@ -74,6 +74,7 @@
 	},
 	"list": {
 		"patient_details": "Rincian Data Pasien",
+		"patient_number": "No. Registrasi",
 		"contact": "Kontak",
 		"contact_name": "Nama Kontak",
 		"contact_phone": "Kontak Telepon",

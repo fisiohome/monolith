@@ -15,7 +15,7 @@ import {
 	Stethoscope,
 	User,
 } from "lucide-react";
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useDateContext } from "@/components/providers/date-provider";
@@ -307,11 +307,27 @@ const VisitNoCell = memo(({ row }: { row: Row<Appointment> }) => {
 	);
 });
 
+const useCopyRegistrationNumber = () => {
+	const handleCopy = useCallback(async (value: string, label: string) => {
+		try {
+			await navigator.clipboard.writeText(value);
+			toast.success(`${label} copied to clipboard`);
+		} catch (error) {
+			const message = `Failed to copy ${label.toLowerCase()}`;
+			console.error(`${message}: ${error}`);
+			toast.error(message);
+		}
+	}, []);
+
+	return handleCopy;
+};
+
 const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 	const appointment = row.original;
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { auth } = globalProps;
+	const copyRegistrationNumber = useCopyRegistrationNumber();
 	const isAdminPIC = useMemo(() => {
 		const currentAccountId = auth.currentUser?.id;
 
@@ -335,16 +351,31 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 		return { updateStatus, cancel, reschedule };
 	}, [appointment]);
 
-	const handleCopy = async () => {
-		try {
-			await navigator.clipboard.writeText(appointment.registrationNumber);
-			toast.success("Registration number copied to clipboard");
-		} catch (error) {
-			const message = "Failed to copy registration number";
-			console.error(`${message}: ${error}`);
-			toast.error(message);
+	const onCopyRegNumber = useCallback(() => {
+		copyRegistrationNumber(
+			appointment.registrationNumber,
+			"Registration number",
+		);
+	}, [appointment.registrationNumber, copyRegistrationNumber]);
+
+	const onCopyPatientNumber = useCallback(() => {
+		if (!appointment.patient?.patientNumber) {
+			toast.error("Patient number unavailable");
+			return;
 		}
-	};
+		copyRegistrationNumber(appointment.patient.patientNumber, "Patient number");
+	}, [appointment.patient?.patientNumber, copyRegistrationNumber]);
+
+	const onCopyTherapistNumber = useCallback(() => {
+		if (!appointment.therapist?.registrationNumber) {
+			toast.error("Therapist registration number unavailable");
+			return;
+		}
+		copyRegistrationNumber(
+			appointment.therapist.registrationNumber,
+			"Therapist registration number",
+		);
+	}, [appointment.therapist?.registrationNumber, copyRegistrationNumber]);
 
 	const routeTo = useMemo(
 		() => ({
@@ -419,8 +450,14 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 						</DropdownMenuSubTrigger>
 						<DropdownMenuPortal>
 							<DropdownMenuSubContent>
-								<DropdownMenuItem onSelect={handleCopy}>
-									Reg. Number
+								<DropdownMenuItem onSelect={onCopyRegNumber}>
+									Appt Reg. Number
+								</DropdownMenuItem>
+								<DropdownMenuItem onSelect={onCopyPatientNumber}>
+									Patient ID
+								</DropdownMenuItem>
+								<DropdownMenuItem onSelect={onCopyTherapistNumber}>
+									Therapist ID
 								</DropdownMenuItem>
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>

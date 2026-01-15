@@ -44,7 +44,7 @@ export default function TherapistCard({
 							<p className="font-light">{t("list.reg_number")}:</p>
 							<div className="col-span-2">
 								<p className="flex items-center justify-end gap-0.5 w-full font-semibold uppercase text-pretty">
-									<Hash className="size-4 text-muted-foreground/75 shrink-0" />
+									<Hash className="size-3 text-muted-foreground/75 shrink-0" />
 									{therapist?.registrationNumber || "N/A"}
 								</p>
 							</div>

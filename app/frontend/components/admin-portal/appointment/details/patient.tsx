@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Link } from "lucide-react";
+import { HashIcon, Link } from "lucide-react";
 import { type ComponentProps, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
@@ -45,6 +45,16 @@ const PatientCard = memo(function Component({
 				</div>
 
 				<div className="grid gap-3">
+					<div className="grid grid-cols-3 gap-2">
+						<p className="font-light">{t("list.patient_number")}:</p>
+						<div className="col-span-2">
+							<p className="flex items-center justify-end gap-0.5 w-full font-semibold uppercase text-pretty">
+								<HashIcon className="size-3 text-muted-foreground/75 shrink-0" />
+								{patient?.patientNumber || "N/A"}
+							</p>
+						</div>
+					</div>
+
 					<div className="grid grid-cols-3 gap-2">
 						<p className="font-light">{t("list.gender")}:</p>
 						<div className="col-span-2">

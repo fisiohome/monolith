@@ -36,6 +36,7 @@ export interface PatientMedicalRecord {
 export interface Patient {
 	id: string;
 	name: string;
+	patientNumber?: string;
 	dateOfBirth: string;
 	age: number;
 	gender: (typeof GENDERS)[number];
