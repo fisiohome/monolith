@@ -60,7 +60,8 @@ class Patient < ApplicationRecord
   end
 
   def location
-    active_address.location.attributes.slice("country", "state", "city")
+    location = active_address&.location
+    location&.attributes&.slice("country", "state", "city")
   end
 
   private
