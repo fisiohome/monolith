@@ -914,6 +914,63 @@ export function AppointmentSchedulingForm() {
 							}}
 						/>
 					</Deferred>
+
+					<Deferred
+						data={["optionsData"]}
+						fallback={
+							<div className="flex flex-col self-end gap-3 col-span-full">
+								<Skeleton className="w-10 h-4 rounded-md" />
+								<div className="grid grid-cols-1 gap-4">
+									<Skeleton className="relative w-full rounded-md h-9" />
+									<Skeleton className="relative w-full rounded-md h-9" />
+									<Skeleton className="relative w-full rounded-md h-9" />
+								</div>
+							</div>
+						}
+					>
+						<FormField
+							control={form.control}
+							name="appointmentScheduling.preferredTherapistGender"
+							render={({ field }) => (
+								<FormItem className="space-y-3 col-span-full">
+									<FormLabel>
+										{tasf("pref_therapist_gender.label")}
+									</FormLabel>
+									<FormControl>
+										<RadioGroup
+											onValueChange={(value) => {
+												field.onChange(value);
+												onResetAllTherapistState();
+											}}
+											defaultValue={field.value}
+											orientation="horizontal"
+											className="grid grid-cols-1 gap-4 md:grid-cols-3"
+										>
+											{preferredTherapistGenderOption.map((gender) => (
+												<FormItem
+													key={gender}
+													className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
+												>
+													<FormControl>
+														<RadioGroupItem value={gender} />
+													</FormControl>
+													<FormLabel className="flex items-center gap-1 font-normal uppercase">
+														{getGenderIcon(gender)}
+														<span>
+															{tasf(
+																`pref_therapist_gender.options.${gender.toLowerCase()}`,
+															)}
+														</span>
+													</FormLabel>
+												</FormItem>
+											))}
+										</RadioGroup>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</Deferred>
 				</>
 			)}
 
@@ -971,63 +1028,6 @@ export function AppointmentSchedulingForm() {
 					</AccordionPrimitive.Header>
 					<AccordionContent className="text-muted-foreground pb-2">
 						<div className="p-4 px-0 pb-0 border-t bg-muted/5 grid grid-cols-1 md:grid-cols-2 gap-4">
-							<Deferred
-								data={["optionsData"]}
-								fallback={
-									<div className="flex flex-col self-end gap-3 col-span-full">
-										<Skeleton className="w-10 h-4 rounded-md" />
-										<div className="grid grid-cols-1 gap-4">
-											<Skeleton className="relative w-full rounded-md h-9" />
-											<Skeleton className="relative w-full rounded-md h-9" />
-											<Skeleton className="relative w-full rounded-md h-9" />
-										</div>
-									</div>
-								}
-							>
-								<FormField
-									control={form.control}
-									name="appointmentScheduling.preferredTherapistGender"
-									render={({ field }) => (
-										<FormItem className="space-y-3 col-span-full">
-											<FormLabel>
-												{tasf("pref_therapist_gender.label")}
-											</FormLabel>
-											<FormControl>
-												<RadioGroup
-													onValueChange={(value) => {
-														field.onChange(value);
-														onResetAllTherapistState();
-													}}
-													defaultValue={field.value}
-													orientation="horizontal"
-													className="grid grid-cols-1 gap-4 md:grid-cols-3"
-												>
-													{preferredTherapistGenderOption.map((gender) => (
-														<FormItem
-															key={gender}
-															className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-														>
-															<FormControl>
-																<RadioGroupItem value={gender} />
-															</FormControl>
-															<FormLabel className="flex items-center gap-1 font-normal uppercase">
-																{getGenderIcon(gender)}
-																<span>
-																	{tasf(
-																		`pref_therapist_gender.options.${gender.toLowerCase()}`,
-																	)}
-																</span>
-															</FormLabel>
-														</FormItem>
-													))}
-												</RadioGroup>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</Deferred>
-
 							<FormField
 								control={form.control}
 								name="appointmentScheduling.appointmentDateTime"

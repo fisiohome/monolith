@@ -254,7 +254,7 @@ module AdminPortal
           # additional settings
           :referral_source, :other_referral_source, :fisiohome_partner_booking, :fisiohome_partner_name, :other_fisiohome_partner_name, :voucher_code, :notes,
           # series visits
-          series_visits: %i[appointment_date_time therapist_id visit_number preferred_therapist_gender]
+          series_visits: %i[appointment_date_time therapist_id visit_number]
         ]
       ).to_h.deep_symbolize_keys
     end

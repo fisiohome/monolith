@@ -144,9 +144,10 @@ const BASE_APPOINTMENT_FIELDS = {
 	findTherapistsAllOfDay: z.boolean().optional(),
 };
 
-// * series visit schema
+// * series visit schema (without preferredTherapistGender - it's set at appointment level)
 export const SERIES_VISIT_SCHEMA = z.object({
-	...BASE_APPOINTMENT_FIELDS,
+	therapist: THERAPIST_SCHEMA,
+	findTherapistsAllOfDay: z.boolean().optional(),
 	visitNumber: z.number().int().positive(),
 	appointmentDateTime: APPOINTMENT_DATE_TIME_SCHEMA.nullable(),
 });

@@ -159,7 +159,6 @@ export interface AppointmentPayload {
 			appointmentDateTime: Date | null;
 			therapistId: string | null;
 			visitNumber: number;
-			preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
 		}[];
 	};
 }

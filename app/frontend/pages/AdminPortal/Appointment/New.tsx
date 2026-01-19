@@ -172,7 +172,6 @@ function FormComponent() {
 				},
 			} satisfies Parameters<typeof router.put>["2"];
 			const payload = buildAppointmentPayload(values);
-
 			router.post(submitURL, { appointment: payload }, submitConfig);
 
 			console.log("Appointment booking successfully saved...");

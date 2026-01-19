@@ -333,6 +333,20 @@ export const useReviewForm = () => {
 						),
 					},
 					{
+						key: "preferred-therapist-gender",
+						title: "Preferred Therapist Gender",
+						value: (
+							<Badge variant="outline">
+								<span className="flex items-center justify-end gap-1">
+									{getGenderIcon(
+										appointmentScheduling.preferredTherapistGender.toLowerCase(),
+									)}
+									{appointmentScheduling.preferredTherapistGender}
+								</span>
+							</Badge>
+						),
+					},
+					{
 						key: "visit-1",
 						title: <p className="font-bold">Visit 1</p>,
 						value: (
@@ -353,20 +367,6 @@ export const useReviewForm = () => {
 									: appointmentScheduling.therapist?.id
 										? "Scheduled"
 										: "Pending Therapist"}
-							</Badge>
-						),
-					},
-					{
-						key: "preferred-therapist-gender-1",
-						title: "Preferred Therapist Gender",
-						value: (
-							<Badge variant="outline">
-								<span className="flex items-center justify-end gap-1">
-									{getGenderIcon(
-										appointmentScheduling.preferredTherapistGender.toLowerCase(),
-									)}
-									{appointmentScheduling.preferredTherapistGender}
-								</span>
 							</Badge>
 						),
 					},
@@ -415,20 +415,6 @@ export const useReviewForm = () => {
 								key: `visit-${visit.visitNumber}-header`,
 								title: <p className="font-bold">Visit {visit.visitNumber}</p>,
 								value: statusBadge,
-							},
-							{
-								key: `visit-${visit.visitNumber}-gender`,
-								title: "Preferred Therapist Gender",
-								value: (
-									<Badge variant="outline">
-										<span className="flex items-center justify-end gap-1">
-											{getGenderIcon(
-												visit.preferredTherapistGender.toLowerCase(),
-											)}
-											{visit.preferredTherapistGender}
-										</span>
-									</Badge>
-								),
 							},
 							{
 								key: `visit-${visit.visitNumber}-datetime`,

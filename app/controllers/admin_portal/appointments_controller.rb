@@ -45,21 +45,33 @@ module AdminPortal
     end
 
     def create
-      result = CreateAppointmentService.new(params, current_user).call
+      result = CreateAppointmentServiceExternalApi.new(params, current_user).call
       if result[:success]
         redirect_to new_admin_portal_appointment_path(created: result[:data].id), notice: "Appointment was successfully booked."
       else
         logger.error("Failed to booking the appointment: #{result[:error]}")
-        first_error = result[:error]&.full_messages&.first
-        error_messages = result[:error]&.full_messages
+
+        # Handle different error types
+        if result[:error].is_a?(String)
+          error_message = result[:error]
+          error_messages = [error_message]
+        elsif result[:error].respond_to?(:full_messages)
+          error_message = result[:error].full_messages&.first
+          error_messages = result[:error].full_messages
+        else
+          error_message = result[:error].to_s
+          error_messages = [error_message]
+        end
 
         logger.error("Failed to save the booking of the appointment: #{error_messages}.")
-        flash[:alert] = first_error
+        flash[:alert] = error_message
         redirect_to new_admin_portal_appointment_path, inertia: {
           errors: deep_transform_keys_to_camel_case(
-            result[:error]&.messages&.transform_values(&:uniq)&.merge({
-              full_messages: error_messages
-            })
+            result[:error].respond_to?(:messages) ?
+              result[:error].messages&.transform_values(&:uniq)&.merge({
+                full_messages: error_messages
+              }) :
+              {base: [error_message], full_messages: error_messages}
           )
         }
       end

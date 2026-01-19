@@ -29,13 +29,11 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/kibo-ui/spinner";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import type { TherapistOption } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import type { IsolineConstraint, MarkerData } from "@/hooks/here-maps";
 import { useTherapistMarker } from "@/hooks/here-maps/use-markers";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
-import { getGenderIcon } from "@/hooks/use-gender";
 import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import { getBadgeVariantStatus } from "@/lib/appointments/utils";
 import { ISOLINE_CONSTRAINTS, MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
@@ -50,14 +48,12 @@ const VISIT_STATUSES = {
 	SCHEDULED: "scheduled",
 } as const;
 
-const generateInitialSeriesVisits = (
+const createDefaultSeriesVisit = (
 	{
-		prefTherapistGender,
 		isAllOfDay,
 		apptDate,
 		therapist,
 	}: {
-		prefTherapistGender: AppointmentBookingSchema["appointmentScheduling"]["preferredTherapistGender"];
 		isAllOfDay: AppointmentBookingSchema["appointmentScheduling"]["findTherapistsAllOfDay"];
 		apptDate: AppointmentBookingSchema["appointmentScheduling"]["appointmentDateTime"];
 		therapist: AppointmentBookingSchema["appointmentScheduling"]["therapist"];
@@ -66,7 +62,6 @@ const generateInitialSeriesVisits = (
 	tzDate: ContextFn<Date>,
 ) => ({
 	visitNumber,
-	preferredTherapistGender: prefTherapistGender,
 	appointmentDateTime: apptDate
 		? addDays(apptDate, (visitNumber - 1) * 7, { in: tzDate })
 		: new Date(),
@@ -98,7 +93,7 @@ const useSeriesVisitForm = (index: number) => {
 	});
 	const watchPreferredTherapistGenderValue = useWatch({
 		control: form.control,
-		name: `${fieldPath}.preferredTherapistGender`,
+		name: "appointmentScheduling.preferredTherapistGender",
 	});
 	const watchAllOfDayValue = useWatch({
 		control: form.control,
@@ -492,7 +487,7 @@ const useSeriesVisitForm = (index: number) => {
 				locationId: watchPatientDetailsValue.location.id,
 				serviceId: watchMainServiceValue,
 				appointmentDateTime: watchAppointmentDateTimeValue,
-				preferredGender: watchPreferredTherapistGenderValue,
+				preferredTherapistGender: watchPreferredTherapistGenderValue,
 				isAllOfDay: watchAllOfDayValue,
 			});
 			const { fullUrl } = populateQueryParams(url, params);
@@ -683,6 +678,7 @@ const useSeriesVisitForm = (index: number) => {
 		generateMarkerDataPatient,
 		generateMarkerDataTherapist,
 		formSelections,
+		watchPreferredTherapistGenderValue,
 	};
 };
 
@@ -703,9 +699,6 @@ export function SeriesScheduler() {
 
 	// get the first visit data and then initialize for this
 	const [isLoading, setIsLoading] = useState(false);
-	const firstVisitPrefTherapistGender = getValues(
-		"appointmentScheduling.preferredTherapistGender",
-	);
 	const firstVisitIsAllOfDay = getValues("formOptions.findTherapistsAllOfDay");
 	const firstVisitApptDate = getValues(
 		"appointmentScheduling.appointmentDateTime",
@@ -715,17 +708,11 @@ export function SeriesScheduler() {
 	);
 	const firstVisitData = useMemo(
 		() => ({
-			prefTherapistGender: firstVisitPrefTherapistGender,
 			isAllOfDay: firstVisitIsAllOfDay,
 			apptDate: firstVisitApptDate,
 			packageVisits: firstVisitPackageVisits,
 		}),
-		[
-			firstVisitPrefTherapistGender,
-			firstVisitIsAllOfDay,
-			firstVisitApptDate,
-			firstVisitPackageVisits,
-		],
+		[firstVisitIsAllOfDay, firstVisitApptDate, firstVisitPackageVisits],
 	);
 	const initializeSeriesVisits = useCallback(() => {
 		if (firstVisitData.packageVisits <= 1) {
@@ -754,7 +741,7 @@ export function SeriesScheduler() {
 		// Series visits should be numbered 2, 3, 4, ..., packageVisits
 		const toAdd = Array.from({ length: targetCount - currentCount }, (_, i) => {
 			const visitNumber = currentCount + i + 2; // Start from visit 2
-			return generateInitialSeriesVisits(
+			return createDefaultSeriesVisit(
 				{ ...firstVisitData, therapist: null },
 				visitNumber,
 				tzDate,
@@ -822,9 +809,8 @@ export function SeriesScheduler() {
 			setIsResetting(true);
 			setValue(
 				fieldPath,
-				generateInitialSeriesVisits(
+				createDefaultSeriesVisit(
 					{
-						prefTherapistGender: firstVisitData.prefTherapistGender,
 						isAllOfDay: firstVisitData.isAllOfDay,
 						apptDate: firstVisitData.apptDate,
 						therapist: null,
@@ -951,10 +937,7 @@ const VisitForm = ({
 	onClose,
 	onReset,
 }: VisitFormProps) => {
-	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
 	const form = useFormContext<AppointmentBookingSchema>();
-	const preferredTherapistGenderOption =
-		globalProps?.optionsData?.preferredTherapistGender || [];
 
 	// Use the custom hook for this series visit
 	const {
@@ -1064,43 +1047,6 @@ const VisitForm = ({
 	return (
 		<div className="p-4 px-0 pb-0 border-t bg-muted/5">
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<FormField
-					control={form.control}
-					name={`${fieldPath}.preferredTherapistGender`}
-					render={({ field }) => (
-						<FormItem className="space-y-3 col-span-full">
-							<FormLabel>Preferred Therapist Gender</FormLabel>
-							<FormControl>
-								<RadioGroup
-									onValueChange={(value) => {
-										field.onChange(value);
-										onResetAllTherapistState();
-									}}
-									value={field.value}
-									orientation="horizontal"
-									className="grid grid-cols-1 gap-4 md:grid-cols-3"
-								>
-									{preferredTherapistGenderOption.map((gender) => (
-										<FormItem
-											key={gender}
-											className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-sidebar"
-										>
-											<FormControl>
-												<RadioGroupItem value={gender} />
-											</FormControl>
-											<FormLabel className="flex items-center gap-1 font-normal capitalize">
-												{getGenderIcon?.(gender)}
-												<span className="capitalize">{gender}</span>
-											</FormLabel>
-										</FormItem>
-									))}
-								</RadioGroup>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
 				<FormField
 					control={form.control}
 					name={`${fieldPath}.appointmentDateTime`}
