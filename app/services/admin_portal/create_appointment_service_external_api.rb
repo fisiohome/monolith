@@ -10,9 +10,14 @@ module AdminPortal
     end
 
     def call
-      ActiveRecord::Base.transaction do
-        create_single_booking
-      end
+      # Create patient, contact, and address first (committed to DB)
+      # so external API can find them by ID
+      find_or_initialize_patient
+      upsert_patient_contact
+      upsert_patient_address
+
+      # Now call external API and handle response
+      create_single_booking
     rescue ActionController::ParameterMissing => e
       {success: false, error: "Invalid parameters: #{e.message}", type: "ParameterMissing"}
     rescue ActiveRecord::RecordInvalid => e
@@ -29,10 +34,6 @@ module AdminPortal
 
     # Creates a single booking via external API
     def create_single_booking
-      find_or_initialize_patient
-      upsert_patient_contact
-      upsert_patient_address
-
       response = call_booking_api(build_booking_payload)
       handle_api_response(response)
     end
