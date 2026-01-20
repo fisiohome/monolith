@@ -64,10 +64,12 @@ module AdminPortal
         appointment_id = if result[:data].respond_to?(:id)
           result[:data].id
         else
-          # Extract from API response: appointments[0].appointment_id
-          appointments = result[:data]["appointments"] || result[:data][:appointments] || []
+          # Extract from API response data - may be nested in "data" key or at root
+          response_data = result[:data]
+          appointments = response_data["appointments"] || response_data[:appointments] || []
           appointments.first&.dig("appointment_id") || appointments.first&.dig(:appointment_id)
         end
+        logger.info("[AppointmentsController#create] Extracted appointment_id: #{appointment_id}")
         redirect_to new_admin_portal_appointment_path(created: appointment_id), notice: "Appointment was successfully booked."
       else
         logger.error("Failed to booking the appointment: #{result[:error]}")

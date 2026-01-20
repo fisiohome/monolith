@@ -48,7 +48,13 @@ module AdminPortal
     # Handles the API response and returns standardized result
     def handle_api_response(response, skip_return: false)
       if response.success?
-        appointment_data = response.body
+        response_body = response.body
+        Rails.logger.info("[CreateAppointmentServiceExternalApi] API response: #{response_body}")
+
+        # Extract booking data from nested "data" key
+        appointment_data = response_body["data"] || response_body[:data] || response_body
+        Rails.logger.info("[CreateAppointmentServiceExternalApi] Extracted appointment data: #{appointment_data}")
+
         appointment = find_or_create_local_appointment(appointment_data)
 
         associate_admins(appointment) if appointment && @params[:admin_ids].present?
