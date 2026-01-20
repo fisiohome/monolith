@@ -26,22 +26,12 @@ module AdminPortal
 
     def new
       @appointment = if params[:created]
-        # Try to find the appointment, with a small retry for database sync
-        appointment = Appointment.find_by(id: params[:created])
-        unless appointment
-          # Wait a bit and retry in case of database sync delay
-          sleep(0.5)
-          appointment = Appointment.find_by(id: params[:created])
-        end
-        logger.info("[AppointmentsController#new] Looking for appointment with id: #{params[:created]}, found: #{appointment&.id}")
-        appointment || Appointment.new
+        find_created_appointment(params[:created])
       else
         Appointment.new
       end
 
-      if params[:reference]
-        @appointment.reference_appointment = Appointment.find(params[:reference])
-      end
+      @appointment.reference_appointment = Appointment.find(params[:reference]) if params[:reference]
 
       preparation = PreparationNewAppointmentService.new(params)
 
@@ -59,34 +49,16 @@ module AdminPortal
 
     def create
       result = CreateAppointmentServiceExternalApi.new(params, current_user).call
+
       if result[:success]
-        # Handle both Appointment object (has .id) and API response hash
-        appointment_id = if result[:data].respond_to?(:id)
-          result[:data].id
+        appointment_id = extract_appointment_id(result[:data])
+        if appointment_id
+          redirect_to new_admin_portal_appointment_path(created: appointment_id), notice: "Appointment was successfully booked."
         else
-          # Extract from API response data - may be nested in "data" key or at root
-          response_data = result[:data]
-          appointments = response_data["appointments"] || response_data[:appointments] || []
-          appointments.first&.dig("appointment_id") || appointments.first&.dig(:appointment_id)
+          redirect_to new_admin_portal_appointment_path, alert: "Appointment was created but could not retrieve details."
         end
-        logger.info("[AppointmentsController#create] Extracted appointment_id: #{appointment_id}")
-        redirect_to new_admin_portal_appointment_path(created: appointment_id), notice: "Appointment was successfully booked."
       else
-        logger.error("Failed to booking the appointment: #{result[:error]}")
-
-        # Handle different error types
-        if result[:error].is_a?(String)
-          error_message = result[:error]
-          error_messages = [error_message]
-        elsif result[:error].respond_to?(:full_messages)
-          error_message = result[:error].full_messages&.first
-          error_messages = result[:error].full_messages
-        else
-          error_message = result[:error].to_s
-          error_messages = [error_message]
-        end
-
-        logger.error("Failed to save the booking of the appointment: #{error_messages}.")
+        error_message, error_messages = extract_error_messages(result[:error])
         flash[:alert] = error_message
         redirect_to new_admin_portal_appointment_path, inertia: {
           errors: deep_transform_keys_to_camel_case(
@@ -304,6 +276,35 @@ module AdminPortal
 
     def set_appointment
       @appointment = Appointment.includes(:therapist).find(params[:id])
+    end
+
+    # Finds a recently created appointment with retry for DB sync delay
+    def find_created_appointment(appointment_id)
+      appointment = Appointment.find_by(id: appointment_id)
+      unless appointment
+        sleep(0.5)
+        appointment = Appointment.find_by(id: appointment_id)
+      end
+      appointment || Appointment.new
+    end
+
+    # Extracts appointment ID from result data (Appointment object or API response hash)
+    def extract_appointment_id(data)
+      return data.id if data.respond_to?(:id)
+
+      appointments = data["appointments"] || data[:appointments] || []
+      appointments.first&.dig("appointment_id") || appointments.first&.dig(:appointment_id)
+    end
+
+    # Extracts error messages from various error types
+    def extract_error_messages(error)
+      if error.is_a?(String)
+        [error, [error]]
+      elsif error.respond_to?(:full_messages)
+        [error.full_messages&.first, error.full_messages]
+      else
+        [error.to_s, [error.to_s]]
+      end
     end
   end
 end

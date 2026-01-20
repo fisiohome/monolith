@@ -4,29 +4,38 @@ module AdminPortal
 
     BANK_PAYMENT = "bank_transfer".freeze
 
+    LOG_TAG = "[BookingAPI]".freeze
+
     def initialize(params, user)
       @params = permitted_params(params)
       @current_user = user
     end
 
     def call
+      log_info("start", user_id: @current_user&.id, service_id: @params[:service_id], package_id: @params[:package_id])
+
       # Create patient, contact, and address first (committed to DB)
-      # so external API can find them by ID
       find_or_initialize_patient
       upsert_patient_contact
       upsert_patient_address
 
-      # Now call external API and handle response
-      create_single_booking
+      result = create_single_booking
+      log_info("success", patient_id: @patient&.id, appointment_id: result.dig(:data, :id) || result.dig(:data, "appointments", 0, "appointment_id"))
+      result
     rescue ActionController::ParameterMissing => e
+      log_error("param_missing", message: e.message)
       {success: false, error: "Invalid parameters: #{e.message}", type: "ParameterMissing"}
     rescue ActiveRecord::RecordInvalid => e
+      log_error("validation_failed", errors: e.record.errors.full_messages)
       {success: false, error: e.record.errors, type: "RecordInvalid"}
     rescue FisiohomeApi::Client::AuthenticationError => e
+      log_error("auth_failed", message: e.message)
       {success: false, error: "Authentication failed: #{e.message}", type: "AuthenticationError"}
     rescue Faraday::Error => e
+      log_error("api_error", type: e.class.name, message: e.message)
       {success: false, error: "API request failed: #{e.message}", type: "ApiError"}
     rescue => e
+      log_error("unexpected", type: e.class.name, message: e.message, backtrace: e.backtrace.first(5))
       {success: false, error: e.message, type: "GeneralError"}
     end
 
@@ -40,8 +49,7 @@ module AdminPortal
 
     # Calls the external booking API
     def call_booking_api(payload)
-      Rails.logger.info("[CreateAppointmentServiceExternalApi] Calling booking API with payload: #{payload.to_json}")
-
+      log_debug("api_request", endpoint: BOOKING_ENDPOINT, visits_count: payload[:visits]&.size)
       FisiohomeApi::Client.post(BOOKING_ENDPOINT, body: payload)
     end
 
@@ -49,23 +57,20 @@ module AdminPortal
     def handle_api_response(response, skip_return: false)
       if response.success?
         response_body = response.body
-        Rails.logger.info("[CreateAppointmentServiceExternalApi] API response: #{response_body}")
-
         # Extract booking data from nested "data" key
         appointment_data = response_body["data"] || response_body[:data] || response_body
-        Rails.logger.info("[CreateAppointmentServiceExternalApi] Extracted appointment data: #{appointment_data}")
+
+        reg_number = appointment_data["registration_number"] || appointment_data[:registration_number]
+        log_info("api_success", registration_number: reg_number)
 
         appointment = find_or_create_local_appointment(appointment_data)
-
         associate_admins(appointment) if appointment && @params[:admin_ids].present?
 
-        # Return appointment if found locally, otherwise return API response data
         result_data = appointment || appointment_data
         skip_return ? {success: true, data: result_data} : (return {success: true, data: result_data})
       else
         error_message = parse_api_error(response)
-        Rails.logger.error("[CreateAppointmentServiceExternalApi] API error: #{error_message}")
-
+        log_error("api_failed", status: response.status, error: error_message)
         skip_return ? {success: false, error: error_message, type: "ApiError"} : (return {success: false, error: error_message, type: "ApiError"})
       end
     end
@@ -132,30 +137,37 @@ module AdminPortal
 
     # Finds or creates a local appointment record based on API response
     def find_or_create_local_appointment(api_response)
-      # The external API returns CreateBookingAppointmentResponse structure with:
-      # - registration_number at root level
-      # - appointments array with appointment_id for each visit
-      # Try to find by first appointment's ID (UUID)
       appointments = api_response["appointments"] || api_response[:appointments] || []
-      if appointments.any?
-        first_appointment = appointments.first
-        appointment_id = first_appointment["appointment_id"] || first_appointment[:appointment_id]
+      registration_number = api_response["registration_number"] || api_response[:registration_number]
 
+      # Try to find by first appointment's ID (UUID)
+      if appointments.any?
+        appointment_id = appointments.first["appointment_id"] || appointments.first[:appointment_id]
         if appointment_id
-          # Retry a few times in case of database sync delay
-          appointment = nil
-          3.times do |i|
-            appointment = Appointment.find_by(id: appointment_id)
-            break if appointment
-            sleep(0.3)
-          end
+          appointment = find_with_retry(appointment_id)
           return appointment if appointment
         end
       end
 
-      # Fallback: try to find by registration_number
-      registration_number = api_response["registration_number"] || api_response[:registration_number]
-      Appointment.find_by(registration_number: registration_number) if registration_number
+      # Fallback: find by registration_number
+      if registration_number
+        appointment = Appointment.find_by(registration_number: registration_number)
+        log_warn("fallback_lookup", registration_number: registration_number, found: appointment.present?) unless appointment
+        return appointment
+      end
+
+      log_warn("local_not_found", api_appointment_id: appointments.first&.dig("appointment_id"))
+      nil
+    end
+
+    # Retries finding appointment with delay for DB sync
+    def find_with_retry(appointment_id, max_attempts: 3, delay: 0.3)
+      max_attempts.times do |attempt|
+        appointment = Appointment.find_by(id: appointment_id)
+        return appointment if appointment
+        sleep(delay) if attempt < max_attempts - 1
+      end
+      nil
     end
 
     # Parses error from API response
@@ -255,5 +267,14 @@ module AdminPortal
         ]
       ).to_h.deep_symbolize_keys
     end
+
+    # Logging helpers for consistent structured logs
+    def log_info(event, **data) = Rails.logger.info("#{LOG_TAG} #{event} #{data.to_json}")
+
+    def log_warn(event, **data) = Rails.logger.warn("#{LOG_TAG} #{event} #{data.to_json}")
+
+    def log_error(event, **data) = Rails.logger.error("#{LOG_TAG} #{event} #{data.to_json}")
+
+    def log_debug(event, **data) = Rails.logger.debug { "#{LOG_TAG} #{event} #{data.to_json}" }
   end
 end
