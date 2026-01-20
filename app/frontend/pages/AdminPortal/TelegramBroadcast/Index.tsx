@@ -13,6 +13,8 @@ import { Fragment, useCallback, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import { TagInput } from "emblor";
+import type { Tag } from "emblor";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -100,6 +102,7 @@ const broadcastSchema = z.object({
 	alamat: z.string().min(1, "Patient address is required"), // as patient address
 	visit: z.string().min(1, "Patient visit type is required"), // as patient visit type (e.g., "4x Visit")
 	jadwal: z.string().min(1, "Patient visit schedule is required"), // as patient visit schedule
+	mentions: z.array(z.string()).optional(), // as mentions
 });
 
 type BroadcastFormData = z.infer<typeof broadcastSchema>;
@@ -134,6 +137,8 @@ export default function Index({ groups }: PageProps) {
 	const [groupSelectorOpen, setGroupSelectorOpen] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [mentions, setMentions] = useState<Tag[]>([]);
+	const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
 
 	const form = useForm<BroadcastFormData>({
 		resolver: zodResolver(broadcastSchema),
@@ -150,6 +155,7 @@ export default function Index({ groups }: PageProps) {
 			alamat: "",
 			visit: "",
 			jadwal: "",
+			mentions: [],
 		},
 	});
 
@@ -174,6 +180,7 @@ export default function Index({ groups }: PageProps) {
 			alamat: visitAddress,
 			visit: totalVisit,
 			jadwal: visitSchedule,
+			mentions: mentions.map((tag) => tag.text),
 		};
 
 		setIsSubmitting(true);
@@ -185,6 +192,7 @@ export default function Index({ groups }: PageProps) {
 				only: ["adminPortal", "flash", "errors"],
 				onSuccess: () => {
 					form.reset();
+					setMentions([]);
 				},
 				onError: () => {},
 				onFinish: () => {
@@ -264,7 +272,12 @@ export default function Index({ groups }: PageProps) {
 
 			message += `────────────────────\n`;
 			message += `🙏 *Informasi untuk Tim Fisioterapis*\n`;
-			message += `Apabila berkenan menangani pasien di atas, silakan hubungi admin melalui *personal chat* dengan menyertakan *KODE PASIEN* serta opsi jadwal kunjungan alternatif.`;
+			const mentionTexts = mentions.map((tag) => tag.text);
+			if (mentionTexts.length > 0) {
+				message += `Apabila berkenan menangani pasien di atas, silakan hubungi admin ${mentionTexts.join(", ")} melalui *personal chat* dengan menyertakan *KODE PASIEN* serta opsi jadwal kunjungan alternatif.`;
+			} else {
+				message += `Apabila berkenan menangani pasien di atas, silakan hubungi admin melalui *personal chat* dengan menyertakan *KODE PASIEN* serta opsi jadwal kunjungan alternatif.`;
+			}
 
 			// Return both the formatted message and structured data
 			return {
@@ -293,7 +306,7 @@ export default function Index({ groups }: PageProps) {
 				},
 			};
 		},
-		[patientConditionOptions, globalProps.optionsData],
+		[patientConditionOptions, globalProps.optionsData, mentions],
 	);
 
 	const formattedMessage = useMemo(
@@ -518,7 +531,7 @@ export default function Index({ groups }: PageProps) {
 																		{globalProps.optionsData?.patientGenders.map(
 																			(gender) => (
 																				<Fragment key={gender.title}>
-																					<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-background">
+																					<FormItem className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow border-input bg-background">
 																						<FormControl>
 																							<RadioGroupItem
 																								value={gender.title}
@@ -574,7 +587,7 @@ export default function Index({ groups }: PageProps) {
 																			(gender) => (
 																				<FormItem
 																					key={gender.title}
-																					className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow-inner border-input bg-background"
+																					className="flex items-start p-3 space-x-3 space-y-0 border rounded-md shadow border-input bg-background"
 																				>
 																					<FormControl>
 																						<RadioGroupItem
@@ -643,7 +656,7 @@ export default function Index({ groups }: PageProps) {
 																			(condition) => (
 																				<FormItem
 																					key={condition.title}
-																					className="flex items-start p-4 space-x-3 space-y-0 border rounded-md border-input bg-background"
+																					className="flex items-start p-4 space-x-3 space-y-0 border rounded-md border-input shadow bg-background"
 																				>
 																					<FormControl>
 																						<RadioGroupItem
@@ -728,7 +741,7 @@ export default function Index({ groups }: PageProps) {
 															<FormLabel className="capitalize">
 																{tpm("fields.medical_history.label")}{" "}
 																<span className="text-sm italic font-light">
-																	- (optional)
+																	&mdash; (optional)
 																</span>
 															</FormLabel>
 															<FormControl>
@@ -812,6 +825,63 @@ export default function Index({ groups }: PageProps) {
 																/>
 															</FormControl>
 															<FormMessage />
+														</FormItem>
+													)}
+												/>
+											</div>
+										</section>
+
+										<section className="space-y-4">
+											<div className="flex items-center gap-3 mb-6">
+												<hr className="flex-1 border-t border-border" />
+												<span className="text-xs font-semibold uppercase text-muted-foreground opacity-50">
+													Additional
+												</span>
+												<hr className="flex-1 border-t border-border" />
+											</div>
+
+											<div className="grid gap-y-6 gap-x-4 grid-cols-1 md:grid-cols-2">
+												<FormField
+													control={form.control}
+													name="mentions"
+													render={({ field }) => (
+														<FormItem className="md:col-span-full">
+															<FormLabel className="capitalize">
+																Mentions{" "}
+																<span className="text-sm italic font-light">
+																	&mdash; (optional)
+																</span>
+															</FormLabel>
+															<FormControl>
+																<TagInput
+																	{...field}
+																	activeTagIndex={activeTagIndex}
+																	inlineTags={false}
+																	inputFieldPosition="top"
+																	placeholder='e.g., "@admin" or "@people"'
+																	setActiveTagIndex={setActiveTagIndex}
+																	setTags={(newTags) => {
+																		setMentions(newTags);
+																	}}
+																	styleClasses={{
+																		input:
+																			"rounded-md transition-[color,box-shadow] placeholder:text-muted-foreground/70 focus-visible:border-ring outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 bg-background shadow",
+																		tag: {
+																			body: "relative h-7 bg-background border border-input hover:bg-background rounded-md font-medium text-xs ps-2 pe-7",
+																			closeButton:
+																				"absolute -inset-y-px -end-px p-0 rounded-s-none rounded-e-md flex size-7 transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] text-muted-foreground/80 hover:text-foreground",
+																		},
+																		tagList: {
+																			container: "gap-1",
+																		},
+																	}}
+																	tags={mentions}
+																/>
+															</FormControl>
+															<FormDescription className="text-pretty">
+																Add mentions starting with "@" (e.g., @admin,
+																@people). Press Enter to add each mention.
+															</FormDescription>
 														</FormItem>
 													)}
 												/>

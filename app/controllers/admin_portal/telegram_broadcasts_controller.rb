@@ -25,7 +25,7 @@ module AdminPortal
     def create
       broadcast_params = params.require(:broadcast).permit(
         :chat_id, :kode_pasien, :gender_req, :usia, :jenis_kelamin,
-        :keluhan, :durasi, :kondisi, :riwayat, :alamat, :visit, :jadwal
+        :keluhan, :durasi, :kondisi, :riwayat, :alamat, :visit, :jadwal, mentions: []
       )
 
       # Convert usia to integer if it's a string
@@ -36,7 +36,7 @@ module AdminPortal
       response = service.broadcast_message(
         group_id: broadcast_params[:chat_id],
         message: broadcast_params,
-        mentions: []  # Can be extended later to include mentions if needed
+        mentions: broadcast_params[:mentions] || []
       )
 
       if response[:success]
