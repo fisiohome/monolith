@@ -200,6 +200,7 @@ export default function Index({
 				),
 				cell: ({ row }) => {
 					const name = row.original.name;
+					const patientNumber = row.original.patientNumber;
 					const initials = generateInitials(name);
 
 					return (
@@ -212,6 +213,11 @@ export default function Index({
 							</Avatar>
 							<div className="flex-1 space-y-0.5 text-sm leading-tight text-left">
 								<p className="font-bold uppercase truncate">{name}</p>
+								{patientNumber && (
+									<p className="text-xs text-muted-foreground">
+										{patientNumber}
+									</p>
+								)}
 							</div>
 						</div>
 					);

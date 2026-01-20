@@ -5,7 +5,7 @@ class Patient < ApplicationRecord
 
     joins(:patient_contact)
       .where(
-        "patients.name ILIKE :t OR patient_contacts.contact_name ILIKE :t OR patient_contacts.email ILIKE :t OR patient_contacts.contact_phone ILIKE :t",
+        "patients.name ILIKE :t OR patient_contacts.contact_name ILIKE :t OR patient_contacts.email ILIKE :t OR patient_contacts.contact_phone ILIKE :t OR patients.patient_number ILIKE :t",
         t: "%#{search.strip}%"
       )
   }

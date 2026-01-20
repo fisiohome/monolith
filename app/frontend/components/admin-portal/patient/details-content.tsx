@@ -66,7 +66,11 @@ const DetailsContent = memo(function Component({
 							<div className="grid gap-4 col-span-full">
 								<Card className="shadow-inner">
 									<CardContent className="p-6">
-										<Accordion type="single" collapsible className="w-full">
+										<Accordion
+											type="single"
+											collapsible
+											defaultValue="addresses"
+										>
 											<AccordionItem value="addresses" className="border-0">
 												<AccordionTrigger className="p-0 uppercase">
 													{tpl("addresses.label")}
@@ -85,7 +89,11 @@ const DetailsContent = memo(function Component({
 							<div className="grid gap-4 col-span-full">
 								<Card className="shadow-inner">
 									<CardContent className="p-6">
-										<Accordion type="single" collapsible className="w-full">
+										<Accordion
+											type="single"
+											collapsible
+											defaultValue="appointments"
+										>
 											<AccordionItem value="appointments" className="border-0">
 												<AccordionTrigger className="p-0 uppercase">
 													{tpl("appointments.label")}
@@ -148,8 +156,12 @@ const ProfileCard = memo(function Component({
 	return (
 		<div
 			title={tpl("profile")}
-			className="flex flex-col gap-2 col-span-full md:col-span-5 xl:col-span-4"
+			className="flex flex-col gap-2 col-span-full md:col-span-7 xl:col-span-8"
 		>
+			<p className="uppercase tracking-wider text-foreground opacity-50 text-xs font-bold">
+				{tpl("profile")}
+			</p>
+
 			<Card className="h-full shadow-inner">
 				<CardHeader>
 					<div className="flex items-center w-full gap-2 text-left">
@@ -168,8 +180,8 @@ const ProfileCard = memo(function Component({
 				</CardHeader>
 
 				<CardContent className="grid gap-4">
-					<div className="flow-root ">
-						<dl className="-my-3 text-sm">
+					<div className="flow-root">
+						<dl className="-my-3 text-sm grid grid-cols-1 lg:grid-cols-2">
 							<div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
 								<dt className="font-medium">{tpl("gender.label")}</dt>
 
@@ -209,6 +221,15 @@ const ProfileCard = memo(function Component({
 								</dd>
 							</div>
 							<div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+								<dt className="font-medium">Reg. Number</dt>
+
+								<dd className="sm:col-span-2">
+									<span className="font-mono text-xs">
+										{patient.patientNumber || "N/A"}
+									</span>
+								</dd>
+							</div>
+							<div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
 								<dt className="font-medium">{tpl("registered_at")}</dt>
 
 								<dd className="sm:col-span-2">
@@ -243,8 +264,12 @@ const ContactCard = memo(function Component({
 	return (
 		<div
 			title={tpl("contact")}
-			className="flex flex-col gap-2 col-span-full md:col-span-7 xl:col-span-8"
+			className="flex flex-col gap-2 col-span-full md:col-span-5 xl:col-span-4"
 		>
+			<p className="uppercase tracking-wider text-foreground opacity-50 text-xs font-bold">
+				{tpl("contact")}
+			</p>
+
 			<Card className="h-full shadow-inner">
 				<CardHeader>
 					<div className="flex items-center w-full gap-2 text-left">
@@ -273,7 +298,7 @@ const ContactCard = memo(function Component({
 
 								<dd className="sm:col-span-2">
 									<span className="flex items-center gap-1">
-										<Phone className="size-3.5" />
+										<Phone className="size-3.5 opacity-75" />
 										{patient.contact?.contactPhone || "N/A"}
 									</span>
 								</dd>
@@ -283,7 +308,7 @@ const ContactCard = memo(function Component({
 
 								<dd className="sm:col-span-2">
 									<span className="flex items-center gap-1">
-										<Mail className="size-3.5" />
+										<Mail className="size-3.5 opacity-75" />
 										{patient.contact?.email || "N/A"}
 									</span>
 								</dd>
@@ -293,7 +318,7 @@ const ContactCard = memo(function Component({
 
 								<dd className="sm:col-span-2">
 									<span className="flex items-center gap-1">
-										<Link className="size-3.5" />
+										<Link className="size-3.5 opacity-75" />
 										{patient.contact?.miitelLink || "N/A"}
 									</span>
 								</dd>
