@@ -25,7 +25,20 @@ module AdminPortal
     end
 
     def new
-      @appointment = params[:created] ? Appointment.find_by(id: params[:created]) || Appointment.new : Appointment.new
+      @appointment = if params[:created]
+        # Try to find the appointment, with a small retry for database sync
+        appointment = Appointment.find_by(id: params[:created])
+        unless appointment
+          # Wait a bit and retry in case of database sync delay
+          sleep(0.5)
+          appointment = Appointment.find_by(id: params[:created])
+        end
+        logger.info("[AppointmentsController#new] Looking for appointment with id: #{params[:created]}, found: #{appointment&.id}")
+        appointment || Appointment.new
+      else
+        Appointment.new
+      end
+
       if params[:reference]
         @appointment.reference_appointment = Appointment.find(params[:reference])
       end
@@ -47,7 +60,15 @@ module AdminPortal
     def create
       result = CreateAppointmentServiceExternalApi.new(params, current_user).call
       if result[:success]
-        redirect_to new_admin_portal_appointment_path(created: result[:data].id), notice: "Appointment was successfully booked."
+        # Handle both Appointment object (has .id) and API response hash
+        appointment_id = if result[:data].respond_to?(:id)
+          result[:data].id
+        else
+          # Extract from API response: appointments[0].appointment_id
+          appointments = result[:data]["appointments"] || result[:data][:appointments] || []
+          appointments.first&.dig("appointment_id") || appointments.first&.dig(:appointment_id)
+        end
+        redirect_to new_admin_portal_appointment_path(created: appointment_id), notice: "Appointment was successfully booked."
       else
         logger.error("Failed to booking the appointment: #{result[:error]}")
 

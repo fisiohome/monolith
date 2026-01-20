@@ -51,9 +51,11 @@ module AdminPortal
         appointment_data = response.body
         appointment = find_or_create_local_appointment(appointment_data)
 
-        associate_admins(appointment) if @params[:admin_ids].present?
+        associate_admins(appointment) if appointment && @params[:admin_ids].present?
 
-        skip_return ? {success: true, data: appointment} : (return {success: true, data: appointment})
+        # Return appointment if found locally, otherwise return API response data
+        result_data = appointment || appointment_data
+        skip_return ? {success: true, data: result_data} : (return {success: true, data: result_data})
       else
         error_message = parse_api_error(response)
         Rails.logger.error("[CreateAppointmentServiceExternalApi] API error: #{error_message}")
@@ -90,7 +92,7 @@ module AdminPortal
       # Add first visit from appointment level
       visits << {
         visit_number: 1,
-        therapist_id: appointment_params[:therapist_id].present? ? appointment_params[:therapist_id].to_s : nil,
+        therapist_id: @params[:therapist_id].present? ? @params[:therapist_id].to_s : nil,
         appointment_date_time: appointment_params[:appointment_date_time]
       }.compact
 
@@ -124,17 +126,30 @@ module AdminPortal
 
     # Finds or creates a local appointment record based on API response
     def find_or_create_local_appointment(api_response)
-      # The external API returns CreateBookingAppointmentResponse structure
-      # We need to find the appointment by registration_number from the response
-      registration_number = api_response["registration_number"] || api_response[:registration_number]
+      # The external API returns CreateBookingAppointmentResponse structure with:
+      # - registration_number at root level
+      # - appointments array with appointment_id for each visit
+      # Try to find by first appointment's ID (UUID)
+      appointments = api_response["appointments"] || api_response[:appointments] || []
+      if appointments.any?
+        first_appointment = appointments.first
+        appointment_id = first_appointment["appointment_id"] || first_appointment[:appointment_id]
 
-      if registration_number
-        Appointment.find_by(registration_number: registration_number)
-      else
-        # Fallback: try to find by other identifiers if available
-        appointment_id = api_response["id"] || api_response[:id]
-        appointment_id ? Appointment.find_by(id: appointment_id) : nil
+        if appointment_id
+          # Retry a few times in case of database sync delay
+          appointment = nil
+          3.times do |i|
+            appointment = Appointment.find_by(id: appointment_id)
+            break if appointment
+            sleep(0.3)
+          end
+          return appointment if appointment
+        end
       end
+
+      # Fallback: try to find by registration_number
+      registration_number = api_response["registration_number"] || api_response[:registration_number]
+      Appointment.find_by(registration_number: registration_number) if registration_number
     end
 
     # Parses error from API response
