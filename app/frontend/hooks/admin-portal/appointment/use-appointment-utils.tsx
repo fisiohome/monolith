@@ -1,9 +1,9 @@
+import H from "@here/maps-api-for-javascript";
 import { router, usePage } from "@inertiajs/react";
 import { useSessionStorage } from "@uidotdev/usehooks";
 import { format, isBefore, startOfDay, sub, subDays } from "date-fns";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import H from "@here/maps-api-for-javascript";
 import { useDateContext } from "@/components/providers/date-provider";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
@@ -131,29 +131,44 @@ const buildNotFeasibleDetails = async (
 
 	const constraintDetails: string[] = [];
 	if (distanceConstraint) {
-		constraintDetails.push(`max ${(distanceConstraint.value / 1000).toFixed(1)}km`);
+		constraintDetails.push(
+			`max ${(distanceConstraint.value / 1000).toFixed(1)}km`,
+		);
 	}
 	if (timeConstraint) {
 		constraintDetails.push(`max ${(timeConstraint.value / 60).toFixed(0)}min`);
 	}
 
 	// Calculate actual route distance
-	const routeInfo = await calculateRouteDistance(apiKey, patientCoords, therapistCoord.position);
+	const routeInfo = await calculateRouteDistance(
+		apiKey,
+		patientCoords,
+		therapistCoord.position,
+	);
 
 	if (routeInfo) {
 		details.routeDistance = { value: routeInfo.distance, unit: "km" };
 		details.duration = { value: routeInfo.duration, unit: "min" };
 
-		if (distanceConstraint && routeInfo.distance > distanceConstraint.value / 1000) {
+		if (
+			distanceConstraint &&
+			routeInfo.distance > distanceConstraint.value / 1000
+		) {
 			reason = `Route distance exceeded: ${routeInfo.distance.toFixed(1)}km > ${(distanceConstraint.value / 1000).toFixed(1)}km (straight-line: ${straightLineDistance.toFixed(1)}km)`;
-		} else if (timeConstraint && routeInfo.duration > timeConstraint.value / 60) {
+		} else if (
+			timeConstraint &&
+			routeInfo.duration > timeConstraint.value / 60
+		) {
 			reason = `Route duration exceeded: ${Math.round(routeInfo.duration)}min > ${(timeConstraint.value / 60).toFixed(0)}min (straight-line: ${Math.round((straightLineDistance / 30) * 60)}min)`;
 		} else {
 			reason = `Outside isoline polygon (straight-line: ${straightLineDistance.toFixed(1)}km, route: ${routeInfo.distance.toFixed(1)}km, constraints: ${constraintDetails.join(", ")})`;
 		}
 	} else {
 		// Fallback to straight-line based reason
-		if (distanceConstraint && straightLineDistance > distanceConstraint.value / 1000) {
+		if (
+			distanceConstraint &&
+			straightLineDistance > distanceConstraint.value / 1000
+		) {
 			reason = `Distance exceeded: ${straightLineDistance.toFixed(1)}km > ${(distanceConstraint.value / 1000).toFixed(1)}km max`;
 		} else if (timeConstraint) {
 			const estimatedTime = (straightLineDistance / 30) * 60;
@@ -176,9 +191,11 @@ const buildNotFeasibleDetails = async (
 // Helper to map therapist to MarkerData
 const mapTherapistToMarkerData = (
 	therapist: TherapistOption,
-	generateMarkerDataTherapist: (
-		args: { address: string; position: Coordinate; therapist: TherapistOption },
-	) => MarkerData,
+	generateMarkerDataTherapist: (args: {
+		address: string;
+		position: Coordinate;
+		therapist: TherapistOption;
+	}) => MarkerData,
 ): MarkerData | null => {
 	if (!therapist?.activeAddress) return null;
 
@@ -933,15 +950,24 @@ export const useTherapistAvailability = ({
 				if (rule?.distanceInMeters !== undefined) {
 					hasExplicitDistance = true;
 					// Only add constraint if value > 0
-					if (rule.distanceInMeters > 0 && Number.isFinite(rule.distanceInMeters)) {
-						constraints.push({ type: "distance", value: rule.distanceInMeters });
+					if (
+						rule.distanceInMeters > 0 &&
+						Number.isFinite(rule.distanceInMeters)
+					) {
+						constraints.push({
+							type: "distance",
+							value: rule.distanceInMeters,
+						});
 					}
 				}
 				// Check if duration rule exists (including 0)
 				if (rule?.durationInMinutes !== undefined) {
 					hasExplicitDuration = true;
 					// Only add constraint if value > 0
-					if (rule.durationInMinutes > 0 && Number.isFinite(rule.durationInMinutes)) {
+					if (
+						rule.durationInMinutes > 0 &&
+						Number.isFinite(rule.durationInMinutes)
+					) {
 						constraints.push({
 							type: "time",
 							value: rule.durationInMinutes * 60,
@@ -951,7 +977,11 @@ export const useTherapistAvailability = ({
 			});
 
 			// If explicit rules exist but both are 0 (disabled), return null to skip feasibility check
-			if (hasExplicitDistance && hasExplicitDuration && constraints.length === 0) {
+			if (
+				hasExplicitDistance &&
+				hasExplicitDuration &&
+				constraints.length === 0
+			) {
 				return null;
 			}
 
@@ -1039,7 +1069,8 @@ export const useTherapistAvailability = ({
 				}
 
 				// Check feasibility for each therapist
-				const feasibleResult = mapRef.current.isLocationFeasible(groupTherapistCoords);
+				const feasibleResult =
+					mapRef.current.isLocationFeasible(groupTherapistCoords);
 
 				// Process feasibility results
 				for (const item of feasibleResult) {
@@ -1102,7 +1133,9 @@ export const useTherapistAvailability = ({
 
 			// Add feasible therapist markers
 			const markerTherapistFeasibleData: MarkerData[] = therapistList.feasible
-				.map((t) => allTherapistCoords.find((c) => c?.additional?.therapist?.id === t.id))
+				.map((t) =>
+					allTherapistCoords.find((c) => c?.additional?.therapist?.id === t.id),
+				)
 				.filter((coord): coord is MarkerData => coord !== null);
 			mapRef.current.marker.onAdd(markerTherapistFeasibleData, {
 				isSecondary: true,

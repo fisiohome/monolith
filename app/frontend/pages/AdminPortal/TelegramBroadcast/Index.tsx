@@ -2,6 +2,8 @@ import { tz } from "@date-fns/tz";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Deferred, Head, router, usePage } from "@inertiajs/react";
 import { format, parse } from "date-fns";
+import type { Tag } from "emblor";
+import { TagInput } from "emblor";
 import {
 	Check,
 	ChevronsUpDown,
@@ -13,8 +15,6 @@ import { Fragment, useCallback, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { TagInput } from "emblor";
-import type { Tag } from "emblor";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import { MarkdownRenderer } from "@/components/shared/markdown-renderer";
 import { Alert, AlertDescription } from "@/components/ui/alert";

@@ -163,7 +163,7 @@ export default function AppointmentSettingsForm({
 											const value = e.target.value;
 											field.onChange(value ? parseInt(value, 10) : 0);
 										}}
-										value={isDefault ? 25000 : (field.value || 0)}
+										value={isDefault ? 25000 : field.value || 0}
 									/>
 								</FormControl>
 								<FormDescription>
@@ -210,7 +210,7 @@ export default function AppointmentSettingsForm({
 											const value = e.target.value;
 											field.onChange(value ? parseInt(value, 10) : 0);
 										}}
-										value={isDefault ? 50 : (field.value || 0)}
+										value={isDefault ? 50 : field.value || 0}
 									/>
 								</FormControl>
 								<FormDescription>

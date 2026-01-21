@@ -934,9 +934,7 @@ export function AppointmentSchedulingForm() {
 							name="appointmentScheduling.preferredTherapistGender"
 							render={({ field }) => (
 								<FormItem className="space-y-3 col-span-full">
-									<FormLabel>
-										{tasf("pref_therapist_gender.label")}
-									</FormLabel>
+									<FormLabel>{tasf("pref_therapist_gender.label")}</FormLabel>
 									<FormControl>
 										<RadioGroup
 											onValueChange={(value) => {
