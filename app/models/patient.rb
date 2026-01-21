@@ -22,6 +22,7 @@ class Patient < ApplicationRecord
 
   # * define the associations
   belongs_to :patient_contact
+  belongs_to :user, optional: true
   accepts_nested_attributes_for :patient_contact
 
   has_many :appointments, dependent: :nullify

@@ -2,7 +2,15 @@ module PatientsHelper
   include LocationsHelper
 
   def serialize_patient(patient, options = {})
-    patient.as_json(only: options[:only]).tap do |patient_serialized|
+    # Define default fields to include
+    default_fields = %w[id name patient_number date_of_birth gender created_at updated_at]
+    fields_to_include = options[:only] || default_fields
+
+    patient.as_json(only: fields_to_include).tap do |patient_serialized|
+      # Include registration source from user if available
+      if options.fetch(:include_registration_source, true) && patient.user.present?
+        patient_serialized["registration_source"] = patient.user.registration_source
+      end
       # Serialize patient contact details
       if options.fetch(:include_patient_contact, true) && patient.patient_contact.present?
         patient_serialized["contact"] = patient.patient_contact.as_json(only: options[:patient_contact_only])

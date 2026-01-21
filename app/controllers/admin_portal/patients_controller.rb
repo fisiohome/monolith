@@ -13,7 +13,7 @@ module AdminPortal
       filter_by_city = params[:city]
 
       # * get the patients collections
-      patients_collections = Patient.joins(:patient_contact).search(patient_search).by_city(filter_by_city).distinct
+      patients_collections = Patient.joins(:patient_contact).includes(:user).search(patient_search).by_city(filter_by_city).distinct
       @pagy, @patients = pagy(patients_collections, page:, limit:)
       patients_data = @patients.map { |p| serialize_patient(p, {include_active_address: false, include_patient_location: true}) }
 
@@ -97,7 +97,7 @@ module AdminPortal
     private
 
     def get_patient(id)
-      @patient = Patient.includes(:patient_contact).find_by(id:)
+      @patient = Patient.includes(:patient_contact, :user).find_by(id:)
     end
   end
 end

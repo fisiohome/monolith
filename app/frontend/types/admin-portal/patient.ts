@@ -40,6 +40,12 @@ export interface Patient {
 	dateOfBirth: string;
 	age: number;
 	gender: (typeof GENDERS)[number];
+	registrationSource?:
+		| "WEB"
+		| "MOBILE_ANDROID"
+		| "MOBILE_IOS"
+		| "ADMIN_PANEL"
+		| "API";
 	contact?: PatientContact;
 	activeAddress?: PatientActiveAddress;
 	patientAddresses?: {

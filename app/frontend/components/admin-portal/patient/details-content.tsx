@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Cake, Dot, Link, Mail, MapPinIcon, Phone } from "lucide-react";
+import { Cake, Dot, Globe, Link, Mail, MapPinIcon, Phone } from "lucide-react";
 import { Fragment, memo, Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
@@ -156,7 +156,7 @@ const ProfileCard = memo(function Component({
 	return (
 		<div
 			title={tpl("profile")}
-			className="flex flex-col gap-2 col-span-full md:col-span-7 xl:col-span-8"
+			className="flex flex-col gap-2 col-span-full md:col-span-7"
 		>
 			<p className="uppercase tracking-wider text-foreground opacity-50 text-xs font-bold">
 				{tpl("profile")}
@@ -264,7 +264,7 @@ const ContactCard = memo(function Component({
 	return (
 		<div
 			title={tpl("contact")}
-			className="flex flex-col gap-2 col-span-full md:col-span-5 xl:col-span-4"
+			className="flex flex-col gap-2 col-span-full md:col-span-5"
 		>
 			<p className="uppercase tracking-wider text-foreground opacity-50 text-xs font-bold">
 				{tpl("contact")}
@@ -320,6 +320,18 @@ const ContactCard = memo(function Component({
 									<span className="flex items-center gap-1">
 										<Link className="size-3.5 opacity-75" />
 										{patient.contact?.miitelLink || "N/A"}
+									</span>
+								</dd>
+							</div>
+							<div className="grid grid-cols-1 gap-1 py-3 sm:grid-cols-3 sm:gap-4">
+								<dt className="font-medium">Registration Source</dt>
+
+								<dd className="sm:col-span-2">
+									<span className="flex items-center gap-1">
+										<Globe className="size-3.5 opacity-75" />
+										{patient?.registrationSource
+											? patient.registrationSource.replaceAll("_", " ")
+											: "N/A"}
 									</span>
 								</dd>
 							</div>
