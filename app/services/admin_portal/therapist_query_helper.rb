@@ -34,6 +34,10 @@ module AdminPortal
         schedule = therapist.therapist_appointment_schedule
         next false unless schedule
         rules = schedule.effective_availability_rules
+
+        # Ensure rules is an array
+        rules = Array(rules)
+
         # If the therapist's schedule has a location rule ("location" key), apply location-based filtering
         location_rule = rules.any? { |rule| rule["location"] == true }
         if location_rule

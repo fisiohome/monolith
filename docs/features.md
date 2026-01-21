@@ -74,6 +74,320 @@ This sophisticated approach to isoline calculation ensures that our home healthc
 
 ---
 
+## Therapist Availability Rules System
+
+The Therapist Availability Rules system controls how therapists are filtered and matched with patients based on location constraints, travel distance, and travel time. This system integrates with the HERE Maps isoline feature to provide intelligent therapist-patient matching.
+
+### Overview
+
+Each therapist can have custom availability rules that determine:
+1. **Location matching** - Whether the therapist must be in the same location as the patient
+2. **Distance constraint** - Maximum travel distance (in meters) the therapist can cover
+3. **Duration constraint** - Maximum travel time (in minutes) the therapist can spend traveling
+
+### Rule Structure
+
+Rules are stored as JSON in the `availability_rules` column of `therapist_appointment_schedules` table:
+
+```json
+[
+  {"distance_in_meters": 25000},
+  {"duration_in_minutes": 50},
+  {"location": true}
+]
+```
+
+**Special Values**:
+- `distance_in_meters: 0` - Distance constraint is disabled (therapist can be any distance)
+- `duration_in_minutes: 0` - Duration constraint is disabled (therapist can take any travel time)
+- `location: false` - Therapist can serve any location (not restricted to same area)
+
+### Default Rules
+
+When a therapist has no custom rules, the system applies defaults defined in `TherapistAppointmentSchedule`:
+
+```ruby
+DEFAULT_AVAILABILITY_RULES = [
+  {"distance_in_meters" => 25_000},  # 25 km
+  {"duration_in_minutes" => 50},      # 50 minutes
+  {"location" => true}                # Must match location
+].freeze
+```
+
+### Rule Processing Pipeline
+
+The availability rules are processed in two stages:
+
+#### Stage 1: Backend Location Filtering (Ruby)
+
+**File**: `app/services/admin_portal/therapist_query_helper.rb`
+
+The `location` rule is applied server-side before sending data to the frontend:
+
+```ruby
+location_rule = rules.any? { |rule| rule["location"] == true }
+if location_rule
+  therapist_location = therapist.active_address&.location
+  # Special case: Jakarta region allows cross-city matching
+  if location.state == "DKI JAKARTA"
+    location_ids.include?(therapist_location&.id) || 
+      therapist_location&.city == "KOTA ADM. JAKARTA PUSAT"
+  else
+    location_ids.include?(therapist_location&.id)
+  end
+else
+  true  # No location rule = include therapist
+end
+```
+
+**Special Case - Jakarta**: Therapists in any DKI Jakarta location can serve patients in Jakarta Pusat, and vice versa.
+
+#### Stage 2: Frontend Isoline Feasibility (TypeScript)
+
+**File**: `app/frontend/hooks/admin-portal/appointment/use-appointment-utils.tsx`
+
+The `distance_in_meters` and `duration_in_minutes` rules are used for isoline calculations:
+
+1. **Group therapists by constraints** (`groupTherapistsByConstraints`)
+   - Therapists with identical rules are grouped together for efficient isoline calculation
+
+2. **Extract constraints** (`getIsolineConstraintsForGroup`)
+   ```typescript
+   rules.forEach((rule) => {
+     if (rule?.distanceInMeters) {
+       constraints.push({ type: "distance", value: rule.distanceInMeters });
+     }
+     if (rule?.durationInMinutes) {
+       constraints.push({ type: "time", value: rule.durationInMinutes * 60 });
+     }
+   });
+   ```
+
+3. **Calculate isoline polygons** - HERE Maps API calculates reachable areas from patient location
+
+4. **Check feasibility** (`isLocationFeasible`)
+   - Determines if each therapist's location falls within the isoline polygon
+
+### Frontend Default Fallback
+
+**File**: `app/frontend/lib/here-maps/index.ts`
+
+When therapists have no custom rules, the frontend uses hardcoded defaults:
+
+```typescript
+export const ISOLINE_CONSTRAINTS = [
+  { type: "distance", value: 1000 * 25 },  // 25 km
+  { type: "time", value: 60 * 50 },        // 50 minutes (in seconds)
+];
+```
+
+### Therapist Categories
+
+After processing, therapists are categorized into four groups:
+
+| Category | Description |
+|----------|-------------|
+| **Available** | Has schedule availability for the requested time |
+| **Unavailable** | No schedule availability (busy, day off, etc.) |
+| **Feasible** | Available AND within distance/time constraints |
+| **Not Feasible** | Available BUT outside distance/time constraints |
+
+Only **Feasible** therapists are shown to users for selection.
+
+### Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         BACKEND (Ruby)                               │
+├─────────────────────────────────────────────────────────────────────┤
+│  1. Fetch all therapists for service/location                       │
+│  2. Apply location rule filter (if location: true)                  │
+│  3. Check time availability (GetTherapistAvailableService)          │
+│  4. Serialize with availability_rules                               │
+└─────────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (TypeScript)                         │
+├─────────────────────────────────────────────────────────────────────┤
+│  5. Receive therapists with availability_rules                      │
+│  6. Split into available/unavailable                                │
+│  7. Group available therapists by constraints                       │
+│  8. Calculate isoline for each constraint group                     │
+│  9. Check feasibility for each therapist                            │
+│  10. Split into feasible/notFeasible                                │
+│  11. Display only feasible therapists                               │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `app/models/therapist_appointment_schedule.rb` | Model with DEFAULT_AVAILABILITY_RULES and validation |
+| `app/services/admin_portal/therapist_query_helper.rb` | Backend location rule filtering |
+| `app/services/admin_portal/get_therapist_available_service.rb` | Time availability checking |
+| `app/helpers/therapists_helper.rb` | Serializes availability_rules for frontend |
+| `app/frontend/hooks/admin-portal/appointment/use-appointment-utils.tsx` | Frontend isoline/feasibility logic |
+| `app/frontend/lib/here-maps/index.ts` | Default isoline constraints |
+| `app/frontend/hooks/here-maps/index.tsx` | HERE Maps integration |
+
+### Customizing Rules
+
+To set custom availability rules for a therapist:
+
+1. **Via Admin UI**: Navigate to Therapist Availability Settings
+   - Use the toggle to enable/disable default values
+   - Set to 0 to disable a specific constraint
+   
+2. **Via Database**:
+   ```ruby
+   schedule = therapist.therapist_appointment_schedule
+   
+   # Both constraints enabled
+   schedule.update(availability_rules: [
+     { "distance_in_meters" => 30000 },  # 30 km max
+     { "duration_in_minutes" => 60 },     # 60 minutes max
+     { "location" => false }              # Can serve any location
+   ])
+   
+   # Distance disabled, duration enabled
+   schedule.update(availability_rules: [
+     { "distance_in_meters" => 0 },       # No distance limit
+     { "duration_in_minutes" => 45 },     # 45 minutes max
+     { "location" => true }               # Must match location
+   ])
+   
+   # Both constraints disabled (therapist always feasible regarding distance/time)
+   schedule.update(availability_rules: [
+     { "distance_in_meters" => 0 },       # No distance limit
+     { "duration_in_minutes" => 0 },      # No time limit
+     { "location" => false }              # Can serve any location
+   ])
+   ```
+
+### Validation
+
+Rules are validated in `TherapistAppointmentSchedule#availability_rules_format`:
+- Must be an array of hashes
+- Each hash must contain at least one of: `distance_in_meters`, `duration_in_minutes`, or `location`
+
+### How 0 Values Affect Feasibility Checking
+
+When a therapist has `0` values in their availability rules:
+
+**Frontend Processing** (`use-appointment-utils.tsx`):
+- `distance_in_meters: 0` - Distance constraint is skipped during isoline calculation
+- `duration_in_minutes: 0` - Duration constraint is skipped during isoline calculation
+- Both values `0` - Therapist is automatically considered feasible (no distance/time checks)
+
+**Example Scenarios**:
+| distance_in_meters | duration_in_minutes | Feasibility Check |
+|-------------------|---------------------|------------------|
+| 25000 | 50 | Check both distance ≤ 25km AND time ≤ 50min |
+| 0 | 45 | Skip distance, only check time ≤ 45min |
+| 30000 | 0 | Check distance ≤ 30km, skip time |
+| 0 | 0 | Always feasible (no distance/time limits) |
+
+**Note**: When both constraints are 0, the therapist bypasses isoline calculation entirely and is marked as feasible regardless of their distance from the patient.
+
+### Understanding Straight-line Distance vs Isoline Coverage
+
+It's important to understand why a therapist might appear "not feasible" even when their straight-line distance seems acceptable:
+
+**Straight-line Distance (As-the-crow-flies)**:
+- Calculated using the Haversine formula between two coordinates
+- Represents the shortest possible distance between two points
+- Example: 22.8 km between patient and therapist
+
+**Route Distance (Actual Road Distance)**:
+- Calculated by HERE Maps routing API using actual road networks
+- Represents the actual distance a therapist would need to travel
+- Includes detours, road layouts, and actual routing
+- Example: 30.5 km via actual roads (vs 22.8 km straight-line)
+
+**Isoline Coverage (Reachable Area)**:
+- Calculated by HERE Maps API using real road networks and traffic conditions
+- The isoline polygon represents areas reachable within the constraints via actual routes
+- Considers traffic patterns, road types, and geographic barriers
+
+**Why This Matters**:
+- A therapist 22.8 km away in straight-line might need to travel 30+ km on actual roads
+- Traffic patterns, one-way streets, and road layouts affect actual travel time
+- Geographic features like rivers or mountains require detours
+- The isoline provides a realistic view of who can actually reach the patient in time
+
+### Viewing Unfeasible Therapists
+
+The system provides a detailed UI dialog showing all therapists who are not displayed in the selection list. After clicking "Find the Available Therapists", users will see a button labeled "X Not Shown" next to the therapist count.
+
+**Dialog Features**:
+- **Unavailable Section**: Therapists who are not available at the selected time, with specific reasons from `availabilityDetails.reasons` (e.g., "Already has appointment", "Day off", "Outside working hours")
+- **Outside Reachable Area Section**: Therapists who are available but too far based on distance/duration constraints
+- **Detailed Information**: For each therapist, the dialog shows:
+  - Name and registration number
+  - Specific reason for not being shown
+  - Actual route distance and duration when available
+  - Straight-line distance for comparison
+
+**Example Dialog Content**:
+```
+Therapists Not Shown (12)
+
+┌─ Unavailable (5) ─────────────────┐
+│ 👤 Dr. Sarah Johnson               │
+│    REG001                          │
+│    Already has appointment         │
+│                                    │
+│ 👤 Dr. Michael Chen               │
+│    REG002                          │
+│    Day off                         │
+└────────────────────────────────────┘
+
+┌─ Outside Reachable Area (7) ──────┐
+│ 📍 Dr. Jane Smith                  │
+│    REG003                          │
+│    Route distance exceeded: 35.2km > 25.0km max │
+│    Straight: 28.5km  Route: 35.2km  ~70min      │
+│                                    │
+│ ⏱️ Dr. Robert Davis               │
+│    REG004                          │
+│    Route duration exceeded: 65min > 50min max   │
+│    Straight: 22.8km  Route: 30.5km  ~65min      │
+└────────────────────────────────────┘
+```
+
+### Route Distance Calculation
+
+The system now calculates actual route distances for ALL therapists using the HERE Maps Routing API to provide accurate feasibility information:
+
+- **No API Rate Limiting**: All therapists get route distance calculations (previously limited to first 5)
+- **Accurate Travel Times**: Real road network data provides precise travel time estimates
+- **Clear Constraint Reasons**: Users see exactly why a therapist is not feasible (distance exceeded, duration exceeded, or outside reachable area)
+
+**Note**: This comprehensive route calculation provides the best user experience but increases API usage. If rate limits become an issue, consider implementing caching or batch processing strategies.
+
+### Debugging
+
+To debug availability rule processing:
+
+**Backend logging**: Check Rails logs for therapist filtering and availability checking.
+
+**Frontend debugging**: The system now provides a comprehensive UI dialog instead of console logs:
+- Click the "X Not Shown" button to view all unfeasible therapists
+- The dialog categorizes therapists into "Unavailable" and "Outside Reachable Area"
+- Each therapist shows detailed reasons for not being displayed
+- Route distances and durations are shown for accurate feasibility assessment
+
+**Key files for debugging**:
+- `app/services/admin_portal/therapist_query_helper.rb` - Backend location filtering
+- `app/services/admin_portal/get_therapist_available_service.rb` - Time availability logic
+- `app/frontend/hooks/admin-portal/appointment/use-appointment-utils.tsx` - Frontend isoline and feasibility calculations
+- `app/frontend/components/admin-portal/appointment/form/therapist-selection.tsx` - UI dialog implementation
+- Straight-line distance vs isoline constraints comparison
+
+---
+
 ## Authentication and Authorization
 
 Authentication and authorization are implemented using **Role-Based Access Control (RBAC)**, where each user is assigned a single role that determines their permissions within the system.

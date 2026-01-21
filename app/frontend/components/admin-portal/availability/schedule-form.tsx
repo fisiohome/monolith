@@ -146,8 +146,7 @@ export default function ScheduleForm({
 			// Convert frontend availability rules format to backend format
 			const formattedAvailabilityRules = values?.availabilityRules?.[0]
 				? [
-						...(values.availabilityRules[0].distanceInMeters &&
-						values.availabilityRules[0].distanceInMeters > 0
+						...(values.availabilityRules[0].distanceInMeters !== undefined
 							? [
 									{
 										distanceInMeters:
@@ -155,8 +154,7 @@ export default function ScheduleForm({
 									},
 								]
 							: []),
-						...(values.availabilityRules[0].durationInMinutes &&
-						values.availabilityRules[0].durationInMinutes > 0
+						...(values.availabilityRules[0].durationInMinutes !== undefined
 							? [
 									{
 										durationInMinutes:

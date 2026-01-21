@@ -101,7 +101,7 @@
 				"label": "Therapist",
 				"button": "Find the Available Therapists",
 				"search": {
-					"placeholder": "Search by name...",
+					"placeholder": "Search by name or registration number...",
 					"suggested_label": "Suggested Therapist",
 					"other_label": "Other",
 					"empty": "There are no therapists available"

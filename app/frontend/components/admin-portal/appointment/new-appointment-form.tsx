@@ -546,6 +546,7 @@ export function AppointmentSchedulingForm() {
 		onFindTherapists,
 		onSelectTherapist,
 		onResetAllTherapistState,
+		feasibilityReport,
 	} = restSchedulingHooks;
 
 	// get the badge statuses
@@ -1106,6 +1107,7 @@ export function AppointmentSchedulingForm() {
 														onFindTherapists();
 													},
 												}}
+												unfeasibleTherapists={feasibilityReport}
 												onSelectTherapist={(value) => onSelectTherapist(value)}
 												onPersist={(value) => {
 													setFormSelections({

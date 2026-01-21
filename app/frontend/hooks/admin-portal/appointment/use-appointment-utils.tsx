@@ -3,6 +3,7 @@ import { useSessionStorage } from "@uidotdev/usehooks";
 import { format, isBefore, startOfDay, sub, subDays } from "date-fns";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import H from "@here/maps-api-for-javascript";
 import { useDateContext } from "@/components/providers/date-provider";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
@@ -30,6 +31,180 @@ import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointm
 import type { Location } from "@/types/admin-portal/location";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { Coordinate, IsolineResult } from "@/types/here-maps";
+
+// Helper function to calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (
+	lat1: number,
+	lon1: number,
+	lat2: number,
+	lon2: number,
+): number => {
+	const R = 6371; // Earth's radius in kilometers
+	const dLat = ((lat2 - lat1) * Math.PI) / 180;
+	const dLon = ((lon2 - lon1) * Math.PI) / 180;
+	const a =
+		Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+		Math.cos((lat1 * Math.PI) / 180) *
+			Math.cos((lat2 * Math.PI) / 180) *
+			Math.sin(dLon / 2) *
+			Math.sin(dLon / 2);
+	const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+	return R * c;
+};
+
+// Type for feasibility report items
+export type FeasibilityReportItem = {
+	name: string;
+	regNumber: string;
+	reason: string;
+	type?: "unavailable" | "not_feasible";
+	straightLineDistance?: { value: number; unit: string };
+	routeDistance?: { value: number; unit: string };
+	duration?: { value: number; unit: string };
+};
+
+// Type for feasibility details
+type FeasibilityDetails = {
+	straightLineDistance?: { value: number; unit: string };
+	routeDistance?: { value: number; unit: string };
+	duration?: { value: number; unit: string };
+};
+
+// Helper to calculate route distance using HERE Maps Routing API
+const calculateRouteDistance = async (
+	apiKey: string,
+	origin: Coordinate,
+	destination: Coordinate,
+): Promise<{ distance: number; duration: number } | null> => {
+	try {
+		const platform = new H.service.Platform({ apikey: apiKey });
+		const router = platform.getRoutingService(undefined, 8);
+		const params = {
+			origin: `${origin.lat},${origin.lng}`,
+			destination: `${destination.lat},${destination.lng}`,
+			transportMode: "car",
+			return: "summary",
+			routingMode: "short",
+		};
+
+		const result = await new Promise((resolve, reject) => {
+			router.calculateRoute(params, resolve, reject);
+		});
+
+		const route = (result as any)?.routes?.[0];
+		const section = route?.sections?.[0];
+
+		if (!section?.summary) {
+			return null;
+		}
+
+		return {
+			distance: section.summary.length / 1000, // Convert to km
+			duration: section.summary.duration / 60, // Convert to minutes
+		};
+	} catch (error) {
+		console.error("Error calculating route:", error);
+		return null;
+	}
+};
+
+// Helper to build not feasible reason and details
+const buildNotFeasibleDetails = async (
+	apiKey: string,
+	patientCoords: Coordinate,
+	therapistCoord: MarkerData,
+	constraints: IsolineConstraint[],
+): Promise<{ reason: string; details: FeasibilityDetails }> => {
+	const details: FeasibilityDetails = {};
+	let reason = "Outside isoline coverage area";
+
+	const straightLineDistance = calculateDistance(
+		patientCoords.lat,
+		patientCoords.lng,
+		therapistCoord.position.lat,
+		therapistCoord.position.lng,
+	);
+	details.straightLineDistance = { value: straightLineDistance, unit: "km" };
+
+	const distanceConstraint = constraints.find((c) => c.type === "distance");
+	const timeConstraint = constraints.find((c) => c.type === "time");
+
+	const constraintDetails: string[] = [];
+	if (distanceConstraint) {
+		constraintDetails.push(`max ${(distanceConstraint.value / 1000).toFixed(1)}km`);
+	}
+	if (timeConstraint) {
+		constraintDetails.push(`max ${(timeConstraint.value / 60).toFixed(0)}min`);
+	}
+
+	// Calculate actual route distance
+	const routeInfo = await calculateRouteDistance(apiKey, patientCoords, therapistCoord.position);
+
+	if (routeInfo) {
+		details.routeDistance = { value: routeInfo.distance, unit: "km" };
+		details.duration = { value: routeInfo.duration, unit: "min" };
+
+		if (distanceConstraint && routeInfo.distance > distanceConstraint.value / 1000) {
+			reason = `Route distance exceeded: ${routeInfo.distance.toFixed(1)}km > ${(distanceConstraint.value / 1000).toFixed(1)}km (straight-line: ${straightLineDistance.toFixed(1)}km)`;
+		} else if (timeConstraint && routeInfo.duration > timeConstraint.value / 60) {
+			reason = `Route duration exceeded: ${Math.round(routeInfo.duration)}min > ${(timeConstraint.value / 60).toFixed(0)}min (straight-line: ${Math.round((straightLineDistance / 30) * 60)}min)`;
+		} else {
+			reason = `Outside isoline polygon (straight-line: ${straightLineDistance.toFixed(1)}km, route: ${routeInfo.distance.toFixed(1)}km, constraints: ${constraintDetails.join(", ")})`;
+		}
+	} else {
+		// Fallback to straight-line based reason
+		if (distanceConstraint && straightLineDistance > distanceConstraint.value / 1000) {
+			reason = `Distance exceeded: ${straightLineDistance.toFixed(1)}km > ${(distanceConstraint.value / 1000).toFixed(1)}km max`;
+		} else if (timeConstraint) {
+			const estimatedTime = (straightLineDistance / 30) * 60;
+			details.duration = { value: estimatedTime, unit: "min" };
+			if (estimatedTime > timeConstraint.value / 60) {
+				reason = `Duration exceeded: ~${Math.round(estimatedTime)}min > ${(timeConstraint.value / 60).toFixed(0)}min max`;
+			} else {
+				reason = `Outside reachable area (${straightLineDistance.toFixed(1)}km straight-line, ~${Math.round(estimatedTime)}min estimated)`;
+			}
+		} else if (distanceConstraint) {
+			reason = `Outside reachable area (${straightLineDistance.toFixed(1)}km straight-line, max ${(distanceConstraint.value / 1000).toFixed(1)}km)`;
+		} else {
+			reason = "Outside reachable area";
+		}
+	}
+
+	return { reason, details };
+};
+
+// Helper to map therapist to MarkerData
+const mapTherapistToMarkerData = (
+	therapist: TherapistOption,
+	generateMarkerDataTherapist: (
+		args: { address: string; position: Coordinate; therapist: TherapistOption },
+	) => MarkerData,
+): MarkerData | null => {
+	if (!therapist?.activeAddress) return null;
+
+	const prev = therapist.availabilityDetails?.locations?.prevAppointment;
+	let lat: number;
+	let lng: number;
+	let address: string;
+
+	if (prev) {
+		lat = prev.latitude;
+		lng = prev.longitude;
+		address = prev.address;
+	} else if (therapist.activeAddress) {
+		lat = therapist.activeAddress.latitude;
+		lng = therapist.activeAddress.longitude;
+		address = therapist.activeAddress.address;
+	} else {
+		return null;
+	}
+
+	return generateMarkerDataTherapist({
+		address,
+		position: { lat, lng },
+		therapist,
+	});
+};
 
 export type LocationOption = Pick<
 	Location,
@@ -616,6 +791,15 @@ export const useTherapistAvailability = ({
 	onChangeTherapistLoading: (value: boolean) => void;
 	onResetTherapistFormValue: () => void;
 }) => {
+	// Get API key from global props at the top level
+	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
+	const apiKey = globalProps.adminPortal.protect.hereMapApiKey;
+
+	// * state for feasibility report (to show in dialog)
+	const [feasibilityReport, setFeasibilityReport] = useState<
+		FeasibilityReportItem[]
+	>([]);
+
 	// * state group for isolane therapist
 	const [markerStorage, setMarkerStorage] = useSessionStorage<null | {
 		patient: MarkerData[];
@@ -728,7 +912,7 @@ export const useTherapistAvailability = ({
 
 	// Get isoline constraints for a specific group of therapists
 	const getIsolineConstraintsForGroup = useCallback(
-		(therapists: TherapistOption[]): IsolineConstraint[] => {
+		(therapists: TherapistOption[]): IsolineConstraint[] | null => {
 			// Get the first therapist's rules (they should all be the same in a group)
 			const firstTherapist = therapists[0];
 			const rules = firstTherapist?.availability?.availabilityRules || [];
@@ -739,25 +923,44 @@ export const useTherapistAvailability = ({
 			}
 
 			// Extract constraints from the rules
+			// A value of 0 means the constraint is disabled
 			const constraints: IsolineConstraint[] = [];
+			let hasExplicitDistance = false;
+			let hasExplicitDuration = false;
 
 			rules.forEach((rule) => {
-				if (rule?.distanceInMeters && Number.isFinite(rule.distanceInMeters)) {
-					constraints.push({ type: "distance", value: rule.distanceInMeters });
+				// Check if distance rule exists (including 0)
+				if (rule?.distanceInMeters !== undefined) {
+					hasExplicitDistance = true;
+					// Only add constraint if value > 0
+					if (rule.distanceInMeters > 0 && Number.isFinite(rule.distanceInMeters)) {
+						constraints.push({ type: "distance", value: rule.distanceInMeters });
+					}
 				}
-				if (
-					rule?.durationInMinutes &&
-					Number.isFinite(rule.durationInMinutes)
-				) {
-					constraints.push({
-						type: "time",
-						value: rule.durationInMinutes * 60,
-					}); // convert minutes to seconds
+				// Check if duration rule exists (including 0)
+				if (rule?.durationInMinutes !== undefined) {
+					hasExplicitDuration = true;
+					// Only add constraint if value > 0
+					if (rule.durationInMinutes > 0 && Number.isFinite(rule.durationInMinutes)) {
+						constraints.push({
+							type: "time",
+							value: rule.durationInMinutes * 60,
+						}); // convert minutes to seconds
+					}
 				}
 			});
 
-			// If no valid constraints found, use defaults
-			return constraints.length > 0 ? constraints : ISOLINE_CONSTRAINTS;
+			// If explicit rules exist but both are 0 (disabled), return null to skip feasibility check
+			if (hasExplicitDistance && hasExplicitDuration && constraints.length === 0) {
+				return null;
+			}
+
+			// If no valid constraints found but rules exist, use defaults only for missing constraints
+			if (constraints.length === 0) {
+				return ISOLINE_CONSTRAINTS;
+			}
+
+			return constraints;
 		},
 		[],
 	);
@@ -776,7 +979,10 @@ export const useTherapistAvailability = ({
 	}, []);
 
 	const onCalculateIsoline = useCallback(
-		async (therapists: NonNullable<TherapistOption[]>) => {
+		async (
+			therapists: NonNullable<TherapistOption[]>,
+			unavailableTherapists: TherapistOption[] = [],
+		) => {
 			if (!mapRef.current) return;
 
 			const { latitude, longitude, address: patientAddress } = patientValues;
@@ -785,87 +991,107 @@ export const useTherapistAvailability = ({
 			// Group therapists by their constraints
 			const therapistGroups = groupTherapistsByConstraints(therapists);
 
-			// Collect all isoline results and all marker data for map rendering
+			// Collect results for map rendering
 			const allIsolineResults: IsolineResult["isolines"] = [];
 			const allTherapistCoords: MarkerData[] = [];
 
-			// Collect feasibility results for all groups
+			// Collect feasibility results
 			const therapistList = {
 				feasible: [] as TherapistOption[],
 				notFeasible: [] as TherapistOption[],
 			};
 
+			// Start with unavailable therapists for dialog display
+			const allNotFeasibleReports: FeasibilityReportItem[] =
+				unavailableTherapists.map((t) => ({
+					name: t.name,
+					regNumber: t.registrationNumber,
+					reason: t.availabilityDetails?.reasons?.join(", ") || "Unavailable",
+					type: "unavailable" as const,
+				}));
+
+			// Process each constraint group
 			for (const [_constraintKey, groupTherapists] of therapistGroups) {
-				// Get constraints for this group
 				const constraints = getIsolineConstraintsForGroup(groupTherapists);
+
+				// Map therapists to MarkerData
+				const groupTherapistCoords: MarkerData[] = groupTherapists
+					.map((t) => mapTherapistToMarkerData(t, generateMarkerDataTherapist))
+					.filter((coord): coord is MarkerData => coord !== null);
+				allTherapistCoords.push(...groupTherapistCoords);
+
+				// If constraints is null, both distance and duration are 0 (disabled)
+				// All therapists in this group are considered feasible
+				if (constraints === null) {
+					for (const therapist of groupTherapists) {
+						therapistList.feasible.push(therapist);
+					}
+					continue;
+				}
 
 				// Calculate isoline for this group
 				const result = await mapRef.current.isoline.onCalculate.both({
 					coord: patientCoords,
 					constraints,
 				});
-
-				// Store isoline results for map rendering
 				if (result) {
 					allIsolineResults.push(...result);
 				}
 
-				// Map therapists in this group to MarkerData
-				const groupTherapistCoords: MarkerData[] =
-					groupTherapists
-						.map((therapist) => {
-							if (!therapist?.activeAddress) return null;
-							const prev =
-								therapist.availabilityDetails?.locations?.prevAppointment;
-							let lat: number;
-							let lng: number;
-							let address: string;
-							if (prev) {
-								lat = prev.latitude;
-								lng = prev.longitude;
-								address = prev.address;
-							} else if (therapist.activeAddress) {
-								lat = therapist.activeAddress.latitude;
-								lng = therapist.activeAddress.longitude;
-								address = therapist.activeAddress.address;
-							} else {
-								return null;
-							}
-							return generateMarkerDataTherapist({
-								address,
-								position: { lat, lng },
-								therapist,
-							});
-						})
-						.filter((coord) => coord !== null) || [];
+				// Check feasibility for each therapist
+				const feasibleResult = mapRef.current.isLocationFeasible(groupTherapistCoords);
 
-				allTherapistCoords.push(...groupTherapistCoords);
-
-				// --- FEASIBILITY CHECK PER GROUP ---
-				const feasibleResult =
-					mapRef.current.isLocationFeasible(groupTherapistCoords);
-				for (const item of feasibleResult || []) {
+				// Process feasibility results
+				for (const item of feasibleResult) {
 					const therapist = item?.additional?.therapist;
 					if (!therapist) continue;
+
 					if (item.isFeasible) {
 						therapistList.feasible.push(therapist);
 					} else {
+						const therapistCoord = groupTherapistCoords.find(
+							(coord) => coord?.additional?.therapist?.id === therapist.id,
+						);
+
+						if (therapistCoord) {
+							const { reason, details } = await buildNotFeasibleDetails(
+								apiKey,
+								patientCoords,
+								therapistCoord,
+								constraints,
+							);
+							allNotFeasibleReports.push({
+								name: therapist.name,
+								regNumber: therapist.registrationNumber,
+								reason,
+								type: "not_feasible",
+								...details,
+							});
+						} else {
+							allNotFeasibleReports.push({
+								name: therapist.name,
+								regNumber: therapist.registrationNumber,
+								reason: "Outside reachable area",
+								type: "not_feasible",
+							});
+						}
 						therapistList.notFeasible.push(therapist);
 					}
 				}
 			}
 
-			// Store combined isoline results for map rendering
+			// Update state
 			setIsolineStorage(allIsolineResults);
-
-			// Render all isoline polygons for all constraint groups on the map
-			if (mapRef.current?.isoline?.onAddAll) {
-				mapRef.current.isoline.onAddAll(allIsolineResults);
-			}
+			setFeasibilityReport(allNotFeasibleReports);
 			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
 			setIsTherapistFound(true);
 
-			// Add markers for the patient position and store to the storage
+			// Render isolines on map
+			if (mapRef.current?.isoline?.onAddAll) {
+				mapRef.current.isoline.onAddAll(allIsolineResults);
+			}
+
+			// Add patient marker
 			const markerPatientData: MarkerData = generateMarkerDataPatient({
 				address: patientAddress,
 				position: patientCoords,
@@ -874,23 +1100,15 @@ export const useTherapistAvailability = ({
 			mapRef.current.marker.onAdd([markerPatientData]);
 			setMarkerStorage({ patient: [markerPatientData] });
 
-			// Add markers for feasible therapists
-			const markerTherapistFeasibleData: MarkerData[] =
-				therapistList.feasible
-					?.map(
-						(feasibleTherapist) =>
-							allTherapistCoords?.find(
-								(coord) =>
-									coord?.additional?.therapist?.id === feasibleTherapist.id,
-							) || null,
-					)
-					?.filter((coord) => coord !== null) || [];
+			// Add feasible therapist markers
+			const markerTherapistFeasibleData: MarkerData[] = therapistList.feasible
+				.map((t) => allTherapistCoords.find((c) => c?.additional?.therapist?.id === t.id))
+				.filter((coord): coord is MarkerData => coord !== null);
 			mapRef.current.marker.onAdd(markerTherapistFeasibleData, {
 				isSecondary: true,
 				useRouting: true,
 			});
 
-			// Mark isoline as calculated
 			setIsIsolineCalculated(true);
 		},
 		[
@@ -901,6 +1119,7 @@ export const useTherapistAvailability = ({
 			generateMarkerDataTherapist,
 			groupTherapistsByConstraints,
 			getIsolineConstraintsForGroup,
+			apiKey,
 		],
 	);
 
@@ -930,13 +1149,14 @@ export const useTherapistAvailability = ({
 				therapists?.filter((t) => t.availabilityDetails?.available) || [];
 			const therapistsUnavailable =
 				therapists?.filter((t) => !t.availabilityDetails?.available) || [];
+
 			setTherapistsOptions((prev) => ({
 				...prev,
 				available: therapistsAvailable,
 				unavailable: therapistsUnavailable,
 			}));
 			if (therapistsAvailable?.length) {
-				onCalculateIsoline(therapistsAvailable);
+				onCalculateIsoline(therapistsAvailable, therapistsUnavailable);
 			} else {
 				setIsTherapistFound(true);
 			}
@@ -1056,5 +1276,6 @@ export const useTherapistAvailability = ({
 		isolineStorage,
 		generateMarkerDataPatient,
 		generateMarkerDataTherapist,
+		feasibilityReport,
 	};
 };

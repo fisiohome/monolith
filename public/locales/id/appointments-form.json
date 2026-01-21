@@ -101,7 +101,7 @@
 				"label": "Terapis",
 				"button": "Temukan Terapis yang Tersedia",
 				"search": {
-					"placeholder": "Cari berdasarkan nama...",
+					"placeholder": "Cari berdasarkan nama atau nomor registrasi...",
 					"suggested_label": "Disarankan",
 					"other_label": "Lainnya",
 					"empty": "Tidak ada terapis yang tersedia"

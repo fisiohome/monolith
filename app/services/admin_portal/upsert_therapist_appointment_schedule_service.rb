@@ -54,8 +54,35 @@ module AdminPortal
         .except(:weekly_availabilities, :adjusted_availabilities)
         .merge(
           start_date_window: schedule_params[:start_date_window]&.in_time_zone(Time.zone.name),
-          end_date_window: schedule_params[:end_date_window]&.in_time_zone(Time.zone.name)
+          end_date_window: schedule_params[:end_date_window]&.in_time_zone(Time.zone.name),
+          availability_rules: process_availability_rules(schedule_params[:availability_rules])
         )
+    end
+
+    def process_availability_rules(rules)
+      return [] if rules.blank?
+
+      # Convert to backend format, keeping 0 values as they are
+      rules.map do |rule|
+        processed_rule = {}
+
+        # Include distance (including 0)
+        if rule.key?(:distance_in_meters)
+          processed_rule[:distance_in_meters] = rule[:distance_in_meters]
+        end
+
+        # Include duration (including 0)
+        if rule.key?(:duration_in_minutes)
+          processed_rule[:duration_in_minutes] = rule[:duration_in_minutes]
+        end
+
+        # Always include location if it's present
+        if rule.key?(:location)
+          processed_rule[:location] = rule[:location]
+        end
+
+        processed_rule unless processed_rule.empty?
+      end.compact
     end
 
     def weekly_availability_params

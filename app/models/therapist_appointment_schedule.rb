@@ -33,7 +33,7 @@ class TherapistAppointmentSchedule < ApplicationRecord
   ].freeze
 
   # Returns the effective availability rules for this schedule.
-  # If custom rules are present and valid, they are used.
+  # If custom rules are present and valid, they are used (filtering out 0 values).
   # Otherwise, the default rules are returned.
   #
   # Rules can be:
@@ -41,9 +41,23 @@ class TherapistAppointmentSchedule < ApplicationRecord
   #   - Only duration: [{"duration_in_minutes" => 50}]
   #   - Both: [{"distance_in_meters" => 25000}, {"duration_in_minutes" => 50}]
   #   - None (nil or []): falls back to default rules
+  #   - Zero values: [{"distance_in_meters" => 0}] will be filtered out
   def effective_availability_rules
     if availability_rules.present? && availability_rules.is_a?(Array) && availability_rules.any?
-      availability_rules
+      # Filter out rules with 0 values
+      filtered_rules = availability_rules.filter do |rule|
+        # Keep rule if it has location (regardless of value)
+        next true if rule.key?("location") && rule["location"]
+        # Keep rule if distance is greater than 0
+        next true if rule.key?("distance_in_meters") && rule["distance_in_meters"].to_i > 0
+        # Keep rule if duration is greater than 0
+        next true if rule.key?("duration_in_minutes") && rule["duration_in_minutes"].to_i > 0
+        # Otherwise, filter it out
+        false
+      end
+
+      # If no rules after filtering, use defaults
+      filtered_rules.any? ? filtered_rules : DEFAULT_AVAILABILITY_RULES
     else
       DEFAULT_AVAILABILITY_RULES
     end
