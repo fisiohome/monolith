@@ -89,3 +89,4 @@ gem "csv", "~> 3.3"
 gem "simplecov", "~> 0.22.0"
 
 gem "faraday", "~> 2.0"
+gem "dotenv-rails", groups: [:development, :test]
