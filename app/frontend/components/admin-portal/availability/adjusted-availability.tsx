@@ -1,5 +1,5 @@
 import { useMediaQuery } from "@uidotdev/usehooks";
-import { format, isSameDay } from "date-fns";
+import { format, isBefore, isSameDay, startOfDay } from "date-fns";
 import {
 	AlertCircle,
 	CalendarIcon,
@@ -13,6 +13,14 @@ import { useDateContext } from "@/components/providers/date-provider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import {
 	FormControl,
 	FormField,
@@ -37,6 +45,10 @@ import { IS_MOBILE_MEDIA_QUERY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import BaseAvailabilityTimeField from "./time-field";
+
+type AdjustedAvailabilityEntry = NonNullable<
+	AvailabilityFormSchema["adjustedAvailabilities"]
+>[number];
 
 const DateSelectedField = ({
 	parentIndex,
@@ -93,6 +105,88 @@ const DateSelectedField = ({
 				</FormItem>
 			)}
 		/>
+	);
+};
+
+const PastAdjustedAvailabilityDialog = ({
+	entries,
+}: {
+	entries: AdjustedAvailabilityEntry[];
+}) => {
+	const [isOpen, setIsOpen] = useState(false);
+	const { locale, tzDate } = useDateContext();
+	const isMobile = useMediaQuery(IS_MOBILE_MEDIA_QUERY);
+
+	if (!entries.length) return null;
+
+	const getDateLabel = (date: Date | null) =>
+		date
+			? format(date, isMobile ? "PP" : "PPP", { locale, in: tzDate })
+			: "No date";
+
+	return (
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			<DialogTrigger asChild>
+				<Button variant="outline" size="sm" className="bg-card">
+					Past adjustments
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="max-h-[80vh] overflow-y-auto">
+				<DialogHeader>
+					<DialogTitle>Past adjusted availabilities</DialogTitle>
+					<DialogDescription>
+						Past dated adjustments are read-only. Create new entries if you need
+						to make changes.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="space-y-4">
+					{entries.map((entry, index) => (
+						<div
+							key={`${entry.specificDate?.toString() ?? "unknown"}-${index}`}
+							className="p-4 border rounded-lg bg-card space-y-3"
+						>
+							<div className="flex flex-wrap items-center justify-between gap-2">
+								<p className="text-sm font-semibold">
+									{getDateLabel(
+										entry.specificDate ? new Date(entry.specificDate) : null,
+									)}
+								</p>
+								<span className="text-xs text-muted-foreground">
+									{entry.times?.length
+										? `${entry.times.length} time slot${entry.times.length > 1 ? "s" : ""}`
+										: "Marked unavailable"}
+								</span>
+							</div>
+
+							{entry.reason && (
+								<p className="text-sm text-muted-foreground">
+									Reason: {entry.reason}
+								</p>
+							)}
+
+							{entry.times?.length ? (
+								<div className="flex flex-wrap gap-2">
+									{entry.times.map((time, timeIndex) => (
+										<div
+											key={`${time.startTime}-${time.endTime}-${timeIndex}`}
+											className="flex items-center justify-between text-sm rounded-md bg-background px-3 py-1.5 border"
+										>
+											<span className="text-muted-foreground">
+												Slot {timeIndex + 1}:{" "}
+												<span className="font-medium">
+													{time.startTime} &mdash; {time.endTime}
+												</span>
+											</span>
+										</div>
+									))}
+								</div>
+							) : null}
+						</div>
+					))}
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 };
 
@@ -415,6 +509,7 @@ export default function AdjustedAvailabilityForm({
 	selectedTherapist,
 }: AdjustedAvailabilityFormProps) {
 	const form = useFormContext<AvailabilityFormSchema>();
+	const todayStart = useMemo(() => startOfDay(new Date()), []);
 
 	// for the adjusted date fields
 	const adjustedDateFields = useFieldArray({
@@ -426,6 +521,31 @@ export default function AdjustedAvailabilityForm({
 		control: form.control,
 		name: "adjustedAvailabilities",
 	});
+	const partitionedAdjustedDates = useMemo(() => {
+		return adjustedDateFields.fields.reduce(
+			(acc, field, index) => {
+				const watchedValue =
+					(watchAdjustedDates?.[index] as
+						| AdjustedAvailabilityEntry
+						| undefined) ?? (field as AdjustedAvailabilityEntry | undefined);
+				const specificDateValue = watchedValue?.specificDate
+					? startOfDay(new Date(watchedValue.specificDate))
+					: null;
+
+				if (specificDateValue && isBefore(specificDateValue, todayStart)) {
+					if (watchedValue) acc.pastEntries.push(watchedValue);
+				} else {
+					acc.upcomingIndexes.push(index);
+				}
+
+				return acc;
+			},
+			{
+				upcomingIndexes: [] as number[],
+				pastEntries: [] as AdjustedAvailabilityEntry[],
+			},
+		);
+	}, [adjustedDateFields.fields, todayStart, watchAdjustedDates]);
 	// to check if all fields are filled (date and times)
 	const isAllFieldsFilled = useMemo(() => {
 		return (
@@ -457,22 +577,35 @@ export default function AdjustedAvailabilityForm({
 
 	return (
 		<div className={cn("px-1", className)}>
+			{selectedTherapist && partitionedAdjustedDates.pastEntries.length > 0 && (
+				<div className="flex justify-end mb-3">
+					<PastAdjustedAvailabilityDialog
+						entries={partitionedAdjustedDates.pastEntries}
+					/>
+				</div>
+			)}
+
 			<Table>
 				<TableBody>
 					{selectedTherapist &&
-						adjustedDateFields?.fields?.map((dateField, dateFieldIndex) => (
-							<AdjustedDateField
-								key={dateField.uuid}
-								field={{
-									data: dateField,
-									index: dateFieldIndex,
-								}}
-								actions={{
-									isRemoved: removed === dateFieldIndex,
-									onRemoveDate,
-								}}
-							/>
-						))}
+						partitionedAdjustedDates.upcomingIndexes.map((dateFieldIndex) => {
+							const dateField = adjustedDateFields.fields[dateFieldIndex];
+							if (!dateField) return null;
+
+							return (
+								<AdjustedDateField
+									key={dateField.uuid}
+									field={{
+										data: dateField,
+										index: dateFieldIndex,
+									}}
+									actions={{
+										isRemoved: removed === dateFieldIndex,
+										onRemoveDate,
+									}}
+								/>
+							);
+						})}
 				</TableBody>
 			</Table>
 
@@ -480,7 +613,7 @@ export default function AdjustedAvailabilityForm({
 				<Button
 					type="button"
 					size="sm"
-					variant="secondary"
+					variant="primary-outline"
 					disabled={!selectedTherapist || !isAllFieldsFilled}
 					onClick={(event) => {
 						event.preventDefault();

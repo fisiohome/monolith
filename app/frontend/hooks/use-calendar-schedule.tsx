@@ -14,6 +14,7 @@ import {
 	type TimeFormat,
 	type TimeFormatDateFns,
 } from "@/lib/constants";
+import type { AdjustedAvailability } from "@/types/admin-portal/availability";
 import type { Therapist } from "@/types/admin-portal/therapist";
 
 export const SLOT_HEIGHT = 48; // Height of each time slot row in pixels (for UI rendering)
@@ -184,28 +185,39 @@ export const getTherapistAvailabilityForDate = ({
 		}
 	}
 
-	// Check adjusted availabilities first
-	const adjusted = availability?.adjustedAvailabilities.find(
-		(a) =>
-			a.specificDate ===
-			format(date, "yyyy-MM-dd", {
-				locale: dateOpt.locale,
-				in: dateOpt.in,
-			}),
-	);
+	// Check adjusted availabilities first (can have multiple entries per date)
+	const formattedDate = format(date, "yyyy-MM-dd", {
+		locale: dateOpt.locale,
+		in: dateOpt.in,
+	});
+	const adjustedForDate =
+		availability?.adjustedAvailabilities?.filter(
+			(a) => a.specificDate === formattedDate,
+		) ?? [];
 
-	// If there's an adjusted availability for this specific date
-	if (adjusted) {
-		// If the therapist is marked as unavailable on this date, return null
-		// (no time slots should be shown)
-		if (adjusted.isUnavailable) {
+	const hasTimeWindow = (
+		availability: AdjustedAvailability,
+	): availability is AdjustedAvailability & {
+		startTime: string;
+		endTime: string;
+	} => Boolean(availability.startTime && availability.endTime);
+
+	if (adjustedForDate.length) {
+		// Any entry without times represents a full-day unavailability override
+		const hasFullDayBlock = adjustedForDate.some(
+			(a) => a.isUnavailable || !a.startTime || !a.endTime,
+		);
+		if (hasFullDayBlock) {
 			return null;
 		}
 
-		// If the adjusted availability has specific time ranges defined,
-		// return them as an array of time slots
-		if (adjusted?.startTime && adjusted?.endTime) {
-			return [{ startTime: adjusted.startTime, endTime: adjusted.endTime }];
+		const adjustedSlots = adjustedForDate.filter(hasTimeWindow).map((a) => ({
+			startTime: a.startTime,
+			endTime: a.endTime,
+		}));
+
+		if (adjustedSlots.length) {
+			return adjustedSlots;
 		}
 	}
 

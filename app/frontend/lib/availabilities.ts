@@ -220,17 +220,54 @@ export const getDefaultValues = ({
 				})) satisfies AvailabilityFormSchema["weeklyAvailabilities"]),
 
 		adjustedAvailabilities: Array.isArray(adjustedAvailabilities)
-			? adjustedAvailabilities.map((adj) => ({
-					specificDate: adj.specificDate
-						? new Date(String(adj.specificDate))
-						: null,
-					reason: adj.reason || "",
-					times:
-						adj.times?.map((time: { startTime: string; endTime: string }) => ({
-							startTime: time.startTime,
-							endTime: time.endTime,
-						})) || null,
-				}))
+			? (() => {
+					// Group adjusted availabilities by specificDate
+					// Data is already transformed to camelCase by the backend
+					const groupedByDate = adjustedAvailabilities.reduce(
+						(acc, adj) => {
+							// Ensure specificDate is a string for consistent key comparison
+							const dateKey =
+								(adj.specificDate as any) instanceof Date
+									? (adj.specificDate as any).toISOString().split("T")[0]
+									: String(adj.specificDate || "");
+
+							if (!acc[dateKey]) {
+								acc[dateKey] = {
+									specificDate: adj.specificDate,
+									reason: adj.reason || "",
+									times: [],
+								};
+							}
+
+							// If this is an unavailable record (no times), set times to null
+							if (adj.isUnavailable) {
+								acc[dateKey].times = null;
+							} else if (
+								acc[dateKey].times !== null &&
+								adj.startTime &&
+								adj.endTime
+							) {
+								// Only add times if not already marked as unavailable
+								acc[dateKey].times.push({
+									startTime: adj.startTime,
+									endTime: adj.endTime,
+								});
+							}
+
+							return acc;
+						},
+						{} as Record<string, any>,
+					);
+
+					// Convert grouped object back to array
+					return Object.values(groupedByDate).map((group: any) => ({
+						specificDate: group.specificDate
+							? new Date(String(group.specificDate))
+							: null,
+						reason: group.reason,
+						times: group.times,
+					}));
+				})()
 			: ([] satisfies AvailabilityFormSchema["adjustedAvailabilities"]),
 
 		availabilityRules: convertedAvailabilityRules,
