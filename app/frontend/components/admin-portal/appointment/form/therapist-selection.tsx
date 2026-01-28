@@ -36,7 +36,9 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/extended/input";
+import { Spinner } from "@/components/ui/kibo-ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import type {
 	FeasibilityReportItem,
 	TherapistOption,
@@ -349,7 +351,7 @@ export interface TherapistSelectionProps extends ComponentProps<"div"> {
 	};
 	find: {
 		isDisabled: boolean;
-		handler: () => Promise<void>;
+		handler: (options?: { bypassConstraints?: boolean }) => Promise<void>;
 	};
 	unfeasibleTherapists?: FeasibilityReportItem[];
 	onSelectTherapist: (value: { id: string; name: string }) => void;
@@ -380,6 +382,7 @@ const TherapistSelection = memo(function Component({
 	});
 	const isMobile = useIsMobile();
 	const [search, setSearch] = useState("");
+	const [isBypassConstraints, setIsBypassConstraints] = useState(false);
 	const debouncedSearchTerm = useDebounce(search, 250);
 	// Filter by search term first
 	const filteredTherapists = useMemo(
@@ -518,21 +521,45 @@ const TherapistSelection = memo(function Component({
 
 	return (
 		<div className={cn("flex flex-col gap-6", className)}>
-			<Button
-				type="button"
-				effect="shine"
-				iconPlacement="right"
-				className="w-full"
-				icon={ChevronsRight}
-				disabled={find.isDisabled}
-				onClick={async (event) => {
-					event.preventDefault();
+			<div className="flex items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
+				<div>
+					<p className="text-sm font-semibold">
+						Bypass distance & duration rules
+					</p>
+					<p className="text-xs text-muted-foreground">
+						Shows all available therapists even if travel limits flag them as
+						unreachable.
+					</p>
+				</div>
+				<Switch
+					checked={isBypassConstraints}
+					onCheckedChange={setIsBypassConstraints}
+					aria-label="Bypass distance and duration rules"
+				/>
+			</div>
 
-					await find.handler();
-				}}
-			>
-				{tasf("therapist.button")}
-			</Button>
+			{isLoading ? (
+				<Button type="button" effect="shine" className="w-full" disabled>
+					Finding therapists...
+					<Spinner className="h-4 w-4 animate-spin" />
+				</Button>
+			) : (
+				<Button
+					type="button"
+					effect="shine"
+					iconPlacement="right"
+					className="w-full"
+					icon={ChevronsRight}
+					disabled={find.isDisabled}
+					onClick={async (event) => {
+						event.preventDefault();
+
+						await find.handler({ bypassConstraints: isBypassConstraints });
+					}}
+				>
+					{tasf("therapist.button")}
+				</Button>
+			)}
 
 			<ScrollArea
 				className="relative p-3 text-sm border rounded-md border-border bg-sidebar text-muted-foreground"

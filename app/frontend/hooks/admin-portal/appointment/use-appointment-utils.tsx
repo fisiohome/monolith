@@ -830,6 +830,16 @@ export const useTherapistAvailability = ({
 		[],
 	);
 	const markerIcon = useTherapistMarker();
+	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
+
+	// * for assigning the therapist
+	const [isTherapistFound, setIsTherapistFound] = useState(false);
+	const [therapistsOptions, setTherapistsOptions] = useState({
+		available: [] as TherapistOption[],
+		unavailable: [] as TherapistOption[],
+		feasible: [] as TherapistOption[],
+		notFeasible: [] as TherapistOption[],
+	});
 	const generateMarkerDataPatient = useCallback(
 		({
 			address,
@@ -881,7 +891,6 @@ export const useTherapistAvailability = ({
 		},
 		[markerIcon],
 	);
-	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
 
 	// Group therapists by their availability rules for efficient isoline calculations
 	const groupTherapistsByConstraints = useCallback(
@@ -1008,37 +1017,99 @@ export const useTherapistAvailability = ({
 		setIsIsolineCalculated(false);
 	}, []);
 
-	const onCalculateIsoline = useCallback(
-		async (
-			therapists: NonNullable<TherapistOption[]>,
-			unavailableTherapists: TherapistOption[] = [],
+	// Helper function to create feasibility report for unavailable therapists
+	const createUnavailableTherapistReports = useCallback(
+		(unavailableTherapists: TherapistOption[]): FeasibilityReportItem[] => {
+			return unavailableTherapists.map((t) => ({
+				name: t.name,
+				regNumber: t.registrationNumber,
+				reason: t.availabilityDetails?.reasons?.join(", ") || "Unavailable",
+				type: "unavailable" as const,
+			}));
+		},
+		[],
+	);
+
+	// Helper function to add markers to map
+	const addMarkersToMap = useCallback(
+		(
+			patientCoords: Coordinate,
+			patientAddress: string,
+			therapists: TherapistOption[],
+			options?: { isSecondary?: boolean; useRouting?: boolean },
 		) => {
-			if (!mapRef.current) return;
+			// Add patient marker
+			const markerPatientData: MarkerData = generateMarkerDataPatient({
+				address: patientAddress,
+				position: patientCoords,
+				patient: patientValues,
+			});
+			mapRef.current?.marker.onAdd([markerPatientData]);
+			setMarkerStorage({ patient: [markerPatientData] });
 
-			const { latitude, longitude, address: patientAddress } = patientValues;
-			const patientCoords = { lat: latitude, lng: longitude };
+			// Add therapist markers
+			const markerTherapistData: MarkerData[] = therapists
+				.map((t) => mapTherapistToMarkerData(t, generateMarkerDataTherapist))
+				.filter((coord): coord is NonNullable<typeof coord> => coord !== null);
+			mapRef.current?.marker.onAdd(markerTherapistData, options);
 
-			// Group therapists by their constraints
+			return { markerPatientData, markerTherapistData };
+		},
+		[
+			patientValues,
+			generateMarkerDataPatient,
+			generateMarkerDataTherapist,
+			setMarkerStorage,
+		],
+	);
+
+	// Helper function to handle bypass constraints mode
+	const handleBypassConstraintsMode = useCallback(
+		async (
+			therapists: TherapistOption[],
+			unavailableTherapists: TherapistOption[],
+			patientCoords: Coordinate,
+			patientAddress: string,
+		) => {
+			const therapistList = {
+				feasible: therapists,
+				notFeasible: [] as TherapistOption[],
+			};
+			const allNotFeasibleReports = createUnavailableTherapistReports(
+				unavailableTherapists,
+			);
+
+			// Update state
+			setFeasibilityReport(allNotFeasibleReports);
+			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
+			setIsTherapistFound(true);
+
+			// Add markers to map
+			addMarkersToMap(patientCoords, patientAddress, therapists, {
+				isSecondary: true,
+				useRouting: true,
+			});
+
+			setIsIsolineCalculated(true);
+		},
+		[createUnavailableTherapistReports, addMarkersToMap],
+	);
+
+	// Helper function to process therapist constraints and feasibility
+	const processTherapistConstraints = useCallback(
+		async (
+			therapists: TherapistOption[],
+			patientCoords: Coordinate,
+			initialReports: FeasibilityReportItem[],
+		) => {
 			const therapistGroups = groupTherapistsByConstraints(therapists);
-
-			// Collect results for map rendering
 			const allIsolineResults: IsolineResult["isolines"] = [];
 			const allTherapistCoords: MarkerData[] = [];
-
-			// Collect feasibility results
 			const therapistList = {
 				feasible: [] as TherapistOption[],
 				notFeasible: [] as TherapistOption[],
 			};
-
-			// Start with unavailable therapists for dialog display
-			const allNotFeasibleReports: FeasibilityReportItem[] =
-				unavailableTherapists.map((t) => ({
-					name: t.name,
-					regNumber: t.registrationNumber,
-					reason: t.availabilityDetails?.reasons?.join(", ") || "Unavailable",
-					type: "unavailable" as const,
-				}));
+			const allNotFeasibleReports = [...initialReports];
 
 			// Process each constraint group
 			for (const [_constraintKey, groupTherapists] of therapistGroups) {
@@ -1047,20 +1118,19 @@ export const useTherapistAvailability = ({
 				// Map therapists to MarkerData
 				const groupTherapistCoords: MarkerData[] = groupTherapists
 					.map((t) => mapTherapistToMarkerData(t, generateMarkerDataTherapist))
-					.filter((coord): coord is MarkerData => coord !== null);
+					.filter(
+						(coord): coord is NonNullable<typeof coord> => coord !== null,
+					);
 				allTherapistCoords.push(...groupTherapistCoords);
 
-				// If constraints is null, both distance and duration are 0 (disabled)
-				// All therapists in this group are considered feasible
+				// If constraints is null, all therapists are feasible
 				if (constraints === null) {
-					for (const therapist of groupTherapists) {
-						therapistList.feasible.push(therapist);
-					}
+					therapistList.feasible.push(...groupTherapists);
 					continue;
 				}
 
 				// Calculate isoline for this group
-				const result = await mapRef.current.isoline.onCalculate.both({
+				const result = await mapRef.current?.isoline.onCalculate.both({
 					coord: patientCoords,
 					constraints,
 				});
@@ -1069,6 +1139,7 @@ export const useTherapistAvailability = ({
 				}
 
 				// Check feasibility for each therapist
+				if (!mapRef.current) continue;
 				const feasibleResult =
 					mapRef.current.isLocationFeasible(groupTherapistCoords);
 
@@ -1111,6 +1182,34 @@ export const useTherapistAvailability = ({
 				}
 			}
 
+			return {
+				allIsolineResults,
+				allTherapistCoords,
+				therapistList,
+				allNotFeasibleReports,
+			};
+		},
+		[
+			groupTherapistsByConstraints,
+			getIsolineConstraintsForGroup,
+			generateMarkerDataTherapist,
+			apiKey,
+		],
+	);
+
+	// Helper function to finalize and render results
+	const finalizeAndRenderResults = useCallback(
+		(
+			allIsolineResults: IsolineResult["isolines"],
+			allTherapistCoords: MarkerData[],
+			therapistList: {
+				feasible: TherapistOption[];
+				notFeasible: TherapistOption[];
+			},
+			allNotFeasibleReports: FeasibilityReportItem[],
+			patientCoords: Coordinate,
+			patientAddress: string,
+		) => {
 			// Update state
 			setIsolineStorage(allIsolineResults);
 			setFeasibilityReport(allNotFeasibleReports);
@@ -1128,7 +1227,7 @@ export const useTherapistAvailability = ({
 				position: patientCoords,
 				patient: patientValues,
 			});
-			mapRef.current.marker.onAdd([markerPatientData]);
+			mapRef.current?.marker.onAdd([markerPatientData]);
 			setMarkerStorage({ patient: [markerPatientData] });
 
 			// Add feasible therapist markers
@@ -1136,8 +1235,8 @@ export const useTherapistAvailability = ({
 				.map((t) =>
 					allTherapistCoords.find((c) => c?.additional?.therapist?.id === t.id),
 				)
-				.filter((coord): coord is MarkerData => coord !== null);
-			mapRef.current.marker.onAdd(markerTherapistFeasibleData, {
+				.filter((coord): coord is NonNullable<typeof coord> => coord !== null);
+			mapRef.current?.marker.onAdd(markerTherapistFeasibleData, {
 				isSecondary: true,
 				useRouting: true,
 			});
@@ -1145,25 +1244,67 @@ export const useTherapistAvailability = ({
 			setIsIsolineCalculated(true);
 		},
 		[
-			patientValues,
 			setIsolineStorage,
-			setMarkerStorage,
 			generateMarkerDataPatient,
-			generateMarkerDataTherapist,
-			groupTherapistsByConstraints,
-			getIsolineConstraintsForGroup,
-			apiKey,
+			patientValues,
+			setMarkerStorage,
 		],
 	);
 
-	// * for assigning the therapist
-	const [isTherapistFound, setIsTherapistFound] = useState(false);
-	const [therapistsOptions, setTherapistsOptions] = useState({
-		available: [] as TherapistOption[],
-		unavailable: [] as TherapistOption[],
-		feasible: [] as TherapistOption[],
-		notFeasible: [] as TherapistOption[],
-	});
+	const onCalculateIsoline = useCallback(
+		async (
+			therapists: NonNullable<TherapistOption[]>,
+			unavailableTherapists: TherapistOption[] = [],
+			options?: { bypassConstraints?: boolean },
+		) => {
+			const { bypassConstraints = false } = options ?? {};
+			if (!mapRef.current) return;
+
+			const { latitude, longitude, address: patientAddress } = patientValues;
+			const patientCoords = { lat: latitude, lng: longitude };
+
+			// Handle bypass constraints mode
+			if (bypassConstraints) {
+				await handleBypassConstraintsMode(
+					therapists,
+					unavailableTherapists,
+					patientCoords,
+					patientAddress,
+				);
+				return;
+			}
+
+			// Initialize with unavailable therapists reports
+			const initialReports = createUnavailableTherapistReports(
+				unavailableTherapists,
+			);
+
+			// Process therapist constraints and feasibility
+			const results = await processTherapistConstraints(
+				therapists,
+				patientCoords,
+				initialReports,
+			);
+
+			// Finalize and render results
+			finalizeAndRenderResults(
+				results.allIsolineResults,
+				results.allTherapistCoords,
+				results.therapistList,
+				results.allNotFeasibleReports,
+				patientCoords,
+				patientAddress,
+			);
+		},
+		[
+			patientValues,
+			handleBypassConstraintsMode,
+			createUnavailableTherapistReports,
+			processTherapistConstraints,
+			finalizeAndRenderResults,
+		],
+	);
+
 	// reset the therapist all options
 	const onResetTherapistOptions = useCallback(() => {
 		setTherapistsOptions((prev) => ({
@@ -1177,7 +1318,10 @@ export const useTherapistAvailability = ({
 	}, []);
 	// map the available and unavailable therapists, then also calculate the isoline
 	const mappingTherapists = useCallback(
-		(therapists: TherapistOption[] | undefined) => {
+		(
+			therapists: TherapistOption[] | undefined,
+			options?: { bypassConstraints?: boolean },
+		) => {
 			const therapistsAvailable =
 				therapists?.filter((t) => t.availabilityDetails?.available) || [];
 			const therapistsUnavailable =
@@ -1189,88 +1333,94 @@ export const useTherapistAvailability = ({
 				unavailable: therapistsUnavailable,
 			}));
 			if (therapistsAvailable?.length) {
-				onCalculateIsoline(therapistsAvailable, therapistsUnavailable);
+				onCalculateIsoline(therapistsAvailable, therapistsUnavailable, options);
 			} else {
 				setIsTherapistFound(true);
 			}
 		},
 		[onCalculateIsoline],
 	);
-	const onFindTherapists = useCallback(() => {
-		// fetch the services options data
-		const { queryParams } = populateQueryParams(
-			fetchURL,
-			deepTransformKeysToSnakeCase(
+	const onFindTherapists = useCallback(
+		(options?: { bypassConstraints?: boolean }) => {
+			const { bypassConstraints = false } = options ?? {};
+
+			const basePayload = {
+				preferredTherapistGender: preferredTherapistGenderValue,
+				appointmentDateTime: appointmentDateTImeValue,
+				isAllOfDay: isAllOfDayValue,
+			};
+
+			const payload =
 				formType === "create"
 					? {
 							locationId: patientValues.locationId,
 							serviceId: serviceIdValue,
-							preferredTherapistGender: preferredTherapistGenderValue,
-							appointmentDateTime: appointmentDateTImeValue,
-							isAllOfDay: isAllOfDayValue,
+							...basePayload,
 						}
-					: {
-							preferredTherapistGender: preferredTherapistGenderValue,
-							appointmentDateTime: appointmentDateTImeValue,
-							isAllOfDay: isAllOfDayValue,
-						},
-			),
-		);
-		router.get(fetchURL, queryParams, {
-			preserveScroll: true,
-			preserveState: true,
-			replace: false,
-			/**
-			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
-			 * ? it's related to onSuccess callback error
-			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
-			 **/
-			// only:
-			// 	formType === "create"
-			// 		? []
-			// 		: ["adminPortal", "flash", "errors", "therapists"],
-			only: [],
-			onStart: () => {
-				onChangeTherapistLoading(true);
-				onResetTherapistOptions();
-				onResetIsoline();
-				// reset the therapist form values
-				onResetTherapistFormValue();
-			},
-			onFinish: () => {
-				setTimeout(() => {
-					onChangeTherapistLoading(false);
-				}, 250);
-			},
-			/**
-			 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
-			 * ? This callback will not be called if there is a server error for example on the validation server.
-			 * ? And instead of calling the onSuccess callback it will call the onError callback. but this has been solved.
-			 * ? That is by not using the only option (for example only: [“props”]),
-			 * ? And also instead of using InertiaRails.defer use `->` or lazy data evaluation (https://inertia-rails.dev/guide/partial-reloads#lazy-data-evaluation).
-			 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
-			 *
-			 **/
-			onSuccess: ({ props }) => {
-				const result = (props as unknown as AppointmentNewGlobalPageProps)
-					.therapists;
-				mappingTherapists(result);
-			},
-		});
-	}, [
-		fetchURL,
-		formType,
-		serviceIdValue,
-		preferredTherapistGenderValue,
-		appointmentDateTImeValue,
-		patientValues.locationId,
-		isAllOfDayValue,
-		onResetTherapistOptions,
-		mappingTherapists,
-		onChangeTherapistLoading,
-		onResetTherapistFormValue,
-		onResetIsoline,
-	]);
+					: basePayload;
+
+			const { queryParams } = populateQueryParams(
+				fetchURL,
+				deepTransformKeysToSnakeCase(payload),
+			);
+
+			router.get(fetchURL, queryParams, {
+				preserveScroll: true,
+				preserveState: true,
+				replace: false,
+				/**
+				 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
+				 * ? it's related to onSuccess callback error
+				 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
+				 **/
+				// only:
+				// 	formType === "create"
+				// 		? []
+				// 		: ["adminPortal", "flash", "errors", "therapists"],
+				only: [],
+				onStart: () => {
+					onChangeTherapistLoading(true);
+					onResetTherapistOptions();
+					onResetIsoline();
+					// reset the therapist form values
+					onResetTherapistFormValue();
+				},
+				onFinish: () => {
+					setTimeout(() => {
+						onChangeTherapistLoading(false);
+					}, 250);
+				},
+				/**
+				 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
+				 * ? This callback will not be called if there is a server error for example on the validation server.
+				 * ? And instead of calling the onSuccess callback it will call the onError callback. but this has been solved.
+				 * ? That is by not using the only option (for example only: [“props”]),
+				 * ? And also instead of using InertiaRails.defer use `->` or lazy data evaluation (https://inertia-rails.dev/guide/partial-reloads#lazy-data-evaluation).
+				 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
+				 *
+				 **/
+				onSuccess: ({ props }) => {
+					const result = (props as unknown as AppointmentNewGlobalPageProps)
+						.therapists;
+					mappingTherapists(result, { bypassConstraints });
+				},
+			});
+		},
+		[
+			fetchURL,
+			formType,
+			serviceIdValue,
+			preferredTherapistGenderValue,
+			appointmentDateTImeValue,
+			patientValues.locationId,
+			isAllOfDayValue,
+			onResetTherapistOptions,
+			mappingTherapists,
+			onChangeTherapistLoading,
+			onResetTherapistFormValue,
+			onResetIsoline,
+		],
+	);
 
 	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
 	useEffect(() => {
@@ -1310,5 +1460,6 @@ export const useTherapistAvailability = ({
 		generateMarkerDataPatient,
 		generateMarkerDataTherapist,
 		feasibilityReport,
+		setFeasibilityReport,
 	};
 };

@@ -30,13 +30,20 @@ import {
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/kibo-ui/spinner";
 import { Switch } from "@/components/ui/switch";
-import type { TherapistOption } from "@/hooks/admin-portal/appointment/use-appointment-utils";
+import type {
+	FeasibilityReportItem,
+	TherapistOption,
+} from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import type { IsolineConstraint, MarkerData } from "@/hooks/here-maps";
 import { useTherapistMarker } from "@/hooks/here-maps/use-markers";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import { getBadgeVariantStatus } from "@/lib/appointments/utils";
-import { ISOLINE_CONSTRAINTS, MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
+import {
+	ISOLINE_CONSTRAINTS,
+	MAP_DEFAULT_COORDINATE,
+	SESSION_MARKERS_KEY,
+} from "@/lib/here-maps";
 import { populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import type { Coordinate, IsolineResult } from "@/types/here-maps";
@@ -136,9 +143,19 @@ const useSeriesVisitForm = (index: number) => {
 	// Therapist marker icons
 	const markerIcon = useTherapistMarker();
 
+	// Marker storage for session
+	const [_markerStorage, setMarkerStorage] = useSessionStorage<null | {
+		patient: MarkerData[];
+	}>(SESSION_MARKERS_KEY, null);
+
 	// For assigning the therapist
 	const [isTherapistFound, setIsTherapistFound] = useState(false);
 	const [isIsolineCalculated, setIsIsolineCalculated] = useState(false);
+
+	// State for feasibility report
+	const [feasibilityReport, setFeasibilityReport] = useState<
+		FeasibilityReportItem[]
+	>([]);
 
 	// Therapist selection handlers
 	const onSelectTherapist = useCallback(
@@ -326,7 +343,12 @@ const useSeriesVisitForm = (index: number) => {
 	);
 
 	const onCalculateIsoline = useCallback(
-		async (therapists: NonNullable<TherapistOption[]>) => {
+		async (
+			therapists: NonNullable<TherapistOption[]>,
+			unavailableTherapists: TherapistOption[] = [],
+			options?: { bypassConstraints?: boolean },
+		) => {
+			const { bypassConstraints = false } = options ?? {};
 			if (!mapRef.current) return;
 
 			const {
@@ -335,6 +357,71 @@ const useSeriesVisitForm = (index: number) => {
 				address: patientAddress,
 			} = watchPatientDetailsValue;
 			const patientCoords = { lat: latitude, lng: longitude };
+
+			// If bypassing constraints, treat all available therapists as feasible
+			if (bypassConstraints) {
+				const therapistList = {
+					feasible: therapists,
+					notFeasible: [] as TherapistOption[],
+				};
+				const allNotFeasibleReports: FeasibilityReportItem[] =
+					unavailableTherapists.map((t) => ({
+						name: t.name,
+						regNumber: t.registrationNumber,
+						reason: t.availabilityDetails?.reasons?.join(", ") || "Unavailable",
+						type: "unavailable" as const,
+					}));
+
+				// Update state
+				setFeasibilityReport(allNotFeasibleReports);
+				setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
+				setIsTherapistFound(true);
+
+				// Add patient marker
+				const markerPatientData: MarkerData = generateMarkerDataPatient({
+					address: patientAddress,
+					position: patientCoords,
+					patient: watchPatientDetailsValue,
+				});
+				mapRef.current.marker.onAdd([markerPatientData]);
+				setMarkerStorage({ patient: [markerPatientData] });
+
+				// Add all available therapist markers
+				const markerTherapistData = therapists
+					.map((t) => {
+						if (!t?.activeAddress) return null;
+						const prev = t.availabilityDetails?.locations?.prevAppointment;
+						let lat: number;
+						let lng: number;
+						let address: string;
+						if (prev) {
+							lat = prev.latitude;
+							lng = prev.longitude;
+							address = prev.address;
+						} else if (t.activeAddress) {
+							lat = t.activeAddress.latitude;
+							lng = t.activeAddress.longitude;
+							address = t.activeAddress.address;
+						} else {
+							return null;
+						}
+						return generateMarkerDataTherapist({
+							address,
+							position: { lat, lng },
+							therapist: t,
+						});
+					})
+					.filter(
+						(coord): coord is NonNullable<typeof coord> => coord !== null,
+					);
+				mapRef.current.marker.onAdd(markerTherapistData, {
+					isSecondary: true,
+					useRouting: true,
+				});
+
+				setIsIsolineCalculated(true);
+				return;
+			}
 
 			// Group therapists by their constraints
 			const therapistGroups = groupTherapistsByConstraints(therapists);
@@ -449,6 +536,7 @@ const useSeriesVisitForm = (index: number) => {
 		[
 			watchPatientDetailsValue,
 			setIsolineStorage,
+			setMarkerStorage,
 			generateMarkerDataPatient,
 			generateMarkerDataTherapist,
 			groupTherapistsByConstraints,
@@ -456,20 +544,24 @@ const useSeriesVisitForm = (index: number) => {
 		],
 	);
 
-	// Map available and unavailable therapists
+	// map the available and unavailable therapists, then also calculate the isoline
 	const mappingTherapists = useCallback(
-		(therapists: TherapistOption[] | undefined) => {
+		(
+			therapists: TherapistOption[] | undefined,
+			options?: { bypassConstraints?: boolean },
+		) => {
 			const therapistsAvailable =
 				therapists?.filter((t) => t.availabilityDetails?.available) || [];
 			const therapistsUnavailable =
 				therapists?.filter((t) => !t.availabilityDetails?.available) || [];
+
 			setTherapistsOptions((prev) => ({
 				...prev,
 				available: therapistsAvailable,
 				unavailable: therapistsUnavailable,
 			}));
 			if (therapistsAvailable?.length) {
-				onCalculateIsoline(therapistsAvailable);
+				onCalculateIsoline(therapistsAvailable, therapistsUnavailable, options);
 			} else {
 				setIsTherapistFound(true);
 			}
@@ -478,42 +570,42 @@ const useSeriesVisitForm = (index: number) => {
 	);
 
 	// Find therapists handler (skip backend for now)
-	const onFindTherapists = useCallback(async () => {
-		try {
-			setIsLoading((prev) => ({ ...prev, therapists: true }));
-			onResetAllTherapistState();
-			const url = globalProps.adminPortal.router.api.therapists.feasible;
-			const params = deepTransformKeysToSnakeCase({
-				locationId: watchPatientDetailsValue.location.id,
-				serviceId: watchMainServiceValue,
-				appointmentDateTime: watchAppointmentDateTimeValue,
-				preferredTherapistGender: watchPreferredTherapistGenderValue,
-				isAllOfDay: watchAllOfDayValue,
-			});
-			const { fullUrl } = populateQueryParams(url, params);
-			const response = await fetch(fullUrl);
-			const data = await response.json();
+	const onFindTherapists = useCallback(
+		async (options?: { bypassConstraints?: boolean }) => {
+			try {
+				setIsLoading((prev) => ({ ...prev, therapists: true }));
+				onResetAllTherapistState();
+				const url = globalProps.adminPortal.router.api.therapists.feasible;
+				const { bypassConstraints = false } = options ?? {};
+				const params = deepTransformKeysToSnakeCase({
+					locationId: watchPatientDetailsValue.location.id,
+					serviceId: watchMainServiceValue,
+					appointmentDateTime: watchAppointmentDateTimeValue,
+					preferredTherapistGender: watchPreferredTherapistGenderValue,
+					isAllOfDay: watchAllOfDayValue,
+				});
+				const { fullUrl } = populateQueryParams(url, params);
+				const response = await fetch(fullUrl);
+				const data = await response.json();
 
-			mappingTherapists(data || []);
-		} catch (error) {
-			console.error("Error finding therapists:", error);
-			mappingTherapists([]);
-			setIsLoading((prev) => ({ ...prev, therapists: false }));
-		} finally {
-			setTimeout(() => {
+				mappingTherapists(data || [], { bypassConstraints });
+			} catch (error) {
+				console.error("Error finding therapists:", error);
+			} finally {
 				setIsLoading((prev) => ({ ...prev, therapists: false }));
-			}, 250);
-		}
-	}, [
-		globalProps,
-		watchMainServiceValue,
-		watchAppointmentDateTimeValue,
-		watchPreferredTherapistGenderValue,
-		watchAllOfDayValue,
-		watchPatientDetailsValue,
-		onResetAllTherapistState,
-		mappingTherapists,
-	]);
+			}
+		},
+		[
+			watchPatientDetailsValue.location.id,
+			watchMainServiceValue,
+			watchAppointmentDateTimeValue,
+			watchPreferredTherapistGenderValue,
+			watchAllOfDayValue,
+			mappingTherapists,
+			onResetAllTherapistState,
+			globalProps.adminPortal.router.api.therapists.feasible,
+		],
+	);
 
 	// Time slot selection
 	const watchSelectedTimeSlotValue = useMemo(() => {
@@ -679,6 +771,7 @@ const useSeriesVisitForm = (index: number) => {
 		generateMarkerDataTherapist,
 		formSelections,
 		watchPreferredTherapistGenderValue,
+		feasibilityReport,
 	};
 };
 
@@ -956,6 +1049,7 @@ const VisitForm = ({
 		onSelectAllOfDay,
 		onResetAllTherapistState,
 		formSelections,
+		feasibilityReport,
 	} = useSeriesVisitForm(index);
 
 	// reset the therapist selected and isoline map while reset the visit
@@ -1119,6 +1213,7 @@ const VisitForm = ({
 										isDisabled: !watchAppointmentDateTimeValue,
 										handler: onFindTherapists,
 									}}
+									unfeasibleTherapists={feasibilityReport}
 									onSelectTherapist={onSelectTherapist}
 									onPersist={onPersistTherapist}
 									onSelectTimeSlot={onSelectTimeSlot}

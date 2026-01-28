@@ -1098,11 +1098,13 @@ export function AppointmentSchedulingForm() {
 												find={{
 													isDisabled:
 														!watchAppointmentSchedulingValue.appointmentDateTime,
-													handler: async () => {
+													handler: async (options?: {
+														bypassConstraints?: boolean;
+													}) => {
 														const isError = onCheckServiceError();
 														if (isError) return;
 
-														onFindTherapists();
+														onFindTherapists(options);
 													},
 												}}
 												unfeasibleTherapists={feasibilityReport}

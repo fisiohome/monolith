@@ -155,6 +155,7 @@ class Appointment < ApplicationRecord
 
   # Automatic status determination for new records
   before_validation :set_auto_status, on: :create
+  before_validation :normalize_preferred_therapist_gender
 
   # before every update, clear the details if the status is on hold
   before_save :clear_details_if_on_hold, if: -> { will_save_change_to_status? && status_on_hold? }
@@ -164,6 +165,16 @@ class Appointment < ApplicationRecord
   after_commit :snapshot_address_history, on: [:create]
   after_commit :snapshot_package_history, on: [:create]
   after_commit :track_status_change, on: [:create, :update], if: -> { saved_change_to_status? && updater.present? }
+
+  def preferred_therapist_gender=(value)
+    normalized = (value == "OTHER") ? "NO PREFERENCE" : value
+    super(normalized)
+  end
+
+  def preferred_therapist_gender
+    value = super
+    (value == "OTHER") ? "NO PREFERENCE" : value
+  end
 
   # * define the validations
   validates :registration_number, uniqueness: {scope: :visit_number}
@@ -625,6 +636,12 @@ class Appointment < ApplicationRecord
 
   private
 
+  def normalize_preferred_therapist_gender
+    return if preferred_therapist_gender.blank?
+
+    self.preferred_therapist_gender = "NO PREFERENCE" if preferred_therapist_gender == "OTHER"
+  end
+
   def clear_details_if_on_hold
     self.appointment_date_time = nil
     self.therapist_id = nil
@@ -775,6 +792,20 @@ class Appointment < ApplicationRecord
       return true
     end
 
+    # Check that this visit is scheduled after the previous visit in the series
+    prev_visit = previous_scheduled_visit(initial)
+    if prev_visit && appointment_date_time <= prev_visit.appointment_date_time
+      errors.add(:appointment_date_time, "must be after visit #{prev_visit.visit_number}")
+      return true
+    end
+
+    # Check that this visit is scheduled before the next visit in the series
+    next_visit = next_scheduled_visit(initial)
+    if next_visit && appointment_date_time >= next_visit.appointment_date_time
+      errors.add(:appointment_date_time, "must be before visit #{next_visit.visit_number}")
+      return true
+    end
+
     # Dynamic ordering: Instead of enforcing strict chronological order,
     # only prevent scheduling at overlapping times with other visits
     validate_no_overlapping_visits(initial)
@@ -810,6 +841,33 @@ class Appointment < ApplicationRecord
     end
 
     false
+  end
+
+  # Returns all scheduled visits in the series except the current one
+  # @param initial [Appointment] the initial/root appointment of the series
+  # @return [Array<Appointment>] siblings with scheduled appointment times
+  def series_siblings(initial)
+    ([initial] + initial.series_appointments.to_a)
+      .reject { |appt| appt.id == id }
+      .select { |appt| appt.appointment_date_time.present? }
+  end
+
+  # Finds the most recent scheduled visit before the current one in visit order
+  # @param initial [Appointment] the initial/root appointment of the series
+  # @return [Appointment, nil] the previous scheduled visit or nil if none exists
+  def previous_scheduled_visit(initial)
+    series_siblings(initial)
+      .select { |appt| appt.visit_number < visit_number }
+      .max_by(&:visit_number)
+  end
+
+  # Finds the next scheduled visit after the current one in visit order
+  # @param initial [Appointment] the initial/root appointment of the series
+  # @return [Appointment, nil] the next scheduled visit or nil if none exists
+  def next_scheduled_visit(initial)
+    series_siblings(initial)
+      .select { |appt| appt.visit_number > visit_number }
+      .min_by(&:visit_number)
   end
 
   # Enforce that paid appointments must have a therapist when rescheduling

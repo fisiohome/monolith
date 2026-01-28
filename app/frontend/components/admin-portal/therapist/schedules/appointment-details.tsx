@@ -147,7 +147,7 @@ export function AppointmentDetailsSection({
 			<div className="grid gap-4 md:grid-cols-2">
 				<div>
 					<p className="font-light">{t("list.preferred_therapist_gender")}:</p>
-					<p className="flex gap-1 font-semibold uppercase">
+					<p className="flex items-center gap-1 font-semibold uppercase">
 						{getGenderIcon(appointment.preferredTherapistGender)}{" "}
 						{appointment.preferredTherapistGender}
 					</p>

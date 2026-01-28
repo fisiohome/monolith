@@ -261,6 +261,20 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_equal expected, appt.total_duration_minutes
   end
 
+  test "preferred therapist gender OTHER normalizes to NO PREFERENCE" do
+    appt = Appointment.create!(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 9),
+      preferred_therapist_gender: "OTHER"
+    )
+
+    assert_equal "NO PREFERENCE", appt.preferred_therapist_gender
+  end
+
   test "requires a therapist when marking an appointment paid, about validate_paid_requires_therapist" do
     appt = Appointment.create!(
       therapist: @therapist,
@@ -973,6 +987,7 @@ class AppointmentTest < ActiveSupport::TestCase
     second = initial.series_appointments.find_by(visit_number: 2)
     second.appointment_date_time = @future_time + 6.days
     second.therapist = @therapist
+    second.status = :pending_patient_approval
 
     assert_not second.valid?
     assert_includes second.errors[:appointment_date_time].join, "must be before visit 3"

@@ -346,7 +346,8 @@ export const RescheduleFields = memo(function Component({
 								}}
 								find={{
 									isDisabled: !formHooks.watchAppointmentDateTimeValue,
-									handler: async () => await formHooks.onFindTherapists(),
+									handler: async (options?: { bypassConstraints?: boolean }) =>
+										await formHooks.onFindTherapists(options),
 								}}
 								onSelectTherapist={(value) =>
 									formHooks.onSelectTherapist(value)

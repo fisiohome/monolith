@@ -36,6 +36,7 @@ class Patient < ApplicationRecord
   accepts_nested_attributes_for :patient_addresses
 
   # * cycle callbacks
+  before_validation :assign_patient_number, on: :create
   before_destroy :destroy_associated_addresses
 
   # * define the enums
@@ -66,6 +67,28 @@ class Patient < ApplicationRecord
   end
 
   private
+
+  def assign_patient_number
+    return if patient_number.present?
+
+    self.patient_number = generate_patient_number
+  end
+
+  def generate_patient_number
+    prefix = "FH-P-"
+    number_width = 7
+
+    Patient.transaction do
+      last_number = Patient.lock.order(patient_number: :desc).limit(1).pick(:patient_number)
+      next_sequence = if last_number.present?
+        last_number.split("-").last.to_i + 1
+      else
+        1
+      end
+
+      format("%s%0*d", prefix, number_width, next_sequence)
+    end
+  end
 
   def date_of_birth_in_the_past
     return if date_of_birth.blank?

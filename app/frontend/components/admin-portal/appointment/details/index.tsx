@@ -180,7 +180,7 @@ const AppointmentListItemDetails = memo(function Component({
 
 				<div>
 					<p className="font-light">{t("list.preferred_therapist_gender")}:</p>
-					<p className="flex gap-1 font-semibold uppercase">
+					<p className="flex items-center gap-1 font-semibold uppercase">
 						{getGenderIcon(schedule.preferredTherapistGender)}{" "}
 						{schedule.preferredTherapistGender}
 					</p>
