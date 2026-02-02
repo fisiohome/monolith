@@ -2,7 +2,14 @@ class FeatureFlagChecker
   TELEGRAM_BROADCASTS_KEY = "TELEGRAM_BROADCASTS"
 
   def self.enabled?(key, env: FeatureFlag.environment_for_current_rails_env)
-    new(env: env).enabled?(key)
+    return false unless key
+
+    begin
+      new(env: env).enabled?(key)
+    rescue => e
+      Rails.logger.error("[FeatureFlagChecker] Error checking #{key}: #{e.message}")
+      false
+    end
   end
 
   def initialize(service: AdminPortal::FeatureFlagsService.new, env: FeatureFlag.environment_for_current_rails_env)

@@ -706,6 +706,7 @@ function TherapistSlot({
 					therapist={therapist}
 					appointment={appointment}
 					isPastTime={isPastTime}
+					isRedirect={true}
 				/>
 			))}
 		</div>
@@ -770,6 +771,7 @@ export interface AppointmentBlockProps extends ComponentProps<"div"> {
 	therapist: Therapist;
 	slotHeight?: number;
 	intervalMinutes?: number;
+	isRedirect?: boolean;
 }
 
 export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
@@ -779,6 +781,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 	slotHeight = SLOT_HEIGHT,
 	intervalMinutes = INTERVAL_MINUTES,
 	className,
+	isRedirect,
 }) => {
 	const isMobile = useIsMobile();
 	const { locale, tzDate, timeFormatDateFns, timeFormat } = useDateContext();
@@ -864,6 +867,51 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 	const therapistDetails = useMemo(() => therapist, [therapist]);
 	const picList = useMemo(() => appointment.admins, [appointment.admins]);
 
+	if (isRedirect) {
+		return (
+			<Button
+				variant="link"
+				className={cn(
+					"absolute left-1 right-1 z-20 p-2 rounded shadow cursor-pointer inset-2 border border-border h-full",
+					blockColor,
+					className,
+					isPastTime && "opacity-75",
+				)}
+				style={{
+					top: `${topOffset}px`, // set the offset from the top
+					height: `${heightBlock}px`,
+				}}
+				onClick={() => {
+					window.open(
+						`/admin-portal/appointments?registration_number=${appointment.registrationNumber}`,
+						"_blank",
+					);
+				}}
+			>
+				<div className="flex flex-col items-start justify-between w-full h-full text-xs line-clamp-1">
+					<div className="w-full space-y-0.5 text-left">
+						<div className="flex gap-1">
+							<p className="flex items-center gap-0.5 uppercase font-bold text-[10px]">
+								<Hash className="!size-2.5" />
+								<span>{appointment.registrationNumber}</span>
+							</p>
+
+							<span>&bull;</span>
+
+							<p className="font-light">Visit {appointment.visitProgress}</p>
+						</div>
+
+						<p className="font-semibold tracking-wide uppercase">
+							{appointment.patient?.name}
+						</p>
+					</div>
+
+					<p className="font-light uppercase">{appointmentTime}</p>
+				</div>
+			</Button>
+		);
+	}
+
 	return (
 		<Sheet>
 			<SheetTrigger asChild>
@@ -879,9 +927,7 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 						top: `${topOffset}px`, // set the offset from the top
 						height: `${heightBlock}px`,
 					}}
-					onClick={() => {
-						console.log(appointment);
-					}}
+					onClick={() => {}}
 				>
 					<div className="flex flex-col items-start justify-between w-full h-full text-xs line-clamp-1">
 						<div className="w-full space-y-0.5 text-left">

@@ -169,11 +169,11 @@ module AdminPortal
         packages_data = service.packages.map do |package|
           if is_admin
             package.attributes.merge(
-              formatted_price_per_visit: package.formatted_price_per_visit,
-              formatted_total_price: package.formatted_total_price,
-              formatted_fee_per_visit: package.formatted_fee_per_visit,
-              formatted_total_fee: package.formatted_total_fee,
-              formatted_discount: package.formatted_discount
+              formatted_price_per_visit: package&.formatted_price_per_visit,
+              formatted_total_price: package&.formatted_total_price,
+              formatted_fee_per_visit: package&.formatted_fee_per_visit,
+              formatted_total_fee: package&.formatted_total_fee,
+              formatted_discount: package&.formatted_discount
             )
           else
             package.attributes.merge(

@@ -121,6 +121,11 @@ module InertiaAdminPortal
   end
 
   def telegram_broadcast_feature_flag_enabled?
-    @telegram_broadcast_feature_flag_enabled ||= FeatureFlagChecker.enabled?(FeatureFlagChecker::TELEGRAM_BROADCASTS_KEY)
+    @telegram_broadcast_feature_flag_enabled ||= begin
+      FeatureFlagChecker.enabled?(FeatureFlagChecker::TELEGRAM_BROADCASTS_KEY)
+    rescue => e
+      Rails.logger.error("[FeatureFlagChecker] Error checking TELEGRAM_BROADCASTS flag: #{e.message}")
+      false
+    end
   end
 end

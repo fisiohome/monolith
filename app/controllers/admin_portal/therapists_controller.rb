@@ -219,6 +219,19 @@ module AdminPortal
         .by_city(city_params)
         .by_employment_type(employment_type)
         .employment_status_ACTIVE
+        .includes(
+          appointments: [
+            :patient,
+            :service,
+            :package,
+            :package_history,
+            :location,
+            :admins,
+            :patient_medical_record,
+            :address_history,
+            reference_appointment: :package_history
+          ]
+        )
         .where(
           # Filter therapists based on appointment date and allowed advance booking days.
           # Include therapists without a defined limit or within allowed booking window.
@@ -261,6 +274,7 @@ module AdminPortal
                 include_addresses: false,
                 include_availability: true,
                 include_active_appointments: true,
+                include_packages_formatted: true,
                 appointment_date: date_params
               }
             )

@@ -15,22 +15,24 @@ module ServicesHelper
       # include the packages
       if options[:include_packages]
         serialized_service["packages"] = service.packages.map do |package|
+          next nil if package.nil?
+
           package_data = package.as_json(
             only: options[:only_packages] || nil
           )
 
           if options[:include_packages_formatted]
             package_data.merge!(
-              formatted_price_per_visit: package.formatted_price_per_visit,
-              formatted_total_price: package.formatted_total_price,
-              formatted_fee_per_visit: package.formatted_fee_per_visit,
-              formatted_total_fee: package.formatted_total_fee,
-              formatted_discount: package.formatted_discount
+              formatted_price_per_visit: package&.formatted_price_per_visit,
+              formatted_total_price: package&.formatted_total_price,
+              formatted_fee_per_visit: package&.formatted_fee_per_visit,
+              formatted_total_fee: package&.formatted_total_fee,
+              formatted_discount: package&.formatted_discount
             )
           end
 
           package_data
-        end
+        end.compact
       end
 
       # get the prices total grouping by currencies

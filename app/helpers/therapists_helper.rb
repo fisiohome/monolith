@@ -109,6 +109,12 @@ module TherapistsHelper
         end
 
         therapist_serialize["active_appointments"] = appointments.map do |appointment|
+          # Use the correct package_history based on whether this is a reference appointment or not
+          package_history = appointment.appointment_reference_id.nil? ? appointment.package_history : appointment.reference_appointment_package_history
+
+          # Fallback to current package if history is not available
+          package_to_serialize = package_history || appointment.package
+
           appointment.attributes.merge(
             start_time: appointment.start_time,
             end_time: appointment.end_time,
@@ -117,7 +123,7 @@ module TherapistsHelper
             patient: serialize_patient(appointment.patient),
             admins: serialize_admin(appointment.admins),
             package: serialize_package(
-              appointment.package_history,
+              package_to_serialize,
               options.fetch(:package_options, options.slice(:include_packages_formatted))
             ),
             voucher_discount: appointment.voucher_discount,
