@@ -68,6 +68,7 @@ Rails.application.routes.draw do
             get "generate-reset-password-url" => "therapists#generate_reset_password_url"
             put "change-password" => "therapists#change_password"
             put "sync-data-master" => "therapists#sync_data_master"
+            get "sync-status" => "therapists#sync_status"
           end
         end
 
@@ -76,6 +77,7 @@ Rails.application.routes.draw do
             get "generate-reset-password-url" => "admins#generate_reset_password_url"
             put "change-password" => "admins#change_password"
             put "sync-data-master" => "admins#sync_data_master"
+            get "sync-status" => "admins#sync_status"
           end
         end
 
@@ -91,6 +93,7 @@ Rails.application.routes.draw do
           collection do
             put "update-status" => "services#update_status"
             put "sync-data-master" => "services#sync_data_master"
+            get "sync-status" => "services#sync_status"
           end
         end
 
@@ -100,6 +103,7 @@ Rails.application.routes.draw do
             put "update-bulk" => "locations#update_bulk"
             delete "delete-bulk" => "locations#destroy_bulk"
             put "sync-data-master" => "locations#sync_data_master"
+            get "sync-status" => "locations#sync_status"
           end
         end
       end

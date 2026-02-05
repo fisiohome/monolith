@@ -285,18 +285,53 @@ module AdminPortal
     end
 
     def sync_data_master
-      sync_response = MasterDataSyncService.new.therapists_and_schedules
-      redirect_path = admin_portal_therapists_path
+      # Enqueue background job
+      MasterDataSyncJob.perform_later(:therapists_and_schedules, current_user&.id)
 
-      if sync_response[:success]
-        results = sync_response[:results]
-        Rails.logger.debug do
-          "Sync Summary - Therapists: Created: #{results[:created]}, Updated: #{results[:updated]}, Skipped: #{results[:skipped]}, Failed: #{results[:failed]}, Schedule Updates: #{results[:schedule_updated]}"
-        end
-        redirect_to redirect_path, notice: sync_response[:message]
-      else
-        redirect_to redirect_path, alert: sync_response[:error]
+      redirect_to admin_portal_therapists_path, notice: "Data sync is running in the background. You'll be notified when it's complete."
+    end
+
+    def sync_status
+      # Ensure user is authenticated
+      unless current_user
+        render json: {status: :error, error: "Authentication required"}, status: :unauthorized
+        return
       end
+
+      status = SyncStatusService.get_latest_sync_status(:therapists_and_schedules)
+
+      if status
+        # Clear the status after retrieving it to prevent repeated notifications
+        # but only after successfully sending the response
+        SyncStatusService.clear_sync_status(:therapists_and_schedules)
+
+        render json: {
+          status: status[:status],
+          completed_at: status[:completed_at],
+          message: status[:result][:success] ? status[:result][:message] : status[:result][:error],
+          results: status[:result][:results]
+        }
+      else
+        # Check if there are any pending or running jobs
+        # In Solid Queue, jobs are running when they have claimed executions
+        pending_jobs = SolidQueue::Job.where(class_name: "MasterDataSyncJob")
+          .where(finished_at: nil)
+          .count
+
+        # Also check for jobs that are currently being executed
+        running_jobs = SolidQueue::ClaimedExecution.joins(:job)
+          .where(solid_queue_jobs: {class_name: "MasterDataSyncJob"})
+          .count
+
+        if pending_jobs > 0 || running_jobs > 0
+          render json: {status: :running, message: "Sync is in progress..."}
+        else
+          render json: {status: :not_found}
+        end
+      end
+    rescue => e
+      Rails.logger.error "Error in sync_status: #{e.class} - #{e.message}"
+      render json: {status: :error, error: "Failed to check sync status"}, status: :internal_server_error
     end
 
     private

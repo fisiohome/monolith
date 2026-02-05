@@ -134,11 +134,49 @@ module AdminPortal
     end
 
     def sync_data_master
-      result = MasterDataSyncService.new.brands_and_packages
-      if result[:success]
-        redirect_to admin_portal_services_path, notice: result[:message]
+      # Enqueue background job
+      MasterDataSyncJob.perform_later(:brands_and_packages, current_user&.id)
+
+      redirect_to admin_portal_services_path, notice: "Data sync is running in the background. You'll be notified when it's complete."
+    end
+
+    def sync_status
+      # Ensure user is authenticated
+      unless current_user
+        render json: {status: :error, error: "Authentication required"}, status: :unauthorized
+        return
+      end
+
+      status = SyncStatusService.get_latest_sync_status(:brands_and_packages)
+
+      if status
+        # Clear the status after retrieving it to prevent repeated notifications
+        # but only after successfully sending the response
+        SyncStatusService.clear_sync_status(:brands_and_packages)
+
+        render json: {
+          status: status[:status],
+          completed_at: status[:completed_at],
+          message: status[:result][:success] ? status[:result][:message] : status[:result][:error],
+          results: status[:result][:results]
+        }
       else
-        redirect_to admin_portal_services_path, alert: result[:error]
+        # Check if there are any pending or running jobs
+        # In Solid Queue, jobs are running when they have claimed executions
+        pending_jobs = SolidQueue::Job.where(class_name: "MasterDataSyncJob")
+          .where(finished_at: nil)
+          .count
+
+        # Also check for jobs that are currently being executed
+        running_jobs = SolidQueue::ClaimedExecution.joins(:job)
+          .where(solid_queue_jobs: {class_name: "MasterDataSyncJob"})
+          .count
+
+        if pending_jobs > 0 || running_jobs > 0
+          render json: {status: "running"}
+        else
+          render json: {status: "not_found"}
+        end
       end
     end
 

@@ -7,6 +7,7 @@ class User < ApplicationRecord
 
   has_one :admin, dependent: :destroy
   has_one :therapist, dependent: :destroy
+  has_many :sync_logs, dependent: :destroy, class_name: "SyncMonolithLogs"
 
   validates :email, presence: true
   validates :email, uniqueness: true

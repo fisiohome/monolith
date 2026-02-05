@@ -195,12 +195,36 @@ module AdminPortal
     end
 
     def sync_data_master
-      result = MasterDataSyncService.new.admins_data
+      # Enqueue background job
+      MasterDataSyncJob.perform_later(:admins_data, current_user&.id)
 
-      if result[:success]
-        redirect_to admin_portal_admins_path, notice: result[:message]
+      redirect_to admin_portal_admins_path, notice: "Data sync is running in the background. You'll be notified when it's complete."
+    end
+
+    def sync_status
+      # Ensure user is authenticated
+      unless current_user
+        render json: {status: :error, error: "Authentication required"}, status: :unauthorized
+        return
+      end
+
+      status = SyncStatusService.get_latest_sync_status(:admins_data)
+
+      if status
+        # Clear the status after retrieving it to prevent repeated notifications
+        # but only after successfully sending the response
+        SyncStatusService.clear_sync_status(:admins_data)
+
+        render json: {
+          status: status[:status],
+          message: status[:result][:message] || status[:result][:error],
+          completed_at: status[:completed_at]
+        }
+      elsif SolidQueue::Job.where("job_class_name = ? AND finished_at IS NULL", "MasterDataSyncJob").exists?
+        # Check if there are any jobs in the queue
+        render json: {status: :running}
       else
-        redirect_to admin_portal_admins_path, alert: result[:error]
+        render json: {status: :idle}
       end
     end
 

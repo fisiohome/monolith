@@ -27,21 +27,66 @@ module AdminPortal
         return {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
       end
 
+      # Track results
+      results = {created: [], updated: [], skipped: [], failed: []}
+
       csv.each do |row|
         country, country_code, state, city = headers.map { |key| row[key]&.strip }
 
-        next if [country, country_code, state, city].any?(&:blank?)
+        if [country, country_code, state, city].any?(&:blank?)
+          results[:skipped] << {city: city || "blank", reason: "Missing required fields"}
+          next
+        end
 
-        Location.create_or_find_by(city:, state:, country_code:) do |location|
-          location.country = country
+        begin
+          # Create or find location
+          location = Location.create_or_find_by(city:, state:, country_code:) do |loc|
+            loc.country = country
+          end
+
+          # Track if it was created or found
+          if location.previously_new_record?
+            results[:created] << {city:, state:, country:}
+          elsif location.saved_change_to_country?
+            # Check if it was updated
+            results[:updated] << {city:, state:, country:}
+          else
+            results[:skipped] << {city:, state:, reason: "No changes needed"}
+          end
+        rescue => e
+          results[:failed] << {city:, state:, error: e.message}
+          Rails.logger.error "Failed to sync location '#{city}, #{state}': #{e.message}"
         end
       end
 
-      Rails.logger.info "Locations sync successfully."
-      {success: true, message: "Synchronized with master data successfully."}
+      # Build detailed message
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      failed_count = results[:failed].count
+      skipped_count = results[:skipped].count
+
+      log_message = "Processed #{csv.count} locations: #{created_count} created, #{updated_count} updated"
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:city]}, #{f[:state]} (#{f[:error]})" }.join(", ")
+        log_message += ", #{failed_count} failed: #{failure_reasons}"
+      end
+      if skipped_count > 0
+        skip_reasons = results[:skipped].map { |s| "#{s[:city] || s[:state]} (#{s[:reason]})" }.join(", ")
+        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+      end
+      log_message += "."
+
+      message = "Processed #{csv.count} locations: #{created_count} created, #{updated_count} updated"
+      message += ", #{failed_count} failed" if failed_count > 0
+      message += ", #{skipped_count} skipped" if skipped_count > 0
+      message += "."
+
+      Rails.logger.info log_message
+      {success: true, message:, log_message:, results:}
     rescue => e
-      Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
-      {success: false, error: "An error occurred while syncing data."}
+      error_message = "Error syncing locations: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, log_message: error_message, results: {}}
     end
 
     def admins_data
@@ -55,40 +100,114 @@ module AdminPortal
         return {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
       end
 
+      # Track results
+      results = {created: [], updated: [], skipped: [], failed: []}
+
       csv.each do |row|
         name, email, admin_type = headers.map { |key| row[key]&.strip }
         email = email.downcase
 
-        next if [name, email, admin_type].any?(&:blank?)
+        if [name, email, admin_type].any?(&:blank?)
+          results[:skipped] << {email: email || "blank", reason: "Missing required fields"}
+          next
+        end
 
-        # Create or update user
-        user = User.find_or_initialize_by(email:)
-        user.password = "Fisiohome123!" if user.new_record?
-        user.save! if user.changed?
+        begin
+          # Create or update user
+          user = User.find_or_initialize_by(email:)
+          user_created = user.new_record?
+          user.password = "Fisiohome123!" if user.new_record?
+          user.save! if user.changed?
 
-        # Create or update admin
-        admin = Admin.find_or_initialize_by(user_id: user.id)
-        admin.name = name
-        admin.admin_type = admin_type.tr(" ", "_")
+          # Create or update admin
+          admin = Admin.find_or_initialize_by(user_id: user.id)
+          admin_created = admin.new_record?
+          admin.name = name
+          admin.admin_type = admin_type.tr(" ", "_")
+          admin.save! if admin.changed?
 
-        admin.save! if admin.changed?
+          # Track successful operations
+          if admin_created || user_created
+            results[:created] << {name:, email:, admin_type:}
+          elsif admin.changed? || user.changed?
+            results[:updated] << {name:, email:, admin_type:}
+          else
+            results[:skipped] << {name:, email:, reason: "No changes needed"}
+          end
+        rescue => e
+          results[:failed] << {name:, email:, error: e.message}
+          Rails.logger.error "Failed to sync admin '#{email}': #{e.message}"
+        end
       end
 
-      Rails.logger.info "Admins sync successfully."
-      {success: true, message: "Synchronized with master data successfully."}
+      # Build detailed message
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      failed_count = results[:failed].count
+      skipped_count = results[:skipped].count
+
+      log_message = "Processed #{csv.count} admins: #{created_count} created, #{updated_count} updated"
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:email]} (#{f[:error]})" }.join(", ")
+        log_message += ", #{failed_count} failed: #{failure_reasons}"
+      end
+      if skipped_count > 0
+        skip_reasons = results[:skipped].map { |s| "#{s[:email] || s[:name]} (#{s[:reason]})" }.join(", ")
+        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+      end
+      log_message += "."
+
+      message = "Processed #{csv.count} admins: #{created_count} created, #{updated_count} updated"
+      message += ", #{failed_count} failed" if failed_count > 0
+      message += ", #{skipped_count} skipped" if skipped_count > 0
+      message += "."
+
+      Rails.logger.info log_message
+      {success: true, message:, log_message:, results:}
     rescue => e
-      Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
-      {success: false, error: "An error occurred while syncing data."}
+      error_message = "Error syncing admins: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, log_message: error_message, results: {}}
     end
 
     def brands_and_packages
-      result = brands
-      return result unless result[:success]
+      brands_result = brands
+      return brands_result unless brands_result[:success]
 
-      result = packages
-      return result unless result[:success]
+      packages_result = packages
+      return packages_result unless packages_result[:success]
 
-      {success: true, message: "Brands and packages synced successfully."}
+      # Extract counts from results
+      brands_created = brands_result.dig(:results, :created)&.count || 0
+      brands_updated = brands_result.dig(:results, :updated)&.count || 0
+      brands_failed = brands_result.dig(:results, :failed)&.count || 0
+      brands_skipped = brands_result.dig(:results, :skipped)&.count || 0
+
+      packages_created = packages_result.dig(:results, :created)&.count || 0
+      packages_updated = packages_result.dig(:results, :updated)&.count || 0
+      packages_failed = packages_result.dig(:results, :failed)&.count || 0
+      packages_skipped = packages_result.dig(:results, :skipped)&.count || 0
+
+      # Build comprehensive UI message
+      message = "Brands: #{brands_created} created, #{brands_updated} updated"
+      message += ", #{brands_failed} failed" if brands_failed > 0
+      message += ", #{brands_skipped} skipped" if brands_skipped > 0
+      message += ". Packages: #{packages_created} created, #{packages_updated} updated"
+      message += ", #{packages_failed} failed" if packages_failed > 0
+      message += ", #{packages_skipped} skipped" if packages_skipped > 0
+      message += "."
+
+      # Combine messages for logging (with full details)
+      log_message = "#{brands_result[:log_message]} #{packages_result[:log_message]}"
+
+      # Combine results
+      combined_results = {
+        brands: brands_result[:results] || {},
+        packages: packages_result[:results] || {}
+      }
+
+      Rails.logger.info "Brands and packages sync completed. #{log_message}"
+      {success: true, message:, results: combined_results}
     rescue => e
       {success: false, error: "Sync failed: #{e.message}"}
     end
@@ -104,36 +223,74 @@ module AdminPortal
         return {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
       end
 
+      # Track results
+      results = {created: [], updated: [], skipped: [], failed: []}
+
       csv.each do |row|
         name, code, description, locations = headers.map { |key| row[key]&.strip }
         next if [name, code].any?(&:blank?)
 
-        normalized_name = name.upcase.tr(" ", "_")
-        location_names = locations.to_s.split(",").map(&:strip).compact_blank
+        begin
+          normalized_name = name.upcase.tr(" ", "_")
+          service = Service.find_or_initialize_by(name: normalized_name)
+          action = service.new_record? ? :created : :updated
+          service.description = description if service.new_record?
+          service.save! if service.changed?
 
-        service = Service.find_or_initialize_by(name: normalized_name)
-        service.description = description if service.new_record?
-        service.save! if service.changed?
+          # Sync associated locations
+          location_names = locations.to_s.split(",").map(&:strip).compact_blank
 
-        # Sync associated locations
-        location_names.each do |city_name|
-          location = Location.find_by(city: city_name)
-          unless location
-            Rails.logger.warn "Location '#{city_name}' not found, skipping."
-            next
+          location_names.each do |city_name|
+            location = Location.find_by(city: city_name)
+            unless location
+              Rails.logger.warn "Location '#{city_name}' not found, skipping."
+              next
+            end
+
+            location_service = LocationService.find_or_initialize_by(service_id: service.id, location_id: location.id)
+            location_service.active = true if location_service.new_record?
+            location_service.save! if location_service.changed?
           end
 
-          location_service = LocationService.find_or_initialize_by(service_id: service.id, location_id: location.id)
-          location_service.active = true if location_service.new_record?
-          location_service.save! if location_service.changed?
+          # Track successful operations
+          if action == :created
+            results[:created] << {name:, code:}
+          elsif action == :updated
+            results[:updated] << {name:, code:}
+          end
+        rescue => e
+          results[:failed] << {name:, code:, error: e.message}
+          Rails.logger.error "Failed to sync brand '#{name}': #{e.message}"
         end
       end
 
-      Rails.logger.info "Brands sync successfully."
-      {success: true, message: "Synchronized with master data successfully."}
+      # Build detailed message
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      failed_count = results[:failed].count
+      skipped_count = results[:skipped].count
+
+      log_message = "Processed #{csv.count} brands: #{created_count} created, #{updated_count} updated"
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
+        log_message += ", #{failed_count} failed: #{failure_reasons}"
+      end
+      if skipped_count > 0
+        log_message += ", #{skipped_count} skipped"
+      end
+      log_message += "."
+
+      message = "Processed #{csv.count} brands: #{created_count} created, #{updated_count} updated"
+      message += ", #{failed_count} failed" if failed_count > 0
+      message += ", #{skipped_count} skipped" if skipped_count > 0
+      message += "."
+
+      Rails.logger.info log_message
+      {success: true, message:, log_message:, results:}
     rescue => e
-      Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
-      {success: false, error: "An error occurred while syncing data."}
+      error_message = "Error syncing brands: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, log_message: error_message}
     end
 
     def packages
@@ -147,57 +304,90 @@ module AdminPortal
         return {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
       end
 
+      # Track results
+      results = {created: [], updated: [], skipped: [], failed: []}
+
       csv.each do |row|
         brand_name, package_name = headers.map { |key| row[key]&.strip }
         next if [brand_name, package_name].any?(&:blank?)
 
-        normalized_name = brand_name&.upcase&.tr(" ", "_")
-        service = Service.find_by(name: normalized_name)
+        begin
+          normalized_name = brand_name&.upcase&.tr(" ", "_")
+          service = Service.find_by(name: normalized_name)
 
-        unless service
-          Rails.logger.warn "Service for brand '#{brand_name}' not found, skipping package '#{package_name}'."
-          next
+          unless service
+            Rails.logger.warn "Service for brand '#{brand_name}' not found, skipping."
+            next
+          end
+
+          package_attrs = {
+            name: package_name,
+            number_of_visit: row["Jumlah Visit"]&.strip&.to_i || 1,
+            price_per_visit: row["Harga/Visit"]&.strip&.to_s&.delete(",").to_d || 0,
+            discount: row["Diskon RO/FUM"]&.strip&.to_s&.delete(",").to_d || 0,
+            total_price: row["Total Harga"]&.strip&.to_s&.delete(",").to_d || 0,
+            fee_per_visit: row["Fee Flat/Visit"]&.strip&.to_s&.delete(",").to_d || 0,
+            total_fee: row["Total Fee"]&.strip&.to_s&.delete(",").to_d || 0,
+            currency: row["Currency"]&.strip,
+            active: true
+          }
+          package = Package.find_or_initialize_by(service_id: service.id, name: package_name)
+          action = package.new_record? ? :created : :updated
+          package.assign_attributes(package_attrs)
+          package.save! if package.changed?
+
+          # Track successful operations
+          if action == :created
+            results[:created] << {brand: brand_name, package: package_name}
+          elsif action == :updated
+            results[:updated] << {brand: brand_name, package: package_name}
+          end
+        rescue => e
+          results[:failed] << {brand: brand_name, package: package_name, error: e.message}
+          Rails.logger.error "Failed to sync package '#{package_name}' for brand '#{brand_name}': #{e.message}"
         end
-
-        package_attrs = {
-          name: package_name,
-          number_of_visit: row["Jumlah Visit"]&.strip&.to_i || 1,
-          price_per_visit: row["Harga/Visit"]&.strip&.to_s&.delete(",").to_d || 0,
-          discount: row["Diskon RO/FUM"]&.strip&.to_s&.delete(",").to_d || 0,
-          total_price: row["Total Harga"]&.strip&.to_s&.delete(",").to_d || 0,
-          fee_per_visit: row["Fee Flat/Visit"]&.strip&.to_s&.delete(",").to_d || 0,
-          total_fee: row["Total Fee"]&.strip&.to_s&.delete(",").to_d || 0,
-          currency: row["Currency"]&.strip,
-          active: true
-        }
-        package = Package.find_or_initialize_by(service_id: service.id, name: package_name)
-        package.assign_attributes(package_attrs)
-        package.save! if package.changed?
       end
 
-      Rails.logger.info "Packages sync successfully."
-      {success: true, message: "Synchronized with master data successfully."}
+      # Build detailed message
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      failed_count = results[:failed].count
+      skipped_count = results[:skipped].count
+
+      log_message = "Processed #{csv.count} packages: #{created_count} created, #{updated_count} updated"
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:package]} (#{f[:error]})" }.join(", ")
+        log_message += ", #{failed_count} failed: #{failure_reasons}"
+      end
+      if skipped_count > 0
+        skip_reasons = results[:skipped].group_by { |s| s[:reason] }
+          .map { |reason, items| "#{items.count} #{reason}" }
+          .join(", ")
+        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+      end
+      log_message += "."
+
+      message = "Processed #{csv.count} packages: #{created_count} created, #{updated_count} updated"
+      message += ", #{failed_count} failed" if failed_count > 0
+      message += ", #{skipped_count} skipped" if skipped_count > 0
+      message += "."
+
+      Rails.logger.info log_message
+      {success: true, message:, log_message:, results:}
     rescue => e
-      Rails.logger.error "Error syncing data: #{e.class} - #{e.message}"
-      {success: false, error: "An error occurred while syncing data."}
+      error_message = "Error syncing packages: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, log_message: error_message}
     end
 
-    def therapists_and_schedules
+    def therapists
       # Process therapists CSV
       therapists_csv = fetch_and_parse_csv(gid: THERAPIST_GID)
       required_therapist_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
       validate_headers(therapists_csv, required_therapist_headers)
 
-      # Process therapist_schedules CSV
-      schedules_csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
-      required_schedule_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
-      validate_headers(schedules_csv, required_schedule_headers)
-
-      # Pre-group schedules by therapist name for faster lookup
-      grouped_schedules = schedules_csv.group_by { |row| row["Therapist"]&.strip }
-
       # Track results
-      results = {created: [], updated: [], skipped: [], skipped_flat: [], failed: [], schedule_updated: []}
+      results = {created: [], updated: [], skipped: [], skipped_flat: [], failed: []}
 
       # Process therapists
       therapists_csv.each do |row|
@@ -235,12 +425,9 @@ module AdminPortal
         lng_raw = row["Longitude"]&.strip&.tr(",", ".")
         latitude = Float(lat_raw.presence || 0)
         longitude = Float(lng_raw.presence || 0)
-        coordinates_valid = !(latitude.abs > 90 || longitude.abs > 180 || [latitude, longitude].all?(&:zero?))
 
         begin
           action = :updated
-          therapist = nil
-          schedule_updated = false
 
           ActiveRecord::Base.transaction do
             # Create or update User
@@ -298,42 +485,120 @@ module AdminPortal
             elsif action == :updated
               results[:updated] << {name:, email:}
             end
+          end
+        rescue => e
+          results[:failed] << {name:, email:, error: e.message}
+          next
+        end
+      end
 
-            # Determine reason for skipping schedule
-            skip_reason = if !coordinates_valid
-              # for invalid coordinates
-              "Invalid coordinates, schedule removed"
-            elsif therapist.employment_status == "INACTIVE"
-              # for the inactive therapists
-              "Inactive therapist, schedule removed"
-            end
+      # build results summary
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      skipped_count = results[:skipped].count
+      skipped_flat_count = results[:skipped_flat].count
+      failed_count = results[:failed].count
+      total_count = created_count + updated_count + skipped_count + skipped_flat_count + failed_count
 
-            if skip_reason
-              current_schedule = TherapistAppointmentSchedule.where(therapist:)
-              if current_schedule.exists?
-                current_schedule.destroy_all
-                results[:schedule_updated] << {name:, email:, reason: skip_reason}
-              end
-              next
-            end
+      log_message = "Processed #{total_count} therapists: #{created_count} created, #{updated_count} updated"
+      if skipped_count > 0
+        skip_reasons = results[:skipped].group_by { |s| s[:reason] }
+          .map { |reason, items| "#{items.count} #{reason}" }
+          .join(", ")
+        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+      end
 
-            schedule = TherapistAppointmentSchedule.find_or_initialize_by(therapist:)
-            # all of the default values based on the database default
-            schedule.assign_attributes(
-              appointment_duration_in_minutes: 90,
-              buffer_time_in_minutes: 30,
-              max_advance_booking_in_days: 60,
-              min_booking_before_in_hours: 24,
-              available_now: true
-            )
-            # Set default rules if not present
-            if schedule.availability_rules.blank? || schedule.availability_rules == {}
-              schedule.availability_rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES
-            end
-            schedule.save! if schedule.new_record? || schedule.changed?
+      if skipped_flat_count > 0
+        log_message += ", #{skipped_flat_count} skipped (FLAT)"
+      end
 
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
+        log_message += ", #{failed_count} failed: #{failure_reasons}"
+      end
+
+      log_message += "."
+
+      message = "Processed #{total_count} therapists: #{created_count} created, #{updated_count} updated"
+      message += ", #{skipped_count} skipped" if skipped_count > 0
+      message += ", #{skipped_flat_count} FLAT skipped" if skipped_flat_count > 0
+      message += ", #{failed_count} failed" if failed_count > 0
+      message += "."
+
+      Rails.logger.info log_message
+      {success: true, message:, log_message:, results:}
+    rescue => e
+      error_message = "Error syncing therapists: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, log_message: error_message, results:}
+    end
+
+    def therapist_schedules
+      # Process therapist_schedules CSV
+      schedules_csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
+      required_schedule_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
+      validate_headers(schedules_csv, required_schedule_headers)
+
+      # Pre-group schedules by therapist name for faster lookup
+      grouped_schedules = schedules_csv.group_by { |row| row["Therapist"]&.strip }
+
+      # Track results
+      results = {schedule_updated: [], skipped: [], failed: [], schedules_created: []}
+
+      # Get all therapists (including those without schedules)
+      all_therapists = Therapist.includes(:user).all
+
+      all_therapists.each do |therapist|
+        name = therapist.name
+        email = therapist.user&.email
+
+        # Check if therapist has valid coordinates
+        active_address = therapist.active_address
+        coordinates_valid = active_address && !(active_address.latitude.abs > 90 || active_address.longitude.abs > 180 || [active_address.latitude, active_address.longitude].all?(&:zero?))
+
+        # Check if therapist is inactive or FLAT
+        skip_reason = if !coordinates_valid
+          "Invalid coordinates, schedule removed"
+        elsif therapist.employment_status == "INACTIVE"
+          "Inactive therapist, schedule removed"
+        elsif therapist.employment_type == "FLAT"
+          "FLAT employment type, no schedule"
+        end
+
+        # Get or create schedule
+        schedule_record = TherapistAppointmentSchedule.find_or_initialize_by(therapist:)
+
+        # If skip reason, remove schedule if it exists
+        if skip_reason
+          if schedule_record.persisted?
+            schedule_record.destroy
+            results[:schedule_updated] << {name:, email:, reason: skip_reason}
+          end
+          next
+        end
+
+        # Create new schedule if it doesn't exist
+        if schedule_record.new_record?
+          schedule_record.assign_attributes(
+            appointment_duration_in_minutes: 90,
+            buffer_time_in_minutes: 30,
+            max_advance_booking_in_days: 60,
+            min_booking_before_in_hours: 24,
+            available_now: true
+          )
+          # Set default rules if not present
+          if schedule_record.availability_rules.blank? || schedule_record.availability_rules == {}
+            schedule_record.availability_rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES
+          end
+          schedule_record.save!
+          results[:schedules_created] << {name:, email:}
+        end
+
+        begin
+          schedule_updated = false
+          ActiveRecord::Base.transaction do
             # Apply custom schedule or default
-            existing_availabilities_scope = TherapistWeeklyAvailability.where(therapist_appointment_schedule_id: schedule.id)
+            existing_availabilities_scope = TherapistWeeklyAvailability.where(therapist_appointment_schedule_id: schedule_record.id)
             if grouped_schedules.key?(name)
               # Group by day first
               grouped_schedules[name].group_by { |r| r["Day of Week"]&.strip }.each do |day, rows|
@@ -376,7 +641,7 @@ module AdminPortal
                   day_scope.destroy_all
                   new_slots.each do |slot|
                     TherapistWeeklyAvailability.create!(
-                      therapist_appointment_schedule_id: schedule.id,
+                      therapist_appointment_schedule_id: schedule_record.id,
                       day_of_week: day,
                       start_time: slot[:start_time],
                       end_time: slot[:end_time]
@@ -410,7 +675,7 @@ module AdminPortal
                 # Create default records
                 weekdays.each do |day|
                   TherapistWeeklyAvailability.create!(
-                    therapist_appointment_schedule_id: schedule.id,
+                    therapist_appointment_schedule_id: schedule_record.id,
                     day_of_week: day,
                     start_time: default_start_time,
                     end_time: default_end_time
@@ -430,246 +695,85 @@ module AdminPortal
       end
 
       # Return results
-      created_count = results[:created].count
-      updated_count = results[:updated].count
-      skipped_count = results[:skipped].count + results[:skipped_flat].count
-      failed_count = results[:failed].count
       schedule_updated_count = results[:schedule_updated].count
-      message = "Processed #{created_count + updated_count + skipped_count + failed_count} therapists: " \
-      "#{created_count} created, " \
-      "#{updated_count} updated, " \
-      "#{skipped_count} skipped (#{results[:skipped_flat].count} FLAT), " \
-      "#{failed_count} failed, " \
-      "#{schedule_updated_count} schedule updates."
+      skipped_count = results[:skipped].count
+      failed_count = results[:failed].count
+      schedules_created_count = results[:schedules_created].count
 
-      Rails.logger.info message
-      {success: true, message:, results:}
+      log_message = "Processed schedules: #{schedules_created_count} schedules created, #{schedule_updated_count} schedule updates"
+      if skipped_count > 0
+        skip_reasons = results[:skipped].group_by { |s| s[:reason] }
+          .map { |reason, items| "#{items.count} #{reason}" }
+          .join(", ")
+        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+      end
+
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
+        log_message += ", #{failed_count} failed: #{failure_reasons}"
+      end
+
+      log_message += "."
+
+      message = "Processed schedules: #{schedules_created_count} created, #{schedule_updated_count} updated"
+      message += ", #{skipped_count} skipped" if skipped_count > 0
+      message += ", #{failed_count} failed" if failed_count > 0
+      message += "."
+
+      Rails.logger.info log_message
+      {success: true, message:, log_message:, results:}
+    rescue => e
+      error_message = "Error syncing therapist schedules: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, log_message: error_message, results:}
+    end
+
+    def therapists_and_schedules
+      # First sync therapists
+      therapist_result = therapists
+      return therapist_result unless therapist_result[:success]
+
+      # Then sync schedules
+      schedule_result = therapist_schedules
+      return schedule_result unless schedule_result[:success]
+
+      # Extract counts from results
+      therapists_created = therapist_result.dig(:results, :created)&.count || 0
+      therapists_updated = therapist_result.dig(:results, :updated)&.count || 0
+      therapists_failed = therapist_result.dig(:results, :failed)&.count || 0
+      therapists_skipped = therapist_result.dig(:results, :skipped)&.count || 0
+      therapists_skipped_flat = therapist_result.dig(:results, :skipped_flat)&.count || 0
+
+      schedules_created = schedule_result.dig(:results, :schedules_created)&.count || 0
+      schedules_updated = schedule_result.dig(:results, :schedule_updated)&.count || 0
+      schedules_failed = schedule_result.dig(:results, :failed)&.count || 0
+      schedules_skipped = schedule_result.dig(:results, :skipped)&.count || 0
+
+      # Build comprehensive UI message
+      message = "Therapists: #{therapists_created} created, #{therapists_updated} updated"
+      message += ", #{therapists_failed} failed" if therapists_failed > 0
+      message += ", #{therapists_skipped} skipped" if therapists_skipped > 0
+      message += ", #{therapists_skipped_flat} FLAT skipped" if therapists_skipped_flat > 0
+      message += ". Schedules: #{schedules_created} created, #{schedules_updated} updated"
+      message += ", #{schedules_failed} failed" if schedules_failed > 0
+      message += ", #{schedules_skipped} skipped" if schedules_skipped > 0
+      message += "."
+
+      # Combine messages for logging (with full details)
+      log_message = "#{therapist_result[:log_message]} #{schedule_result[:log_message]}"
+
+      # Combine results
+      combined_results = {
+        therapists: therapist_result[:results] || {},
+        schedules: schedule_result[:results] || {}
+      }
+
+      Rails.logger.info "Therapists and schedules sync completed. #{log_message}"
+      {success: true, message:, log_message:, results: combined_results}
     rescue => e
       error_message = "Error syncing therapists and schedules: #{e.class} - #{e.message}"
       Rails.logger.error error_message
-      {success: false, error: error_message, results:}
-    end
-
-    def therapists
-      csv = fetch_and_parse_csv(gid: THERAPIST_GID)
-      required_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
-      # headers = required_headers.dup + ["Batch", "Modalities", "Specializations", "Bank Name", "Account Number", "Account Holder Name", "Latitude", "Longitude"] # standard:disable Lint/UselessAssignment
-
-      # Validate headers
-      missing_headers = required_headers - csv.headers
-      unless missing_headers.empty?
-        return {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
-      end
-
-      csv.each do |row|
-        # next iterations if name and email are blank or the employment type is "FLAT"
-        name = row["Name"]&.strip
-        email = row["Email"]&.strip&.downcase
-        employment_type = row["Employment Type"]&.strip&.upcase
-        next if [name, email, employment_type].any?(&:blank?) || employment_type === "FLAT"
-
-        # check service validation
-        brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
-        service = Service.find_by(name: brand)
-        unless service
-          Rails.logger.warn "Service for brand '#{brand}' not found, skipping therapist '#{name}'."
-          next
-        end
-
-        # check region validity
-        city = row["City"]&.strip
-        location = Location.find_by(city:)
-        unless location
-          Rails.logger.warn "Location for city '#{city}' not found, skipping therapist '#{name}'."
-          next
-        end
-
-        # check the coordinate validity
-        lat_raw = row["Latitude"]&.strip&.tr(",", ".")
-        lng_raw = row["Longitude"]&.strip&.tr(",", ".")
-        latitude = Float(lat_raw.presence || 0)
-        longitude = Float(lng_raw.presence || 0)
-        invalid_coordinates = (latitude&.abs&.> 90) || (longitude&.abs&.> 180)
-        if invalid_coordinates
-          Rails.logger.warn "Invalid coordinates for '#{name}' (lat: #{latitude}, lng: #{longitude})."
-        end
-
-        phone_number = "+#{row["Phone Number"]&.strip&.to_s}"
-        gender = (row["Gender"]&.strip&.upcase == "L") ? "MALE" : "FEMALE"
-        postal_code = row["Postal Code"]&.strip&.to_s
-        address_line = row["Address Line"]&.strip&.to_s
-        batch = row["Batch"]&.strip&.to_i
-        modalities = row["Modalities"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
-        specializations = row["Specializations"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
-        bank_name = row["Bank Name"]&.strip&.to_s
-        account_number = row["Account Number"]&.strip&.to_s
-        account_holder_name = row["Account Holder Name"]&.strip&.to_s&.upcase
-        employment_status = row["Status"]&.strip
-
-        ActiveRecord::Base.transaction do
-          # Create or update User
-          user = User.find_or_initialize_by(email:)
-          user.password ||= "Fisiohome123!" if user.new_record?
-          user.save! if user.changed?
-
-          # Create or update Address
-          address = Address.find_or_initialize_by(location:, address: address_line)
-          address.assign_attributes(postal_code:, latitude:, longitude:)
-          address.save! if address.changed?
-
-          # Create or update BankDetail
-          bank_detail = BankDetail.find_or_initialize_by(bank_name:, account_number:, account_holder_name:)
-          bank_detail.save! if bank_detail.changed?
-
-          # Create or update Therapist
-          therapist = Therapist.find_or_initialize_by(name:, gender:)
-          therapist.assign_attributes(employment_type:, employment_status:, batch:, modalities:, specializations:, service:, user:, phone_number:)
-          therapist.save! if therapist.changed?
-
-          # Link or create TherapistAddress (one active per therapist)
-          therapist_address = TherapistAddress.find_or_initialize_by(therapist:, address:)
-          therapist_address.active = true if therapist_address.new_record?
-          therapist_address.save! if therapist_address.changed?
-
-          # Link or create TherapistBankDetail (one active per therapist)
-          therapist_bank_detail = TherapistBankDetail.find_or_initialize_by(therapist:, bank_detail:)
-          therapist_bank_detail.active = true if therapist_bank_detail.new_record?
-          therapist_bank_detail.save! if therapist_bank_detail.changed?
-
-          # store the therapist availability
-          if invalid_coordinates || latitude == 0 || longitude == 0
-            # Remove the schedule if it exists but the coordinate are invalid
-            Rails.logger.warn "Removing schedule for therapist '#{name}' due to invalid coordinates."
-            schedule = TherapistAppointmentSchedule.find_by(therapist:)
-            schedule&.destroy
-          else
-            schedule = TherapistAppointmentSchedule.find_or_initialize_by(therapist:)
-            # * all of the default values based on the database default
-            schedule.assign_attributes(
-              appointment_duration_in_minutes: 90,
-              buffer_time_in_minutes: 30,
-              max_advance_booking_in_days: 60,
-              min_booking_before_in_hours: 24,
-              available_now: true
-            )
-            schedule.save! if schedule.changed?
-
-            weekly_times = %w[Monday Tuesday Wednesday Thursday Friday].map do |day|
-              {day_of_week: day, start_time: "09:00".in_time_zone(Time.zone), end_time: "18:00".in_time_zone(Time.zone)}
-            end
-            # save weekly availability if only the schedule is a new record
-            weekly_times.each { |attrs|
-              TherapistWeeklyAvailability.find_or_initialize_by(
-                therapist_appointment_schedule_id: schedule.id,
-                day_of_week: attrs[:day_of_week]
-              ).tap { |a|
-                a.assign_attributes(start_time: attrs[:start_time], end_time: attrs[:end_time])
-                a.save! if a.new_record?
-              }
-            }
-          end
-        rescue => e
-          Rails.logger.warn "Rolled back therapist #{name} due to error: #{e.message}"
-          next
-        end
-      end
-
-      Rails.logger.info "Therapists sync successfully."
-      {success: true, message: "Synchronized with master data successfully."}
-    rescue => e
-      message = "An error occurred while syncing therapists: #{e.class} - #{e.message}"
-      Rails.logger.error message
-      {success: false, error: message}
-    end
-
-    def therapist_schedules
-      csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
-      required_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
-
-      # Validate headers
-      missing_headers = required_headers - csv.headers
-      unless missing_headers.empty?
-        {success: false, error: "CSV headers are incorrect. Missing: #{missing_headers.join(", ")}"}
-      end
-
-      grouped_rows = csv.group_by { |row| [row["Therapist"]&.strip, row["Day of Week"]&.strip] }
-
-      grouped_rows.each do |(therapist_name, day_of_week), rows|
-        therapist = Therapist.find_by(name: therapist_name)
-        unless therapist
-          Rails.logger.warn { "Therapist '#{therapist_name}' not found, skipping schedule." }
-          next
-        end
-
-        active_address = therapist.active_address
-        invalid_coordinates = active_address.nil? || active_address.latitude.abs > 90 || active_address.longitude.abs > 180
-        if invalid_coordinates
-          Rails.logger.warn { "Invalid coordinates for therapist '#{therapist_name}', skipping schedule." }
-          next
-        end
-
-        schedule = TherapistAppointmentSchedule.find_by(therapist:)
-        unless schedule
-          Rails.logger.warn { "Schedule not found for therapist '#{therapist_name}', skipping." }
-          next
-        end
-
-        # Check if it's an OFF day
-        is_off_day = rows.any? { |row| row["Start Time"]&.strip&.upcase == "OFF" || row["End Time"]&.strip&.upcase == "OFF" }
-
-        ActiveRecord::Base.transaction do
-          if is_off_day
-            # If OFF, remove all existing availabilities for this day
-            TherapistWeeklyAvailability.where(
-              therapist_appointment_schedule_id: schedule.id,
-              day_of_week: day_of_week
-            ).delete_all
-            next
-          end
-
-          # Otherwise, prepare new availabilities
-          new_availabilities = rows.map do |row|
-            {
-              start_time: row["Start Time"]&.strip&.in_time_zone(Time.zone),
-              end_time: row["End Time"]&.strip&.in_time_zone(Time.zone)
-            }
-          end
-
-          # Fetch existing availabilities
-          existing = TherapistWeeklyAvailability.where(
-            therapist_appointment_schedule_id: schedule.id,
-            day_of_week: day_of_week
-          ).pluck(:start_time, :end_time)
-
-          # Convert times to string format for comparison (assuming stored as Time objects)
-          existing_set = existing.map { |start_time, end_time| [start_time.strftime("%H:%M").in_time_zone(Time.zone), end_time.strftime("%H:%M").in_time_zone(Time.zone)] }.to_set
-          new_set = new_availabilities.map { |a| [a[:start_time], a[:end_time]] }.to_set
-
-          # If identical, skip
-          next if existing_set == new_set
-
-          # If different, remove old and insert new
-          TherapistWeeklyAvailability.where(
-            therapist_appointment_schedule_id: schedule.id,
-            day_of_week: day_of_week
-          ).delete_all
-
-          new_availabilities.each do |avail|
-            TherapistWeeklyAvailability.create!(
-              therapist_appointment_schedule_id: schedule.id,
-              day_of_week: day_of_week,
-              start_time: avail[:start_time],
-              end_time: avail[:end_time]
-            )
-          end
-        end
-      end
-
-      {success: true, message: "Synchronized with master data successfully."}
-    rescue => e
-      message = "An error occurred while syncing therapist schedules: #{e.class} - #{e.message}"
-      Rails.logger.error message
-      {success: false, error: message}
+      {success: false, error: error_message, log_message: error_message, results:}
     end
 
     def appointments

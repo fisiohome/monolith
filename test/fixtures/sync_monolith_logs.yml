@@ -1,0 +1,31 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: admin_user
+  sync_type: therapists_and_schedules
+  status: completed
+  ui_message: "Therapists: 5 created, 10 updated, 2 failed, 3 skipped. Schedules: 20 created, 5 updated."
+  logger_message: "Therapists sync completed with 5 created, 10 updated, 2 failed, 3 skipped. Schedules sync completed with 20 created, 5 updated."
+  details: "{\"therapists\": {\"created\": 5, \"updated\": 10, \"failed\": 2, \"skipped\": 3}, \"schedules\": {\"created\": 20, \"updated\": 5}}"
+  started_at: 2026-02-03 12:30:00
+  completed_at: 2026-02-03 12:33:25
+
+two:
+  user: super_admin_user
+  sync_type: brands_and_packages
+  status: failed
+  ui_message: "Sync failed: Unable to fetch CSV file"
+  logger_message: "Error syncing brands and packages: Net::ReadTimeout - Unable to fetch CSV file"
+  details: "{\"error\": \"Net::ReadTimeout\", \"backtrace\": [\"app/services/admin_portal/master_data_sync_service.rb:123:in `fetch_and_parse_csv'\"]}"
+  started_at: 2026-02-03 12:35:00
+  completed_at: 2026-02-03 12:35:15
+
+running_sync:
+  user: admin_user
+  sync_type: locations
+  status: running
+  ui_message: ""
+  logger_message: ""
+  details: ""
+  started_at: 2026-02-03 12:40:00
+  completed_at:

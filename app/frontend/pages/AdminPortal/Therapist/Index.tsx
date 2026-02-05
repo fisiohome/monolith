@@ -14,10 +14,11 @@ import {
 	LockIcon,
 	PlusCircle,
 	RefreshCcw,
-	SquarePen,
-	Trash2,
+	SquarePenIcon,
+	Trash2Icon,
+	X,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
@@ -54,6 +55,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useMasterDataSync } from "@/hooks/admin-portal/use-master-data-sync";
 import { useActionPermissions } from "@/hooks/admin-portal/use-therapist-utils";
 import { getGenderIcon } from "@/hooks/use-gender";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -108,31 +110,21 @@ export default function Index({
 	const isMobile = useIsMobile();
 	const { t } = useTranslation("translation");
 	const { t: tt } = useTranslation("therapists");
-	const [isLoading, setIsLoading] = useState({ sync: false });
 
-	// for sync data
-	const doSync = useCallback(() => {
-		const baseURL = `${
-			globalProps.adminPortal.router.adminPortal.therapistManagement.index
-		}/sync-data-master`;
-		router.put(
-			baseURL,
-			{},
-			{
-				preserveScroll: true,
-				preserveState: true,
-				only: ["adminPortal", "flash", "errors", "therapists"],
-				onStart: () => {
-					setIsLoading((prev) => ({ ...prev, sync: true }));
-				},
-				onFinish: () => {
-					setTimeout(() => {
-						setIsLoading((prev) => ({ ...prev, sync: false }));
-					}, 250);
-				},
-			},
-		);
-	}, [globalProps.adminPortal.router.adminPortal.therapistManagement.index]);
+	// Use custom hook for master data sync
+	const onSyncComplete = useCallback(() => {
+		// Refresh therapist data when sync completes
+		router.reload({ only: ["adminPortal", "therapists"] });
+	}, []);
+
+	const { isLoading, syncStatus, triggerSync, clearStatus } = useMasterDataSync(
+		{
+			syncEndpoint: `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}/sync-data-master`,
+			statusEndpoint: `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}/sync-status`,
+			onSyncComplete,
+			autoCheckOnMount: true,
+		},
+	);
 
 	// * data table state management
 	const currentExpanded = useMemo<ExpandedState>(() => {
@@ -541,7 +533,7 @@ export default function Index({
 										<DropdownMenuItem
 											onSelect={() => routeTo.edit(row.original.id)}
 										>
-											<SquarePen />
+											<SquarePenIcon />
 											<span>Edit</span>
 										</DropdownMenuItem>
 									)}
@@ -562,7 +554,7 @@ export default function Index({
 										<DropdownMenuItem
 											onSelect={() => routeTo.delete(row.original.id)}
 										>
-											<Trash2 />
+											<Trash2Icon />
 											<span>Delete</span>
 										</DropdownMenuItem>
 									</>
@@ -589,6 +581,37 @@ export default function Index({
 			<Head title={tt("head_title")} />
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+				{syncStatus.message && (
+					<div
+						className={cn(
+							"p-4 rounded-md border relative",
+							syncStatus.type === "success" &&
+								"bg-green-50 border-green-200 text-green-800",
+							syncStatus.type === "error" &&
+								"bg-red-50 border-red-200 text-red-800",
+							syncStatus.type === "info" &&
+								"bg-blue-50 border-blue-200 text-blue-800",
+						)}
+					>
+						<button
+							onClick={clearStatus}
+							type="button"
+							className="absolute top-2 right-2 p-1 rounded-md hover:bg-black/10 transition-colors"
+							aria-label="Close notification"
+						>
+							<X className="h-4 w-4" />
+						</button>
+						<div className="flex items-center gap-2 pr-8">
+							{syncStatus.type === "info" && (
+								<LoaderIcon className="animate-spin h-4 w-4" />
+							)}
+							{syncStatus.type === "success" && (
+								<RefreshCcw className="h-4 w-4" />
+							)}
+							<span className="text-sm font-medium">{syncStatus.message}</span>
+						</div>
+					</div>
+				)}
 				<div className="flex flex-col justify-between gap-4 md:flex-row">
 					<div>
 						<h1 className="text-lg font-bold tracking-tight uppercase">
@@ -604,13 +627,13 @@ export default function Index({
 						{globalProps?.auth?.currentUser?.["isSuperAdmin?"] && (
 							<Button
 								variant="primary-outline"
-								disabled={isLoading.sync}
+								disabled={isLoading}
 								onClick={(event) => {
 									event.preventDefault();
-									doSync();
+									triggerSync();
 								}}
 							>
-								{isLoading.sync ? (
+								{isLoading ? (
 									<>
 										<LoaderIcon className="animate-spin" />
 										<span>{`${t("components.modal.wait")}...`}</span>
