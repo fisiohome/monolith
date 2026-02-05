@@ -42,6 +42,7 @@ Rails.application.routes.draw do
           collection do
             post "book" => "appointments#create"
             put ":id/cancel" => "appointments#cancel"
+            put ":id/cancel-external" => "appointments#cancel_external"
             put ":id/update-pic" => "appointments#update_pic"
             put ":id/update-status" => "appointments#update_status"
             get ":id/reschedule" => "appointments#reschedule_page", :as => :reschedule_page

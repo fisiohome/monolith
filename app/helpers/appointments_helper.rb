@@ -54,6 +54,11 @@ module AppointmentsHelper
         )
       end
 
+      # Serialize order details
+      if options.fetch(:include_order, false) && appointment.order.present?
+        serialized["order"] = appointment.order.as_json
+      end
+
       # Serialize the patient medical record
       if options.fetch(:include_patient_medical_record, true)
         serialized["patient_medical_record"] = appointment.patient_medical_record.as_json(only: options[:medical_record_only])

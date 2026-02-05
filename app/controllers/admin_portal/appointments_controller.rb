@@ -125,6 +125,8 @@ module AdminPortal
       end
     end
 
+    # DEPRECATED: This method uses internal status update only
+    # Use cancel_external instead to cancel via external API
     def cancel
       Rails.logger.info "Starting process to cancel #{@appointment.registration_number}"
 
@@ -157,6 +159,39 @@ module AdminPortal
         redirect_to(
           admin_portal_appointments_path(request.query_parameters),
           alert: message
+        )
+      end
+    end
+
+    def cancel_external
+      Rails.logger.info "Starting external API cancel process for appointment ID: #{params[:id]}"
+
+      # Find appointment by order ID
+      @appointment = Appointment.joins(:order).find_by(orders: {id: params[:id]})
+
+      unless @appointment
+        Rails.logger.error "Appointment not found for order ID: #{params[:id]}"
+        redirect_to(
+          admin_portal_appointments_path(request.query_parameters),
+          alert: "Appointment not found"
+        )
+        return
+      end
+
+      cancellation_reason = params.dig(:form_data, :reason)
+
+      result = CancelAppointmentServiceExternalApi.new(@appointment, current_user, cancellation_reason).call
+
+      if result[:success]
+        redirect_to(
+          admin_portal_appointments_path(request.query_parameters.except("cancel")),
+          notice: result[:message] || "Appointment cancelled successfully via external API."
+        )
+      else
+        Rails.logger.warn "Failed to cancel appointment #{@appointment.registration_number} via external API: #{result[:error]}"
+        redirect_to(
+          admin_portal_appointments_path(request.query_parameters),
+          alert: result[:error]
         )
       end
     end

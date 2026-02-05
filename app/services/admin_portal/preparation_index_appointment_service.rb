@@ -50,8 +50,8 @@ module AdminPortal
     def fetch_selected_appointment
       return nil if @selected_id.blank?
 
-      appointment = Appointment.find_by(id: @selected_id)
-      deep_transform_keys_to_camel_case(serialize_appointment(appointment))
+      appointment = Appointment.includes(:order).find_by(id: @selected_id)
+      deep_transform_keys_to_camel_case(serialize_appointment(appointment, {include_order: true}))
     end
 
     def fetch_options_data

@@ -57,6 +57,7 @@ export function CancelAppointmentForm({
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
 	const [isLoading, setIsLoading] = useState(false);
+
 	const buttonProps = useMemo<ResponsiveDialogButton>(() => {
 		return {
 			isLoading,
@@ -64,20 +65,32 @@ export function CancelAppointmentForm({
 			submitText: i18n.t("appointments:modal.cancel.button_submit"),
 		};
 	}, [isLoading, forceMode]);
+
 	const formSchema = z.object({
 		id: z.string(),
-		reason: z.string().min(1, "Cancellation reason is required"),
+		orderId: z.string().min(1, "Order ID is required"),
+		reason: z
+			.string()
+			.min(10, "Cancellation reason must be at least 10 characters"),
 	});
+
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			id: selectedAppointment.id,
+			orderId: selectedAppointment.order?.id || "",
 			reason: "",
 		},
 		mode: "onSubmit",
 	});
+
 	const onSubmit = (values: z.infer<typeof formSchema>) => {
-		const routeURL = `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.id}/cancel`;
+		// Use different endpoints based on whether order exists
+		const hasOrder = selectedAppointment.order?.id;
+		const routeURL = hasOrder
+			? `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.orderId}/cancel-external`
+			: `${globalProps.adminPortal.router.adminPortal.appointment.index}/${values.id}/cancel`;
+
 		// populate current query params
 		const { queryParams } = populateQueryParams(pageURL);
 		// generate the submit form url with the source query params
@@ -114,7 +127,7 @@ export function CancelAppointmentForm({
 							<FormControl>
 								<Textarea
 									{...field}
-									placeholder="Enter the cancellation reason..."
+									placeholder="Enter the cancellation reason (minimum 10 characters)..."
 									className="shadow-inner bg-sidebar"
 								/>
 							</FormControl>
