@@ -1,4 +1,4 @@
-import { Deferred, Head, router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { type ContextFn, format, type Locale } from "date-fns";
 import {
@@ -57,7 +57,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, populateQueryParams } from "@/lib/utils";
@@ -191,13 +190,9 @@ export default function Index({
 			if (!featureFlagsIndexRoute) return;
 
 			router.post(
-				featureFlagsIndexRoute,
+				`${featureFlagsIndexRoute}/${flag.key}/toggle`,
 				{
-					feature_flag: {
-						key: flag.key,
-						env: flag.env,
-						is_enabled: !flag.isEnabled,
-					},
+					env: flag.env,
 				},
 				{
 					preserveScroll: true,
@@ -341,12 +336,7 @@ export default function Index({
 					</Button>
 				</div>
 
-				<Deferred
-					data={["featureFlags"]}
-					fallback={<Skeleton className="relative w-full h-32 rounded-xl" />}
-				>
-					<DataTable columns={columns} data={featureFlagsData} />
-				</Deferred>
+				<DataTable columns={columns} data={featureFlagsData} />
 
 				{createFlagDialog.isOpen && (
 					<ResponsiveDialog {...createFlagDialog}>

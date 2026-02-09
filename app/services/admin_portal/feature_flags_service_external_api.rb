@@ -1,5 +1,5 @@
 module AdminPortal
-  class FeatureFlagsService
+  class FeatureFlagsServiceExternalApi
     ENVIRONMENTS = %w[DEV STAGING PROD].freeze
 
     def initialize(client: FisiohomeApi::Client, key_format: :snake)
@@ -18,7 +18,7 @@ module AdminPortal
       if response.success?
         build_response(response.body)
       else
-        Rails.logger.error("[FeatureFlagsService] Failed to fetch feature flags: #{response.status} - #{response.body}")
+        Rails.logger.error("[FeatureFlagsServiceExternalApi] Failed to fetch feature flags: #{response.status} - #{response.body}")
         {feature_flags: []}
       end
     rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
@@ -42,7 +42,7 @@ module AdminPortal
         formatted = deep_transform_keys_format({feature_flag: feature_flag}, format: key_format)
         {success: true, feature_flag: formatted[:feature_flag]}
       else
-        Rails.logger.error("[FeatureFlagsService] Failed to fetch feature flag #{key}/#{env}: #{response.status} - #{response.body}")
+        Rails.logger.error("[FeatureFlagsServiceExternalApi] Failed to fetch feature flag #{key}/#{env}: #{response.status} - #{response.body}")
         errors = normalize_errors(response.body, fallback: "Failed to fetch feature flag.")
         {success: false, errors: format_errors(errors)}
       end
@@ -89,7 +89,7 @@ module AdminPortal
       if response.success?
         {success: true}
       else
-        Rails.logger.error("[FeatureFlagsService] Failed to delete feature flag #{key}/#{env}: #{response.status} - #{response.body}")
+        Rails.logger.error("[FeatureFlagsServiceExternalApi] Failed to delete feature flag #{key}/#{env}: #{response.status} - #{response.body}")
         errors = normalize_errors(response.body, fallback: "Failed to delete feature flag.")
         {success: false, errors: format_errors(errors)}
       end
@@ -277,7 +277,7 @@ module AdminPortal
         formatted = deep_transform_keys_format({feature_flag: feature_flag}, format: key_format)
         {success: true, feature_flag: formatted[:feature_flag]}
       else
-        Rails.logger.error("[FeatureFlagsService] Failed to #{action} feature flag: #{response.status} - #{response.body}")
+        Rails.logger.error("[FeatureFlagsServiceExternalApi] Failed to #{action} feature flag: #{response.status} - #{response.body}")
         errors = normalize_errors(response.body, fallback: "Failed to #{action} feature flag.")
         {success: false, errors: format_errors(errors)}
       end
@@ -301,22 +301,22 @@ module AdminPortal
 
     # Handles exceptions during mutation operations.
     def handle_mutation_exception(action, error)
-      Rails.logger.error("[FeatureFlagsService] #{action.capitalize} feature flag error: #{error.message}")
+      Rails.logger.error("[FeatureFlagsServiceExternalApi] #{action.capitalize} feature flag error: #{error.message}")
       {success: false, errors: format_errors({full_messages: ["Unable to #{action} feature flag. Please try again."]})}
     end
 
     def handle_fetch_network_error(action, error, &fallback)
-      Rails.logger.error("[FeatureFlagsService] Network error when #{action}: #{error.message}")
+      Rails.logger.error("[FeatureFlagsServiceExternalApi] Network error when #{action}: #{error.message}")
       fallback&.call
     end
 
     def handle_fetch_faraday_error(action, error, &fallback)
-      Rails.logger.error("[FeatureFlagsService] Faraday error when #{action}: #{error.message}")
+      Rails.logger.error("[FeatureFlagsServiceExternalApi] Faraday error when #{action}: #{error.message}")
       fallback&.call
     end
 
     def handle_fetch_unexpected_error(action, error, &fallback)
-      Rails.logger.error("[FeatureFlagsService] Unexpected error when #{action}: #{error.message}")
+      Rails.logger.error("[FeatureFlagsServiceExternalApi] Unexpected error when #{action}: #{error.message}")
       fallback&.call
     end
   end

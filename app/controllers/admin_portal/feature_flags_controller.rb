@@ -5,21 +5,41 @@ module AdminPortal
 
     def index
       render inertia: "AdminPortal/FeatureFlag/Index", props: deep_transform_keys_to_camel_case({
-        feature_flags: InertiaRails.defer { deep_transform_keys_to_camel_case_array(feature_flags_list[:feature_flags]) },
-        environments: AdminPortal::FeatureFlagsService::ENVIRONMENTS,
+        feature_flags: deep_transform_keys_to_camel_case_array(feature_flags_list[:feature_flags]),
+        environments: FeatureFlag::ENVIRONMENTS,
         current_env: current_env
       })
     end
 
     def create
       env = requested_env
-      result = feature_flags_service.save(feature_flag_params)
+      params = feature_flag_params
+      # Ensure we have a hash, not an array
+      flag_params = params.is_a?(Array) ? params.first : params
 
-      if result[:success]
-        redirect_to admin_portal_feature_flags_path(env: env), notice: "Feature flag saved successfully."
+      # Create feature flag for all environments
+      results = []
+      FeatureFlag::ENVIRONMENTS.each do |environment|
+        flag = FeatureFlag.new(flag_params)
+        flag.env = environment
+
+        results << if flag.save
+          "#{environment}: created"
+        else
+          "#{environment}: #{flag.errors.full_messages.join(", ")}"
+        end
+      end
+
+      success_count = results.count { |r| r.include?(": created") }
+
+      if success_count == FeatureFlag::ENVIRONMENTS.length
+        redirect_to admin_portal_feature_flags_path(env: env), notice: "Feature flag created successfully in all environments."
+      elsif success_count > 0
+        redirect_to admin_portal_feature_flags_path(env: env),
+          notice: "Feature flag created in #{success_count} environments. Results: #{results.join("; ")}"
       else
         handle_feature_flag_failure(
-          result[:errors],
+          ["Failed to create feature flag: #{results.join("; ")}"],
           redirect_params: {new: "feature_flag", env: env}
         )
       end
@@ -27,29 +47,57 @@ module AdminPortal
 
     def update
       env = requested_env
-      result = feature_flags_service.save(feature_flag_params)
+      params_array = feature_flag_params
+      # Ensure we have a hash, not an array
+      flag_params = params_array.is_a?(Array) ? params_array.first : params_array
 
-      if result[:success]
+      flag = FeatureFlag.find_flag(params[:id], env)
+
+      if flag&.update(flag_params)
         redirect_to admin_portal_feature_flags_path(env: env), notice: "Feature flag updated successfully."
       else
         handle_feature_flag_failure(
-          result[:errors],
+          flag&.errors&.full_messages || ["Feature flag not found"],
           redirect_params: {edit: params[:id], env: env}
         )
       end
+    end
+
+    def toggle
+      key = params[:id]
+      env = params[:env] || current_env
+      flag = FeatureFlag.find_flag(key, env)
+
+      if flag
+        previous_state = flag.is_enabled
+        flag.toggle!
+
+        redirect_to admin_portal_feature_flags_path(env: env),
+          notice: "Feature flag '#{key}' #{previous_state ? "disabled" : "enabled"} successfully."
+      else
+        handle_feature_flag_failure(
+          ["Feature flag not found"],
+          redirect_params: {env: env}
+        )
+      end
+    rescue => e
+      handle_feature_flag_failure(
+        [e.message],
+        redirect_params: {env: env}
+      )
     end
 
     def destroy
       key = params[:id]
       env = params[:env] || current_env
 
-      result = feature_flags_service.destroy_all_environments(key)
+      flags = FeatureFlag.where(key: key)
 
-      if result[:success]
+      if flags.destroy_all
         redirect_to admin_portal_feature_flags_path(env: env), notice: "Feature flag deleted from all environments."
       else
         handle_feature_flag_failure(
-          result[:errors],
+          ["Failed to delete feature flag"],
           redirect_params: {env: env}
         )
       end
@@ -57,16 +105,15 @@ module AdminPortal
 
     private
 
-    def feature_flags_service
-      @feature_flags_service ||= AdminPortal::FeatureFlagsService.new
-    end
-
     def deep_transform_keys_to_camel_case_array(collection)
       Array.wrap(collection).map { |item| deep_transform_keys_to_camel_case(item) }
     end
 
     def feature_flags_list
-      @feature_flags_list ||= feature_flags_service.list(env: current_env)
+      @feature_flags_list ||= begin
+        flags = FeatureFlag.where(env: current_env).order(:key)
+        {feature_flags: flags.map(&:attributes)}
+      end
     end
 
     def current_env

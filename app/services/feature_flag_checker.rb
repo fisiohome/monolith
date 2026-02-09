@@ -1,6 +1,8 @@
 class FeatureFlagChecker
   TELEGRAM_BROADCASTS_KEY = "TELEGRAM_BROADCASTS"
 
+  attr_reader :env
+
   def self.enabled?(key, env: FeatureFlag.environment_for_current_rails_env)
     return false unless key
 
@@ -12,27 +14,18 @@ class FeatureFlagChecker
     end
   end
 
-  def initialize(service: AdminPortal::FeatureFlagsService.new, env: FeatureFlag.environment_for_current_rails_env)
-    @service = service
+  def initialize(env: FeatureFlag.environment_for_current_rails_env)
     @env = env
   end
 
   def enabled?(key)
-    result = service.find(key: key, env: env)
+    return false unless key
 
-    if result[:success]
-      flag = result[:feature_flag]
-      flag.is_a?(Hash) ? flag[:is_enabled] || flag["is_enabled"] : false
-    else
-      Rails.logger.warn("[FeatureFlagChecker] Unable to fetch #{key}: #{result[:errors]}")
-      false
-    end
+    FeatureFlag.enabled?(key, env)
   rescue => e
     Rails.logger.error("[FeatureFlagChecker] Error checking #{key}: #{e.message}")
     false
   end
 
   private
-
-  attr_reader :service, :env
 end

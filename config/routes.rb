@@ -86,7 +86,11 @@ Rails.application.routes.draw do
 
         resources :vouchers, only: [:index, :create, :update, :destroy]
 
-        resources :feature_flags, path: "feature-flags", only: [:index, :create, :update, :destroy]
+        resources :feature_flags, path: "feature-flags", only: [:index, :create, :update, :destroy] do
+          member do
+            post :toggle
+          end
+        end
 
         resources :telegram_broadcasts, path: "telegram-broadcasts", only: [:index, :create]
 
