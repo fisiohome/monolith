@@ -2,14 +2,12 @@ import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-	AlarmClock,
-	ArrowDownUp,
-	Download,
-	ListFilter,
-	LoaderCircle,
-	LoaderIcon,
-	Plus,
-	RefreshCcw,
+	AlarmClockIcon,
+	ArrowDownUpIcon,
+	FileSpreadsheetIcon,
+	ListFilterIcon,
+	LoaderCircleIcon,
+	PlusIcon,
 } from "lucide-react";
 import {
 	createContext,
@@ -23,6 +21,7 @@ import type { DateRange } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ApptTable from "@/components/admin-portal/appointment/appt-table";
+import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
 import {
 	CancelAppointmentForm,
 	UpdatePICForm,
@@ -30,6 +29,7 @@ import {
 } from "@/components/admin-portal/appointment/feature-form";
 import FilterList from "@/components/admin-portal/appointment/filter-list";
 import ApptPagination from "@/components/admin-portal/appointment/pagination-list";
+import { SyncDataMaster } from "@/components/admin-portal/appointment/sync-data-master";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
 	ResponsiveDialog,
@@ -59,9 +59,11 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAppointmentDataMasterSync } from "@/hooks/admin-portal/appointment/use-appointment-data-master-sync";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { GENDERS } from "@/lib/constants";
-import { populateQueryParams } from "@/lib/utils";
+import { cn, populateQueryParams } from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
 import type {
 	Appointment,
@@ -239,8 +241,8 @@ export interface AppointmentIndexGlobalPageProps
 export default function AppointmentIndex() {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
-	const { t: tbase } = useTranslation("translation");
 	const { t } = useTranslation("appointments");
+	const isMobile = useIsMobile();
 
 	const schedules = useMemo(() => {
 		if (!globalProps?.appointments || !globalProps?.appointments?.data?.length)
@@ -421,30 +423,10 @@ export default function AppointmentIndex() {
 	);
 
 	// * sync management state
-	const [isSynchronizing, setIsSynchronizing] = useState(false);
-	const doSync = useCallback(() => {
-		const { queryParams } = populateQueryParams(pageURL);
-		const { fullUrl } = populateQueryParams(
-			globalProps.adminPortal.router.adminPortal.appointment.sync,
-			{ ...queryParams },
-		);
-
-		router.put(
-			fullUrl,
-			{},
-			{
-				preserveScroll: true,
-				preserveState: true,
-				only: ["adminPortal", "flash", "errors", "appointments"],
-				onStart: () => {
-					setIsSynchronizing(true);
-				},
-				onFinish: () => {
-					setTimeout(() => setIsSynchronizing(false), 250);
-				},
-			},
-		);
-	}, [pageURL, globalProps.adminPortal.router.adminPortal.appointment.sync]);
+	const { isSynchronizing, doSync } = useAppointmentDataMasterSync({
+		pageURL,
+		syncRoute: globalProps.adminPortal.router.adminPortal.appointment.sync,
+	});
 
 	// * export management state
 	const [isOpenReportModal, setIsOpenReportModal] = useState(false);
@@ -492,7 +474,7 @@ export default function AppointmentIndex() {
 							{t("page_title")}
 						</h1>
 
-						<p className="w-full text-sm text-muted-foreground text-pretty md:w-10/12 xl:w-8/12">
+						<p className="w-full text-sm text-muted-foreground text-pretty md:max-w-[60ch]">
 							{t("page_description")}
 						</p>
 					</div>
@@ -500,25 +482,32 @@ export default function AppointmentIndex() {
 
 				<Separator className="bg-border" />
 
+				<ApptViewChanger activeView="appointments" showNewBadge />
+
 				<div className="grid gap-4">
-					<div className="z-10 flex flex-col gap-2 md:justify-between md:flex-row">
-						<div className="flex flex-col items-center gap-2 md:flex-row">
+					<div className="z-10 flex gap-2 justify-between">
+						<div className="flex items-center gap-2">
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button
 										disabled={isSorting}
 										type="button"
 										variant="outline"
-										className="w-full md:w-fit"
+										size={isMobile && !sortBy ? "icon" : "default"}
+										className="shadow-none"
 									>
 										{isSorting ? (
-											<LoaderCircle className="animate-spin" />
+											<LoaderCircleIcon className="animate-spin" />
 										) : (
-											<ArrowDownUp />
+											<ArrowDownUpIcon />
 										)}
-										{isSorting
-											? t("button.sort.loading")
-											: t("button.sort.base")}
+
+										{isMobile
+											? null
+											: isSorting
+												? t("button.sort.loading")
+												: t("button.sort.base")}
+
 										{sortBy && (
 											<>
 												<Separator orientation="vertical" />
@@ -572,43 +561,31 @@ export default function AppointmentIndex() {
 							<Button
 								type="button"
 								variant={preferences.isShowFilter ? "default" : "outline"}
-								className="w-full md:w-fit"
+								size={isMobile ? "icon" : "default"}
+								className="shadow-none"
 								onClick={(event) => {
 									event.preventDefault();
 
 									handleToggleFilter();
 								}}
 							>
-								<ListFilter />
-								{preferences.isShowFilter
-									? t("button.close_filter")
-									: t("button.filter")}
+								<ListFilterIcon />
+								{isMobile
+									? null
+									: preferences.isShowFilter
+										? t("button.close_filter")
+										: t("button.filter")}
 							</Button>
 						</div>
 
-						<div className="flex flex-col items-center gap-2 md:flex-row">
-							{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-								<Button
-									variant="primary-outline"
-									className="w-full md:w-fit"
-									disabled={isSynchronizing}
-									onClick={(event) => {
-										event.preventDefault();
-										doSync();
-									}}
-								>
-									{isSynchronizing ? (
-										<>
-											<LoaderIcon className="animate-spin" />
-											<span>{`${tbase("components.modal.wait")}...`}</span>
-										</>
-									) : (
-										<>
-											<RefreshCcw />
-											{t("button.sync")}
-										</>
-									)}
-								</Button>
+						<div className="flex items-center gap-2">
+							{/* ? the sync appointment is currently directly by the backend */}
+							{false && globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+								<SyncDataMaster
+									isSynchronizing={isSynchronizing}
+									isMobile={isMobile}
+									onSync={doSync}
+								/>
 							)}
 
 							<Popover
@@ -619,17 +596,18 @@ export default function AppointmentIndex() {
 									<Button
 										disabled={isGenerateReport}
 										variant="outline"
-										className="w-full md:w-fit"
+										size={isMobile ? "icon" : "default"}
+										className="shadow-none"
 									>
 										{isGenerateReport ? (
 											<>
-												<LoaderCircle className="animate-spin" />
+												<LoaderCircleIcon className="animate-spin" />
 												{t("button.export.loading")}
 											</>
 										) : (
 											<>
-												<Download />
-												{t("button.export.base")}
+												<FileSpreadsheetIcon />
+												{isMobile ? null : t("button.export.base")}
 											</>
 										)}
 									</Button>
@@ -659,14 +637,18 @@ export default function AppointmentIndex() {
 								</PopoverContent>
 							</Popover>
 
-							<Button asChild className="w-full md:w-fit">
+							<Button
+								asChild
+								size={isMobile ? "icon" : "default"}
+								className="shadow-none"
+							>
 								<Link
 									href={
 										globalProps.adminPortal.router.adminPortal.appointment.new
 									}
 								>
-									<Plus />
-									{t("button.create")}
+									<PlusIcon />
+									{isMobile ? null : t("button.create")}
 								</Link>
 							</Button>
 						</div>
@@ -703,7 +685,7 @@ export default function AppointmentIndex() {
 						>
 							<Announcement themed className="text-orange-700 bg-orange-100">
 								<AnnouncementTag className="flex items-center gap-1.5">
-									<AlarmClock className="shrink-0 size-4" />
+									<AlarmClockIcon className="shrink-0 size-4" />
 									<span>{t("announcement.warning.tag")}</span>
 								</AnnouncementTag>
 								<AnnouncementTitle>
@@ -717,13 +699,23 @@ export default function AppointmentIndex() {
 				<Deferred
 					data={["appointments"]}
 					fallback={
-						<div className="flex flex-col self-end gap-6 mt-6">
+						<div
+							className={cn(
+								"flex flex-col self-end gap-6",
+								preferences.isShowFilter ? "!mt-6" : "",
+							)}
+						>
 							<Skeleton className="w-2/12 h-4 rounded-sm" />
 							<Skeleton className="relative w-full h-32 rounded-xl" />
 						</div>
 					}
 				>
-					<div className="grid gap-6 !mt-8 !mb-6">
+					<div
+						className={cn(
+							"grid gap-6 !mb-6",
+							preferences.isShowFilter ? "!mt-8" : "",
+						)}
+					>
 						{isAppointmentExist ? (
 							<ApptTable data={schedules} />
 						) : (

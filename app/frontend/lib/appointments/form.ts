@@ -275,6 +275,19 @@ export const ADDITIONAL_SETTINGS_SCHEMA = z
 export type AdditionalSettingsSchema = z.infer<
 	typeof ADDITIONAL_SETTINGS_SCHEMA
 >;
+// Admin PIC schema for draft feature
+export const ADMIN_PIC_SCHEMA = z.object({
+	id: idSchema,
+	name: z.string(),
+	email: z.string().optional(),
+});
+export type AdminPicSchema = z.infer<typeof ADMIN_PIC_SCHEMA>;
+
+export const ADMINS_SCHEMA = z
+	.array(ADMIN_PIC_SCHEMA)
+	.min(1, "At least one admin PIC is required");
+export type AdminsSchema = z.infer<typeof ADMINS_SCHEMA>;
+
 // form options schema
 export const FORM_OPTIONS_SCHEMA = z.object({
 	patientRecordSource: z.enum(["existing", "add"]),
@@ -282,6 +295,8 @@ export const FORM_OPTIONS_SCHEMA = z.object({
 	coordinateSource: z.enum(["manual", "automatic"]),
 	referenceAppointmentId: idSchema.optional(),
 	findTherapistsAllOfDay: z.boolean().optional(),
+	// Draft-related fields
+	draftId: idSchema.optional(),
 });
 export type FormOptionsSchema = z.infer<typeof FORM_OPTIONS_SCHEMA>;
 
@@ -403,7 +418,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 // define the form default values
 interface FormDefaultProps {
 	mode?: FormMode;
-	user?: Auth["currentUser"];
+	admin?: Auth["currentUser"];
 	apptRef?: Appointment | null;
 }
 
@@ -535,13 +550,15 @@ export const defineAppointmentFormDefaultValues = (
 	};
 
 	// for additional settings
-	const admins = [
-		{
-			id: props?.user?.id || "",
-			name: props?.user?.name || "",
-			email: props?.user?.user?.email || "",
-		},
-	];
+	const admins = props?.admin?.id
+		? [
+				{
+					id: props.admin.id,
+					name: props.admin.name || "",
+					email: props.admin.user?.email || "",
+				},
+			]
+		: [];
 	const referralSource = props?.apptRef?.otherReferralSource
 		? "Other"
 		: props?.apptRef?.referralSource || undefined;
@@ -575,6 +592,7 @@ export const defineAppointmentFormDefaultValues = (
 			patientContactSource,
 			coordinateSource,
 			findTherapistsAllOfDay,
+			draftId: undefined,
 		},
 		contactInformation,
 		patientDetails,

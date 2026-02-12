@@ -6,6 +6,7 @@ module AdminPortal
     include TherapistsHelper
     include AppointmentsHelper
     include TherapistQueryHelper
+    include AdminsHelper
 
     attr_reader :params
 
@@ -105,6 +106,24 @@ module AdminPortal
       deep_transform_keys_to_camel_case(
         serialize_appointment(Appointment.find(appointment_reference_id))
       )
+    end
+
+    # retrieves all active admins for admin pic selection
+    def fetch_admins
+      Admin.includes(:user)
+        .references(:user)
+        .where(
+          "users.suspend_at IS NULL OR users.suspend_end IS NOT NULL AND users.suspend_end < ?",
+          Time.current
+        )
+        .map do |admin|
+        deep_transform_keys_to_camel_case(
+          serialize_admin(
+            admin,
+            only: %i[id name admin_type]
+          )
+        )
+      end
     end
 
     private

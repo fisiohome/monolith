@@ -19,6 +19,9 @@ module ActiveSupport
       GC.start
     end
 
+    # Map fixture names to model classes for unconventional model names
+    set_fixture_class sync_monolith_logs: SyncMonolithLogs
+
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
     # fixtures :therapists, :addresses, :therapist_addresses, :users

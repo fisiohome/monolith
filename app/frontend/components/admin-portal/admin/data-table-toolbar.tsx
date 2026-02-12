@@ -71,7 +71,7 @@ export default function ToolbarTable({
 					value={filterBy.name}
 					StartIcon={{ icon: Search }}
 					type="text"
-					placeholder="Filter by therapist name..."
+					placeholder="Filter by admin name..."
 					onChange={(event) => {
 						event.preventDefault();
 						handleFilterBy({ type: "name", value: event.target.value });

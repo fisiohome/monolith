@@ -52,6 +52,8 @@ Rails.application.routes.draw do
           end
         end
 
+        resources :appointment_drafts, only: [:index], path: "appointments/drafts"
+
         namespace :settings do
           get "account_security"
           get "appearance"
@@ -121,6 +123,18 @@ Rails.application.routes.draw do
             end
           end
           resources :services, only: [:index]
+
+          # Appointment drafts API endpoints
+          resources :appointments, only: [] do
+            collection do
+              # Draft endpoints
+              get "drafts" => "appointments#drafts"
+              get "drafts/:id" => "appointments#draft"
+              post "drafts" => "appointments#save_draft"
+              put "drafts/:id" => "appointments#save_draft"
+              delete "drafts/:id" => "appointments#delete_draft"
+            end
+          end
         end
       end
     end

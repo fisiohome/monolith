@@ -43,7 +43,8 @@ module AdminPortal
         patient_list: InertiaRails.optional { preparation.fetch_patient_list },
         patient_contact_list: InertiaRails.optional { preparation.fetch_patient_contact_list },
         appointment_reference: preparation.fetch_appointment_reference,
-        options_data: InertiaRails.defer { preparation.fetch_options_data }
+        options_data: InertiaRails.defer { preparation.fetch_options_data },
+        admins: InertiaRails.defer { preparation.fetch_admins }
       })
     end
 

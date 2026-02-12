@@ -2,9 +2,11 @@ import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { format, startOfDay } from "date-fns";
 import { MapPin } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { useForm } from "react-hook-form";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
 import { useDateContext } from "@/components/providers/date-provider";
 import { useStepper } from "@/components/shared/stepper";
@@ -20,6 +22,7 @@ import {
 import { IS_DEKSTOP_MEDIA_QUERY } from "@/lib/constants";
 import { cn, goBackHandler, populateQueryParams } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
+import { DRAFT_STEPS, useAppointmentDraft } from "./use-appointment-draft";
 import {
 	usePreferredTherapistGender,
 	useTherapistAvailability,
@@ -28,6 +31,9 @@ import {
 export const SESSION_STORAGE_FORM_KEY = "appointment-form";
 export const SESSION_STORAGE_FORM_SELECTIONS_KEY =
 	"appointment-form-selections";
+
+// CONFIGURATION: Set this to true to use draft database, false to use session storage
+export const USE_DRAFT_DATABASE = true;
 
 export const useFinalStep = () => {
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
@@ -79,10 +85,105 @@ export const useStepButtons = ({
 		setStep,
 		steps,
 	} = useStepper();
+
+	// Draft management - only if configured to use draft database
+	const { saveDraft, isLoading: isDraftSaving } = useAppointmentDraft({
+		onError: (error) => {
+			console.error("Draft save error:", error);
+		},
+		onDraftSaved: USE_DRAFT_DATABASE
+			? (draft) => {
+					// Update URL with draftId
+					const url = new URL(window.location.href);
+					url.searchParams.set("draftId", draft.id);
+					window.history.replaceState({}, "", url.toString());
+				}
+			: undefined,
+	});
+	const [isSavingDraft, setIsSavingDraft] = useState(false);
+
 	const isFirstStep = useMemo(
 		() => currentStep?.label === taf("stepper.patient_profile.label"),
 		[currentStep?.label, taf],
 	);
+
+	// Get current step name for draft
+	const getCurrentStepName = useCallback(() => {
+		if (currentStep?.label === taf("stepper.patient_profile.label")) {
+			return DRAFT_STEPS[0];
+		}
+		if (currentStep?.label === taf("stepper.appt_settings.label")) {
+			return DRAFT_STEPS[1];
+		}
+		if (currentStep?.label === taf("stepper.additional_settings.label")) {
+			return DRAFT_STEPS[2];
+		}
+		if (currentStep?.label === taf("stepper.review.label")) {
+			return DRAFT_STEPS[3];
+		}
+		return DRAFT_STEPS[0];
+	}, [currentStep?.label, taf]);
+
+	// Save draft when navigating to next step
+	const saveDraftOnStep = useCallback(async () => {
+		// Only save draft if configured to use draft database
+		if (!USE_DRAFT_DATABASE) {
+			return;
+		}
+
+		const values = form.getValues();
+		const admins = values.additionalSettings?.admins || [];
+		const primaryAdmin = admins[0]; // The first admin is the primary
+
+		// Filter out admins with invalid IDs (0, undefined, null, or empty string)
+		const validAdmins = admins.filter(
+			(admin) =>
+				admin?.id && admin.id !== 0 && admin.id !== "" && admin.id !== "0",
+		);
+
+		if (validAdmins.length === 0) {
+			console.log("No valid admin selected, skipping draft save");
+			// Show toast notification
+			toast.error("Please select at least one admin before saving");
+			return;
+		}
+
+		const validPrimaryAdmin =
+			primaryAdmin?.id &&
+			primaryAdmin.id !== 0 &&
+			primaryAdmin.id !== "" &&
+			primaryAdmin.id !== "0"
+				? primaryAdmin
+				: validAdmins[0];
+
+		setIsSavingDraft(true);
+		try {
+			const values = form.getValues();
+
+			const result = await saveDraft({
+				adminPicId: validPrimaryAdmin?.id
+					? String(validPrimaryAdmin.id)
+					: undefined,
+				adminIds: validAdmins.map((a) => String(a.id)),
+				primaryAdminId: validPrimaryAdmin?.id
+					? String(validPrimaryAdmin.id)
+					: undefined,
+				currentStep: getCurrentStepName(),
+				formData: values,
+				draftId: values.formOptions?.draftId
+					? String(values.formOptions.draftId)
+					: undefined,
+			});
+
+			if (result.success && result.draft) {
+				// Update form with draft ID for future updates
+				form.setValue("formOptions.draftId", String(result.draft.id));
+			}
+		} finally {
+			setIsSavingDraft(false);
+		}
+	}, [form, saveDraft, getCurrentStepName]);
+
 	const onPrevStep = useCallback(() => {
 		prevStep();
 	}, [prevStep]);
@@ -104,6 +205,10 @@ export const useStepButtons = ({
 
 			const values = form.getValues();
 			setFormStorage({ ...values });
+
+			// Save draft before moving to next step
+			await saveDraftOnStep();
+
 			nextStep();
 		}
 
@@ -120,6 +225,10 @@ export const useStepButtons = ({
 
 			const values = form.getValues();
 			setFormStorage({ ...values });
+
+			// Save draft before moving to next step
+			await saveDraftOnStep();
+
 			nextStep();
 		}
 
@@ -130,6 +239,10 @@ export const useStepButtons = ({
 
 			const values = form.getValues();
 			setFormStorage({ ...values });
+
+			// Save draft before moving to next step
+			await saveDraftOnStep();
+
 			nextStep();
 		}
 	};
@@ -153,7 +266,7 @@ export const useStepButtons = ({
 	return {
 		isDekstop,
 		isDisabledStep,
-		isLoading,
+		isLoading: isLoading || isDraftSaving || isSavingDraft,
 		isFirstStep,
 		isLastStep,
 		isOptionalStep,
@@ -807,4 +920,73 @@ export const useAppointmentSchedulingForm = () => {
 		watchAppointmentSchedulingValue,
 		watchAllOfDayValue,
 	};
+};
+
+/**
+ * Custom hook to handle form reset when draft is loaded
+ *
+ * This hook ensures that:
+ * - The form is reset with draft data only once when loaded
+ * - Therapist fields have proper default values (they're not saved in storage)
+ * - Series visits therapist fields are also properly initialized
+ *
+ * @param {UseFormResetProps} props - The hook properties
+ */
+export const useFormReset = ({
+	form,
+	formStorage,
+	draftLoaded,
+}: {
+	form: ReturnType<typeof useForm<AppointmentBookingSchema>>;
+	formStorage: AppointmentBookingSchema | null;
+	draftLoaded: boolean;
+}) => {
+	// Ref to track if form has been reset for the current draft
+	const hasResetForDraft = useRef(false);
+
+	/**
+	 * Effect to reset form when draft data is loaded
+	 * - Only runs once per draft load
+	 * Ensures therapist fields have default empty values
+	 * - Handles both single therapist and series visits therapist fields
+	 */
+	useEffect(() => {
+		// Check if we have form storage, draft is loaded, and we haven't reset yet
+		if (formStorage && draftLoaded && !hasResetForDraft.current) {
+			// Prepare reset data with default therapist values
+			const resetData = {
+				...formStorage,
+				appointmentScheduling: {
+					...formStorage.appointmentScheduling,
+					// Ensure main therapist field has default values
+					therapist: formStorage.appointmentScheduling?.therapist || {
+						id: "",
+						name: "",
+					},
+					// Ensure each series visit has default therapist values
+					seriesVisits:
+						formStorage.appointmentScheduling?.seriesVisits?.map((visit) => ({
+							...visit,
+							therapist: visit.therapist || { id: "", name: "" },
+						})) || [],
+				},
+			};
+
+			// Reset the form with the prepared data
+			form.reset(resetData);
+
+			// Mark that we've reset for this draft
+			hasResetForDraft.current = true;
+		}
+	}, [formStorage, form, draftLoaded]);
+
+	/**
+	 * Reset the flag when draftLoaded changes to false
+	 * This allows the form to be reset again if a new draft is loaded
+	 */
+	useEffect(() => {
+		if (!draftLoaded) {
+			hasResetForDraft.current = false;
+		}
+	}, [draftLoaded]);
 };

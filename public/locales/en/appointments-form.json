@@ -63,6 +63,16 @@
 		"description": "The appointment has been successfully created. You can start to inform the therapist and patient concerned. And you will be redirected in a few seconds.",
 		"button": "Redirect now"
 	},
+	"draft": {
+		"auto_save_info": "Your progress will be automatically saved as a draft when you move to the next step. The draft will be removed once the appointment is successfully created.",
+		"admin_pic": {
+			"label": "Admin PICs",
+			"placeholder": "Select Admin PICs...",
+			"search": "Search admin...",
+			"empty": "No admin found.",
+			"multi_description": "Select one or more admins who will be responsible for this appointment."
+		}
+	},
 	"appt_schedule": {
 		"alert_therapist": {
 			"title": "Therapist not found",

@@ -1,7 +1,7 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  user: admin_user
+  user_id: <%= ActiveRecord::FixtureSet.identify(:admin_user, :uuid) %>
   sync_type: therapists_and_schedules
   status: completed
   ui_message: "Therapists: 5 created, 10 updated, 2 failed, 3 skipped. Schedules: 20 created, 5 updated."
@@ -11,7 +11,7 @@ one:
   completed_at: 2026-02-03 12:33:25
 
 two:
-  user: super_admin_user
+  user_id: <%= ActiveRecord::FixtureSet.identify(:super_admin_user, :uuid) %>
   sync_type: brands_and_packages
   status: failed
   ui_message: "Sync failed: Unable to fetch CSV file"
@@ -21,7 +21,7 @@ two:
   completed_at: 2026-02-03 12:35:15
 
 running_sync:
-  user: admin_user
+  user_id: <%= ActiveRecord::FixtureSet.identify(:admin_user, :uuid) %>
   sync_type: locations
   status: running
   ui_message: ""

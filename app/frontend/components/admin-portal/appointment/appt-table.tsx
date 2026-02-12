@@ -57,17 +57,30 @@ const ApptTable = memo(({ data }: ApptTableProps) => {
 		getRowCanExpand: () => true,
 		getCoreRowModel: getCoreRowModel(),
 		getExpandedRowModel: getExpandedRowModel(),
+		columnResizeMode: "onChange",
 	});
 
 	return (
-		<div className="rounded-md border">
+		<div className="rounded-md border overflow-x-auto relative">
 			<Table>
 				<TableHeader>
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
 							{headerGroup.headers.map((header) => {
+								const isExpander = header.id === "expander";
+								const isRegNumber = header.id === "registrationNumber";
+
 								return (
-									<TableHead key={header.id}>
+									<TableHead
+										key={header.id}
+										className={cn(
+											isExpander && "sticky left-0 z-10 bg-background",
+											isRegNumber && "sticky left-12 z-10 bg-background",
+										)}
+										style={{
+											width: header.getSize(),
+										}}
+									>
 										{header.isPlaceholder
 											? null
 											: flexRender(
@@ -105,14 +118,29 @@ const ApptTable = memo(({ data }: ApptTableProps) => {
 											"bg-primary/10 hover:bg-primary/20": isFreshAppt,
 										})}
 									>
-										{row.getVisibleCells().map((cell) => (
-											<TableCell key={cell.id}>
-												{flexRender(
-													cell.column.columnDef.cell,
-													cell.getContext(),
-												)}
-											</TableCell>
-										))}
+										{row.getVisibleCells().map((cell) => {
+											const isExpander = cell.column.id === "expander";
+											const isRegNumber =
+												cell.column.id === "registrationNumber";
+
+											return (
+												<TableCell
+													key={cell.id}
+													className={cn(
+														isExpander && "sticky left-0 z-10 bg-background",
+														isRegNumber && "sticky left-12 z-10 bg-background",
+													)}
+													style={{
+														width: cell.column.getSize(),
+													}}
+												>
+													{flexRender(
+														cell.column.columnDef.cell,
+														cell.getContext(),
+													)}
+												</TableCell>
+											);
+										})}
 									</TableRow>
 									{row.getIsExpanded() && (
 										<TableRow>
@@ -201,7 +229,8 @@ export const AppointmentDetails = memo((props: AppointmentDetailsProps) => {
 					</div>
 				</div>
 			)}
-			<div className="grid gap-6 xl:grid-cols-12">
+
+			<div className="grid gap-6 xl:grid-cols-12 w-full max-w-sm md:max-w-screen-sm lg:max-w-max">
 				<div className="flex flex-col h-full gap-3 xl:col-span-8">
 					<h3 className="text-xs font-light uppercase">
 						{t("list.appointment_details")}

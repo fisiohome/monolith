@@ -558,11 +558,17 @@ const getColumns = (): ColumnDef<Appointment>[] => [
 		enableHiding: false,
 		header: ({ table }) => <ExpanderHeader table={table} />,
 		cell: ({ row }) => <ExpanderCell row={row} />,
+		size: 48,
+		minSize: 48,
+		maxSize: 48,
 	},
 	{
 		accessorKey: "registrationNumber",
 		header: "Reg. No.",
 		cell: ({ row }) => <RegistrationNumberCell row={row} />,
+		size: 120,
+		minSize: 100,
+		maxSize: 150,
 	},
 	{
 		accessorKey: "visitNumber",

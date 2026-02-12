@@ -166,16 +166,85 @@ export function FormProvider({ children }: FormProviderProps) {
 		() =>
 			defineAppointmentFormDefaultValues({
 				mode: formMode,
-				user: globalProps.auth.currentUser,
+				admin: globalProps.auth.currentUser,
 				apptRef: globalProps.appointmentReference,
 			}),
 		[globalProps.auth.currentUser, globalProps.appointmentReference, formMode],
 	);
-	const [formStorage, setFormStorage] = useSessionStorage<
+	const [formStorage, setFormStorageInternal] = useSessionStorage<
 		FormProviderState["formStorage"]
 	>(SESSION_STORAGE_FORM_KEY, {
 		...formDefaultvalues,
 	});
+
+	// Wrapper to exclude therapist from storage
+	const setFormStorage = useCallback(
+		(value: SetStateAction<FormStorage>) => {
+			// Handle function updates
+			if (typeof value === "function") {
+				setFormStorageInternal((prev) => {
+					const newValue = value(prev);
+					if (!newValue) return newValue;
+
+					// Create a copy without therapist data
+					const { appointmentScheduling, ...rest } = newValue;
+					const {
+						therapist: _therapist,
+						seriesVisits,
+						...schedulingRest
+					} = appointmentScheduling || {};
+
+					// Also filter out therapists from series visits
+					const filteredSeriesVisits = seriesVisits?.map((visit) => {
+						const { therapist: _visitTherapist, ...visitRest } = visit;
+						return visitRest;
+					});
+
+					const filteredValue = {
+						...rest,
+						appointmentScheduling: {
+							...schedulingRest,
+							seriesVisits: filteredSeriesVisits,
+						},
+					};
+
+					return filteredValue as FormStorage;
+				});
+				return;
+			}
+
+			// Handle direct value updates
+			if (!value) {
+				setFormStorageInternal(value);
+				return;
+			}
+			// Create a copy without therapist data
+			const { appointmentScheduling, ...rest } = value;
+			const {
+				therapist: _therapist,
+				seriesVisits,
+				...schedulingRest
+			} = appointmentScheduling || {};
+
+			// Also filter out therapists from series visits
+			const filteredSeriesVisits = seriesVisits?.map((visit) => {
+				const { therapist: _visitTherapist, ...visitRest } = visit;
+				return visitRest;
+			});
+
+			const filteredValue = {
+				...rest,
+				appointmentScheduling: {
+					...schedulingRest,
+					seriesVisits: filteredSeriesVisits,
+				},
+			};
+
+			setFormStorageInternal(filteredValue as FormStorage);
+		},
+		[setFormStorageInternal],
+	);
+
 	const [formSelections, setFormSelections] = useSessionStorage<
 		FormProviderState["formSelections"]
 	>(SESSION_STORAGE_FORM_SELECTIONS_KEY, {
@@ -732,9 +801,12 @@ export function AppointmentSchedulingForm() {
 															: tasf("service.placeholder")}
 													</p>
 													{field.value ? (
-														<button
-															type="button"
+														// biome-ignore lint/a11y/useSemanticElements: act like a button
+														<div
+															role="button"
+															tabIndex={0}
 															className="cursor-pointer"
+															onKeyDown={() => {}}
 															onClick={(event) => {
 																event.preventDefault();
 																event.stopPropagation();
@@ -743,7 +815,7 @@ export function AppointmentSchedulingForm() {
 															}}
 														>
 															<X className="opacity-50" />
-														</button>
+														</div>
 													) : (
 														<ChevronsUpDown className="opacity-50" />
 													)}

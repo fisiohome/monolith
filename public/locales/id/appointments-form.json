@@ -63,6 +63,16 @@
 		"description": "Janji temu telah berhasil dibuat. Anda dapat mulai memberi tahu terapis dan pasien yang bersangkutan. Dan Anda akan diarahkan dalam beberapa detik.",
 		"button": "Alihkan sekarang"
 	},
+	"draft": {
+		"auto_save_info": "Progress Anda akan otomatis disimpan sebagai draf saat Anda pindah ke langkah berikutnya. Draf akan dihapus setelah janji temu berhasil dibuat.",
+		"admin_pic": {
+			"label": "Admin PIC",
+			"placeholder": "Pilih Admin PIC...",
+			"search": "Cari admin...",
+			"empty": "Admin tidak ditemukan.",
+			"multi_description": "Pilih satu atau lebih admin yang akan bertanggung jawab untuk janji temu ini."
+		}
+	},
 	"appt_schedule": {
 		"alert_therapist": {
 			"title": "Terapis tidak ditemukan",

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_04_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_11_025100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -72,6 +72,35 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_120000) do
     t.index ["appointment_id"], name: "index_appointment_admins_on_appointment_id"
   end
 
+  create_table "appointment_draft_admins", force: :cascade do |t|
+    t.bigint "appointment_draft_id", null: false
+    t.uuid "admin_id", null: false
+    t.boolean "is_primary", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_id"], name: "index_appointment_draft_admins_on_admin_id"
+    t.index ["appointment_draft_id", "admin_id"], name: "idx_on_appointment_draft_id_admin_id_65408e2ee6", unique: true
+    t.index ["appointment_draft_id"], name: "index_appointment_draft_admins_on_appointment_draft_id"
+    t.index ["is_primary"], name: "index_appointment_draft_admins_on_is_primary"
+  end
+
+  create_table "appointment_drafts", force: :cascade do |t|
+    t.uuid "admin_pic_id", null: false
+    t.uuid "created_by_admin_id", null: false
+    t.string "current_step"
+    t.jsonb "form_data", default: {}
+    t.integer "status", default: 0, null: false
+    t.uuid "appointment_id"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_pic_id"], name: "index_appointment_drafts_on_admin_pic_id"
+    t.index ["appointment_id"], name: "index_appointment_drafts_on_appointment_id"
+    t.index ["created_by_admin_id"], name: "index_appointment_drafts_on_created_by_admin_id"
+    t.index ["expires_at"], name: "index_appointment_drafts_on_expires_at"
+    t.index ["status"], name: "index_appointment_drafts_on_status"
+  end
+
   create_table "appointment_evidence_photos", comment: "Stores photo references for appointment evidence in R2", force: :cascade do |t|
     t.bigint "evidence_id", null: false
     t.text "object_key", null: false, comment: "R2 object storage key path"
@@ -98,6 +127,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_120000) do
     t.timestamptz "created_at", default: -> { "now()" }, null: false
     t.timestamptz "updated_at", default: -> { "now()" }, null: false
     t.timestamptz "deleted_at"
+    t.text "notes"
     t.index ["appointment_id"], name: "idx_appointment_evidences_appointment_id"
     t.index ["created_at"], name: "idx_appointment_evidences_created_at"
     t.index ["deleted_at"], name: "idx_appointment_evidences_deleted_at", where: "(deleted_at IS NULL)"
@@ -160,6 +190,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_120000) do
     t.text "follow_up_therapy_plan"
     t.text "next_physiotherapy_goals"
     t.text "therapy_outcome_summary"
+    t.text "notes"
     t.index ["appointment_id"], name: "idx_appointment_soaps_appointment_id"
     t.index ["created_at"], name: "idx_appointment_soaps_created_at"
     t.index ["deleted_at"], name: "idx_appointment_soaps_deleted_at", where: "(deleted_at IS NULL)"
@@ -977,6 +1008,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_04_120000) do
   add_foreign_key "appointment_address_histories", "locations"
   add_foreign_key "appointment_admins", "admins"
   add_foreign_key "appointment_admins", "appointments"
+  add_foreign_key "appointment_draft_admins", "admins"
+  add_foreign_key "appointment_draft_admins", "appointment_drafts"
+  add_foreign_key "appointment_drafts", "admins", column: "admin_pic_id"
+  add_foreign_key "appointment_drafts", "admins", column: "created_by_admin_id"
+  add_foreign_key "appointment_drafts", "appointments"
   add_foreign_key "appointment_evidence_photos", "appointment_evidences", column: "evidence_id", name: "appointment_evidence_photos_evidence_id_fkey", on_delete: :cascade
   add_foreign_key "appointment_evidences", "appointments", name: "appointment_evidences_appointment_id_fkey", on_delete: :cascade
   add_foreign_key "appointment_evidences", "patients", name: "appointment_evidences_patient_id_fkey", on_delete: :cascade
