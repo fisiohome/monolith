@@ -3,12 +3,13 @@ module AdminPortal
     before_action :ensure_admin!
 
     def index
-      render inertia: "AdminPortal/Voucher/Index", props: deep_transform_keys_to_camel_case({
-        vouchers: InertiaRails.defer { vouchers_list[:vouchers] },
-        vouchersMeta: InertiaRails.defer { vouchers_list[:meta] },
+      list_data = vouchers_list
+      render inertia: "AdminPortal/Voucher/Index", props: {
+        vouchers: InertiaRails.defer { list_data["vouchers"] },
+        vouchersMeta: InertiaRails.defer { list_data["meta"] },
         selectedVoucher: InertiaRails.defer { selected_voucher },
         packages: InertiaRails.defer { packages_list }
-      })
+      }
     end
 
     def create
@@ -53,6 +54,49 @@ module AdminPortal
     def delete
     end
 
+    def bulk_upload
+      return unless request.post?
+
+      file = params[:excel_file]
+      save_to_db = params[:save_to_db] == "true"
+
+      if file.blank?
+        render json: {success: false, message: "Please select an Excel file to upload."}
+        return
+      end
+
+      unless file.content_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+          file.original_filename.end_with?(".xlsx")
+        message = "Only Excel (.xlsx) files are accepted. Please download the template."
+        render json: {success: false, message: message}
+        return
+      end
+
+      result = vouchers_service.bulk_create(file, save_to_db: save_to_db)
+
+      # If saving to database and successful, set flash message
+      if save_to_db && result[:success]
+        flash[:notice] = result[:message]
+      end
+
+      # Always return JSON for AJAX requests
+      render json: result
+    end
+
+    def download_template
+      template = AdminPortal::VoucherTemplateService.generate_template
+
+      send_data(
+        template,
+        filename: "voucher_template.xlsx",
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        disposition: "attachment"
+      )
+    rescue => e
+      Rails.logger.error "[VouchersController] Template download error: #{e.message}"
+      redirect_to admin_portal_vouchers_path, alert: "Failed to generate template. Please try again."
+    end
+
     private
 
     def vouchers_service
@@ -81,9 +125,12 @@ module AdminPortal
     end
 
     def selected_voucher
-      return if params[:id].blank?
+      # Check both URL params and query params for ID
+      voucher_id = params[:id] || request.query_parameters[:id]
+      return if voucher_id.blank?
 
-      @selected_voucher ||= vouchers_service.find(params[:id])[:voucher]
+      result = vouchers_service.find(voucher_id)
+      @selected_voucher ||= result["voucher"] # Use string key since find returns string keys with camelCase
     end
 
     def voucher_params

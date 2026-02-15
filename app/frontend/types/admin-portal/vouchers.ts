@@ -23,8 +23,12 @@ export interface Voucher {
 	updatedAt: string;
 	packages: {
 		id: string;
-		voucherId: string;
-		packageId: string;
-		createdAt: string;
+		name: string;
+		number_of_visit: number;
+		service?: {
+			id: string;
+			name: string;
+			description: string;
+		} | null;
 	}[];
 }

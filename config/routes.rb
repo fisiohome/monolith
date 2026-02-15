@@ -86,7 +86,12 @@ Rails.application.routes.draw do
 
         resources :patients, path: "patient-management", only: [:index, :update]
 
-        resources :vouchers, only: [:index, :create, :update, :destroy]
+        resources :vouchers, only: [:index, :create, :update, :destroy] do
+          collection do
+            post "bulk-upload" => "vouchers#bulk_upload"
+            get "download-template" => "vouchers#download_template"
+          end
+        end
 
         resources :feature_flags, path: "feature-flags", only: [:index, :create, :update, :destroy] do
           member do

@@ -1,182 +1,555 @@
 module AdminPortal
   class VouchersService
-    def initialize(client: FisiohomeApi::Client, key_format: :snake)
-      @client = client
+    # Header mapping for human-readable to system keys
+    HEADER_MAPPING = {
+      "voucher code*" => :code,
+      "voucher name" => :name,
+      "description" => :description,
+      "discount type*" => :discount_type,
+      "discount value*" => :discount_value,
+      "quota*" => :quota,
+      "max discount amount" => :max_discount_amount,
+      "min order amount" => :min_order_amount,
+      "valid from (yyyy-mm-dd)" => :valid_from,
+      "valid until (yyyy-mm-dd)" => :valid_until,
+      "is active (true/false)" => :is_active,
+      "package(s)" => :package_ids,
+      "package selection helper" => :_package_helper
+    }.freeze
+
+    require "roo"
+
+    def initialize(key_format: :camel)
       @key_format = key_format
     end
 
-    # Fetches a list of vouchers from the external API
-    # Handles various error scenarios and returns a consistent response format
-    # @return [Hash] hash containing vouchers array and metadata, or empty defaults on error
+    # Fetches a list of vouchers from the database
+    # @return [Hash] hash containing vouchers array and metadata
     def list(code: nil, is_active: nil, discount_type: nil, page: nil, limit: nil)
-      normalized_page = normalize_integer(page) || 1
-      normalized_limit = normalize_integer(limit) || 10
+      vouchers = Voucher.all
 
-      query = {
-        code: code.presence,
-        is_active: normalize_boolean(is_active),
-        discount_type: discount_type.presence,
-        page: normalized_page,
-        limit: normalized_limit
-      }.compact
+      # Apply filters
+      vouchers = vouchers.where("code ILIKE ?", "%#{code}%") if code.present?
+      vouchers = vouchers.where(is_active: is_active) if !is_active.nil?
+      vouchers = vouchers.where(discount_type: discount_type) if discount_type.present?
 
-      response = client.get("/api/v1/vouchers", params: query)
+      # Include associated packages before pagination
+      vouchers = vouchers.includes(:packages)
 
-      if response.success?
-        build_response(response.body)
-      else
-        Rails.logger.error("[VouchersService] Failed to fetch vouchers: #{response.status} - #{response.body}")
-        {vouchers: [], meta: {}}
+      # Get total count before pagination
+      total_count = vouchers.count
+
+      # Apply pagination
+      page = [page.to_i, 1].max if page.present?
+      limit = limit.to_i if limit.present?
+
+      # Set default limit to 10 if not provided
+      limit ||= 10
+
+      if page && limit
+        vouchers = vouchers.limit(limit).offset((page - 1) * limit)
       end
-    rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-      Rails.logger.error("[VouchersService] Network error when fetching vouchers: #{e.message}")
-      {vouchers: [], meta: {}}
-    rescue Faraday::Error => e
-      Rails.logger.error("[VouchersService] Faraday error when fetching vouchers: #{e.message}")
-      {vouchers: [], meta: {}}
-    rescue => e
-      Rails.logger.error("[VouchersService] Unexpected error when fetching vouchers: #{e.message}")
-      {vouchers: [], meta: {}}
+
+      # Build response
+      voucher_list = vouchers.map { |voucher| build_voucher(voucher) }
+
+      response = {
+        vouchers: voucher_list,
+        meta: {
+          totalCount: total_count,
+          page: page || 1,
+          limit: limit,
+          totalPages: limit ? (total_count.to_f / limit).ceil : 1
+        }
+      }
+
+      deep_transform_keys_format(response, format: @key_format)
     end
 
-    # Fetches a single voucher by ID from the external API
-    # Handles various error scenarios and returns a consistent response format
+    # Fetches a single voucher by ID from the database
     # @param id [String, Integer] the voucher ID to fetch
     # @return [Hash] hash containing the voucher or nil on error
     def find(id)
-      response = client.get("/api/v1/vouchers/#{id}")
+      voucher = Voucher.includes(:packages).find_by(id: id)
 
-      if response.success?
-        build_single_response(response.body)
+      if voucher
+        Rails.logger.debug {
+          "[VouchersService] VOUCHER_FOUND: " \
+          "id=#{id} " \
+          "code='#{voucher.code}' " \
+          "is_active=#{voucher.is_active}"
+        }
+        response = {
+          voucher: build_voucher(voucher)
+        }
+        deep_transform_keys_format(response, format: @key_format)
       else
-        Rails.logger.error("[VouchersService] Failed to fetch voucher #{id}: #{response.status} - #{response.body}")
         {voucher: nil}
       end
-    rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-      Rails.logger.error("[VouchersService] Network error when fetching voucher #{id}: #{e.message}")
-      {voucher: nil}
-    rescue Faraday::Error => e
-      Rails.logger.error("[VouchersService] Faraday error when fetching voucher #{id}: #{e.message}")
-      {voucher: nil}
     rescue => e
-      Rails.logger.error("[VouchersService] Unexpected error when fetching voucher #{id}: #{e.message}")
+      Rails.logger.error(
+        "[VouchersService] FIND_VOUCHER_FAILED: " \
+        "id=#{id} " \
+        "error='#{e.message}' " \
+        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
+      )
       {voucher: nil}
     end
 
-    # Creates a new voucher via the external API
-    # Normalizes the payload, sends a POST request, and handles the response
+    # Creates a new voucher in the database
     # @param attributes [Hash] voucher attributes to create
     # @return [Hash] hash with :success boolean and either :voucher or :errors
     def create(attributes)
-      payload = normalize_voucher_payload(attributes)
-      response = client.post("/api/v1/vouchers", body: payload)
-      handle_mutation_response(response, action: "create")
-    rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-      handle_mutation_exception("create", e)
-    rescue Faraday::Error => e
-      handle_mutation_exception("create", e)
+      voucher = Voucher.new(attributes)
+
+      if voucher.save
+        Rails.logger.info(
+          "[VouchersService] VOUCHER_CREATED: " \
+          "id=#{voucher.id} " \
+          "code='#{voucher.code}' " \
+          "discount_type=#{voucher.discount_type} " \
+          "discount_value=#{voucher.discount_value}"
+        )
+        voucher = Voucher.includes(:packages).find(voucher.id)
+        response = {
+          success: true,
+          voucher: build_voucher(voucher)
+        }
+        deep_transform_keys_format(response, format: @key_format)
+      else
+        {
+          success: false,
+          errors: format_errors(voucher.errors)
+        }
+      end
     rescue => e
-      handle_mutation_exception("create", e)
+      Rails.logger.error(
+        "[VouchersService] CREATE_VOUCHER_FAILED: " \
+        "attributes=#{attributes.inspect} " \
+        "error='#{e.message}' " \
+        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
+      )
+      {
+        success: false,
+        errors: {fullMessages: ["Unable to create voucher. Please try again."]}
+      }
     end
 
-    # Updates an existing voucher via the external API
-    # Normalizes the payload, sends a PUT request, and handles the response
+    # Updates an existing voucher in the database
     # @param id [String, Integer] the voucher ID to update
     # @param attributes [Hash] voucher attributes to update
     # @return [Hash] hash with :success boolean and either :voucher or :errors
     def update(id, attributes)
-      payload = normalize_voucher_payload(attributes)
-      response = client.put("/api/v1/vouchers/#{id}", body: payload)
-      handle_mutation_response(response, action: "update")
-    rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-      handle_mutation_exception("update", e)
-    rescue Faraday::Error => e
-      handle_mutation_exception("update", e)
-    rescue => e
-      handle_mutation_exception("update", e)
-    end
+      voucher = Voucher.find(id)
 
-    # Deletes an existing voucher via the external API
-    # Sends a DELETE request and handles the response
-    # @param id [String, Integer] the voucher ID to delete
-    # @return [Hash] hash with :success boolean and optional :errors
-    def destroy(id)
-      response = client.delete("/api/v1/vouchers/#{id}")
-
-      if response.success?
-        {success: true}
+      if voucher.update(attributes)
+        Rails.logger.info(
+          "[VouchersService] VOUCHER_UPDATED: " \
+          "id=#{id} " \
+          "code='#{voucher.code}' " \
+          "changes=#{attributes.keys.join(", ")}"
+        )
+        voucher = Voucher.includes(:packages).find(voucher.id)
+        response = {
+          success: true,
+          voucher: build_voucher(voucher)
+        }
+        deep_transform_keys_format(response, format: @key_format)
       else
-        Rails.logger.error("[VouchersService] Failed to delete voucher #{id}: #{response.status} - #{response.body}")
-        errors = normalize_errors(response.body, fallback: "Failed to delete voucher.")
-        {success: false, errors: format_errors(errors)}
+        {
+          success: false,
+          errors: format_errors(voucher.errors)
+        }
       end
-    rescue Faraday::ConnectionFailed, Faraday::TimeoutError => e
-      handle_mutation_exception("delete", e)
-    rescue Faraday::Error => e
-      handle_mutation_exception("delete", e)
+    rescue ActiveRecord::RecordNotFound
+      {
+        success: false,
+        errors: {fullMessages: ["Voucher not found."]}
+      }
     rescue => e
-      handle_mutation_exception("delete", e)
+      Rails.logger.error(
+        "[VouchersService] UPDATE_VOUCHER_FAILED: " \
+        "id=#{id} " \
+        "attributes=#{attributes.inspect} " \
+        "error='#{e.message}' " \
+        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
+      )
+      {
+        success: false,
+        errors: {fullMessages: ["Unable to update voucher. Please try again."]}
+      }
     end
 
-    private
+    # Creates multiple vouchers from uploaded file (CSV or Excel)
+    # @param file [ActionDispatch::Http::UploadedFile] the uploaded file
+    # @param save_to_db [Boolean] whether to save to database or just validate
+    # @return [Hash] hash with :success boolean and :message
+    def bulk_create(file, save_to_db: false)
+      Rails.logger.info(
+        "[VouchersService] BULK_CREATE_STARTED: " \
+        "file='#{file.original_filename}' " \
+        "file_size=#{file.size} " \
+        "content_type='#{file.content_type}' " \
+        "save_to_db=#{save_to_db}"
+      )
 
-    attr_reader :client, :key_format
+      return {success: false, message: "No file provided"} if file.blank?
 
-    # Normalizes a value to a boolean (true/false) or nil.
-    # Handles various truthy/falsy string representations.
-    # @param value [Object] the value to normalize
-    # @return [Boolean, nil] true, false, or nil if value is blank or unrecognized
-    def normalize_boolean(value)
-      return nil if value.nil? || (value.respond_to?(:empty?) && value.empty?)
-      return value if value == true || value == false
+      vouchers_data = []
+      errors = []
+      created_count = 0
+      row_results = [] # Track results for each row
 
-      case value.to_s.strip.downcase
-      when "true", "1", "yes", "y" then true
-      when "false", "0", "no", "n" then false
+      begin
+        # Helper method to normalize headers
+        normalize_header = lambda do |header|
+          header_name = header.to_s.strip.downcase
+          HEADER_MAPPING[header_name] || header_name.delete("*").to_sym
+        end
+
+        # Only accept Excel files
+        unless file.content_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+            file.original_filename.end_with?(".xlsx")
+          return {success: false, message: "Only Excel (.xlsx) files are accepted. Please download the template."}
+        end
+
+        # Parse Excel file
+        workbook = Roo::Excelx.new(file.path)
+        sheet = workbook.sheet("Vouchers")
+
+        unless sheet
+          return {success: false, message: "Excel file must have a 'Vouchers' sheet"}
+        end
+
+        # Get headers from first row
+        headers = sheet.row(1).map(&normalize_header)
+
+        if headers.blank?
+          return {success: false, message: "Excel file has no headers"}
+        end
+
+        # Validate required headers
+        required_headers = [:code, :discount_type, :discount_value, :quota]
+        missing_headers = required_headers - headers
+        if missing_headers.any?
+          return {success: false, message: "Missing required headers: #{missing_headers.join(", ")}"}
+        end
+
+        # Track seen codes to detect duplicates within the file
+        seen_codes = {}
+        duplicate_codes = []
+
+        # First pass: identify all duplicate codes within the file
+        (2..sheet.last_row).each do |row_index|
+          row_data = headers.zip(sheet.row(row_index)).to_h
+          attributes = prepare_voucher_attributes(row_data, row_index)
+
+          if seen_codes.key?(attributes[:code])
+            duplicate_codes << attributes[:code] unless duplicate_codes.include?(attributes[:code])
+          else
+            seen_codes[attributes[:code]] = row_index
+          end
+        end
+
+        # Second pass: process rows, skipping any with duplicate codes
+        seen_codes = {} # Reset for second pass
+        (2..sheet.last_row).each do |row_index|
+          row_data = headers.zip(sheet.row(row_index)).to_h
+          result = process_voucher_row(row_data, row_index + 1, vouchers_data, errors, seen_codes, duplicate_codes, row_data)
+          row_results << result if result
+        end
+
+        # Create vouchers in a transaction (only if save_to_db is true)
+        if vouchers_data.any? && save_to_db
+          Voucher.transaction do
+            vouchers_data.each do |attrs|
+              Voucher.create!(attrs)
+              created_count += 1
+            end
+          end
+        elsif vouchers_data.any? && !save_to_db
+          # Just count what would be created
+          created_count = vouchers_data.size
+        end
+
+        # Build result message
+        message_parts = []
+        message_parts << if !save_to_db
+          "Preview completed. Review the data before saving."
+        elsif created_count > 0
+          "Successfully created #{created_count} voucher#{"s" if created_count > 1}!"
+        elsif errors.any?
+          "No vouchers were created. Please review the errors."
+        else
+          "No valid vouchers found to create."
+        end
+
+        if errors.any?
+          Rails.logger.error(
+            "[VouchersService] BULK_CREATE_VALIDATION_ERRORS: " \
+            "error_count=#{errors.size} " \
+            "errors='#{errors.join("; ")}' " \
+            "file='#{file.original_filename}'"
+          )
+        end
+
+        message = message_parts.join(", ")
+
+        Rails.logger.info(
+          "[VouchersService] BULK_CREATE_COMPLETED: " \
+          "file='#{file.original_filename}' " \
+          "save_to_db=#{save_to_db} " \
+          "created=#{created_count} " \
+          "errors=#{errors.size} " \
+          "success=#{created_count > 0 || errors.any?}"
+        )
+
+        result = {success: true, message: message, errors: errors}
+        # Add row results for preview
+        result[:rows] = row_results if row_results.any?
+        result
+      rescue => e
+        Rails.logger.error(
+          "[VouchersService] BULK_CREATE_FAILED: " \
+          "file='#{file&.original_filename}' " \
+          "file_size=#{file&.size} " \
+          "content_type='#{file&.content_type}' " \
+          "save_to_db=#{save_to_db} " \
+          "error='#{e.message}' " \
+          "backtrace=#{e.backtrace&.first(5)&.join(", ")}"
+        )
+        {success: false, message: "Failed to process file: #{e.message}"}
       end
     end
 
-    # Normalizes a value to an integer or nil.
-    # Returns nil if the value is blank or cannot be converted to an integer.
-    # @param value [Object] the value to normalize
-    # @return [Integer, nil] the integer value or nil if conversion fails
-    def normalize_integer(value)
-      return nil if value.nil? || (value.respond_to?(:empty?) && value.empty?)
+    # Processes a single voucher row
+    def process_voucher_row(row_data, row_number, vouchers_data, errors, seen_codes, duplicate_codes, original_row_data = nil)
+      # Clean and prepare attributes
+      attributes = prepare_voucher_attributes(row_data, row_number)
 
-      Integer(value)
-    rescue ArgumentError, TypeError
-      nil
+      # Prepare result hash for preview
+      result = nil
+      if original_row_data
+        result = {
+          rowNumber: row_number,
+          code: attributes[:code],
+          name: original_row_data[:name] || "",
+          discountType: attributes[:discount_type],
+          discountValue: attributes[:discount_value].to_s,
+          quota: attributes[:quota].to_s,
+          status: nil,
+          reason: nil
+        }
+      end
+
+      # Check if this code has duplicates in the file
+      if duplicate_codes.include?(attributes[:code])
+        Rails.logger.info(
+          "[VouchersService] BULK_CREATE_SKIPPED_HAS_DUPLICATES: " \
+          "code='#{attributes[:code]}' " \
+          "row=#{row_number}"
+        )
+        error_msg = "Row #{row_number}: Voucher code '#{attributes[:code]}' appears multiple times in your file. Please ensure each code is unique."
+        errors << error_msg
+        if result
+          result[:status] = "error"
+          result[:reason] = "Duplicate code in file"
+        end
+        return result
+      end
+
+      # Check for existing voucher code in database
+      if Voucher.exists?(code: attributes[:code], deleted_at: nil)
+        Rails.logger.info(
+          "[VouchersService] BULK_CREATE_SKIPPED_DB_DUPLICATE: " \
+          "code='#{attributes[:code]}' " \
+          "row=#{row_number}"
+        )
+        if result
+          result[:status] = "error"
+          result[:reason] = "Already exists"
+        end
+        return result
+      end
+
+      voucher = Voucher.new(attributes)
+      if voucher.valid?
+        vouchers_data << attributes
+        if result
+          result[:status] = "created"
+        end
+      else
+        error_msg = "Row #{row_number}: #{voucher.errors.full_messages.join(", ")}"
+        errors << error_msg
+        if result
+          result[:status] = "error"
+          result[:reason] = voucher.errors.full_messages.join(", ")
+        end
+      end
+
+      result
+    rescue => e
+      error_msg = "Row #{row_number}: #{e.message}"
+      errors << error_msg
+      if result
+        result[:status] = "error"
+        result[:reason] = e.message
+      end
+      result
     end
 
-    # Combines the fetched vouchers data and metadata, then formats keys.
-    # Ensures the caller receives the desired casing (camelCase / snake_case).
-    def build_response(body)
-      response = {
-        vouchers: build_vouchers(body),
-        meta: extract_meta(body)
-      }
+    # Prepares voucher attributes from row data
+    # @param row_hash [Hash] the row data from CSV/Excel
+    # @param row_number [Integer] the row number for error reporting
+    # @return [Hash] prepared attributes
+    def prepare_voucher_attributes(row_hash, row_number)
+      # Convert string values to appropriate types
+      attributes = {}
 
-      deep_transform_keys_format(response, format: key_format)
+      # Required fields
+      attributes[:code] = row_hash[:code]&.to_s&.strip&.upcase
+      raise "Code cannot be blank" if attributes[:code].blank?
+
+      # Discount type
+      discount_type = row_hash[:discount_type]&.to_s&.strip&.upcase
+      unless ["PERCENTAGE", "FIXED"].include?(discount_type)
+        raise "Discount type must be PERCENTAGE or FIXED"
+      end
+      attributes[:discount_type] = discount_type
+
+      # Discount value
+      attributes[:discount_value] = row_hash[:discount_value].to_f
+      raise "Discount value must be greater than 0" if attributes[:discount_value] <= 0
+
+      # Quota
+      attributes[:quota] = row_hash[:quota].to_i
+      raise "Quota must be greater than or equal to 0" if attributes[:quota] < 0
+
+      # Optional fields
+      attributes[:name] = row_hash[:name]&.to_s&.strip if row_hash[:name].present?
+      attributes[:description] = row_hash[:description]&.to_s&.strip if row_hash[:description].present?
+
+      # Max discount amount (for percentage discounts)
+      if row_hash[:max_discount_amount].present?
+        attributes[:max_discount_amount] = row_hash[:max_discount_amount].to_f
+        raise "Max discount amount must be greater than or equal to 0" if attributes[:max_discount_amount] < 0
+      end
+
+      # Min order amount
+      if row_hash[:min_order_amount].present?
+        attributes[:min_order_amount] = row_hash[:min_order_amount].to_f
+        raise "Min order amount must be greater than or equal to 0" if attributes[:min_order_amount] < 0
+      end
+
+      # Dates
+      if row_hash[:valid_from].present?
+        begin
+          attributes[:valid_from] = parse_date(row_hash[:valid_from])
+        rescue => e
+          raise "Invalid valid_from date: #{e.message}"
+        end
+      end
+
+      if row_hash[:valid_until].present?
+        begin
+          attributes[:valid_until] = parse_date(row_hash[:valid_until])
+        rescue => e
+          raise "Invalid valid_until date: #{e.message}"
+        end
+      end
+
+      # Validate date range if both dates are present
+      if attributes[:valid_from] && attributes[:valid_until]
+        if attributes[:valid_from] > attributes[:valid_until]
+          raise "Valid from date must be before valid until date"
+        end
+      end
+
+      # Is active (default to true if not specified)
+      is_active = row_hash[:is_active]&.to_s&.strip&.downcase
+      attributes[:is_active] = is_active.blank? ? true : ["true", "1", "yes", "y"].include?(is_active)
+
+      # Package IDs (comma-separated)
+      if row_hash[:package_ids].present?
+        package_input = row_hash[:package_ids].to_s.strip
+
+        # Check if it's the "Multiple packages" indicator
+        if package_input == "--- Multiple packages (enter IDs manually) ---"
+          # User selected the multiple packages option, they should enter IDs manually
+          # We'll leave it empty for them to fill in
+          attributes[:package_ids] = []
+        elsif package_input.match?(/^\d+(,\d+)*$/)
+          # Already in ID format (comma-separated numbers)
+          package_ids = package_input.split(",").map(&:strip).compact_blank
+          attributes[:package_ids] = package_ids.map(&:to_i) if package_ids.any?
+        else
+          # Try to parse as package names (format: "Service Name - Package Name")
+          package_names = package_input.split(",").map(&:strip).compact_blank
+          package_ids = []
+
+          package_names.each do |name|
+            # Parse the service and package name
+            if name =~ /^(.+) - (.+)$/
+              service_name = $1.strip
+              package_name = $2.strip
+
+              # Find the package
+              package = Package.joins(:service)
+                .where(services: {name: service_name})
+                .where("LOWER(packages.name) = ?", package_name.downcase)
+                .first
+
+              package_ids << package.id if package
+            end
+          end
+
+          attributes[:package_ids] = package_ids if package_ids.any?
+        end
+      end
+
+      attributes
     end
 
-    # Builds a single voucher response from the API body.
-    # Extracts the voucher data, builds a voucher hash, and transforms keys to the desired format.
-    # @param body [Hash, Object] the API response body
-    # @return [Hash] hash containing the voucher with properly formatted keys
-    def build_single_response(body)
-      response = {
-        voucher: build_voucher(extract_data(body))
-      }
+    # Parses date from various formats
+    # @param date_string [String] the date string to parse
+    # @return [DateTime] parsed datetime
+    def parse_date(date_string)
+      # Try different date formats
+      formats = ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S"]
 
-      deep_transform_keys_format(response, format: key_format)
+      formats.each do |format|
+        return DateTime.strptime(date_string.to_s.strip, format)
+      rescue ArgumentError
+        # Try next format
+      end
+
+      # Try parsing with Ruby's default parser
+      DateTime.parse(date_string.to_s)
     end
 
-    # Recursively transforms hash keys into the requested format.
-    # Returns original value if it cannot be transformed (e.g. plain objects).
+    # Builds a voucher hash with associated packages
+    # @param voucher [Voucher] the voucher model instance
+    # @return [Hash] voucher hash with packages
+    def build_voucher(voucher)
+      voucher_hash = voucher.attributes
+
+      # Include associated packages
+      if voucher.packages.loaded?
+        voucher_hash[:packages] = voucher.packages.map do |package|
+          package.attributes.slice("id", "name", "number_of_visit")
+        end
+      end
+
+      voucher_hash
+    end
+
+    # Deep transforms hash keys based on format
+    # @param value [Object] the value to transform
+    # @param format [Symbol] the key format (:camel or :snake)
+    # @return [Object] transformed value
     def deep_transform_keys_format(value, format:)
       return value unless value.respond_to?(:deep_transform_keys)
 
-      # Pick the correct key transformer (camelCase, snake_case, or nil if unsupported).
       transformer =
         case format&.to_sym
         when :camel
@@ -186,156 +559,44 @@ module AdminPortal
         end
 
       return value unless transformer
-
-      # Apply the transformer and ensure indifferent access so symbol/string lookups both work.
-      transformed = value.deep_transform_keys(&transformer)
-      transformed = transformed.with_indifferent_access if transformed.is_a?(Hash)
-      transformed
+      value.deep_transform_keys(&transformer)
     end
 
-    # Builds an array of voucher hashes from the API response body.
-    # Extracts data, normalizes it to an array, and transforms each item into a voucher hash.
-    # @param body [Hash, Array, Object] the API response body
-    # @return [Array<Hash>] array of voucher attribute hashes
-    def build_vouchers(body)
-      normalize_items(extract_data(body)).map { |item| build_voucher(item) }.compact
-    end
-
-    # Builds a single voucher hash from raw API data.
-    # Extracts attributes, validates through the Voucher model, and returns clean attributes.
-    # @param item [Hash, Object] raw voucher data from API
-    # @return [Hash, nil] voucher attributes hash or nil if item is invalid
-    def build_voucher(item)
-      return unless item
-
-      # Extract attributes if the item has an attributes property
-      # Handles both string and symbol keys, falling back to the item itself
-      attributes = item.is_a?(Hash) ? (item["attributes"] || item[:attributes] || item) : item
-
-      # Create Voucher model for validation and type safety
-      voucher = Voucher.new(attributes)
-
-      # Return the clean attributes hash instead of the model object
-      # This gives us validation but clean serialization
-      voucher.attributes
-    end
-
-    # Normalizes data into an array format.
-    # Handles cases where data might be a single item, array, or nil.
-    # @param data [Object] the data to normalize
-    # @return [Array] normalized array
-    def normalize_items(data)
-      case data
-      when Array
-        data
-      when nil
-        []
-      else
-        [data]
-      end
-    end
-
-    # Extracts the 'data' field from the API response body.
-    # Handles both string and symbol keys, and falls back to the body itself.
-    # @param body [Hash, Array, Object] the response body
-    # @return [Object] extracted data or empty array
-    def extract_data(body)
-      case body
-      when Hash
-        body["data"] || body[:data] || body
-      when Array
-        body
-      else
-        []
-      end
-    end
-
-    # Extracts pagination/metadata from the API response body.
-    # Looks for 'meta' key with both string and symbol access.
-    # @param body [Hash, Object] the response body
-    # @return [Hash] metadata hash or empty hash if not found
-    def extract_meta(body)
-      case body
-      when Hash
-        body["meta"] || body[:meta] || {}
-      else
-        {}
-      end
-    end
-
-    # Normalizes voucher attributes for API submission.
-    # Converts package_ids to integers where applicable and ensures snake_case keys.
-    # @param attributes [Hash, Object] raw voucher attributes
-    # @return [Hash] normalized payload ready for API submission
-    def normalize_voucher_payload(attributes)
-      attrs = attributes.respond_to?(:to_h) ? attributes.to_h : attributes
-      return {} unless attrs.is_a?(Hash)
-
-      normalized = attrs.deep_dup.with_indifferent_access
-      # Convert package_ids to integers if they are numeric strings
-      normalized[:package_ids] = Array(normalized[:package_ids]).map do |package_id|
-        if package_id.is_a?(String) && package_id.match?(/^\d+$/)
-          package_id.to_i
-        else
-          package_id
-        end
-      end
-
-      # Ensure snake_case keys for the external API
-      deep_transform_keys_format(normalized, format: :snake)
-    end
-
-    # Handles the response from create/update mutation operations.
-    # Builds a success response with voucher data or error response with formatted errors.
-    # @param response [Faraday::Response] the API response object
-    # @param action [String] the action being performed (create/update)
+    # Soft deletes a voucher by setting deleted_at timestamp
+    # @param id [String, Integer] the voucher ID to delete
     # @return [Hash] hash with :success boolean and either :voucher or :errors
-    def handle_mutation_response(response, action:)
-      if response.success?
-        # Extract and format voucher data on success
-        voucher = build_voucher(extract_data(response.body))
-        formatted = deep_transform_keys_format({voucher: voucher}, format: key_format)
-        {success: true, voucher: formatted[:voucher]}
-      else
-        # Log error and format error response
-        Rails.logger.error("[VouchersService] Failed to #{action} voucher: #{response.status} - #{response.body}")
-        errors = normalize_errors(response.body, fallback: "Failed to #{action} voucher.")
-        {success: false, errors: format_errors(errors)}
-      end
-    end
+    def destroy(id)
+      voucher = Voucher.find(id)
 
-    # Normalizes error data from API response body.
-    # Extracts errors or message fields, falling back to a default message.
-    # @param body [Hash, Object] the API response body
-    # @param fallback [String] default error message if none found
-    # @return [Hash] normalized error hash with full_messages key
-    def normalize_errors(body, fallback:)
-      return {full_messages: [fallback]} unless body.is_a?(Hash)
+      Rails.logger.info(
+        "[VouchersService] VOUCHER_DELETED: " \
+        "id=#{id} " \
+        "code='#{voucher.code}' " \
+        "performed_by=current_user"
+      )
 
-      # Try to extract errors field
-      errors = body["errors"] || body[:errors]
-      return errors if errors.present?
-
-      # Fall back to message field or default
-      message = body["message"] || body[:message] || fallback
-      {full_messages: Array(message)}
-    end
-
-    # Formats error hash with proper key casing for client response.
-    # @param errors [Hash] raw error hash
-    # @return [Hash] formatted error hash with proper key casing
-    def format_errors(errors)
-      deep_transform_keys_format({errors: errors}, format: key_format)[:errors]
-    end
-
-    # Handles exceptions during mutation operations (create/update).
-    # Logs the error and returns a formatted error response.
-    # @param action [String] the action being performed (create/update)
-    # @param error [Exception] the exception that occurred
-    # @return [Hash] hash with :success false and :errors
-    def handle_mutation_exception(action, error)
-      Rails.logger.error("[VouchersService] #{action.capitalize} voucher error: #{error.message}")
-      {success: false, errors: format_errors({full_messages: ["Unable to #{action} voucher. Please try again."]})}
+      voucher.update(deleted_at: Time.current)
+      response = {
+        success: true,
+        voucher: build_voucher(voucher)
+      }
+      deep_transform_keys_format(response, format: @key_format)
+    rescue ActiveRecord::RecordNotFound
+      {
+        success: false,
+        errors: {fullMessages: ["Voucher not found."]}
+      }
+    rescue => e
+      Rails.logger.error(
+        "[VouchersService] DELETE_VOUCHER_FAILED: " \
+        "id=#{id} " \
+        "error='#{e.message}' " \
+        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
+      )
+      {
+        success: false,
+        errors: {fullMessages: ["Unable to delete voucher. Please try again."]}
+      }
     end
   end
 end

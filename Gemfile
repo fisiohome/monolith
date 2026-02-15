@@ -90,3 +90,6 @@ gem "simplecov", "~> 0.22.0"
 
 gem "faraday", "~> 2.0"
 gem "dotenv-rails", groups: [:development, :test]
+
+gem "caxlsx", "~> 4.0"
+gem "roo", "~> 2.10"

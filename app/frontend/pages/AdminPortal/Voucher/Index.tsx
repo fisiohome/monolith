@@ -16,12 +16,13 @@ import {
 	PencilIcon,
 	PlusIcon,
 	Trash2Icon,
-	XIcon,
+	Upload,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import BulkUploadDialog from "@/components/admin-portal/vouchers/bulk-upload-dialog";
 import NewVoucherFormFields from "@/components/admin-portal/vouchers/upsert-form-fields";
 import { useDateContext } from "@/components/providers/date-provider";
 import {
@@ -60,6 +61,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
 	cn,
 	formatCurrency,
@@ -129,6 +131,12 @@ export default function Index({
 		string | number | null
 	>(null);
 	const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+
+	// Bulk upload state from query params
+	const isBulkUploadOpen = useMemo(
+		() => globalProps.adminPortal?.currentQuery?.bulkUpload === "true",
+		[globalProps.adminPortal?.currentQuery],
+	);
 
 	const voucherPendingDelete = useMemo(
 		() =>
@@ -215,6 +223,40 @@ export default function Index({
 		setIsDeleteLoading(false);
 		setIsDeleteDialogOpen(true);
 	}, []);
+
+	const handleBulkUploadOpen = useCallback(() => {
+		const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+			bulkUpload: "true",
+		});
+
+		router.get(
+			fullUrl,
+			{ ...queryParams },
+			{
+				only: ["flash", "adminPortal"],
+				preserveScroll: true,
+				preserveState: true,
+				replace: true,
+			},
+		);
+	}, [pageURL]);
+
+	const handleBulkUploadClose = useCallback(() => {
+		const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+			bulkUpload: null,
+		});
+
+		router.get(
+			fullUrl,
+			{ ...queryParams },
+			{
+				only: ["flash", "adminPortal"],
+				preserveScroll: true,
+				preserveState: true,
+				replace: true,
+			},
+		);
+	}, [pageURL]);
 
 	const handleDeleteDialogOpenChange = useCallback(
 		(open: boolean) => {
@@ -356,6 +398,7 @@ export default function Index({
 						newVoucherHref={
 							globalProps.adminPortal.router.adminPortal.vouchers.index
 						}
+						onBulkUploadOpen={handleBulkUploadOpen}
 					/>
 				</Deferred>
 
@@ -458,6 +501,19 @@ export default function Index({
 						</AlertDialogFooter>
 					</AlertDialogContent>
 				</AlertDialog>
+
+				{isBulkUploadOpen && (
+					<BulkUploadDialog
+						isOpen={isBulkUploadOpen}
+						onOpenChange={(open) => {
+							if (!open) {
+								handleBulkUploadClose();
+							}
+						}}
+						uploadUrl={`${vouchersIndexRoute}/bulk-upload`}
+						templateUrl={`${vouchersIndexRoute}/download-template`}
+					/>
+				)}
 			</PageContainer>
 		</>
 	);
@@ -551,38 +607,35 @@ function getColumns(
 			),
 		},
 		{
-			accessorKey: "validFrom",
+			accessorKey: "validity",
 			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Valid From" />
+				<DataTableColumnHeader column={column} title="Validity Period" />
 			),
 			meta: {
 				headerClassName: "hidden lg:table-cell",
 				cellClassName: "hidden lg:table-cell text-nowrap",
 			},
-			cell: ({ row }) =>
-				row?.original?.validFrom
-					? format(new Date(row.original.validFrom), "PPPp", {
-							locale,
-							in: tzDate,
-						})
-					: "N/A",
-		},
-		{
-			accessorKey: "validUntil",
-			header: ({ column }) => (
-				<DataTableColumnHeader column={column} title="Valid Until" />
-			),
-			meta: {
-				headerClassName: "hidden lg:table-cell",
-				cellClassName: "hidden lg:table-cell text-nowrap",
+			cell: ({ row }) => {
+				const { validFrom, validUntil } = row.original;
+				const formatDate = (date: string) =>
+					format(new Date(date), "PPp", {
+						locale,
+						in: tzDate,
+					});
+
+				if (!validFrom && !validUntil) {
+					return "N/A";
+				}
+
+				const from = validFrom ? formatDate(validFrom) : "No start";
+				const until = validUntil ? formatDate(validUntil) : "No end";
+
+				return (
+					<span className="text-sm">
+						{from} {validFrom && validUntil && "—"} {until}
+					</span>
+				);
 			},
-			cell: ({ row }) =>
-				row?.original?.validUntil
-					? format(new Date(row.original.validUntil), "PPPp", {
-							locale,
-							in: tzDate,
-						})
-					: "N/A",
 		},
 		{
 			id: "actions",
@@ -660,7 +713,7 @@ function VoucherDetails({
 		if (!voucher) return [];
 
 		return (voucher.packages ?? []).map((pkg) => {
-			const packageDetails = packagesById?.[String(pkg.packageId)];
+			const packageDetails = packagesById?.[String(pkg.id)];
 			return {
 				...pkg,
 				details: packageDetails,
@@ -733,48 +786,48 @@ function VoucherDetails({
 	const infoBlocks = [
 		{ label: "Code", value: voucher.code },
 		{
-			label: "Status",
-			value: (
-				<Badge
-					variant="outline"
-					className={cn(
-						"border rounded-full text-xs font-semibold uppercase mt-1.5",
-						row.original.isActive
-							? "bg-emerald-50 text-emerald-700 border-emerald-200"
-							: "bg-rose-50 text-rose-700 border-rose-200",
-					)}
-				>
-					{voucher.isActive ? "Active" : "Inactive"}
-				</Badge>
-			),
-		},
-		{
-			label: "Discount Type",
-			value: voucher.discountType.replaceAll("_", " "),
-		},
-		{
-			label: "Discount Value",
-			value: formattedDiscountValue,
-		},
-		{
-			label: "Max Discount",
-			value: formatCurrency(voucher.maxDiscountAmount, { emptyValue: "N/A" }),
+			label: "Discount",
+			value: (() => {
+				const type = voucher.discountType?.replaceAll("_", " ") || "N/A";
+				const value = formattedDiscountValue;
+				const maxDiscount = voucher.maxDiscountAmount
+					? formatCurrency(voucher.maxDiscountAmount, { emptyValue: "" })
+					: null;
+
+				return (
+					<div className="font-normal">
+						<p className="font-semibold">
+							{value} &mdash; ({type})
+						</p>
+						{maxDiscount && (
+							<p className="text-xs text-muted-foreground">
+								Max: <span className="font-semibold">{maxDiscount}</span>
+							</p>
+						)}
+					</div>
+				);
+			})(),
 		},
 		{
 			label: "Min Order Amount",
 			value: formatCurrency(voucher.minOrderAmount, { emptyValue: "N/A" }),
 		},
 		{
-			label: "Valid From",
-			value: voucher?.validFrom
-				? format(new Date(voucher.validFrom), "PPPp", { locale, in: tzDate })
-				: "N/A",
-		},
-		{
-			label: "Valid Until",
-			value: voucher?.validUntil
-				? format(new Date(voucher.validUntil), "PPPp", { locale, in: tzDate })
-				: "N/A",
+			label: "Validity Period",
+			value: (() => {
+				const { validFrom, validUntil } = voucher;
+				const formatDate = (date: string) =>
+					format(new Date(date), "PPPp", { locale, in: tzDate });
+
+				if (!validFrom && !validUntil) {
+					return "N/A";
+				}
+
+				const from = validFrom ? formatDate(validFrom) : "No start";
+				const until = validUntil ? formatDate(validUntil) : "No end";
+
+				return `${from} ${validFrom && validUntil ? "—" : ""} ${until}`;
+			})(),
 		},
 		{
 			label: "Summary",
@@ -810,31 +863,55 @@ function VoucherDetails({
 
 	return (
 		<div className="p-4 space-y-4 rounded-xl border bg-card text-card-foreground md:p-6 text-sm">
-			<div className="space-y-1">
-				<p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-					Voucher Details
-				</p>
-				<h4 className="text-base font-bold tracking-tight">
-					{voucher.name ?? voucher.code}
-				</h4>
-				<p className="text-muted-foreground">
-					{voucher.description || "No additional description provided."}
-				</p>
+			<div className="flex gap-3 justify-between">
+				<div className="space-y-1">
+					<p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+						Voucher Details
+					</p>
+					<h4 className="text-base font-bold tracking-tight">
+						{voucher.name ?? voucher.code}
+					</h4>
+					<p className="text-muted-foreground">
+						{voucher.description || "No additional description provided."}
+					</p>
+				</div>
+
+				<div>
+					<Badge
+						variant="outline"
+						className={cn(
+							"inline-flex border rounded-full text-xs font-semibold uppercase mt-1.5",
+							row.original.isActive
+								? "bg-emerald-50 text-emerald-700 border-emerald-200"
+								: "bg-rose-50 text-rose-700 border-rose-200",
+						)}
+					>
+						{voucher.isActive ? "Active" : "Inactive"}
+					</Badge>
+				</div>
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+			<div className="grid gap-4 md:grid-cols-4">
 				{infoBlocks.map((item) => (
 					<div
 						key={item.label}
 						className={cn(
 							"space-y-1 rounded-lg bg-background p-3",
-							item.label === "Summary" ? "col-span-2" : "",
+							item.label === "Summary" || item.label === "Validity Period"
+								? "col-span-full lg:col-span-2"
+								: "",
+							item.label === "Discount" ? "col-span-2" : "",
 						)}
 					>
 						<p className="text-xs uppercase text-muted-foreground">
 							{item.label}
 						</p>
-						<p className="font-semibold text-pretty">{item.value ?? "N/A"}</p>
+
+						{typeof item.value === "string" ? (
+							<p className="font-semibold text-pretty">{item.value ?? "N/A"}</p>
+						) : (
+							item.value
+						)}
 					</div>
 				))}
 			</div>
@@ -863,12 +940,15 @@ function VoucherDetails({
 													className="flex flex-wrap items-center gap-1 px-3 py-2 text-left leading-tight whitespace-normal break-all"
 												>
 													<span className="text-sm font-semibold">
-														{item.details?.name || `Package #${item.packageId}`}
+														{item.details?.name ||
+															item.name ||
+															`Package #${item.id}`}
 													</span>
 													<span className="text-xs italic text-muted-foreground">
 														(
-														{item.details?.numberOfVisit
-															? `${item.details.numberOfVisit} visit(s)`
+														{(item.details?.numberOfVisit ??
+														item.number_of_visit)
+															? `${item.details?.numberOfVisit ?? item.number_of_visit} visit(s)`
 															: "N/A visits"}
 														)
 													</span>
@@ -900,18 +980,9 @@ function VoucherDetails({
 				</div>
 			</div>
 
-			<div className="mt-4 flex flex-col md:flex-row gap-4 md:gap-2">
+			<div className="mt-4 flex flex-col md:flex-row md:justify-end gap-4 md:gap-2">
 				<Button
-					variant="outline"
-					size="sm"
-					className="w-full md:w-fit"
-					onClick={onClose}
-				>
-					<XIcon />
-					Close
-				</Button>
-				<Button
-					variant="primary-outline"
+					variant="ghost-primary"
 					size="sm"
 					className="w-full md:w-fit"
 					onClick={onEdit}
@@ -920,13 +991,21 @@ function VoucherDetails({
 					Edit
 				</Button>
 				<Button
-					variant="destructive"
+					variant="ghost-destructive"
 					size="sm"
 					className="w-full md:w-fit"
 					onClick={onClose}
 				>
 					<Trash2Icon />
 					Remove
+				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					className="w-full md:w-fit"
+					onClick={onClose}
+				>
+					Close
 				</Button>
 			</div>
 		</div>
@@ -961,13 +1040,16 @@ type FiltersPanelProps = {
 	pageURL: string;
 	queryParams?: Record<string, unknown>;
 	newVoucherHref: string;
+	onBulkUploadOpen: () => void;
 };
 
 const FiltersPanel = memo(function FiltersPanel({
 	pageURL,
 	queryParams,
 	newVoucherHref,
+	onBulkUploadOpen,
 }: FiltersPanelProps) {
+	const isMobile = useIsMobile();
 	const ALL_OPTION = "ALL";
 	const [showFilters, setShowFilters] = useState(false);
 	const [codeFilter, setCodeFilter] = useState<string>(
@@ -1038,26 +1120,36 @@ const FiltersPanel = memo(function FiltersPanel({
 
 	return (
 		<div className="grid gap-4">
-			<div className="z-10 flex flex-col gap-2 md:justify-between md:flex-row items-center">
+			<div className="z-10 flex gap-2 justify-between items-center">
 				<Button
 					variant={showFilters ? "default" : "outline"}
-					className="w-full md:w-fit"
+					size={isMobile ? "icon" : "default"}
 					onClick={() => setShowFilters((prev) => !prev)}
 				>
 					<ListFilterIcon />
-					{showFilters ? "Close" : "Filters"}
+					{isMobile ? null : showFilters ? "Close" : "Filters"}
 				</Button>
 
-				<Button asChild className="w-full md:w-fit order-first md:order-last">
-					<Link
-						href={
-							populateQueryParams(newVoucherHref, { new: "voucher" }).fullUrl
-						}
+				<div className="flex gap-2">
+					<Button
+						variant="primary-outline"
+						size={isMobile ? "icon" : "default"}
+						onClick={onBulkUploadOpen}
 					>
-						<PlusIcon />
-						Create Voucher
-					</Link>
-				</Button>
+						<Upload />
+						{isMobile ? null : "Bulk Upload"}
+					</Button>
+					<Button asChild size={isMobile ? "icon" : "default"}>
+						<Link
+							href={
+								populateQueryParams(newVoucherHref, { new: "voucher" }).fullUrl
+							}
+						>
+							<PlusIcon />
+							{isMobile ? null : "Create Voucher"}
+						</Link>
+					</Button>
+				</div>
 			</div>
 
 			<AnimatePresence initial={false} mode="wait">

@@ -145,6 +145,7 @@ export default function NewVoucherFormFields({
 	const [isLoading, setIsLoading] = useState(false);
 	const { toast } = useToast();
 	const isMobile = useIsMobile();
+	const isEditMode = Boolean(voucher);
 	const buttonProps = useMemo(
 		() => ({
 			isLoading,
@@ -213,7 +214,6 @@ export default function NewVoucherFormFields({
 	}, [globalProps?.errors, form]);
 
 	const onSubmit = (values: VoucherFormValues) => {
-		const isEditMode = Boolean(voucher);
 		const baseRoute = globalProps.adminPortal.router.adminPortal.vouchers.index;
 		const routeURL = isEditMode ? `${baseRoute}/${voucher?.id}` : baseRoute;
 		const payload = deepTransformKeysToSnakeCase({
@@ -314,17 +314,18 @@ export default function NewVoucherFormFields({
 													</span>
 													<div className="flex items-center gap-2">
 														{field.value.length > 0 && (
-															<button
-																type="button"
+															// biome-ignore lint/a11y/noStaticElementInteractions: act like a button
+															<div
 																onClick={(event) => {
 																	event.preventDefault();
 																	event.stopPropagation();
 																	field.onChange([]);
 																}}
+																onKeyDown={() => {}}
 																className="text-muted-foreground transition hover:text-foreground"
 															>
 																<X className="h-4 w-4" />
-															</button>
+															</div>
 														)}
 														<ChevronsUpDown className="opacity-50" />
 													</div>
@@ -415,6 +416,7 @@ export default function NewVoucherFormFields({
 											{...field}
 											placeholder="Enter voucher code..."
 											className="bg-input"
+											disabled={isEditMode}
 											onChange={(event) =>
 												field.onChange(event.target.value.toUpperCase())
 											}
@@ -450,7 +452,11 @@ export default function NewVoucherFormFields({
 								<FormItem>
 									<FormLabel>Discount Type</FormLabel>
 									<FormControl>
-										<Select onValueChange={field.onChange} value={field.value}>
+										<Select
+											disabled={isEditMode}
+											onValueChange={field.onChange}
+											value={field.value}
+										>
 											<SelectTrigger className="bg-input">
 												<SelectValue placeholder="Select discount type" />
 											</SelectTrigger>
@@ -479,6 +485,7 @@ export default function NewVoucherFormFields({
 											{...field}
 											type="number"
 											min={0}
+											disabled={isEditMode}
 											step="0.01"
 											placeholder="Enter discount value..."
 											className="bg-input appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -679,19 +686,10 @@ function mapVoucherToFormValues(voucher: Voucher): VoucherFormValues {
 		name: voucher.name ?? "",
 		description: voucher.description ?? "",
 		discountType: voucher.discountType,
-		discountValue:
-			typeof voucher.discountValue === "number"
-				? String(voucher.discountValue)
-				: "",
-		maxDiscountAmount:
-			typeof voucher.maxDiscountAmount === "number"
-				? String(voucher.maxDiscountAmount)
-				: "",
-		minOrderAmount:
-			typeof voucher.minOrderAmount === "number"
-				? String(voucher.minOrderAmount)
-				: "",
-		quota: typeof voucher.quota === "number" ? String(voucher.quota) : "",
+		discountValue: String(voucher.discountValue ?? ""),
+		maxDiscountAmount: String(voucher.maxDiscountAmount ?? ""),
+		minOrderAmount: String(voucher.minOrderAmount ?? ""),
+		quota: String(voucher.quota ?? ""),
 		validFrom: voucher.validFrom
 			? formatDateTimeLocal(new Date(voucher.validFrom))
 			: "",
@@ -699,7 +697,7 @@ function mapVoucherToFormValues(voucher: Voucher): VoucherFormValues {
 			? formatDateTimeLocal(new Date(voucher.validUntil))
 			: "",
 		isActive: Boolean(voucher.isActive),
-		packageIds: (voucher.packages ?? []).map((pkg) => String(pkg.packageId)),
+		packageIds: (voucher.packages ?? []).map((pkg) => String(pkg.id)),
 	};
 }
 
