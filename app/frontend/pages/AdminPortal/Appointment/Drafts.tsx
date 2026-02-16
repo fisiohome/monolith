@@ -11,8 +11,9 @@ import {
 	MoreHorizontal,
 	NotepadTextDashedIcon,
 	Trash2,
+	X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
@@ -20,6 +21,16 @@ import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
 } from "@/components/shared/responsive-dialog";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +52,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
 	Popover,
 	PopoverContent,
@@ -55,7 +67,13 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DRAFT_STEPS_LABELS } from "@/hooks/admin-portal/appointment/use-appointment-draft";
-import { cn, populateQueryParams, removeWhiteSpaces } from "@/lib/utils";
+import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import {
+	cn,
+	debounce,
+	populateQueryParams,
+	removeWhiteSpaces,
+} from "@/lib/utils";
 import type { Admin } from "@/types/admin-portal/admin";
 import type { AppointmentDraft } from "@/types/admin-portal/appointment-draft";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
@@ -430,13 +448,7 @@ export default function AppointmentDrafts() {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentDraftsGlobalPageProps>();
 	const currentUser = globalProps.auth?.currentUser;
-	const isSuperAdmin = currentUser?.["isSuperAdmin?"];
 
-	const [selectedAdmin, setSelectedAdmin] = useState<string>(
-		isSuperAdmin
-			? String(currentUser?.id || "")
-			: String(currentUser?.id || ""),
-	);
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [deleteDialog, setDeleteDialog] = useState<ResponsiveDialogProps>({
 		isOpen: false,
@@ -446,16 +458,83 @@ export default function AppointmentDrafts() {
 	});
 	const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const [picConfirmDialog, setPicConfirmDialog] = useState<{
+		isOpen: boolean;
+		draftId: string | null;
+	}>({
+		isOpen: false,
+		draftId: null,
+	});
+
+	const [filters, setFilters] = useState(() => {
+		const currentQuery = globalProps?.adminPortal?.currentQuery;
+		return {
+			draftId: currentQuery?.draftId || "",
+			adminId: currentQuery?.adminId || "me",
+		};
+	});
+
+	const debouncedUpdateQueryParams = useCallback(
+		debounce((url) => {
+			router.get(
+				url,
+				{},
+				{
+					preserveScroll: true,
+					only: ["adminPortal", "flash", "errors", "drafts"],
+				},
+			);
+		}, 300),
+		[],
+	);
+
+	const handleFilterBy = useCallback(
+		({ value, type }: { value: string; type: keyof typeof filters }) => {
+			const nextFilters = { ...filters, [type]: value };
+			setFilters(nextFilters);
+
+			// Only send the changed field, updateQueryParams will merge and clean status if needed
+			const { fullUrl } = populateQueryParams(
+				pageURL,
+				deepTransformKeysToSnakeCase({
+					...nextFilters,
+					// null value means reset the another param value
+					page: null,
+					limit: null,
+				}),
+			);
+			debouncedUpdateQueryParams(fullUrl);
+		},
+		[pageURL, debouncedUpdateQueryParams, filters],
+	);
 
 	const handleContinueDraft = useCallback(
 		(draftId: string) => {
-			router.get(
-				globalProps.adminPortal.router.adminPortal.appointment.new,
-				{ draftId: draftId },
-				{ preserveState: false },
+			const draft = globalProps.drafts?.find((d) => d.id === draftId);
+			const isCurrentUserPic = draft?.admins?.some(
+				(admin) => String(admin.id) === String(currentUser?.id),
 			);
+
+			if (!isCurrentUserPic) {
+				// Show confirmation dialog for non-PIC users
+				setPicConfirmDialog({
+					isOpen: true,
+					draftId: draftId,
+				});
+			} else {
+				// Continue directly for PIC users
+				router.get(
+					globalProps.adminPortal.router.adminPortal.appointment.new,
+					{ draft_id: draftId },
+					{ preserveState: false },
+				);
+			}
 		},
-		[globalProps.adminPortal.router.adminPortal.appointment.new],
+		[
+			globalProps.drafts,
+			currentUser?.id,
+			globalProps.adminPortal.router.adminPortal.appointment.new,
+		],
 	);
 
 	const handleDeleteDraft = useCallback((draftId: string) => {
@@ -472,6 +551,52 @@ export default function AppointmentDrafts() {
 				setDeleteDialog((prev) => ({ ...prev, isOpen: open }));
 			},
 		});
+	}, []);
+
+	const handleConfirmPicAddition = useCallback(async () => {
+		if (!picConfirmDialog.draftId) return;
+
+		try {
+			// Call API to add current user as PIC
+			const response = await fetch(
+				`/api/v1/appointments/drafts/${picConfirmDialog.draftId}/add_pic`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						"X-CSRF-Token":
+							document
+								.querySelector('meta[name="csrf-token"]')
+								?.getAttribute("content") || "",
+					},
+				},
+			);
+
+			if (!response.ok) {
+				const error = await response.json();
+				toast.error(error.error || "Failed to add PIC");
+				return;
+			}
+
+			// Successfully added as PIC, now redirect to the draft form
+			router.get(
+				globalProps.adminPortal.router.adminPortal.appointment.new,
+				{ draft_id: picConfirmDialog.draftId },
+				{ preserveState: false },
+			);
+			setPicConfirmDialog({ isOpen: false, draftId: null });
+		} catch (error) {
+			console.error("Add PIC error:", error);
+			toast.error("Failed to add PIC");
+		}
+	}, [
+		picConfirmDialog.draftId,
+		globalProps.adminPortal.router.adminPortal.appointment.new,
+	]);
+
+	const handleCancelPicAddition = useCallback(() => {
+		setPicConfirmDialog({ isOpen: false, draftId: null });
 	}, []);
 
 	const currentExpanded = useMemo<ExpandedState>(() => {
@@ -496,32 +621,6 @@ export default function AppointmentDrafts() {
 		() => columns(handleContinueDraft, handleDeleteDraft, pageURL),
 		[handleContinueDraft, handleDeleteDraft, pageURL],
 	);
-
-	useEffect(() => {
-		const urlParams = new URLSearchParams(window.location.search);
-		const adminPicId = urlParams.get("admin_pic_id");
-		if (adminPicId) {
-			setSelectedAdmin(adminPicId);
-		} else if (isSuperAdmin) {
-			setSelectedAdmin(String(currentUser?.id || ""));
-		}
-	}, [currentUser, isSuperAdmin]);
-
-	const handleFilterByAdmin = (adminId: string) => {
-		setSelectedAdmin(adminId);
-		const { fullUrl } = populateQueryParams(pageURL, {
-			admin_pic_id: adminId === String(currentUser?.id) ? null : adminId,
-		});
-
-		router.get(
-			fullUrl,
-			{},
-			{
-				preserveScroll: true,
-				only: ["adminPortal", "flash", "errors", "drafts"],
-			},
-		);
-	};
 
 	const confirmDeleteDraft = async () => {
 		if (!draftToDelete) return;
@@ -548,8 +647,11 @@ export default function AppointmentDrafts() {
 				router.reload({
 					only: ["adminPortal", "flash", "errors", "drafts"],
 					data: {
-						admin_pic_id:
-							selectedAdmin === String(currentUser?.id) ? null : selectedAdmin,
+						admin_id:
+							filters.adminId !== "me" && filters.adminId !== "all"
+								? filters.adminId
+								: null,
+						draft_id: filters.draftId || null,
 					},
 				});
 			} else {
@@ -593,103 +695,154 @@ export default function AppointmentDrafts() {
 				<div className="space-y-2">
 					<ApptViewChanger activeView="drafts" showNewBadge />
 
-					{isSuperAdmin && (
-						<div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4 xl:grid-cols-5">
-							<Deferred
-								data={["admins"]}
-								fallback={<Skeleton className="w-full rounded-md h-10" />}
-							>
-								<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-									<PopoverTrigger asChild>
-										<Button
-											variant="outline"
-											aria-expanded={popoverOpen}
-											className="bg-background justify-between"
-										>
-											<span className="line-clamp-1 truncate">
-												{selectedAdmin
-													? selectedAdmin === String(currentUser?.id)
-														? "Assigned to me"
-														: globalProps.admins?.find(
-																(admin) => String(admin.id) === selectedAdmin,
-															)?.name || "Filter by PIC"
-													: "Filter by PIC"}
-											</span>
-											<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]">
-										<Command>
-											<CommandInput placeholder="Search admin..." />
-											<CommandList>
-												<CommandEmpty>No admin found.</CommandEmpty>
-												<CommandGroup>
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4">
+						<div className="relative">
+							<Input
+								type="text"
+								placeholder="Search by Draft ID (e.g., 3 or #3)"
+								value={filters.draftId}
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+									const value = e.target.value;
+									handleFilterBy({ value, type: "draftId" });
+								}}
+							/>
+							{filters.draftId && (
+								// biome-ignore lint/a11y/useSemanticElements: act like button
+								<div
+									role="button"
+									tabIndex={0}
+									onClick={() => {
+										handleFilterBy({ value: "", type: "draftId" });
+									}}
+									onKeyUp={() => {}}
+									className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+								>
+									<X className="h-4 w-4" />
+								</div>
+							)}
+						</div>
+
+						<Deferred
+							data={["admins"]}
+							fallback={<Skeleton className="w-full rounded-md h-10" />}
+						>
+							<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										aria-expanded={popoverOpen}
+										className="bg-background justify-between"
+									>
+										<span className="line-clamp-1 truncate">
+											{filters.adminId === "me"
+												? "Assigned to me"
+												: filters.adminId === "all"
+													? "All"
+													: globalProps.admins?.find(
+															(admin) => String(admin.id) === filters.adminId,
+														)?.name || "Filter by PIC"}
+										</span>
+										<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]">
+									<Command>
+										<CommandInput placeholder="Search admin..." />
+										<CommandList>
+											<CommandEmpty>No admin found.</CommandEmpty>
+											<CommandGroup>
+												<CommandItem
+													value="all"
+													onSelect={() => {
+														handleFilterBy({
+															value: "all",
+															type: "adminId",
+														});
+														setPopoverOpen(false);
+													}}
+													className="justify-between"
+												>
+													All
+													<CheckIcon
+														className={cn(
+															"h-4 w-4",
+															filters.adminId === "all"
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+												</CommandItem>
+
+												<CommandItem
+													value="me"
+													onSelect={() => {
+														handleFilterBy({
+															value: "me",
+															type: "adminId",
+														});
+														setPopoverOpen(false);
+													}}
+													className="justify-between"
+												>
+													Assigned to me
+													<CheckIcon
+														className={cn(
+															"h-4 w-4",
+															filters.adminId === "me"
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+												</CommandItem>
+
+												{globalProps.admins?.map((admin) => (
 													<CommandItem
-														value=""
+														key={admin.id}
+														value={admin.name}
 														onSelect={() => {
-															handleFilterByAdmin(String(currentUser?.id));
+															handleFilterBy({
+																value: String(admin.id),
+																type: "adminId",
+															});
 															setPopoverOpen(false);
 														}}
-														className="justify-between"
 													>
-														Assigned to me
+														<div className="flex gap-2 flex-1">
+															<Avatar className="size-6 !rounded-[0px] text-primary border border-primary">
+																<AvatarFallback className="text-xs !rounded-[0px]">
+																	{admin.name?.charAt(0)?.toUpperCase() || "A"}
+																</AvatarFallback>
+															</Avatar>
+
+															<div className="flex flex-col">
+																<span className="text-sm text-pretty">
+																	{admin.name}
+																</span>
+																{admin?.user?.email && (
+																	<span className="text-xs text-muted-foreground">
+																		{admin.user.email}
+																	</span>
+																)}
+															</div>
+														</div>
+
 														<CheckIcon
 															className={cn(
 																"h-4 w-4",
-																selectedAdmin === String(currentUser?.id)
+																filters.adminId === String(admin.id)
 																	? "opacity-100"
 																	: "opacity-0",
 															)}
 														/>
 													</CommandItem>
-
-													{globalProps.admins?.map((admin) => (
-														<CommandItem
-															key={admin.id}
-															value={admin.name}
-															onSelect={() => {
-																handleFilterByAdmin(String(admin.id));
-																setPopoverOpen(false);
-															}}
-														>
-															<div className="flex items-center gap-2 flex-1">
-																<Avatar className="size-6 !rounded-[0px] text-primary border border-primary">
-																	<AvatarFallback className="text-xs !rounded-[0px]">
-																		{admin.name?.charAt(0)?.toUpperCase() ||
-																			"A"}
-																	</AvatarFallback>
-																</Avatar>
-
-																<div className="flex flex-col">
-																	<span className="text-sm text-pretty">
-																		{admin.name}
-																	</span>
-																	{admin?.user?.email && (
-																		<span className="text-xs text-muted-foreground">
-																			{admin.user.email}
-																		</span>
-																	)}
-																</div>
-															</div>
-
-															<CheckIcon
-																className={cn(
-																	"h-4 w-4",
-																	selectedAdmin === String(admin.id)
-																		? "opacity-100"
-																		: "opacity-0",
-																)}
-															/>
-														</CommandItem>
-													))}
-												</CommandGroup>
-											</CommandList>
-										</Command>
-									</PopoverContent>
-								</Popover>
-							</Deferred>
-						</div>
-					)}
+												))}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
+						</Deferred>
+					</div>
 				</div>
 
 				<div className="space-y-4">
@@ -699,11 +852,15 @@ export default function AppointmentDrafts() {
 								<NotepadTextDashedIcon className="size-12 text-muted-foreground mb-4 opacity-60" />
 								<h3 className="text-lg font-semibold mb-2">No drafts found</h3>
 								<p className="text-muted-foreground text-center mb-4">
-									{isSuperAdmin
-										? selectedAdmin
-											? "No drafts found for the selected admin."
-											: "No appointment drafts available."
-										: "You don't have any appointment drafts yet."}
+									{filters.adminId === "me"
+										? "You don't have any appointment drafts yet."
+										: filters.adminId === "all"
+											? "No appointment drafts available."
+											: `No drafts found for ${
+													globalProps.admins?.find(
+														(admin) => String(admin.id) === filters.adminId,
+													)?.name || "the selected admin"
+												}.`}
 								</p>
 								<Button asChild>
 									<Link href="/admin-portal/appointments/new">
@@ -766,6 +923,35 @@ export default function AppointmentDrafts() {
 					</div>
 				</div>
 			</ResponsiveDialog>
+
+			<AlertDialog
+				open={picConfirmDialog.isOpen}
+				onOpenChange={(open) => {
+					if (!open) {
+						handleCancelPicAddition();
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							You are not a PIC for this Draft
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							You are not currently assigned as a PIC for this draft. Would you
+							like to add yourself as a PIC and continue working on this draft?
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel onClick={handleCancelPicAddition}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction onClick={handleConfirmPicAddition}>
+							Yes, Add Me as PIC & Continue
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</>
 	);
 }

@@ -21,7 +21,7 @@
 			"loading": "Saving..."
 		},
 		"next": {
-			"label": "Next",
+			"label": "Save & Next",
 			"loading": "Please Wait..."
 		},
 		"skip": "Skip",

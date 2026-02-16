@@ -138,6 +138,7 @@ Rails.application.routes.draw do
               post "drafts" => "appointments#save_draft"
               put "drafts/:id" => "appointments#save_draft"
               delete "drafts/:id" => "appointments#delete_draft"
+              post "drafts/:id/add_pic" => "appointments#add_pic"
             end
           end
         end

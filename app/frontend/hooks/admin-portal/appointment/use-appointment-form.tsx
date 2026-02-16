@@ -95,7 +95,7 @@ export const useStepButtons = ({
 			? (draft) => {
 					// Update URL with draftId
 					const url = new URL(window.location.href);
-					url.searchParams.set("draftId", draft.id);
+					url.searchParams.set("draft_id", draft.id);
 					window.history.replaceState({}, "", url.toString());
 				}
 			: undefined,

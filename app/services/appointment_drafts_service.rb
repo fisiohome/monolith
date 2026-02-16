@@ -55,14 +55,14 @@ class AppointmentDraftsService
   def list_drafts(filters = {})
     drafts = AppointmentDraft.active_drafts
 
-    # Filter by admin_pic if specified (for backward compatibility)
-    drafts = drafts.for_admin_pic(filters[:admin_pic_id]) if filters[:admin_pic_id].present?
-
-    # Filter by any assigned admin if specified
+    # Filter by assigned admin if specified
     if filters[:admin_id].present?
       drafts = drafts.joins(:appointment_draft_admins)
         .where(appointment_draft_admins: {admin_id: filters[:admin_id]})
     end
+
+    # Filter by specific draft id if provided
+    drafts = drafts.where(id: filters[:draft_id]) if filters[:draft_id].present?
 
     # Filter by created_by if specified
     drafts = drafts.created_by(filters[:created_by_id]) if filters[:created_by_id].present?
@@ -72,6 +72,26 @@ class AppointmentDraftsService
 
     # Include associations for eager loading
     drafts.includes(:admin_pic, :created_by_admin, :admins, :primary_admin)
+  end
+
+  def add_admin_to_draft(draft_id, admin)
+    draft = AppointmentDraft.active_drafts.find_by(id: draft_id)
+
+    return {success: false, error: "Draft not found"} unless draft
+    return {success: false, error: "Admin not found"} unless admin
+
+    if draft.admins.include?(admin)
+      draft.ensure_admin_in_form_data!(admin)
+      return {success: true, draft: draft}
+    end
+
+    draft.add_admin(admin)
+    draft.ensure_admin_in_form_data!(admin)
+
+    {success: true, draft: draft}
+  rescue => e
+    Rails.logger.error("Failed to add admin to draft ##{draft_id}: #{e.message}")
+    {success: false, error: "Failed to add PIC to draft"}
   end
 
   # Mark draft as expired when appointment is created

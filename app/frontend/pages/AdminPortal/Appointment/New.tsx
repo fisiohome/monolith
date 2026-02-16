@@ -101,7 +101,7 @@ function FormComponent() {
 
 	// Get draftId from URL for use in loadDraft callback
 	const draftIdFromUrl = useMemo(() => {
-		return new URLSearchParams(window.location.search).get("draftId");
+		return new URLSearchParams(window.location.search).get("draft_id");
 	}, []);
 
 	// Load draft if draftId is in URL - Now integrated into useAppointmentDraft

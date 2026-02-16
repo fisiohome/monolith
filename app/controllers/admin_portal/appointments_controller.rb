@@ -2,6 +2,7 @@ module AdminPortal
   class AppointmentsController < ApplicationController
     include AppointmentsHelper
 
+    before_action :authenticate_user!
     before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule]
 
     def index

@@ -79,6 +79,20 @@ module Api
         end
       end
 
+      def add_pic
+        service = AppointmentDraftsService.new(current_admin)
+        result = service.add_admin_to_draft(params[:id], current_admin)
+
+        if result[:success]
+          render json: {success: true}
+        else
+          render json: {success: false, error: result[:error]}, status: :unprocessable_entity
+        end
+      rescue => e
+        Rails.logger.error("Add PIC error: #{e.message}")
+        render json: {success: false, error: "Failed to add PIC"}, status: :internal_server_error
+      end
+
       private
 
       def ensure_json_request

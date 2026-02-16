@@ -67,6 +67,33 @@ class AppointmentDraft < ApplicationRecord
     end
   end
 
+  def ensure_admin_in_form_data!(admin)
+    return if form_data.blank?
+
+    data = if form_data.is_a?(String)
+      JSON.parse(form_data)
+    else
+      form_data.deep_dup
+    end
+
+    data["additionalSettings"] ||= {}
+    data["additionalSettings"]["admins"] ||= []
+
+    admin_exists = data["additionalSettings"]["admins"].any? do |admin_hash|
+      admin_hash["id"].to_s == admin.id.to_s
+    end
+
+    return if admin_exists
+
+    data["additionalSettings"]["admins"] << {
+      "id" => admin.id,
+      "name" => admin.name,
+      "email" => admin.user&.email.to_s
+    }
+
+    update!(form_data: data)
+  end
+
   def remove_admin(admin)
     appointment_draft_admins.where(admin: admin).destroy_all
 
