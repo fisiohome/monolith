@@ -1,8 +1,9 @@
 class MasterDataSyncJob < ApplicationJob
   queue_as :default
 
-  def perform(sync_type, user_id = nil)
+  def perform(sync_type, user_id = nil, options = {})
     @current_user = User.find_by(id: user_id) if user_id
+    employment_type_filter = options[:employment_type_filter] || "KARPIS"
 
     # Create initial sync log
     @sync_log = SyncMonolithLogs.create!(
@@ -10,7 +11,7 @@ class MasterDataSyncJob < ApplicationJob
       sync_type: sync_type.to_s,
       status: :running,
       ui_message: "Sync started...",
-      logger_message: "Starting #{sync_type} sync",
+      logger_message: "Starting #{sync_type} sync (#{employment_type_filter})",
       started_at: Time.current
     )
 
@@ -18,7 +19,7 @@ class MasterDataSyncJob < ApplicationJob
 
     result = case sync_type.to_sym
     when :therapists_and_schedules
-      service.therapists_and_schedules
+      service.therapists_and_schedules(employment_type_filter:)
     when :locations
       service.locations
     when :admins_data

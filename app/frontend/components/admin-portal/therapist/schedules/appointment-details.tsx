@@ -131,7 +131,7 @@ export function AppointmentDetailsSection({
 								event.preventDefault();
 								event.stopPropagation();
 								window.open(
-									`https://www.google.com/maps/search/?api=1&query=${appointment?.visitAddress?.coordinates.y},${appointment.visitAddress?.coordinates.x}`,
+									`https://www.google.com/maps/search/?api=1&query=${appointment?.visitAddress?.coordinates.x},${appointment.visitAddress?.coordinates.y}`,
 								);
 							}}
 						>

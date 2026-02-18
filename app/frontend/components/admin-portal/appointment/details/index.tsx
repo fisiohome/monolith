@@ -168,7 +168,7 @@ const AppointmentListItemDetails = memo(function Component({
 								event.preventDefault();
 								event.stopPropagation();
 								window.open(
-									`https://www.google.com/maps/search/?api=1&query=${schedule?.visitAddress?.coordinates.y},${schedule.visitAddress?.coordinates.x}`,
+									`https://www.google.com/maps/search/?api=1&query=${schedule?.visitAddress?.coordinates.x},${schedule.visitAddress?.coordinates.y}`,
 								);
 							}}
 						>

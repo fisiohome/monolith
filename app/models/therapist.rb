@@ -20,6 +20,11 @@ class Therapist < ApplicationRecord
     where(employment_type: employment_type)
   }
 
+  # * define the constants
+  # define the employment type constants with a label and value
+  EmplymentTypeStruct = Struct.new(:key, :title_id)
+  EMPLOYMENT_TYPE_LABELS = [EmplymentTypeStruct.new("KARPIS", "Karyawan"), EmplymentTypeStruct.new("FLAT", "Mitra")].freeze
+
   # * define the associations
   belongs_to :user
 

@@ -285,10 +285,15 @@ module AdminPortal
     end
 
     def sync_data_master
-      # Enqueue background job
-      MasterDataSyncJob.perform_later(:therapists_and_schedules, current_user&.id)
+      # Get employment type filter from params (default: KARPIS for internal employees)
+      employment_type_filter = params[:employment_type_filter]&.upcase || "KARPIS"
+      employment_type_filter = "KARPIS" unless Therapist.employment_types.key?(employment_type_filter)
 
-      redirect_to admin_portal_therapists_path, notice: "Data sync is running in the background. You'll be notified when it's complete."
+      # Enqueue background job with options
+      MasterDataSyncJob.perform_later(:therapists_and_schedules, current_user&.id, {employment_type_filter:})
+
+      type_label = (employment_type_filter == "FLAT") ? "Mitra" : "Karyawan"
+      redirect_to admin_portal_therapists_path, notice: "#{type_label} data sync is running in the background. You'll be notified when it's complete."
     end
 
     def sync_status

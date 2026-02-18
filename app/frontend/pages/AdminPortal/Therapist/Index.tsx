@@ -1,12 +1,12 @@
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import type {
 	ColumnDef,
-	ExpandedState,
 	Row,
 	Table as TableTanstack,
 } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import {
+	ChevronDown,
 	Ellipsis,
 	InfinityIcon,
 	Info,
@@ -61,12 +61,7 @@ import { getGenderIcon } from "@/hooks/use-gender";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getBrandBadgeVariant } from "@/lib/services";
 import { getEmpStatusBadgeVariant } from "@/lib/therapists";
-import {
-	cn,
-	generateInitials,
-	populateQueryParams,
-	removeWhiteSpaces,
-} from "@/lib/utils";
+import { cn, generateInitials, populateQueryParams } from "@/lib/utils";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Location } from "@/types/admin-portal/location";
 import type {
@@ -125,25 +120,6 @@ export default function Index({
 			autoCheckOnMount: true,
 		},
 	);
-
-	// * data table state management
-	const currentExpanded = useMemo<ExpandedState>(() => {
-		const { queryParams } = populateQueryParams(pageURL);
-		const expandedList = queryParams?.expanded
-			? removeWhiteSpaces(queryParams?.expanded)?.split(",")
-			: [];
-		const adminsIndex = therapists.data.reduce(
-			(obj, item, index) => {
-				if (expandedList.includes(String(item.id))) {
-					obj[index] = true;
-				}
-				return obj;
-			},
-			{} as Record<number, boolean>,
-		);
-
-		return adminsIndex;
-	}, [pageURL, therapists.data]);
 
 	// * for table actions management state
 	const routeTo = {
@@ -625,26 +601,42 @@ export default function Index({
 
 					<div className="flex flex-col gap-2 md:flex-row">
 						{globalProps?.auth?.currentUser?.["isSuperAdmin?"] && (
-							<Button
-								variant="primary-outline"
-								disabled={isLoading}
-								onClick={(event) => {
-									event.preventDefault();
-									triggerSync();
-								}}
-							>
-								{isLoading ? (
-									<>
-										<LoaderIcon className="animate-spin" />
-										<span>{`${t("components.modal.wait")}...`}</span>
-									</>
-								) : (
-									<>
-										<RefreshCcw />
-										{tt("button.sync")}
-									</>
-								)}
-							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="primary-outline" disabled={isLoading}>
+										{isLoading ? (
+											<>
+												<LoaderIcon className="animate-spin" />
+												<span>{`${t("components.modal.wait")}...`}</span>
+											</>
+										) : (
+											<>
+												<RefreshCcw />
+												{tt("button.sync")}
+												<ChevronDown className="ml-1 h-4 w-4" />
+											</>
+										)}
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuLabel>Sync Therapists</DropdownMenuLabel>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() =>
+											triggerSync({ employment_type_filter: "KARPIS" })
+										}
+									>
+										<span>Karyawan (KARPIS)</span>
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() =>
+											triggerSync({ employment_type_filter: "FLAT" })
+										}
+									>
+										<span>Mitra (FLAT)</span>
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						)}
 
 						{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
@@ -673,7 +665,6 @@ export default function Index({
 					customPagination={(table) => (
 						<PaginationTable table={table} metadata={therapists.metadata} />
 					)}
-					currentExpanded={currentExpanded}
 				/>
 
 				{formDialog.isOpen && (

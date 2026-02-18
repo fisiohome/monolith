@@ -47,11 +47,11 @@ class TherapistAppointmentSchedule < ApplicationRecord
       # Filter out rules with 0 values
       filtered_rules = availability_rules.filter do |rule|
         # Keep rule if it has location (regardless of value)
-        next true if rule.key?("location") && rule["location"]
+        next true if (rule.key?("location") || rule.key?(:location)) && rule["location"]
         # Keep rule if distance is greater than 0
-        next true if rule.key?("distance_in_meters") && rule["distance_in_meters"].to_i > 0
+        next true if (rule.key?("distance_in_meters") || rule.key?(:distance_in_meters)) && rule["distance_in_meters"].to_i > 0
         # Keep rule if duration is greater than 0
-        next true if rule.key?("duration_in_minutes") && rule["duration_in_minutes"].to_i > 0
+        next true if (rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes)) && rule["duration_in_minutes"].to_i > 0
         # Otherwise, filter it out
         false
       end
@@ -94,7 +94,7 @@ class TherapistAppointmentSchedule < ApplicationRecord
     return if availability_rules.blank?
 
     if !availability_rules.is_a?(Array) ||
-        !availability_rules.all? { |rule| rule.is_a?(Hash) && (rule.key?("distance_in_meters") || rule.key?("duration_in_minutes") || rule.key?("location")) }
+        !availability_rules.all? { |rule| rule.is_a?(Hash) && (rule.key?("distance_in_meters") || rule.key?("duration_in_minutes") || rule.key?("location") || rule.key?(:distance_in_meters) || rule.key?(:duration_in_minutes) || rule.key?(:location)) }
       errors.add(:availability_rules, "must be an array of hashes with distance_in_meters, duration_in_minutes, or location keys")
     end
   end

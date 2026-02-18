@@ -8,7 +8,7 @@ module AdminPortal
     ADMIN_GID = "1493117737"
     BRAND_GID = "2090364532"
     PACKAGE_GID = "872007576"
-    THERAPIST_GID = "887408989"
+    THERAPIST_GID = Rails.env.development? ? "1510199675" : "887408989"
     THERAPIST_SCHEDULES_GID = "1843613331"
     APPOINTMENT_GID = "350823925"
 
@@ -380,23 +380,31 @@ module AdminPortal
       {success: false, error: error_message, log_message: error_message}
     end
 
-    def therapists
+    def therapists(employment_type_filter: "KARPIS")
       # Process therapists CSV
-      therapists_csv = fetch_and_parse_csv(gid: THERAPIST_GID)
-      required_therapist_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Postal Code", "Address Line", "Brand"]
-      validate_headers(therapists_csv, required_therapist_headers)
+      csv = fetch_and_parse_csv(gid: THERAPIST_GID)
+      required_therapist_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Address Line", "Brand"]
+      validate_headers(csv, required_therapist_headers)
+
+      # Build ignoring_loc_rules map for use in therapist_schedules
+      @ignoring_loc_rules_map = csv.each_with_object({}) do |row, hash|
+        name = row["Name"]&.strip
+        ignoring_loc_rules = row["Ignoring Location Rules"]&.strip&.upcase == "ACTIVE"
+        hash[name] = ignoring_loc_rules if name.present?
+      end
 
       # Track results
-      results = {created: [], updated: [], skipped: [], skipped_flat: [], failed: []}
+      results = {created: [], updated: [], skipped: [], skipped_other_type: [], failed: []}
 
       # Process therapists
-      therapists_csv.each do |row|
-        # skipped for the FLAT employment type therapists
+      csv.each do |row|
         name = row["Name"]&.strip
         email = row["Email"]&.strip&.downcase
         employment_type = row["Employment Type"]&.strip&.upcase
-        if employment_type === "FLAT"
-          results[:skipped_flat] << {name:, email:, reason: "FLAT employment type"}
+
+        # Skip therapists with employment types other than the filter
+        if employment_type != employment_type_filter
+          results[:skipped_other_type] << {name:, email:, reason: "#{employment_type} employment type (filtering for #{employment_type_filter})"}
           next
         end
 
@@ -439,16 +447,19 @@ module AdminPortal
 
             # Create or update Address
             address_line = row["Address Line"]&.strip&.to_s
-            postal_code = row["Postal Code"]&.strip&.to_s
+            postal_code = row["Postal Code"]&.strip.presence
             address = Address.find_or_initialize_by(location:, address: address_line)
-            address.assign_attributes(postal_code:, latitude:, longitude:)
+            address_attrs = {latitude:, longitude:}
+            address_attrs[:postal_code] = postal_code if postal_code
+            address.assign_attributes(address_attrs)
             address.save! if address.changed? || address.new_record?
 
             # Create or update BankDetail
             bank_name = row["Bank Name"]&.strip&.to_s
             account_number = row["Account Number"]&.strip&.to_s
             account_holder_name = row["Account Holder Name"]&.strip&.to_s&.upcase
-            bank_detail = BankDetail.find_or_initialize_by(bank_name:, account_number:, account_holder_name:)
+            bank_detail = BankDetail.find_or_initialize_by(bank_name:, account_number:)
+            bank_detail.account_holder_name = account_holder_name
             bank_detail.save! if bank_detail.changed? || bank_detail.new_record?
 
             # Create or update Therapist
@@ -496,11 +507,12 @@ module AdminPortal
       created_count = results[:created].count
       updated_count = results[:updated].count
       skipped_count = results[:skipped].count
-      skipped_flat_count = results[:skipped_flat].count
+      skipped_other_type_count = results[:skipped_other_type].count
       failed_count = results[:failed].count
-      total_count = created_count + updated_count + skipped_count + skipped_flat_count + failed_count
+      total_count = created_count + updated_count + skipped_count + failed_count
 
-      log_message = "Processed #{total_count} therapists: #{created_count} created, #{updated_count} updated"
+      type_label = (employment_type_filter == "FLAT") ? Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "FLAT" }&.title_id : Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "KARPIS" }&.title_id
+      log_message = "Processed #{total_count} #{type_label} therapists: #{created_count} created, #{updated_count} updated"
       if skipped_count > 0
         skip_reasons = results[:skipped].group_by { |s| s[:reason] }
           .map { |reason, items| "#{items.count} #{reason}" }
@@ -508,8 +520,8 @@ module AdminPortal
         log_message += ", #{skipped_count} skipped: #{skip_reasons}"
       end
 
-      if skipped_flat_count > 0
-        log_message += ", #{skipped_flat_count} skipped (FLAT)"
+      if skipped_other_type_count > 0
+        log_message += ", #{skipped_other_type_count} skipped (other employment type)"
       end
 
       if failed_count > 0
@@ -519,9 +531,8 @@ module AdminPortal
 
       log_message += "."
 
-      message = "Processed #{total_count} therapists: #{created_count} created, #{updated_count} updated"
+      message = "Processed #{total_count} #{type_label} therapists: #{created_count} created, #{updated_count} updated"
       message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += ", #{skipped_flat_count} FLAT skipped" if skipped_flat_count > 0
       message += ", #{failed_count} failed" if failed_count > 0
       message += "."
 
@@ -533,7 +544,7 @@ module AdminPortal
       {success: false, error: error_message, log_message: error_message, results:}
     end
 
-    def therapist_schedules
+    def therapist_schedules(employment_type_filter: nil)
       # Process therapist_schedules CSV
       schedules_csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
       required_schedule_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
@@ -542,28 +553,29 @@ module AdminPortal
       # Pre-group schedules by therapist name for faster lookup
       grouped_schedules = schedules_csv.group_by { |row| row["Therapist"]&.strip }
 
+      # Use ignoring_loc_rules_map from therapists method if available, otherwise fetch
+      ignoring_loc_rules_map = @ignoring_loc_rules_map || begin
+        therapist_csv = fetch_and_parse_csv(gid: THERAPIST_GID)
+        therapist_csv.each_with_object({}) do |row, hash|
+          name = row["Name"]&.strip
+          ignoring_loc_rules = row["Ignoring Location Rules"]&.strip&.upcase == "ACTIVE"
+          hash[name] = ignoring_loc_rules if name.present?
+        end
+      end
+
       # Track results
       results = {schedule_updated: [], skipped: [], failed: [], schedules_created: []}
 
       # Get all therapists (including those without schedules)
-      all_therapists = Therapist.includes(:user).all
+      all_therapists = Therapist.includes(:user)
+      all_therapists = all_therapists.where(employment_type: employment_type_filter) if employment_type_filter.present?
 
       all_therapists.each do |therapist|
         name = therapist.name
         email = therapist.user&.email
 
-        # Check if therapist has valid coordinates
-        active_address = therapist.active_address
-        coordinates_valid = active_address && !(active_address.latitude.abs > 90 || active_address.longitude.abs > 180 || [active_address.latitude, active_address.longitude].all?(&:zero?))
-
-        # Check if therapist is inactive or FLAT
-        skip_reason = if !coordinates_valid
-          "Invalid coordinates, schedule removed"
-        elsif therapist.employment_status == "INACTIVE"
-          "Inactive therapist, schedule removed"
-        elsif therapist.employment_type == "FLAT"
-          "FLAT employment type, no schedule"
-        end
+        # Skip only inactive therapists
+        skip_reason = "Inactive therapist, schedule removed" if therapist.employment_status == "INACTIVE"
 
         # Get or create schedule
         schedule_record = TherapistAppointmentSchedule.find_or_initialize_by(therapist:)
@@ -588,7 +600,24 @@ module AdminPortal
           )
           # Set default rules if not present
           if schedule_record.availability_rules.blank? || schedule_record.availability_rules == {}
-            schedule_record.availability_rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES
+            # Start with default rules
+            rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES.dup
+
+            # For FLAT employment type, always remove distance and duration rules
+            if therapist.employment_type == "FLAT"
+              rules = rules.reject { |rule|
+                rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) ||
+                  rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes)
+              }
+            end
+
+            # Apply ignoring_loc_rules_map for location rule
+            if ignoring_loc_rules_map[name]
+              # Remove location rule if ignoring
+              rules = rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
+            end
+
+            schedule_record.availability_rules = rules
           end
           schedule_record.save!
           results[:schedules_created] << {name:, email:}
@@ -597,6 +626,44 @@ module AdminPortal
         begin
           schedule_updated = false
           ActiveRecord::Base.transaction do
+            # Update availability_rules based on employment type and ignoring_loc_rules flag for existing schedules
+            should_ignore_location = ignoring_loc_rules_map[name]
+            current_rules = schedule_record.availability_rules || []
+            has_location_rule = current_rules.any? { |rule| rule.key?("location") || rule.key?(:location) }
+            has_distance_rule = current_rules.any? { |rule| rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) }
+            has_duration_rule = current_rules.any? { |rule| rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes) }
+
+            rules_updated = false
+            new_rules = current_rules.dup
+
+            # For FLAT employment type, always remove distance and duration rules
+            if therapist.employment_type == "FLAT"
+              if has_distance_rule || has_duration_rule
+                new_rules = new_rules.reject { |rule|
+                  rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) ||
+                    rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes)
+                }
+                rules_updated = true
+              end
+            end
+
+            # Apply ignoring_loc_rules_map for location rule
+            if should_ignore_location && has_location_rule
+              # Remove location rule if ignoring
+              new_rules = new_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
+              rules_updated = true
+            elsif !should_ignore_location && !has_location_rule && new_rules.present?
+              # Add location rule back if not ignoring and it's missing
+              new_rules += [{"location" => true}]
+              rules_updated = true
+            end
+
+            if rules_updated
+              schedule_record.availability_rules = new_rules
+              schedule_record.save! if schedule_record.changed?
+              schedule_updated = true
+            end
+
             # Apply custom schedule or default
             existing_availabilities_scope = TherapistWeeklyAvailability.where(therapist_appointment_schedule_id: schedule_record.id)
             if grouped_schedules.key?(name)
@@ -728,13 +795,13 @@ module AdminPortal
       {success: false, error: error_message, log_message: error_message, results:}
     end
 
-    def therapists_and_schedules
-      # First sync therapists
-      therapist_result = therapists
+    def therapists_and_schedules(employment_type_filter: "KARPIS")
+      # First sync therapists (this builds @ignoring_loc_rules_map)
+      therapist_result = therapists(employment_type_filter:)
       return therapist_result unless therapist_result[:success]
 
-      # Then sync schedules
-      schedule_result = therapist_schedules
+      # Then sync schedules for the requested employment type (uses @ignoring_loc_rules_map)
+      schedule_result = therapist_schedules(employment_type_filter:)
       return schedule_result unless schedule_result[:success]
 
       # Extract counts from results
@@ -742,25 +809,27 @@ module AdminPortal
       therapists_updated = therapist_result.dig(:results, :updated)&.count || 0
       therapists_failed = therapist_result.dig(:results, :failed)&.count || 0
       therapists_skipped = therapist_result.dig(:results, :skipped)&.count || 0
-      therapists_skipped_flat = therapist_result.dig(:results, :skipped_flat)&.count || 0
+
+      type_label = (employment_type_filter == "FLAT") ? Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "FLAT" }&.title_id : Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "KARPIS" }&.title_id
+
+      # Build comprehensive UI message
+      message = "#{type_label}: #{therapists_created} created, #{therapists_updated} updated"
+      message += ", #{therapists_failed} failed" if therapists_failed > 0
+      message += ", #{therapists_skipped} skipped" if therapists_skipped > 0
 
       schedules_created = schedule_result.dig(:results, :schedules_created)&.count || 0
       schedules_updated = schedule_result.dig(:results, :schedule_updated)&.count || 0
       schedules_failed = schedule_result.dig(:results, :failed)&.count || 0
       schedules_skipped = schedule_result.dig(:results, :skipped)&.count || 0
 
-      # Build comprehensive UI message
-      message = "Therapists: #{therapists_created} created, #{therapists_updated} updated"
-      message += ", #{therapists_failed} failed" if therapists_failed > 0
-      message += ", #{therapists_skipped} skipped" if therapists_skipped > 0
-      message += ", #{therapists_skipped_flat} FLAT skipped" if therapists_skipped_flat > 0
       message += ". Schedules: #{schedules_created} created, #{schedules_updated} updated"
       message += ", #{schedules_failed} failed" if schedules_failed > 0
       message += ", #{schedules_skipped} skipped" if schedules_skipped > 0
       message += "."
 
       # Combine messages for logging (with full details)
-      log_message = "#{therapist_result[:log_message]} #{schedule_result[:log_message]}"
+      log_message = therapist_result[:log_message].to_s
+      log_message += " #{schedule_result[:log_message]}"
 
       # Combine results
       combined_results = {
@@ -768,7 +837,7 @@ module AdminPortal
         schedules: schedule_result[:results] || {}
       }
 
-      Rails.logger.info "Therapists and schedules sync completed. #{log_message}"
+      Rails.logger.info "#{type_label} therapists sync completed. #{log_message}"
       {success: true, message:, log_message:, results: combined_results}
     rescue => e
       error_message = "Error syncing therapists and schedules: #{e.class} - #{e.message}"

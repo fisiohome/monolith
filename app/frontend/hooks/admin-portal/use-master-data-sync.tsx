@@ -150,18 +150,16 @@ export function useMasterDataSync({
 		}
 	}, [autoCheckOnMount, checkExistingSync]);
 
-	// Trigger sync
-	const triggerSync = useCallback(() => {
-		setIsLoading(true);
-		setSyncStatus({
-			message: MESSAGES.SYNC_RUNNING,
-			type: "info",
-		});
+	// Trigger sync with optional parameters
+	const triggerSync = useCallback(
+		(params?: Record<string, string>) => {
+			setIsLoading(true);
+			setSyncStatus({
+				message: MESSAGES.SYNC_RUNNING,
+				type: "info",
+			});
 
-		router.put(
-			syncEndpoint,
-			{},
-			{
+			router.put(syncEndpoint, params || {}, {
 				preserveScroll: true,
 				preserveState: true,
 				only: ["adminPortal", "flash", "errors"],
@@ -169,9 +167,10 @@ export function useMasterDataSync({
 					setIsLoading(false);
 					pollSyncStatus();
 				},
-			},
-		);
-	}, [syncEndpoint, pollSyncStatus]);
+			});
+		},
+		[syncEndpoint, pollSyncStatus],
+	);
 
 	return {
 		isLoading,

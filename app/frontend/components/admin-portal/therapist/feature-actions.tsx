@@ -16,6 +16,7 @@ import {
 	Loader2,
 	LoaderIcon,
 	Mail,
+	MapPinIcon,
 	Microscope,
 	PartyPopper,
 	Phone,
@@ -893,6 +894,26 @@ export function DetailsTherapistContent({
 																	{addr.address}
 																</span>
 															</div>
+
+															{addr.latitude && addr.longitude ? (
+																<div className="flex flex-col font-light text-pretty">
+																	<Button
+																		size={!isDekstop ? "default" : "sm"}
+																		type="button"
+																		variant="accent-outline"
+																		onClick={(event) => {
+																			event.preventDefault();
+
+																			window.open(
+																				`https://www.google.com/maps/search/?api=1&query=${addr?.latitude},${addr?.longitude}`,
+																			);
+																		}}
+																	>
+																		<MapPinIcon />
+																		View on Google Maps
+																	</Button>
+																</div>
+															) : null}
 														</div>
 													</AccordionContent>
 												</AccordionItem>
