@@ -26,6 +26,8 @@ class MasterDataSyncJob < ApplicationJob
       service.admins_data
     when :brands_and_packages
       service.brands_and_packages
+    when :therapist_leaves
+      service.therapist_leaves
     else
       {success: false, error: "Unknown sync type: #{sync_type}"}
     end

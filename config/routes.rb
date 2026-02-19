@@ -62,7 +62,11 @@ Rails.application.routes.draw do
         resources :availabilities, only: [:index] do
           collection do
             put "upsert" => "availabilities#upsert"
-            put "sync-data-master" => "availabilities#sync_data_master"
+            # ? we don't need to sync schedule because it's already included in therapists_and_schedules in therapists page
+            # put "sync-data-master" => "availabilities#sync_data_master"
+            # get "sync-status" => "availabilities#sync_status"
+            put "sync-leaves" => "availabilities#sync_leaves"
+            get "sync-leaves-status" => "availabilities#sync_leaves_status"
           end
         end
 

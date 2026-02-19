@@ -164,7 +164,7 @@ function ActionButtons({
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							<p>Apply time to all</p>
+							<p>Remove this day</p>
 						</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>

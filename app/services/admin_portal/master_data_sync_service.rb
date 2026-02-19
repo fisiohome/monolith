@@ -10,6 +10,7 @@ module AdminPortal
     PACKAGE_GID = "872007576"
     THERAPIST_GID = Rails.env.development? ? "1510199675" : "887408989"
     THERAPIST_SCHEDULES_GID = "1843613331"
+    THERAPIST_LEAVES_GID = "261776844"
     APPOINTMENT_GID = "350823925"
 
     def initialize(user = nil)
@@ -106,6 +107,7 @@ module AdminPortal
       csv.each do |row|
         name, email, admin_type = headers.map { |key| row[key]&.strip }
         email = email.downcase
+        status = row["Status"]&.strip&.upcase.presence || "INACTIVE"
 
         if [name, email, admin_type].any?(&:blank?)
           results[:skipped] << {email: email || "blank", reason: "Missing required fields"}
@@ -117,6 +119,16 @@ module AdminPortal
           user = User.find_or_initialize_by(email:)
           user_created = user.new_record?
           user.password = "Fisiohome123!" if user.new_record?
+
+          # Handle suspension based on Status column
+          if status == "ACTIVE"
+            user.suspend_at = nil
+            user.suspend_end = nil
+          elsif user.suspend_at.nil?
+            user.suspend_at = Time.current
+          end
+          # Suspend user if not already suspended
+
           user.save! if user.changed?
 
           # Create or update admin
@@ -128,9 +140,9 @@ module AdminPortal
 
           # Track successful operations
           if admin_created || user_created
-            results[:created] << {name:, email:, admin_type:}
+            results[:created] << {name:, email:, admin_type:, status:}
           elsif admin.changed? || user.changed?
-            results[:updated] << {name:, email:, admin_type:}
+            results[:updated] << {name:, email:, admin_type:, status:}
           else
             results[:skipped] << {name:, email:, reason: "No changes needed"}
           end
@@ -152,7 +164,15 @@ module AdminPortal
         log_message += ", #{failed_count} failed: #{failure_reasons}"
       end
       if skipped_count > 0
-        skip_reasons = results[:skipped].map { |s| "#{s[:email] || s[:name]} (#{s[:reason]})" }.join(", ")
+        skip_reasons = results[:skipped].group_by { |s| s[:reason] }
+          .map { |reason, items|
+            if reason == "No changes needed"
+              "#{items.count} admins - #{reason}"
+            else
+              items.map { |s| "#{s[:email] || s[:name]} (#{reason})" }.join(", ")
+            end
+          }
+          .join(", ")
         log_message += ", #{skipped_count} skipped: #{skip_reasons}"
       end
       log_message += "."
@@ -841,6 +861,121 @@ module AdminPortal
       {success: true, message:, log_message:, results: combined_results}
     rescue => e
       error_message = "Error syncing therapists and schedules: #{e.class} - #{e.message}"
+      Rails.logger.error error_message
+      {success: false, error: error_message, log_message: error_message, results:}
+    end
+
+    def therapist_leaves
+      # Process therapist leaves CSV
+      csv = fetch_and_parse_csv(gid: THERAPIST_LEAVES_GID)
+      required_headers = ["Therapist", "Leave Date"]
+      validate_headers(csv, required_headers)
+
+      # Track results
+      results = {created: [], updated: [], skipped: [], failed: []}
+
+      csv.each do |row|
+        therapist_name = row["Therapist"]&.strip
+        leave_date_raw = row["Leave Date"]&.strip
+        reason = row["Reason"]&.strip
+
+        # Skip rows without therapist name or leave date
+        if therapist_name.blank? || leave_date_raw.blank?
+          results[:skipped] << {name: therapist_name, reason: "Missing therapist name or leave date"}
+          next
+        end
+
+        begin
+          # Parse the leave date
+          leave_date = begin
+            Date.strptime(leave_date_raw, "%d-%m-%Y")
+          rescue Date::Error
+            nil
+          end
+
+          unless leave_date
+            results[:skipped] << {name: therapist_name, date: leave_date_raw, reason: "Invalid date format (expected DD-MM-YYYY)"}
+            next
+          end
+
+          # Skip past dates
+          if leave_date < Date.current
+            results[:skipped] << {name: therapist_name, date: leave_date_raw, reason: "Past date"}
+            next
+          end
+
+          # Find the therapist
+          therapist = Therapist.find_by(name: therapist_name)
+          unless therapist
+            results[:skipped] << {name: therapist_name, date: leave_date_raw, reason: "Therapist not found"}
+            next
+          end
+
+          # Find the therapist's schedule
+          schedule = TherapistAppointmentSchedule.find_by(therapist: therapist)
+          unless schedule
+            results[:skipped] << {name: therapist_name, date: leave_date_raw, reason: "Therapist has no appointment schedule"}
+            next
+          end
+
+          # Always full-day leave (start_time and end_time are nil)
+          ActiveRecord::Base.transaction do
+            adjusted = TherapistAdjustedAvailability.find_or_initialize_by(
+              therapist_appointment_schedule: schedule,
+              specific_date: leave_date,
+              start_time: nil,
+              end_time: nil
+            )
+
+            adjusted.reason = reason if reason.present?
+            action = adjusted.new_record? ? :created : :updated
+
+            if adjusted.new_record? || adjusted.changed?
+              adjusted.save!
+              results[action] << {name: therapist_name, date: leave_date_raw, reason: reason}
+            else
+              results[:skipped] << {name: therapist_name, date: leave_date_raw, reason: "No changes"}
+            end
+          end
+        rescue => e
+          results[:failed] << {name: therapist_name, date: leave_date_raw, error: e.message}
+        end
+      end
+
+      # Build results summary
+      created_count = results[:created].count
+      updated_count = results[:updated].count
+      skipped_count = results[:skipped].count
+      failed_count = results[:failed].count
+
+      log_message = "Processed #{csv.count} therapist leaves: #{created_count} created, #{updated_count} updated"
+      if skipped_count > 0
+        skip_reasons = results[:skipped].group_by { |s| s[:reason] }
+          .map { |reason, items|
+            if reason == "No changes"
+              "#{items.count} therapist leaves - #{reason}"
+            else
+              items.map { |s| "#{s[:name]} (#{reason})" }.join(", ")
+            end
+          }
+          .join(", ")
+        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+      end
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
+        log_message += ", #{failed_count} failed: #{failure_reasons}"
+      end
+      log_message += "."
+
+      message = "Processed #{csv.count} therapist leaves: #{created_count} created, #{updated_count} updated"
+      message += ", #{skipped_count} skipped" if skipped_count > 0
+      message += ", #{failed_count} failed" if failed_count > 0
+      message += "."
+
+      Rails.logger.info log_message
+      {success: true, message:, log_message:, results:}
+    rescue => e
+      error_message = "Error syncing therapist leaves: #{e.class} - #{e.message}"
       Rails.logger.error error_message
       {success: false, error: error_message, log_message: error_message, results:}
     end
