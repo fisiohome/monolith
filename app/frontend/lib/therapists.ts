@@ -121,6 +121,8 @@ export const getFormSchema = (mode: FormMode) => {
 		gender: z.enum(GENDERS).nullable(),
 		employmentStatus: z.enum(EMPLOYMENT_STATUSES).nullable(),
 		employmentType: z.enum(EMPLOYMENT_TYPES).nullable(),
+		contractStartDate: z.string().nullable().optional(),
+		contractEndDate: z.string().nullable().optional(),
 		modalities: z.array(z.string()).nonempty("At least input one modality"),
 		specializations: z
 			.array(z.string())

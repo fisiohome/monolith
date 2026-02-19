@@ -5,6 +5,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import {
 	Activity,
 	BriefcaseMedical,
+	CalendarDays,
 	Clipboard,
 	Dot,
 	Eye,
@@ -632,6 +633,22 @@ export function DetailsTherapistContent({
 				) : (
 					"-"
 				),
+			},
+			{
+				icon: CalendarDays,
+				label: "Contract Period",
+				value: (() => {
+					const start = therapist.contractStartDate
+						? format(therapist.contractStartDate, "PP")
+						: null;
+					const end = therapist.contractEndDate
+						? format(therapist.contractEndDate, "PP")
+						: null;
+					if (start && end) return `${start} — ${end}`;
+					if (start) return `start from ${start}`;
+					if (end) return `until ${end}`;
+					return "N/A";
+				})(),
 			},
 		],
 		[therapist],

@@ -118,4 +118,51 @@ class TherapistTest < ActiveSupport::TestCase
     end
     assert_not TherapistAppointmentSchedule.exists?(schedule.id), "Associated TherapistAppointmentSchedule was not destroyed"
   end
+
+  # Test contract dates
+  test "therapist can have both contract_start_date and contract_end_date" do
+    assert_equal Date.parse("2025-01-01"), @therapist_one.contract_start_date
+    assert_equal Date.parse("2026-12-31"), @therapist_one.contract_end_date
+  end
+
+  test "therapist can have only contract_start_date" do
+    therapist = therapists(:therapist_two)
+    assert_equal Date.parse("2025-06-01"), therapist.contract_start_date
+    assert_nil therapist.contract_end_date
+  end
+
+  test "therapist can have only contract_end_date" do
+    assert_nil @active_therapist.contract_start_date
+    assert_equal Date.parse("2027-03-31"), @active_therapist.contract_end_date
+  end
+
+  test "therapist can have no contract dates" do
+    assert_nil @hold_therapist.contract_start_date
+    assert_nil @hold_therapist.contract_end_date
+  end
+
+  test "therapist is valid without contract dates" do
+    @therapist_one.contract_start_date = nil
+    @therapist_one.contract_end_date = nil
+    assert @therapist_one.valid?
+  end
+
+  test "therapist can update contract_start_date" do
+    @hold_therapist.update!(contract_start_date: "2026-02-01")
+    @hold_therapist.reload
+    assert_equal Date.parse("2026-02-01"), @hold_therapist.contract_start_date
+  end
+
+  test "therapist can update contract_end_date" do
+    @hold_therapist.update!(contract_end_date: "2027-06-30")
+    @hold_therapist.reload
+    assert_equal Date.parse("2027-06-30"), @hold_therapist.contract_end_date
+  end
+
+  test "therapist can clear contract dates back to nil" do
+    @therapist_one.update!(contract_start_date: nil, contract_end_date: nil)
+    @therapist_one.reload
+    assert_nil @therapist_one.contract_start_date
+    assert_nil @therapist_one.contract_end_date
+  end
 end

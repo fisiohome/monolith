@@ -13,6 +13,8 @@ therapist_one:
     - "US"
   employment_type: "KARPIS" # from employment_type_enum
   employment_status: "ACTIVE" # from employment_status_enum
+  contract_start_date: "2025-01-01"
+  contract_end_date: "2026-12-31"
   user: therapist_user_one
   service: fisiohome # "FISIOHOME" from services.yml
   created_at: <%= Time.zone.now %>
@@ -30,6 +32,7 @@ therapist_two:
     - "Alat infus dan Injeksi untuk wajah dan bahan2 lain strerilisasi"
   employment_type: "FLAT"
   employment_status: "HOLD"
+  contract_start_date: "2025-06-01"
   user: therapist_user_two
   service: pusat_okupasi # "PUSAT_OKUPASI" from services.yml
   created_at: <%= Time.zone.now %>
@@ -47,6 +50,7 @@ active_therapist:
     - "TENS"
   employment_type: "KARPIS"
   employment_status: "ACTIVE"
+  contract_end_date: "2027-03-31"
   user: therapist_user_one
   service: fisiohome # "FISIOHOME" from services.yml
   created_at: <%= Time.zone.now %>

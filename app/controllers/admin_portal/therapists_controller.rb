@@ -61,7 +61,7 @@ module AdminPortal
           serialize_therapist(
             Therapist.find_by(id: selected_param),
             {
-              only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+              only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender contract_start_date contract_end_date]
             }
           )
         )
@@ -111,7 +111,7 @@ module AdminPortal
         therapist: serialize_therapist(
           @therapist,
           {
-            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender contract_start_date contract_end_date]
           }
         )
       }
@@ -355,6 +355,8 @@ module AdminPortal
         :gender,
         :employment_status,
         :employment_type,
+        :contract_start_date,
+        :contract_end_date,
         modalities: [],
         specializations: [],
         service: %i[id name code],
@@ -375,7 +377,7 @@ module AdminPortal
         therapist: serialize_therapist(
           therapist,
           {
-            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender contract_start_date contract_end_date]
           }
         ),
         genders: Therapist.genders.map { |key, value| value },

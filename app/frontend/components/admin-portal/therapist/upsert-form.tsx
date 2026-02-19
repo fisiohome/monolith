@@ -710,6 +710,52 @@ function ContractDetailForm({
 
 			<FormField
 				control={form.control}
+				name="contractStartDate"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel className="capitalize">
+							Contract Start Date{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
+						<FormControl>
+							<Input
+								{...field}
+								type="date"
+								value={field.value || ""}
+								onChange={(e) => field.onChange(e.target.value || null)}
+								className="w-[65%] md:w-[50%] lg:w-[65%] xl:w-[65%] block"
+							/>
+						</FormControl>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<FormField
+				control={form.control}
+				name="contractEndDate"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel className="capitalize">
+							Contract End Date{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
+						<FormControl>
+							<Input
+								{...field}
+								type="date"
+								value={field.value || ""}
+								onChange={(e) => field.onChange(e.target.value || null)}
+								className="w-[65%] md:w-[50%] lg:w-[65%] xl:w-[65%] block"
+							/>
+						</FormControl>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<FormField
+				control={form.control}
 				name="modalities"
 				render={({ field }) => (
 					<FormItem className="col-span-full">
@@ -1632,6 +1678,8 @@ export default function FormTherapist({
 			gender: therapist.gender || "MALE",
 			employmentType: therapist.employmentType || "FLAT",
 			employmentStatus: therapist.employmentStatus || "INACTIVE",
+			contractStartDate: therapist.contractStartDate || "",
+			contractEndDate: therapist.contractEndDate || "",
 			modalities: therapist.modalities || [],
 			specializations: therapist.specializations || [],
 			bankDetails: therapist.bankDetails || [],
@@ -1738,8 +1786,16 @@ export default function FormTherapist({
 				),
 		};
 		const { user, ...restValues } = values;
+		// Ensure empty date strings are sent as null
+		const sanitizedValues = {
+			...restValues,
+			contractStartDate: restValues.contractStartDate || null,
+			contractEndDate: restValues.contractEndDate || null,
+		};
 		const payload = deepTransformKeysToSnakeCase({
-			therapist: isUpdate ? { ...restValues } : { ...restValues, user },
+			therapist: isUpdate
+				? { ...sanitizedValues }
+				: { ...sanitizedValues, user },
 		});
 		console.log(`Payload data: ${payload}`);
 

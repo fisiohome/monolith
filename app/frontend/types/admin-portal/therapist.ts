@@ -50,6 +50,8 @@ export interface Therapist {
 	employmentStatus: TherapistEmploymentStatus[number];
 	employmentType: TherapistEmploymentType[number];
 	gender: TherapistGender[number];
+	contractStartDate?: string | null;
+	contractEndDate?: string | null;
 	user: TherapistUser;
 	service: TherapistService;
 	bankDetails: TherapistBankDetail[];
