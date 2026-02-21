@@ -10,7 +10,7 @@
 	"filter": {
 		"search": {
 			"placeholder": "Cari pasien...",
-			"description": "Cari berdasarkan nama profil/kontak, telepon, email, dan nomor registrasi pasien."
+			"description": "Cari berdasarkan nama profil/kontak, telepon, email, dan nomor registrasi."
 		},
 		"region": {
 			"placeholder": "Berdasarkan wilayah",

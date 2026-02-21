@@ -212,7 +212,9 @@ export default function Index({
 								</AvatarFallback>
 							</Avatar>
 							<div className="flex-1 space-y-0.5 text-sm leading-tight text-left">
-								<p className="font-bold uppercase truncate">{name}</p>
+								<p className="font-bold uppercase truncate max-w-52 md:max-w-16 lg:max-w-full">
+									{name}
+								</p>
 								{patientNumber && (
 									<p className="text-xs text-muted-foreground">
 										{patientNumber}
@@ -246,7 +248,7 @@ export default function Index({
 									</AvatarFallback>
 								</Avatar>
 								<div className="flex-1 text-sm leading-tight text-left">
-									<p className="font-bold uppercase truncate">
+									<p className="font-bold uppercase truncate max-w-52 md:max-w-16 lg:max-w-full">
 										{contact?.contactName || "N/A"}
 									</p>
 								</div>

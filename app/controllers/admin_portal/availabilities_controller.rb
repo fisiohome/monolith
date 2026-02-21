@@ -3,26 +3,55 @@ module AdminPortal
     include TherapistsHelper
 
     def index
+      # Extract query parameters
       search_param = params[:search]
       selected_therapist_param = params[:therapist]
+      page = params[:page] || 1
+      limit = params[:limit] || 20
 
+      # Fetch paginated therapists list (deferred for faster initial page load)
       therapists_lambda = lambda do
-        therapists = Therapist
-          .includes([:user])
-          .where(search_param.present? ? ["name ILIKE ?", "%#{search_param}%"] : nil)
-          .where(employment_status: "ACTIVE")
-        therapists.map do |therapist|
-          deep_transform_keys_to_camel_case(
-            serialize_therapist(
-              therapist,
-              {
-                only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
-              }
-            )
-          )
+        # Build a versioned cache key based on search, page, limit, and the latest therapist update timestamp.
+        # This ensures the cache auto-invalidates whenever any active therapist record changes.
+        cache_key = "availability_therapists/#{search_param}/page_#{page}/limit_#{limit}/#{Therapist.where(employment_status: "ACTIVE").maximum(:updated_at).to_i}"
+
+        Rails.cache.fetch(cache_key, expires_in: 10.minutes) do
+          # Build the query scope: only active therapists, optionally filtered by name or registration number (ILIKE)
+          therapists_scope = Therapist
+            .includes([:user])
+            .where(employment_status: "ACTIVE")
+            .then do |scope|
+              if search_param.present?
+                name_match = Therapist.arel_table[:name].matches("%#{search_param}%")
+                reg_match = Therapist.arel_table[:registration_number].matches("%#{search_param}%")
+                scope.where(name_match.or(reg_match))
+              else
+                scope
+              end
+            end
+            .order(:name)
+
+          # Paginate the results
+          pagy, paged_therapists = pagy(therapists_scope, page:, limit:)
+
+          # Return paginated data with Pagy metadata for frontend infinite scroll
+          {
+            data: paged_therapists.map do |therapist|
+              deep_transform_keys_to_camel_case(
+                serialize_therapist(
+                  therapist,
+                  {
+                    only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender]
+                  }
+                )
+              )
+            end,
+            metadata: pagy_metadata(pagy)
+          }
         end
       end
 
+      # Fetch the selected therapist with full availability data (weekly + adjusted)
       selected_therapist_lambda = lambda do
         return nil unless selected_therapist_param
 
@@ -44,6 +73,10 @@ module AdminPortal
 
       day_names = Date::DAYNAMES
 
+      # Render the Inertia page
+      # - therapists: deferred (loaded asynchronously after initial paint)
+      # - selected_therapist: lazy-evaluated (only computed when accessed by frontend)
+      # - day_names: static data for the schedule form
       render inertia: "AdminPortal/Availability/Index", props: deep_transform_keys_to_camel_case({
         therapists: InertiaRails.defer {
           therapists_lambda.call

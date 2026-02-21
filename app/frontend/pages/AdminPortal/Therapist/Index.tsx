@@ -282,7 +282,7 @@ export default function Index({
 								</AvatarFallback>
 							</Avatar>
 							<div className="flex-1 space-y-0.5 text-sm leading-tight text-left">
-								<p className="font-bold uppercase truncate max-w-52 md:max-w-full">
+								<p className="font-bold uppercase truncate max-w-52 md:max-w-16 lg:max-w-full">
 									{name}
 								</p>
 								<p className="text-xs font-light">#{registrationNumber}</p>
@@ -556,7 +556,7 @@ export default function Index({
 		<>
 			<Head title={tt("head_title")} />
 
-			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
+			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4 overflow-hidden relative">
 				{syncStatus.message && (
 					<div
 						className={cn(

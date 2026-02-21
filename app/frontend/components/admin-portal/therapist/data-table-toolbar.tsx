@@ -73,7 +73,7 @@ export default function ToolbarTable({ table: _ }: ToolbarTableProps) {
 	);
 
 	const [filterBy, setFilterBy] = useState({
-		name: globalProps?.adminPortal?.currentQuery?.name || "",
+		search: globalProps?.adminPortal?.currentQuery?.search || "",
 		accountStatus: globalProps?.adminPortal?.currentQuery?.accountStatus || "",
 		employmentStatus:
 			globalProps?.adminPortal?.currentQuery?.employmentStatus || "",
@@ -110,13 +110,13 @@ export default function ToolbarTable({ table: _ }: ToolbarTableProps) {
 		<section className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4 xl:grid-cols-5">
 			<div className="col-span-full md:col-span-1">
 				<Input
-					value={filterBy.name}
+					value={filterBy.search}
 					StartIcon={{ icon: Search }}
 					type="text"
-					placeholder="Filter by therapist name..."
+					placeholder="By name or reg number..."
 					onChange={(event) => {
 						event.preventDefault();
-						handleFilterBy({ type: "name", value: event.target.value });
+						handleFilterBy({ type: "search", value: event.target.value });
 					}}
 				/>
 			</div>

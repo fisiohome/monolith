@@ -10,7 +10,7 @@ module AdminPortal
       # define the query params default values
       page = params.fetch(:page, 1)
       limit = params.fetch(:limit, 10)
-      filter_by_name = params[:name]
+      filter_by_search = params[:search]
       filter_by_account_status = params[:account_status]
       filter_by_employment_type = params[:employment_type]
       filter_by_employment_status = params[:employment_status]
@@ -22,7 +22,7 @@ module AdminPortal
         .joins(:user)
         .left_joins(:therapist_appointment_schedule)
         .includes(:therapist_appointment_schedule)
-        .by_name(filter_by_name)
+        .by_search(filter_by_search)
         .by_city(filter_by_city)
         .by_employment_type(filter_by_employment_type)
         .where(filter_by_employment_status.present? ? {employment_status: filter_by_employment_status} : nil)

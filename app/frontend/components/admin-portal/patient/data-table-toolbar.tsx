@@ -92,8 +92,8 @@ const ToolbarTable = memo(function Component({ table: _ }: ToolbarTableProps) {
 	);
 
 	return (
-		<section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-2 lg:grid-cols-3 xl:grid-cols-5">
-			<div className="grid gap-2">
+		<section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-2 lg:grid-cols-4 xl:grid-cols-5">
+			<div className="grid gap-2 col-span-full md:col-span-1 lg:col-span-2">
 				<Input
 					placeholder={tpf("search.placeholder")}
 					className="shadow-inner bg-input"

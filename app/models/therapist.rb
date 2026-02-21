@@ -9,10 +9,20 @@ class Therapist < ApplicationRecord
     where("therapists.name ILIKE ?", "%#{name}%")
   }
 
+  scope :by_search, ->(search) {
+    return if search.blank?
+    where("therapists.name ILIKE :q OR therapists.registration_number ILIKE :q", q: "%#{search}%")
+  }
+
   scope :by_city, ->(city) {
     return if city.blank?
     left_joins(therapist_addresses: {address: :location})
       .where(Location.arel_table[:city].matches("%#{city}%"))
+  }
+
+  scope :by_registration_number, ->(registration_number) {
+    return if registration_number.blank?
+    where("therapists.registration_number ILIKE ?", "%#{registration_number}%")
   }
 
   scope :by_employment_type, ->(employment_type) {

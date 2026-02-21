@@ -2,7 +2,14 @@ import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery } from "@uidotdev/usehooks";
 import { motion } from "framer-motion";
 import { Info, Search, X } from "lucide-react";
-import { type ComponentProps, useCallback, useMemo, useState } from "react";
+import {
+	type ComponentProps,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,6 +29,7 @@ import {
 } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
+import type { Metadata } from "@/types/pagy";
 
 interface TherapistListCardProps {
 	therapist: Therapist;
@@ -67,7 +75,11 @@ function TherapistListCard({
 							: 1,
 			}}
 			exit={{ opacity: 0, y: 0 }}
-			transition={{ delay: index * 0.1 }}
+			transition={{ delay: index * 0.025 }}
+			whileTap={{
+				scale: isTablet || isDekstop ? 0.97 : 0.95,
+				transition: { duration: 0.1, delay: 0 },
+			}}
 			whileHover={{
 				scale: isTablet || isDekstop ? 1.02 : 1.05,
 				transition: { duration: 0.1, delay: 0 },
@@ -91,7 +103,7 @@ function TherapistListCard({
 			<div className="flex-1 space-y-0.5 text-sm leading-tight text-left">
 				<p className="font-semibold uppercase truncate">{therapist.name}</p>
 				<p className="text-[10px] font-light">
-					{therapist.employmentType} |{" "}
+					#{therapist.registrationNumber} | {therapist.employmentType} |{" "}
 					{therapist.service.name.replaceAll("_", " ")}
 				</p>
 			</div>
@@ -101,10 +113,98 @@ function TherapistListCard({
 
 export interface TherapistListProps extends ComponentProps<"div"> {
 	therapists: Therapist[];
+	metadata?: Metadata;
 }
 
-export function TherapistList({ className, therapists }: TherapistListProps) {
+export function TherapistList({
+	className,
+	therapists,
+	metadata,
+}: TherapistListProps) {
 	const { props: globalProps, url: pageURL } = usePage<GlobalPageProps>();
+
+	// Accumulated therapists from all loaded pages
+	const [allTherapists, setAllTherapists] = useState<Therapist[]>(therapists);
+	const [currentMeta, setCurrentMeta] = useState<Metadata | undefined>(
+		metadata,
+	);
+	const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+	// Ref for tracking search changes to reset accumulated list
+	const lastSearchRef = useRef(
+		globalProps?.adminPortal?.currentQuery?.search || "",
+	);
+
+	// Sync when props change (initial load, search, or page navigation)
+	useEffect(() => {
+		const currentSearch = globalProps?.adminPortal?.currentQuery?.search || "";
+
+		if (currentSearch !== lastSearchRef.current) {
+			// Search changed — reset the accumulated list
+			setAllTherapists(therapists);
+			lastSearchRef.current = currentSearch;
+		} else if (currentMeta?.page === 1 && metadata?.page === 1) {
+			// Fresh load (page 1) — reset
+			setAllTherapists(therapists);
+		}
+		setCurrentMeta(metadata);
+	}, [
+		therapists,
+		metadata,
+		currentMeta?.page,
+		globalProps?.adminPortal?.currentQuery?.search,
+	]);
+
+	// Intersection Observer for infinite scroll
+	const sentinelRef = useRef<HTMLDivElement>(null);
+
+	const loadMore = useCallback(() => {
+		if (isLoadingMore || !currentMeta?.next) return;
+
+		setIsLoadingMore(true);
+		const { fullUrl, queryParams } = populateQueryParams(pageURL, {
+			page: String(currentMeta?.next),
+		});
+
+		router.get(
+			fullUrl,
+			{ ...queryParams },
+			{
+				preserveScroll: true,
+				preserveState: true,
+				only: ["therapists", "adminPortal"],
+				onSuccess: (page) => {
+					const newData = (
+						page.props as unknown as {
+							therapists: { data: Therapist[]; metadata: Metadata };
+						}
+					).therapists;
+					setAllTherapists((prev) => [...prev, ...newData.data]);
+					setCurrentMeta(newData.metadata);
+				},
+				onFinish: () => {
+					setIsLoadingMore(false);
+				},
+			},
+		);
+	}, [isLoadingMore, currentMeta?.next, pageURL]);
+
+	useEffect(() => {
+		const sentinel = sentinelRef.current;
+		if (!sentinel) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting && currentMeta?.next) {
+					loadMore();
+				}
+			},
+			{ threshold: 0.1 },
+		);
+
+		observer.observe(sentinel);
+		return () => observer.disconnect();
+	}, [loadMore, currentMeta?.next]);
 
 	// for search therapist
 	const [search, setSearch] = useState(
@@ -147,7 +247,11 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 		(value: string) => {
 			setSearch(value);
 			updateQueryParams(
-				deepTransformKeysToSnakeCase({ search: value, therapist: "" }),
+				deepTransformKeysToSnakeCase({
+					search: value,
+					therapist: "",
+					page: "",
+				}),
 			);
 		},
 		[updateQueryParams],
@@ -160,7 +264,7 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 					Therapists
 				</h2>
 				<TooltipProvider>
-					<Tooltip>
+					<Tooltip delayDuration={0}>
 						<TooltipTrigger asChild>
 							<Info className="align-top cursor-pointer size-3" />
 						</TooltipTrigger>
@@ -173,7 +277,7 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 
 			<Input
 				type="text"
-				placeholder="Search therapist..."
+				placeholder="Search by name or reg number..."
 				value={search}
 				StartIcon={{ icon: Search }}
 				isLoading={isSearching}
@@ -196,18 +300,35 @@ export function TherapistList({ className, therapists }: TherapistListProps) {
 
 			<ScrollArea className="w-full max-h-[40dvh] xl:max-h-[100dvh] overflow-y-auto">
 				<div className="grid gap-2 mx-3">
-					{therapists?.length ? (
-						therapists.map((therapist, therapistIndex) => (
-							<TherapistListCard
-								key={therapist.id}
-								therapist={therapist}
-								index={therapistIndex}
-								isSelected={
-									globalProps.adminPortal.currentQuery?.therapist ===
-									therapist.id
-								}
-							/>
-						))
+					{allTherapists?.length ? (
+						<>
+							{allTherapists.map((therapist, therapistIndex) => (
+								<TherapistListCard
+									key={therapist.id}
+									therapist={therapist}
+									index={therapistIndex}
+									isSelected={
+										globalProps.adminPortal.currentQuery?.therapist ===
+										therapist.id
+									}
+								/>
+							))}
+
+							{/* Sentinel element for infinite scroll */}
+							{currentMeta?.next && (
+								<div
+									ref={sentinelRef}
+									className="flex items-center justify-center py-3"
+								>
+									{isLoadingMore && (
+										<div className="flex items-center gap-2 text-sm text-muted-foreground">
+											<div className="w-4 h-4 border-2 rounded-full animate-spin border-primary border-t-transparent" />
+											<span>Loading more...</span>
+										</div>
+									)}
+								</div>
+							)}
+						</>
 					) : (
 						<p className="mx-auto mt-2 text-sm text-center text-muted-foreground">
 							There are no active therapists yet. Let's start by activating an

@@ -6,7 +6,6 @@ import type {
 	Table as TableTanstack,
 } from "@tanstack/react-table";
 import { useMediaQuery } from "@uidotdev/usehooks";
-import { AnimatePresence, motion } from "framer-motion";
 import {
 	ChevronDown,
 	ChevronUp,
@@ -46,12 +45,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -422,9 +415,20 @@ export default function Index({ services, selectedService }: PageProps) {
 			cell: ({ row }) => {
 				const locations = row.original.locations || [];
 				const locationsActive = locations.filter((location) => location.active);
-				const locationInactive = locations.filter(
-					(location) => !location.active,
-				);
+				const toggleExpand = () => {
+					row.toggleExpanded();
+
+					const { queryParams: currentQuery } = populateQueryParams(pageURL);
+					const expandedList = removeWhiteSpaces(currentQuery?.expanded || "")
+						.split(",")
+						.filter(Boolean);
+					const id = String(row.original.id);
+					const updatedList = row.getIsExpanded()
+						? expandedList.filter((item) => item !== id)
+						: [...expandedList, id];
+
+					onHandleTableExpand(updatedList);
+				};
 
 				if (!locations?.length) {
 					return <span>No locations listed yet</span>;
@@ -440,101 +444,18 @@ export default function Index({ services, selectedService }: PageProps) {
 									: `Inactive in all of  ${locations.length} locations`}
 						</span>
 
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button variant="link" className="p-0">
-									<Info />
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-full">
-								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-									<div className="space-y-2 col-span-full">
-										<div className="space-y-0.5">
-											<h4 className="font-medium leading-none">
-												Show Locations
-											</h4>
-											<p className="font-light">
-												Monitor active and inactive locations.
-											</p>
-										</div>
+						<Button
+							type="button"
+							variant="link"
+							className="p-0"
+							onClick={(event) => {
+								event.preventDefault();
 
-										<div className="flex items-center h-5 space-x-2 text-sm text-muted-foreground">
-											<div className="flex items-baseline space-x-1">
-												<div className="bg-green-700 rounded-full size-2" />
-												<span>{`${locationsActive?.length || 0} Locations`}</span>
-											</div>
-											<Separator
-												orientation="vertical"
-												className="bg-muted-foreground/25"
-											/>
-											<div className="flex items-baseline space-x-1">
-												<div className="rounded-full bg-destructive size-2" />
-												<span>{`${locationInactive?.length || 0} Locations`}</span>
-											</div>
-											<Separator
-												orientation="vertical"
-												className="bg-muted-foreground/25"
-											/>
-											<p>{`${locations?.length || 0} Total Locations`}</p>
-										</div>
-									</div>
-
-									<ScrollArea className="w-full max-h-52 lg:max-h-32">
-										<AnimatePresence>
-											{locationsActive?.length ? (
-												locationsActive.map((action, index) => (
-													<motion.div
-														key={action.id}
-														initial={{ opacity: 0, y: -10 }}
-														animate={{ opacity: 1, y: 0 }}
-														exit={{ opacity: 0, y: 10 }}
-														transition={{ delay: index * 0.1 }}
-														className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
-													>
-														<div
-															className={cn(
-																"rounded-full size-2",
-																action.active
-																	? "bg-green-700"
-																	: "bg-destructive",
-															)}
-														/>
-														<span>{action.city}</span>
-													</motion.div>
-												))
-											) : (
-												<p className="text-sm text-muted-foreground">
-													There's no active locations
-												</p>
-											)}
-										</AnimatePresence>
-									</ScrollArea>
-
-									<ScrollArea className="w-full max-h-52 lg:max-h-32">
-										<AnimatePresence>
-											{locationInactive.map((action, index) => (
-												<motion.div
-													key={action.id}
-													initial={{ opacity: 0, y: -10 }}
-													animate={{ opacity: 1, y: 0 }}
-													exit={{ opacity: 0, y: 10 }}
-													transition={{ delay: index * 0.1 }}
-													className="flex items-center px-1 space-x-2 text-sm rounded-md hover:bg-accent hover:text-accent-foreground"
-												>
-													<div
-														className={cn(
-															"rounded-full size-2",
-															action.active ? "bg-green-700" : "bg-destructive",
-														)}
-													/>
-													<span>{action.city}</span>
-												</motion.div>
-											))}
-										</AnimatePresence>
-									</ScrollArea>
-								</div>
-							</PopoverContent>
-						</Popover>
+								toggleExpand();
+							}}
+						>
+							<Info />
+						</Button>
 					</div>
 				);
 			},

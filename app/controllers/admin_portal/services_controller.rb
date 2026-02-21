@@ -11,18 +11,24 @@ module AdminPortal
       # get services
       services = Service
         .includes([:location_services, :packages])
-        .all
-        .where(
-          if filter_by_status == "active"
-            ["active IS NOT NULL AND active IS true"]
+        .then do |scope|
+          case filter_by_status
+          when "active"
+            scope.where(Service.arel_table[:active].eq(true))
+          when "inactive"
+            scope.where(Service.arel_table[:active].eq(nil).or(Service.arel_table[:active].eq(false)))
           else
-            (filter_by_status == "inactive") ? ["active IS NULL OR active IS false"] :
-                        nil
+            scope
           end
-        )
-        .where(filter_by_name.present? ? ["name ILIKE ?", "%#{filter_by_name}%"] : nil)
-        .sort_by { |item| item.active ? 1 : 0 }
-        .reverse
+        end
+        .then do |scope|
+          if filter_by_name.present?
+            scope.where(Service.arel_table[:name].matches("%#{filter_by_name}%"))
+          else
+            scope
+          end
+        end
+        .order(active: :desc)
 
       # get the selected service
       selected_service_lambda = lambda do

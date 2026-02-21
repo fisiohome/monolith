@@ -13,9 +13,13 @@ import type { DAY_NAMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
+import type { Metadata } from "@/types/pagy";
 
 export interface PageProps {
-	therapists: Therapist[];
+	therapists: {
+		data: Therapist[];
+		metadata: Metadata;
+	};
 	selectedTherapist: Therapist | null;
 	dayNames: (typeof DAY_NAMES)[number][];
 }
@@ -139,7 +143,8 @@ export default function AvailabilityIndex({
 						}
 					>
 						<TherapistList
-							therapists={therapists}
+							therapists={therapists?.data ?? []}
+							metadata={therapists?.metadata as Metadata}
 							className="col-span-full xl:col-span-4"
 						/>
 					</Deferred>

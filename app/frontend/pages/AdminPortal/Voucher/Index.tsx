@@ -1163,7 +1163,7 @@ const FiltersPanel = memo(function FiltersPanel({
 					>
 						<div className="p-3 border shadow-inner rounded-xl bg-background">
 							<div className="grid gap-4 md:grid-cols-12">
-								<div className="md:col-span-6">
+								<div className="md:col-span-6 xl:col-span-4">
 									<Input
 										value={codeFilter}
 										onChange={(e) => setCodeFilter(e.target.value)}
@@ -1172,7 +1172,7 @@ const FiltersPanel = memo(function FiltersPanel({
 									/>
 								</div>
 
-								<div className="md:col-span-3">
+								<div className="md:col-span-3 xl:col-span-2">
 									<Select
 										value={isActiveFilter}
 										onValueChange={(value) => {
@@ -1190,7 +1190,7 @@ const FiltersPanel = memo(function FiltersPanel({
 									</Select>
 								</div>
 
-								<div className="md:col-span-3">
+								<div className="md:col-span-3 xl:col-span-2">
 									<Select
 										value={discountTypeFilter}
 										onValueChange={(value) => {

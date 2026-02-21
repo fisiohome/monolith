@@ -10,7 +10,7 @@
 	"filter": {
 		"search": {
 			"placeholder": "Search patient...",
-			"description": "Search by name profile/contact, phone, email, and patient registration number"
+			"description": "Search by name profile/contact, phone, email, and registration number"
 		},
 		"region": {
 			"placeholder": "By region",
