@@ -587,8 +587,10 @@ module AdminPortal
       results = {schedule_updated: [], skipped: [], failed: [], schedules_created: []}
 
       # Get all therapists (including those without schedules)
-      all_therapists = Therapist.includes(:user)
+      all_therapists = Therapist.includes(:user, active_address: :location)
       all_therapists = all_therapists.where(employment_type: employment_type_filter) if employment_type_filter.present?
+
+      jabodetabek_keywords = ["JAKARTA", "BOGOR", "DEPOK", "TANGERANG", "BEKASI", "KEPULAUAN SERIBU"]
 
       all_therapists.each do |therapist|
         name = therapist.name
@@ -609,6 +611,10 @@ module AdminPortal
           next
         end
 
+        therapist_location = therapist.active_address&.location
+        is_in_jabodetabek = jabodetabek_keywords.any? { |kw| therapist_location&.city&.include?(kw) }
+        is_flat_jabodetabek = therapist.employment_type == "FLAT" && is_in_jabodetabek
+
         # Create new schedule if it doesn't exist
         if schedule_record.new_record?
           schedule_record.assign_attributes(
@@ -623,8 +629,10 @@ module AdminPortal
             # Start with default rules
             rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES.dup
 
-            # For FLAT employment type, always remove distance and duration rules
-            if therapist.employment_type == "FLAT"
+            if is_flat_jabodetabek
+              rules = []
+            elsif therapist.employment_type == "FLAT"
+              # Always remove distance and duration rules for FLAT outside Jabodetabek
               rules = rules.reject { |rule|
                 rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) ||
                   rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes)
@@ -632,7 +640,7 @@ module AdminPortal
             end
 
             # Apply ignoring_loc_rules_map for location rule
-            if ignoring_loc_rules_map[name]
+            if !is_flat_jabodetabek && ignoring_loc_rules_map[name]
               # Remove location rule if ignoring
               rules = rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
             end
@@ -656,8 +664,12 @@ module AdminPortal
             rules_updated = false
             new_rules = current_rules.dup
 
-            # For FLAT employment type, always remove distance and duration rules
-            if therapist.employment_type == "FLAT"
+            if is_flat_jabodetabek
+              if new_rules.present?
+                new_rules = []
+                rules_updated = true
+              end
+            elsif therapist.employment_type == "FLAT"
               if has_distance_rule || has_duration_rule
                 new_rules = new_rules.reject { |rule|
                   rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) ||
@@ -668,14 +680,16 @@ module AdminPortal
             end
 
             # Apply ignoring_loc_rules_map for location rule
-            if should_ignore_location && has_location_rule
-              # Remove location rule if ignoring
-              new_rules = new_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
-              rules_updated = true
-            elsif !should_ignore_location && !has_location_rule && new_rules.present?
-              # Add location rule back if not ignoring and it's missing
-              new_rules += [{"location" => true}]
-              rules_updated = true
+            unless is_flat_jabodetabek
+              if should_ignore_location && has_location_rule
+                # Remove location rule if ignoring
+                new_rules = new_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
+                rules_updated = true
+              elsif !should_ignore_location && !has_location_rule && new_rules.present?
+                # Add location rule back if not ignoring and it's missing
+                new_rules += [{"location" => true}]
+                rules_updated = true
+              end
             end
 
             if rules_updated

@@ -6,7 +6,10 @@ import {
 	Check,
 	ChevronLeft,
 	ChevronRight,
+	ChevronsLeft,
+	ChevronsRight,
 	ChevronsUpDown,
+	EllipsisIcon,
 	Hash,
 	Search,
 } from "lucide-react";
@@ -33,7 +36,13 @@ import {
 	CommandList,
 	CommandSeparator,
 } from "@/components/ui/command";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Popover,
 	PopoverContent,
@@ -47,6 +56,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import {
 	Sheet,
 	SheetClose,
@@ -75,7 +85,7 @@ import {
 	generateInitials,
 	populateQueryParams,
 } from "@/lib/utils";
-import type { SchedulesPageGlobalProps } from "@/pages/AdminPortal/Therapist/Schedules";
+import type { DaySchedulesPageGlobalProps } from "@/pages/AdminPortal/Therapist/DaySchedules";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import type { GlobalPageProps } from "@/types/globals";
@@ -146,7 +156,6 @@ export function ScheduleDateToolbar({
 			<div className="flex flex-col items-center gap-2 md:order-last md:flex-row">
 				<Button
 					variant={isToday(selectedDate) ? "default" : "primary-outline"}
-					size={isMobile ? "sm" : "xs"}
 					className={cn(isMobile && "w-full")}
 					onClick={actions.goToToday}
 				>
@@ -189,7 +198,7 @@ export function ScheduleDateToolbar({
 					<ChevronLeft />
 				</Button>
 
-				<p className="flex-1 font-semibold text-center md:order-first md:ml-4">
+				<p className="flex-1 md:flex-initial md:w-auto font-semibold text-center md:order-first lg:mr-2 text-nowrap">
 					{displayedDate}
 				</p>
 
@@ -210,8 +219,11 @@ export function ScheduleDateToolbar({
 export interface SchedulePaginationProps extends ComponentProps<"div"> {
 	metadata: Metadata;
 	actions: {
-		goToPrevpage: () => void;
+		goToFirstPage: () => void;
+		goToPrevPage: () => void;
 		goToNextPage: () => void;
+		goToLastPage: () => void;
+		goToPage: (page: number) => void;
 	};
 }
 
@@ -226,37 +238,122 @@ export function SchedulePagination({
 	});
 	const isPrevDisabled = useMemo(() => !metadata.prev, [metadata.prev]);
 	const isNextDisabled = useMemo(() => !metadata.next, [metadata.next]);
+	const isSinglePage = useMemo(() => metadata.pages <= 1, [metadata.pages]);
+	const minPage = 1;
+	const maxPage = useMemo(
+		() => metadata.last || metadata.pages || metadata.page || 1,
+		[metadata.last, metadata.pages, metadata.page],
+	);
+	const { goToFirstPage, goToPrevPage, goToNextPage, goToLastPage, goToPage } =
+		actions;
+
+	const handleGoToPage = useCallback(
+		(value: string) => {
+			if (!value) return;
+			const parsedValue = Number(value);
+			if (Number.isNaN(parsedValue)) return;
+			const clampedValue = Math.min(Math.max(parsedValue, minPage), maxPage);
+			goToPage(clampedValue);
+		},
+		[goToPage, maxPage],
+	);
 
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-4 justify-between md:justify-end w-full md:w-auto",
+				"flex items-center flex-col md:flex-row justify-between w-full bg-background p-2 border border-border gap-4",
 				className,
 			)}
 		>
-			<span className="text-sm text-muted-foreground text-nowrap">
-				{t("pagination.showing")} {metadata.from}–{metadata.to} {tp("of")}{" "}
-				{metadata.count} {t("pagination.therapists")}
-			</span>
+			<div className="flex items-center gap-3 justify-between w-full">
+				<span className="text-sm text-muted-foreground text-nowrap">
+					{t("pagination.showing")} {metadata.from}–{metadata.to} {tp("of")}{" "}
+					{metadata.count} {t("pagination.therapists")}
+				</span>
 
-			<div className="flex gap-2">
-				<Button
-					variant="outline"
-					className="p-0 size-8"
-					disabled={isPrevDisabled}
-					onClick={actions.goToPrevpage}
-				>
-					<ChevronLeft />
-				</Button>
+				<span className="text-sm text-muted-foreground md:hidden text-nowrap">
+					{tp("page")} {metadata.page} {tp("of")} {metadata.pages}
+				</span>
+			</div>
 
-				<Button
-					variant="outline"
-					className="p-0 size-8"
-					disabled={isNextDisabled}
-					onClick={actions.goToNextPage}
-				>
-					<ChevronRight />
-				</Button>
+			<div className="flex items-center gap-3">
+				<span className="hidden text-sm text-muted-foreground md:inline-flex text-nowrap">
+					{tp("page")} {metadata.page} {tp("of")} {metadata.pages}
+				</span>
+
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						className="p-0 size-8 bg-card"
+						disabled={isPrevDisabled}
+						onClick={goToFirstPage}
+					>
+						<span className="sr-only">{tp("go_to_first")}</span>
+						<ChevronsLeft className="size-4" />
+					</Button>
+					<Button
+						variant="outline"
+						className="p-0 size-8 bg-card"
+						disabled={isPrevDisabled}
+						onClick={goToPrevPage}
+					>
+						<span className="sr-only">{tp("go_to_previous")}</span>
+						<ChevronLeft className="size-4" />
+					</Button>
+
+					<Popover>
+						<PopoverTrigger asChild disabled={isSinglePage}>
+							<Button
+								variant="outline"
+								size="icon"
+								className="p-0 size-8 bg-card"
+							>
+								{isSinglePage ? (
+									<span className="text-xs font-semibold">1</span>
+								) : (
+									<EllipsisIcon className="size-4" />
+								)}
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-full" align="center">
+							<div className="grid gap-4">
+								<div className="flex items-center gap-4">
+									<Label htmlFor="goto-page" className="text-nowrap">
+										{tp("go_to_page")}
+									</Label>
+									<Input
+										id="goto-page"
+										type="number"
+										defaultValue={metadata.page}
+										min={minPage}
+										max={maxPage}
+										className="h-8"
+										onChange={(event) => handleGoToPage(event.target.value)}
+									/>
+								</div>
+							</div>
+						</PopoverContent>
+					</Popover>
+
+					<Button
+						variant="outline"
+						className="p-0 size-8 bg-card"
+						disabled={isNextDisabled}
+						onClick={goToNextPage}
+					>
+						<span className="sr-only">{tp("go_to_next")}</span>
+						<ChevronRight className="size-4" />
+					</Button>
+					<Button
+						variant="outline"
+						className="p-0 size-8 bg-card"
+						disabled={isNextDisabled}
+						onClick={goToLastPage}
+					>
+						<span className="sr-only">{tp("go_to_last")}</span>
+						<ChevronsRight className="size-4" />
+					</Button>
+				</div>
 			</div>
 		</div>
 	);
@@ -265,7 +362,7 @@ export function SchedulePagination({
 // * for schedule filter data
 export function ScheduleFilters() {
 	const { props: globalProps, url: pageURL } =
-		usePage<SchedulesPageGlobalProps>();
+		usePage<DaySchedulesPageGlobalProps>();
 	const empTypes = useMemo(
 		() => globalProps.filterOptions?.employmentTypes || [],
 		[globalProps.filterOptions?.employmentTypes],
@@ -279,7 +376,7 @@ export function ScheduleFilters() {
 		[globalProps?.filterOptions?.locations],
 	);
 	const [filterBy, setFilterBy] = useState({
-		name: globalProps?.adminPortal?.currentQuery?.name || "",
+		search: globalProps?.adminPortal?.currentQuery?.search || "",
 		employmentType:
 			globalProps?.adminPortal?.currentQuery?.employmentType || "",
 		city: globalProps?.adminPortal?.currentQuery?.city || "",
@@ -313,16 +410,16 @@ export function ScheduleFilters() {
 	);
 
 	return (
-		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4">
-			<div className="col-span-full md:col-span-1">
+		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-4 lg:grid-cols-5 md:gap-2">
+			<div className="col-span-full md:col-span-2">
 				<Input
-					value={filterBy.name}
+					value={filterBy.search}
 					StartIcon={{ icon: Search }}
 					type="text"
-					placeholder="Filter by therapist name..."
+					placeholder="By name or reg number..."
 					onChange={(event) => {
 						event.preventDefault();
-						handleFilterBy({ type: "name", value: event.target.value });
+						handleFilterBy({ type: "search", value: event.target.value });
 					}}
 				/>
 			</div>
@@ -346,7 +443,7 @@ export function ScheduleFilters() {
 								!filterBy.employmentType ? "text-muted-foreground" : "",
 							)}
 						>
-							<SelectValue placeholder="Filter by employment type..." />
+							<SelectValue placeholder="By employment type..." />
 						</SelectTrigger>
 
 						<SelectContent>
@@ -405,7 +502,7 @@ export function ScheduleFilters() {
 										? locations?.find(
 												(location) => location.city === filterBy?.city,
 											)?.city
-										: "Filter by region..."}
+										: "By region..."}
 								</p>
 								<ChevronsUpDown className="opacity-50" />
 							</Button>
@@ -495,41 +592,69 @@ export function CalendarHeader({ className, therapists }: CalendarHeaderProps) {
 
 	return (
 		<div className={cn("flex sticky top-[64px] z-20 min-h-8", className)}>
-			<div className="w-16 md:w-24" /> {/* Empty space for time column */}
+			<div className="w-16 md:w-20" /> {/* Empty space for time column */}
 			<div className="flex-1">
 				<div className="grid grid-flow-col auto-cols-[minmax(200px,1fr)]">
 					{therapists.map((t) => (
-						<div
-							key={t.id}
-							className="p-2 space-y-1 text-sm font-semibold tracking-tight truncate border-b border-l shadow bg-background"
-						>
-							<p className="uppercase">{t.name}</p>
+						<HoverCard key={t.id} openDelay={10} closeDelay={100}>
+							<HoverCardTrigger asChild>
+								<Button
+									variant="ghost"
+									className="border-b line-clamp-1 truncate border-l shadow bg-background"
+								>
+									{t.name}
+								</Button>
+							</HoverCardTrigger>
+							<HoverCardContent className="flex w-64 flex-col gap-0.5 text-xs">
+								<div className="flex gap-4 flex-col">
+									<div className="flex items-center gap-2 text-left">
+										<Avatar className="w-8 h-8 border rounded-lg bg-muted">
+											<AvatarImage src="#" alt={t.name} />
+											<AvatarFallback
+												className={cn(
+													"text-xs rounded-lg",
+													t.user.email ===
+														globalProps.auth.currentUser?.user.email
+														? "bg-primary text-primary-foreground"
+														: t.user["isOnline?"]
+															? "bg-emerald-700 text-white"
+															: "",
+												)}
+											>
+												{generateInitials(t.name)}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex-1 space-y-0.5 leading-tight text-left">
+											<p className="font-bold uppercase truncate max-w-52 md:max-w-16 lg:max-w-full">
+												{t.name}
+											</p>
+											<p className="font-light">#{t.registrationNumber}</p>
+										</div>
+									</div>
 
-							<div className="flex gap-2">
-								<Avatar className="border rounded-lg size-8">
-									<AvatarImage src="#" alt={t.name} />
-									<AvatarFallback
-										className={cn(
-											"text-xs rounded-lg",
-											t.user.email === globalProps.auth.currentUser?.user.email
-												? "bg-primary text-primary-foreground"
-												: t.user["isOnline?"]
-													? "bg-emerald-700 text-white"
-													: "",
-										)}
-									>
-										{generateInitials(t.name)}
-									</AvatarFallback>
-								</Avatar>
+									<Separator />
 
-								<div>
-									<p className="text-xs font-light truncate">
-										{t.service.name.replaceAll("_", " ")}
-									</p>
-									<p className="text-xs font-light">{t.employmentType}</p>
+									<div className="flex w-full flex-col gap-2">
+										<dl className="flex items-center justify-between gap-2">
+											<dt className="text-muted-foreground text-nowrap">
+												Type
+											</dt>
+											<dd className="font-medium text-right">
+												{t.employmentType}
+											</dd>
+										</dl>
+										<dl className="flex items-center justify-between gap-2">
+											<dt className="text-muted-foreground text-nowrap">
+												Therapist at
+											</dt>
+											<dd className="font-medium text-right">
+												{t.service.name.replaceAll("_", " ")}
+											</dd>
+										</dl>
+									</div>
 								</div>
-							</div>
-						</div>
+							</HoverCardContent>
+						</HoverCard>
 					))}
 				</div>
 			</div>
@@ -611,7 +736,7 @@ export function CalendarTimeSlot({
 	const { locale, tzDate, timeFormatDateFns, timeFormat } = useDateContext();
 
 	return (
-		<div className={cn("flex flex-col w-16 md:w-24 bg-background", className)}>
+		<div className={cn("flex flex-col w-16 md:w-20 bg-background", className)}>
 			{timeSlots?.map((time) => {
 				return (
 					<TimeSlot

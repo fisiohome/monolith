@@ -35,6 +35,7 @@ Rails.application.routes.draw do
         put "suspend" => "users#suspend_account"
         put "activate" => "users#activate_account"
         get "therapist-schedules" => "therapists#schedules"
+        get "therapist-day-schedules" => "therapists#day_schedules"
 
         resources :dashboards, only: [:index]
 

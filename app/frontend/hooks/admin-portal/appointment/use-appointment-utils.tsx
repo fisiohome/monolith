@@ -19,11 +19,7 @@ import {
 	DEFAULT_VALUES_THERAPIST,
 } from "@/lib/appointments/form";
 import type { PREFERRED_THERAPIST_GENDER } from "@/lib/constants";
-import {
-	ISOLINE_CONSTRAINTS,
-	SESSION_ISOLINE_KEY,
-	SESSION_MARKERS_KEY,
-} from "@/lib/here-maps";
+import { SESSION_ISOLINE_KEY, SESSION_MARKERS_KEY } from "@/lib/here-maps";
 import { groupLocationsByCountry } from "@/lib/locations";
 import { calculateAge, populateQueryParams } from "@/lib/utils";
 import { boolSchema } from "@/lib/validation";
@@ -943,9 +939,9 @@ export const useTherapistAvailability = ({
 			const firstTherapist = therapists[0];
 			const rules = firstTherapist?.availability?.availabilityRules || [];
 
-			// If no rules, use default constraints
+			// If no rules, return empty array instead of default constraints
 			if (!rules.length) {
-				return ISOLINE_CONSTRAINTS;
+				return [];
 			}
 
 			// Extract constraints from the rules
@@ -994,9 +990,9 @@ export const useTherapistAvailability = ({
 				return null;
 			}
 
-			// If no valid constraints found but rules exist, use defaults only for missing constraints
+			// If no valid constraints found but rules exist, just return empty
 			if (constraints.length === 0) {
-				return ISOLINE_CONSTRAINTS;
+				return [];
 			}
 
 			return constraints;
@@ -1124,7 +1120,7 @@ export const useTherapistAvailability = ({
 				allTherapistCoords.push(...groupTherapistCoords);
 
 				// If constraints is null, all therapists are feasible
-				if (constraints === null) {
+				if (constraints === null || constraints.length === 0) {
 					therapistList.feasible.push(...groupTherapists);
 					continue;
 				}

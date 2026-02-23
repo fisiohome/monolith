@@ -43,9 +43,12 @@ class TherapistAppointmentSchedule < ApplicationRecord
   #   - None (nil or []): falls back to default rules
   #   - Zero values: [{"distance_in_meters" => 0}] will be filtered out
   def effective_availability_rules
-    if availability_rules.present? && availability_rules.is_a?(Array) && availability_rules.any?
+    # Explicitly empty array means no rules
+    if availability_rules.is_a?(Array)
+      return [] if availability_rules.empty?
+
       # Filter out rules with 0 values
-      filtered_rules = availability_rules.filter do |rule|
+      availability_rules.filter do |rule|
         # Keep rule if it has location (regardless of value)
         next true if (rule.key?("location") || rule.key?(:location)) && rule["location"]
         # Keep rule if distance is greater than 0
@@ -56,10 +59,8 @@ class TherapistAppointmentSchedule < ApplicationRecord
         false
       end
 
-      # If no rules after filtering, use defaults
-      filtered_rules.any? ? filtered_rules : DEFAULT_AVAILABILITY_RULES
     else
-      DEFAULT_AVAILABILITY_RULES
+      []
     end
   end
 
