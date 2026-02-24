@@ -24,7 +24,10 @@ module AdminPortal
         )
         .where(service: service)
         .where(employment_status: "ACTIVE")
-        .where.not("addresses.latitude = 0 OR addresses.longitude = 0")
+        .where(
+          "therapists.employment_type = :flat OR (addresses.latitude <> 0 AND addresses.longitude <> 0)",
+          flat: "FLAT"
+        )
         .distinct
 
       therapists = therapists.uniq { |t| t.id }
