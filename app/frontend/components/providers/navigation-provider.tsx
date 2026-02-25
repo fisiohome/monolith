@@ -119,7 +119,7 @@ export function NavigationProvider({
 		const buildBookingsMenu = () => {
 			const subItems = [
 				{
-					title: t("therapist_calendar"),
+					title: t("therapist_schedules"),
 					url: adminPortal.therapistManagement.schedules,
 					isActive: false,
 				},

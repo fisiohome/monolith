@@ -13,5 +13,17 @@
 				"title": "Available"
 			}
 		}
+	},
+	"filters": {
+		"therapist": {
+			"label": "Therapists",
+			"placeholder": "Select therapists...",
+			"search": "Search therapist...",
+			"empty": "No therapist found.",
+			"alert": "Choose one or more therapists to preview their schedules side by side."
+		},
+		"date": {
+			"placeholder": "Select dates..."
+		}
 	}
 }

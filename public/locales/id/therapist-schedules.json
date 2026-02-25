@@ -13,5 +13,17 @@
 				"title": "Tersedia"
 			}
 		}
+	},
+	"filters": {
+		"therapist": {
+			"label": "Terapis",
+			"placeholder": "Pilih terapis...",
+			"search": "Cari terapis...",
+			"empty": "Tidak ada terapis ditemukan.",
+			"alert": "Pilih satu atau lebih terapis untuk melihat jadwal mereka berdampingan."
+		},
+		"date": {
+			"placeholder": "Pilih tanggal..."
+		}
 	}
 }

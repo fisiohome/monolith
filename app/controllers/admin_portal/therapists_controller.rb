@@ -204,34 +204,21 @@ module AdminPortal
       logger.info "The proccess to change the password account finished..."
     end
 
-    def schedules
+    def day_schedules
       page_params = params.fetch(:page, 1)
       limit_params = is_mobile? ? 1 : 5 # limit the therapist data for mobile device
       date_params = params.fetch(:date, Time.zone.today)
-      name_params = params[:name]
+      search_params = params[:search]
       city_params = params[:city]
       employment_type = params[:employment_type]
 
-      therapists = Therapist
+      therapists_scope = Therapist
         .joins(:therapist_appointment_schedule)
         .with_active_addresses
-        .by_name(name_params)
+        .by_search(search_params)
         .by_city(city_params)
         .by_employment_type(employment_type)
         .employment_status_ACTIVE
-        .includes(
-          appointments: [
-            :patient,
-            :service,
-            :package,
-            :package_history,
-            :location,
-            :admins,
-            :patient_medical_record,
-            :address_history,
-            reference_appointment: :package_history
-          ]
-        )
         .where(
           # Filter therapists based on appointment date and allowed advance booking days.
           # Include therapists without a defined limit or within allowed booking window.
@@ -245,8 +232,32 @@ module AdminPortal
           :id  # Secondary sort: Therapist ID for consistent ordering
         )
 
-      # pagination
-      pagy, paged_therapists = pagy(therapists, page: page_params, limit: limit_params)
+      # paginate on the lightweight scope first to avoid loading huge association graphs
+      pagy, paged_therapists = pagy(therapists_scope, page: page_params, limit: limit_params)
+
+      therapist_ids = paged_therapists.map(&:id)
+
+      # eager load only the therapists needed for the current page
+      therapists_with_includes = Therapist
+        .where(id: therapist_ids)
+        .includes(
+          :user,
+          :service,
+          :therapist_appointment_schedule,
+          :active_address,
+          appointments: [
+            :patient,
+            :service,
+            :package,
+            :package_history,
+            :location,
+            :admins,
+            :patient_medical_record,
+            :address_history,
+            reference_appointment: :package_history
+          ]
+        )
+        .index_by(&:id)
 
       # get the filter options data
       filter_options_lambda = lambda do
@@ -256,7 +267,7 @@ module AdminPortal
         deep_transform_keys_to_camel_case({locations:, employment_types:})
       end
 
-      render inertia: "AdminPortal/Therapist/Schedules", props: deep_transform_keys_to_camel_case({
+      render inertia: "AdminPortal/Therapist/DaySchedules", props: deep_transform_keys_to_camel_case({
         params: {
           page: page_params,
           limit: limit_params,
@@ -267,7 +278,7 @@ module AdminPortal
           metadata: pagy_metadata(pagy),
           data: paged_therapists.map do |therapist|
             serialize_therapist(
-              therapist,
+              therapists_with_includes[therapist.id],
               {
                 include_user: true,
                 include_bank_details: false,
@@ -281,6 +292,170 @@ module AdminPortal
           end.as_json
         },
         filter_options: InertiaRails.defer { filter_options_lambda.call }
+      })
+    end
+
+    def schedules
+      selected_therapist_ids_param = (params[:therapists] || "").split(",").compact_blank
+      date_from_param = parse_date_param(params[:date_from]) || Time.zone.today
+      date_to_param = parse_date_param(params[:date_to]) || 1.month.from_now.to_date
+
+      appointment_window = date_from_param.beginning_of_day..date_to_param.end_of_day
+      invalid_statuses = ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"]
+
+      # get therapists with lambda
+      get_therapists_option_lambda = lambda do
+        version = [Therapist.maximum(:updated_at), User.maximum(:updated_at), Service.maximum(:updated_at)].compact.max&.to_i || 0
+
+        Rails.cache.fetch("therapists_options:v#{version}", expires_in: 10.minutes) do
+          therapists_scope = Therapist
+            .joins(:user)
+            .includes(:user, :service)
+            .with_active_addresses
+            .employment_status_ACTIVE
+            .where(
+              # active user (not suspended or suspension ended)
+              ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
+            )
+            .select(:id, :user_id, :service_id, :name, :employment_type, :employment_status, :gender, :registration_number)
+            .order(Arel.sql("LOWER(therapists.name) ASC"))
+
+          deep_transform_keys_to_camel_case({
+            data: therapists_scope.map do |therapist|
+              {
+                id: therapist.id,
+                name: therapist.name,
+                employment_type: therapist.employment_type,
+                employment_status: therapist.employment_status,
+                gender: therapist.gender,
+                registration_number: therapist.registration_number,
+                user: therapist.user && {id: therapist.user.id, email: therapist.user.email},
+                service: therapist.service && {id: therapist.service.id, name: therapist.service.name}
+              }
+            end.as_json
+          })
+        end
+      end
+
+      # get selected therapists with the appointment schedule
+      get_selected_therapists_with_appointments_lambda = lambda do
+        return {data: []} if selected_therapist_ids_param.empty?
+
+        therapists = Therapist
+          .where(id: selected_therapist_ids_param)
+          .select(:id, :user_id, :service_id, :name, :employment_type, :employment_status, :gender, :registration_number)
+          .includes(appointments: [:patient, :package, :service])
+          .includes(therapist_appointment_schedule: :therapist_weekly_availabilities)
+          .merge(
+            Appointment
+              .where(appointment_date_time: appointment_window)
+              .where.not(status: invalid_statuses)
+              .order(:appointment_date_time)
+          )
+          .reorder(Arel.sql("LOWER(therapists.name) ASC"))
+
+        data = therapists.map do |therapist|
+          appointments_raw = therapist.appointments.to_a
+          appointments = appointments_raw.map do |a|
+            {
+              id: a.id,
+              patient_id: a.patient_id,
+              patient_name: a.patient&.name,
+              patient_gender: a.patient.gender,
+              service_id: a.service_id,
+              service_name: a.service&.name,
+              service_code: a.service&.code,
+              package_id: a.package_id,
+              package_name: a.package&.name,
+              total_visit: a.package&.try(:number_of_visit),
+              registration_number: a.registration_number,
+              status: a.status,
+              appointment_date_time: a.appointment_date_time,
+              visit_number: a.visit_number
+            }
+          end
+
+          # calculate availability by day (only for dates with appointments)
+          availability_by_day = {}
+
+          if (schedule = therapist.therapist_appointment_schedule) && appointments_raw.any?
+            tz_name = schedule.time_zone.presence || Time.zone.name
+            duration_minutes = schedule.appointment_duration_in_minutes.to_i
+            buffer_minutes = schedule.buffer_time_in_minutes.to_i
+            weekly_by_dow = schedule.therapist_weekly_availabilities.group_by { |slot| slot.day_of_week.to_s.downcase }
+
+            appointments_by_day = appointments_raw.group_by { |a| a.appointment_date_time.to_date.to_s }
+
+            appointments_by_day.each do |date_str, daily_appts|
+              date = Date.parse(date_str)
+              next if schedule.start_date_window && date < schedule.start_date_window
+              next if schedule.end_date_window && date > schedule.end_date_window
+
+              key = date.strftime("%A").downcase
+              slots = weekly_by_dow[key]
+              next if slots.blank?
+
+              busy_ranges = daily_appts.map do |appt|
+                start_time = appt.appointment_date_time.in_time_zone(tz_name)
+                end_time = start_time + duration_minutes.minutes + buffer_minutes.minutes
+                [start_time, end_time]
+              end.sort_by(&:first)
+
+              availability_by_day[date_str] = slots.map do |slot|
+                slot_start = Time.use_zone(tz_name) { Time.zone.parse("#{date} #{slot.start_time}") }
+                slot_end = Time.use_zone(tz_name) { Time.zone.parse("#{date} #{slot.end_time}") }
+
+                free_windows = []
+                cursor = slot_start
+
+                busy_ranges.each do |busy_start, busy_end|
+                  next if busy_end <= cursor
+                  break if busy_start >= slot_end
+
+                  if busy_start > cursor
+                    free_windows << {start_time: cursor.strftime("%H:%M"), end_time: [busy_start, slot_end].min.strftime("%H:%M")}
+                  end
+
+                  cursor = [cursor, busy_end].max
+                  cursor = slot_end if cursor > slot_end
+                end
+
+                if cursor < slot_end
+                  free_windows << {start_time: cursor.strftime("%H:%M"), end_time: slot_end.strftime("%H:%M")}
+                end
+
+                {
+                  start_time: slot.start_time&.strftime("%H:%M"),
+                  end_time: slot.end_time&.strftime("%H:%M"),
+                  free_windows: free_windows
+                }
+              end
+            end
+          end
+
+          {
+            id: therapist.id,
+            name: therapist.name,
+            employment_type: therapist.employment_type,
+            employment_status: therapist.employment_status,
+            gender: therapist.gender,
+            registration_number: therapist.registration_number,
+            availability_by_day: availability_by_day,
+            appointments:
+              appointments.sort_by { |appt| appt[:appointment_date_time] || Time.zone.at(0) }
+          }
+        end
+
+        deep_transform_keys_to_camel_case({data:})
+      end
+
+      render inertia: "AdminPortal/Therapist/Schedules", props: deep_transform_keys_to_camel_case({
+        therapists_schedule: InertiaRails.defer do
+          get_selected_therapists_with_appointments_lambda.call
+        end,
+        therapists_option: InertiaRails.defer(group: "options") do
+          get_therapists_option_lambda.call
+        end
       })
     end
 
@@ -340,6 +515,14 @@ module AdminPortal
     end
 
     private
+
+    def parse_date_param(raw)
+      return if raw.blank?
+
+      Date.strptime(raw.to_s, "%d-%m-%Y")
+    rescue ArgumentError
+      nil
+    end
 
     # Use callbacks to share common setup or constraints between actions.
     def set_therapist

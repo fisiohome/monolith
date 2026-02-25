@@ -600,7 +600,7 @@ export function CalendarHeader({ className, therapists }: CalendarHeaderProps) {
 							<HoverCardTrigger asChild>
 								<Button
 									variant="ghost"
-									className="border-b line-clamp-1 truncate border-l shadow bg-background"
+									className="border-b line-clamp-1 truncate border-l shadow bg-background uppercase"
 								>
 									{t.name}
 								</Button>

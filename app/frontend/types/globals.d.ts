@@ -67,6 +67,7 @@ export interface AdminPortal {
 				generateResetPasswordUrl: string;
 				changePassword: string;
 				schedules: string;
+				daySchedules: string;
 			};
 			patientManagement: {
 				index: string;
