@@ -580,13 +580,15 @@ export default function AppointmentIndex() {
 
 						<div className="flex items-center gap-2">
 							{/* ? the sync appointment is currently directly by the backend */}
-							{false && globalProps.auth.currentUser?.["isSuperAdmin?"] && (
-								<SyncDataMaster
-									isSynchronizing={isSynchronizing}
-									isMobile={isMobile}
-									onSync={doSync}
-								/>
-							)}
+							{false &&
+								(globalProps.auth.currentUser?.["isSuperAdmin?"] ||
+									globalProps.auth.currentUser?.["isAdminSupervisor?"]) && (
+									<SyncDataMaster
+										isSynchronizing={isSynchronizing}
+										isMobile={isMobile}
+										onSync={doSync}
+									/>
+								)}
 
 							<Popover
 								open={isOpenReportModal}

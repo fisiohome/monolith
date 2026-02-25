@@ -333,7 +333,8 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 						</p>
 					</div>
 
-					{globalProps.auth.currentUser?.["isSuperAdmin?"] && (
+					{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
+						globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) && (
 						<div className="flex flex-col gap-2 md:flex-row">
 							<Button
 								variant="primary-outline"

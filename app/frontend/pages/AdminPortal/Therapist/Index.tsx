@@ -600,7 +600,8 @@ export default function Index({
 					</div>
 
 					<div className="flex flex-col gap-2 md:flex-row">
-						{globalProps?.auth?.currentUser?.["isSuperAdmin?"] && (
+						{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
+							globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) && (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button variant="primary-outline" disabled={isLoading}>
