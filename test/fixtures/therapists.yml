@@ -1,6 +1,7 @@
 therapist_one:
   name: "Therapist One"
   phone_number: "+6281234567890"
+  telegram_id: "@therapist_one"
   registration_number: "FH-0001"
   gender: "MALE" # from gender_enum
   batch: 1
@@ -23,6 +24,7 @@ therapist_one:
 therapist_two:
   name: "Therapist Two"
   phone_number: "+6281234567891"
+  telegram_id: "@therapist_two"
   registration_number: "PO-0001"
   gender: "FEMALE"
   batch: 1
@@ -41,6 +43,7 @@ therapist_two:
 active_therapist:
   name: "Active Therapist"
   phone_number: "+6281234567892"
+  telegram_id: "@active_therapist"
   registration_number: "FH-002"
   gender: "FEMALE"
   batch: 1
@@ -59,6 +62,7 @@ active_therapist:
 hold_therapist:
   name: "On-Hold Therapist"
   phone_number: "+6281234567893"
+  telegram_id: "@hold_therapist"
   registration_number: "PO-0002"
   gender: "MALE"
   batch: 1
@@ -76,6 +80,7 @@ hold_therapist:
 delete_therapist:
   name: "Therapist For Delete"
   phone_number: "+6281234567812"
+  telegram_id: "@delete_therapist"
   registration_number: "FH-0003"
   gender: "MALE" # from gender_enum
   batch: 1

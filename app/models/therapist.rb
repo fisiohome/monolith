@@ -81,6 +81,8 @@ class Therapist < ApplicationRecord
   validates :batch, numericality: true, presence: true
   validates :phone_number, uniqueness: true, presence: true
   validates :registration_number, uniqueness: true
+  validates :telegram_id, uniqueness: true, allow_blank: true,
+    format: {with: /\A@[a-zA-Z0-9_]{5,32}\z/, message: "must be a valid Telegram username (e.g., @telegram-id)"}
 
   self.implicit_order_column = "created_at"
 

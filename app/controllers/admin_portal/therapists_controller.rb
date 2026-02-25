@@ -61,7 +61,9 @@ module AdminPortal
           serialize_therapist(
             Therapist.find_by(id: selected_param),
             {
-              only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender contract_start_date contract_end_date]
+              only: %i[
+                id name batch phone_number registration_number modalities specializations employment_status employment_type gender contract_start_date contract_end_date telegram_id
+              ]
             }
           )
         )
@@ -540,6 +542,7 @@ module AdminPortal
         :employment_type,
         :contract_start_date,
         :contract_end_date,
+        :telegram_id,
         modalities: [],
         specializations: [],
         service: %i[id name code],

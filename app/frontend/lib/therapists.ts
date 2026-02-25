@@ -118,6 +118,13 @@ export const getFormSchema = (mode: FormMode) => {
 			.string()
 			.min(1, { message: "Phone Number is required" })
 			.refine(isValidPhoneNumber, { message: "Invalid phone number" }),
+		telegramId: z
+			.string()
+			.regex(/^@[a-zA-Z0-9_]{5,32}$/, {
+				message: "Must be a valid Telegram username (e.g., @telegram-id)",
+			})
+			.or(z.literal(""))
+			.optional(),
 		gender: z.enum(GENDERS).nullable(),
 		employmentStatus: z.enum(EMPLOYMENT_STATUSES).nullable(),
 		employmentType: z.enum(EMPLOYMENT_TYPES).nullable(),

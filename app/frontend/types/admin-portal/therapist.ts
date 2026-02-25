@@ -45,6 +45,7 @@ export interface Therapist {
 	batch: number;
 	phoneNumber: string;
 	registrationNumber: string;
+	telegramId?: string;
 	modalities: string[];
 	specializations: string[];
 	employmentStatus: TherapistEmploymentStatus[number];

@@ -165,4 +165,115 @@ class TherapistTest < ActiveSupport::TestCase
     assert_nil @therapist_one.contract_start_date
     assert_nil @therapist_one.contract_end_date
   end
+
+  # Test Telegram ID validations
+  test "therapist should be valid with valid telegram id" do
+    @therapist_one.telegram_id = "@valid_username"
+    assert @therapist_one.valid?
+  end
+
+  test "therapist should be valid without telegram id" do
+    @therapist_one.telegram_id = nil
+    assert @therapist_one.valid?
+  end
+
+  test "therapist should be valid with blank telegram id" do
+    @therapist_one.telegram_id = ""
+    assert @therapist_one.valid?
+  end
+
+  test "therapist should validate telegram id format with @ symbol" do
+    @therapist_one.telegram_id = "invalid_without_at"
+    assert_not @therapist_one.valid?
+    assert_includes @therapist_one.errors[:telegram_id], "must be a valid Telegram username (e.g., @telegram-id)"
+  end
+
+  test "therapist should validate telegram id minimum length" do
+    @therapist_one.telegram_id = "@abc"
+    assert_not @therapist_one.valid?
+    assert_includes @therapist_one.errors[:telegram_id], "must be a valid Telegram username (e.g., @telegram-id)"
+  end
+
+  test "therapist should validate telegram id maximum length" do
+    @therapist_one.telegram_id = "@" + "a" * 33
+    assert_not @therapist_one.valid?
+    assert_includes @therapist_one.errors[:telegram_id], "must be a valid Telegram username (e.g., @telegram-id)"
+  end
+
+  test "therapist should validate telegram id characters" do
+    @therapist_one.telegram_id = "@invalid-characters!"
+    assert_not @therapist_one.valid?
+    assert_includes @therapist_one.errors[:telegram_id], "must be a valid Telegram username (e.g., @telegram-id)"
+  end
+
+  test "therapist should validate telegram id with valid characters" do
+    @therapist_one.telegram_id = "@valid_user123"
+    assert @therapist_one.valid?
+  end
+
+  test "therapist should validate telegram id with underscores" do
+    @therapist_one.telegram_id = "@valid_user_name"
+    assert @therapist_one.valid?
+  end
+
+  test "therapist should validate uniqueness of telegram id" do
+    @therapist_one.telegram_id = "@unique_telegram"
+    @therapist_one.save!
+
+    duplicate = Therapist.new(
+      name: "Duplicate Therapist",
+      phone_number: "+6281234567899",
+      telegram_id: "@unique_telegram",
+      gender: "MALE",
+      batch: 1,
+      employment_type: "KARPIS",
+      employment_status: "ACTIVE",
+      specializations: ["Test"],
+      modalities: ["Test"],
+      user: users(:therapist_user_one),
+      service: services(:fisiohome)
+    )
+    assert_not duplicate.valid?
+    assert_includes duplicate.errors[:telegram_id], "has already been taken"
+  end
+
+  test "therapist should allow same telegram id if one is blank" do
+    @therapist_one.telegram_id = ""
+    @therapist_one.save!
+
+    new_therapist = Therapist.new(
+      name: "New Therapist",
+      phone_number: "+6281234567899",
+      telegram_id: "",
+      gender: "MALE",
+      batch: 1,
+      employment_type: "KARPIS",
+      employment_status: "ACTIVE",
+      specializations: ["Test"],
+      modalities: ["Test"],
+      user: users(:therapist_user_one),
+      service: services(:fisiohome)
+    )
+    assert new_therapist.valid?, new_therapist.errors.full_messages.join(", ")
+  end
+
+  test "therapist should allow same telegram id if both are nil" do
+    @therapist_one.telegram_id = nil
+    @therapist_one.save!
+
+    new_therapist = Therapist.new(
+      name: "New Therapist",
+      phone_number: "+6281234567899",
+      telegram_id: nil,
+      gender: "MALE",
+      batch: 1,
+      employment_type: "KARPIS",
+      employment_status: "ACTIVE",
+      specializations: ["Test"],
+      modalities: ["Test"],
+      user: users(:therapist_user_one),
+      service: services(:fisiohome)
+    )
+    assert new_therapist.valid?, new_therapist.errors.full_messages.join(", ")
+  end
 end

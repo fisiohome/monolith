@@ -1,6 +1,7 @@
 # * PLEASE NOTE:
 # * if sync data on admin portal data master spreadsheet
 #  * must set general access spreadsheet file to “Anyone with the link” with permission “Editor”.
+#  * test file: test/services/admin_portal/master_data_sync_service_test.rb
 module AdminPortal
   class MasterDataSyncService
     MASTER_DATA_URL = "https://docs.google.com/spreadsheets/d/1gERBdLgZPWrOF-rl5pXCx6mIyKOYi64KKbxjmxpTbvM/export?format=csv"
@@ -501,6 +502,10 @@ module AdminPortal
             specializations = row["Specializations"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
             employment_status = normalize_status(row["Status"])
 
+            # Normalize Telegram ID
+            telegram_id_raw = row["Telegram ID"]&.strip
+            telegram_id = normalize_telegram_id(telegram_id_raw) if telegram_id_raw.present?
+
             # Parse contract period
             contract_start_date = nil
             contract_end_date = nil
@@ -537,6 +542,7 @@ module AdminPortal
               service:,
               user:,
               phone_number:,
+              telegram_id:,
               contract_start_date:,
               contract_end_date:
             )
@@ -1427,6 +1433,14 @@ module AdminPortal
       return false if normalized.blank?
 
       %w[ACTIVE TRUE YES Y 1].include?(normalized.upcase)
+    end
+
+    def normalize_telegram_id(value)
+      normalized = value.to_s.strip
+      return nil if normalized.blank?
+
+      # Add @ if not present
+      normalized.start_with?("@") ? normalized : "@#{normalized}"
     end
 
     def fetch_and_parse_csv(gid:)

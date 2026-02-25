@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_19_105410) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_25_081143) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -907,11 +907,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_19_105410) do
     t.virtual "therapist_type", type: :string, limit: 20, as: "\nCASE\n    WHEN (employment_type = 'KARPIS'::employment_type_enum) THEN 'internal'::text\n    WHEN (employment_type = 'FLAT'::employment_type_enum) THEN 'external'::text\n    ELSE 'external'::text\nEND", stored: true
     t.date "contract_start_date", comment: "Optional contract start date for the therapist"
     t.date "contract_end_date", comment: "Optional contract end date for the therapist"
+    t.string "telegram_id"
     t.index ["modalities"], name: "index_therapists_on_modalities", using: :gin
     t.index ["phone_number"], name: "index_therapists_on_phone_number", unique: true
     t.index ["registration_number"], name: "index_therapists_on_registration_number", unique: true
     t.index ["service_id"], name: "index_therapists_on_service_id"
     t.index ["specializations"], name: "index_therapists_on_specializations", using: :gin
+    t.index ["telegram_id"], name: "index_therapists_on_telegram_id", unique: true
     t.index ["user_id"], name: "index_therapists_on_user_id"
   end
 

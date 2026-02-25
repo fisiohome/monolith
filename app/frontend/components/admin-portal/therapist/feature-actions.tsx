@@ -4,6 +4,7 @@ import { useMediaQuery } from "@uidotdev/usehooks";
 import { format, formatDistanceToNow } from "date-fns";
 import {
 	Activity,
+	AtSignIcon,
 	BriefcaseMedical,
 	CalendarDays,
 	Clipboard,
@@ -574,6 +575,11 @@ export function DetailsTherapistContent({
 					: "-",
 			},
 			{ icon: Mail, label: "Email", value: therapist.user.email },
+			{
+				icon: AtSignIcon,
+				label: "Telegram ID",
+				value: therapist?.telegramId || "N/A",
+			},
 		],
 		[therapist],
 	);

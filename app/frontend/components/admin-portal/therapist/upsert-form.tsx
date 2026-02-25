@@ -1534,7 +1534,7 @@ function PersonalInformationForm({
 				control={form.control}
 				name="gender"
 				render={({ field }) => (
-					<FormItem className="col-span-full">
+					<FormItem>
 						<FormLabel>Gender</FormLabel>
 						<Select
 							onValueChange={field.onChange}
@@ -1557,6 +1557,31 @@ function PersonalInformationForm({
 							</SelectContent>
 						</Select>
 
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+
+			<FormField
+				control={form.control}
+				name="telegramId"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel className="capitalize">
+							Telegram ID{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
+						<FormControl>
+							<Input
+								{...field}
+								type="text"
+								placeholder="Enter the Telegram ID (e.g., @telegram-id)..."
+								autoComplete="off"
+							/>
+						</FormControl>
+						<FormDescription>
+							Enter the Telegram username with "@" prefix.
+						</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -1675,6 +1700,7 @@ export default function FormTherapist({
 			name: therapist.name || "",
 			batch: therapist.batch || 1,
 			phoneNumber: therapist.phoneNumber || "+62",
+			telegramId: therapist.telegramId || "",
 			gender: therapist.gender || "MALE",
 			employmentType: therapist.employmentType || "FLAT",
 			employmentStatus: therapist.employmentStatus || "INACTIVE",

@@ -1,3 +1,4 @@
+# test file: test/runner/test_fetch_therapists_availabiliies.rb
 module AdminPortal
   module TherapistQueryHelper
     # Fetch therapists with location, location-rule, gender, and availability filtering
@@ -22,7 +23,9 @@ module AdminPortal
             :therapist_adjusted_availabilities
           ]
         )
-        .where(service: service)
+        # ? we comments this because there is the case like,
+        # ? Pasien pinggiran Depok, dapat di tangani oleh terapis pinggiran Jaksel, yang mungkin juga untuk kota lainnya terdapat perbedaan service/brand
+        # .where(service: service)
         .where(employment_status: "ACTIVE")
         .where(
           "therapists.employment_type = :flat OR (addresses.latitude <> 0 AND addresses.longitude <> 0)",
