@@ -343,18 +343,18 @@ module AdminPortal
       get_selected_therapists_with_appointments_lambda = lambda do
         return {data: []} if selected_therapist_ids_param.empty?
 
+        # Single query to fetch all selected therapists with schedules and filtered appointments
         therapists = Therapist
           .where(id: selected_therapist_ids_param)
           .select(:id, :user_id, :service_id, :name, :employment_type, :employment_status, :gender, :registration_number)
-          .includes(appointments: [:patient, :package, :service])
           .includes(therapist_appointment_schedule: :therapist_weekly_availabilities)
-          .merge(
-            Appointment
-              .where(appointment_date_time: appointment_window)
+          .preload(:appointments) {
+            where(appointment_date_time: appointment_window)
               .where.not(status: invalid_statuses)
+              .includes(:patient, :package, :service)
               .order(:appointment_date_time)
-          )
-          .reorder(Arel.sql("LOWER(therapists.name) ASC"))
+          }
+          .order(Arel.sql("LOWER(therapists.name) ASC"))
 
         data = therapists.map do |therapist|
           appointments_raw = therapist.appointments.to_a
@@ -377,10 +377,10 @@ module AdminPortal
             }
           end
 
-          # calculate availability by day (only for dates with appointments)
+          # calculate availability by day across requested window
           availability_by_day = {}
 
-          if (schedule = therapist.therapist_appointment_schedule) && appointments_raw.any?
+          if (schedule = therapist.therapist_appointment_schedule)
             tz_name = schedule.time_zone.presence || Time.zone.name
             duration_minutes = schedule.appointment_duration_in_minutes.to_i
             buffer_minutes = schedule.buffer_time_in_minutes.to_i
@@ -388,10 +388,12 @@ module AdminPortal
 
             appointments_by_day = appointments_raw.group_by { |a| a.appointment_date_time.to_date.to_s }
 
-            appointments_by_day.each do |date_str, daily_appts|
-              date = Date.parse(date_str)
+            (date_from_param..date_to_param).each do |date|
               next if schedule.start_date_window && date < schedule.start_date_window
               next if schedule.end_date_window && date > schedule.end_date_window
+
+              date_str = date.to_s
+              daily_appts = appointments_by_day[date_str] || []
 
               key = date.strftime("%A").downcase
               slots = weekly_by_dow[key]
@@ -443,8 +445,8 @@ module AdminPortal
             gender: therapist.gender,
             registration_number: therapist.registration_number,
             availability_by_day: availability_by_day,
-            appointments:
-              appointments.sort_by { |appt| appt[:appointment_date_time] || Time.zone.at(0) }
+            appointments: appointments.select { |appt| appt[:appointment_date_time].between?(date_from_param.beginning_of_day, date_to_param.end_of_day) }
+              .sort_by { |appt| appt[:appointment_date_time] || Time.zone.at(0) }
           }
         end
 

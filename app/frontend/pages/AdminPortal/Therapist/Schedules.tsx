@@ -78,9 +78,20 @@ type TherapistsApptSchedule = Pick<
 };
 
 type TherapistSchedule = Therapist & {
-	availabilityByDay?: Record<string, { startTime: string; endTime: string }[]>;
+	availabilityByDay?: Record<
+		string,
+		{
+			startTime: string;
+			endTime: string;
+			freeWindows?: { startTime: string; endTime: string }[];
+		}[]
+	>;
 	appointments?: TherapistsApptSchedule[];
 };
+
+type AvailabilitySlots = NonNullable<
+	TherapistSchedule["availabilityByDay"]
+>[string];
 
 export interface PageProps {
 	therapistsOption?: {
@@ -97,6 +108,277 @@ export interface SchedulesPageGlobalProps
 	[key: string]: any;
 }
 
+// * DayCard component
+interface DayCardProps {
+	dayKey: string;
+	appointments: TherapistsApptSchedule[];
+	availabilitySlots: AvailabilitySlots;
+}
+
+function DayCard({ dayKey, appointments, availabilitySlots }: DayCardProps) {
+	const { t: tappt } = useTranslation("appointments");
+	const { locale, tzDate, timeFormatDateFns } = useDateContext();
+	const isApptToday = isToday(new Date(dayKey));
+	const dateLabel =
+		dayKey === "unscheduled"
+			? "Unscheduled"
+			: format(new Date(dayKey), "dd", {
+					in: tzDate,
+					locale,
+				});
+	const monthAndDayLabel =
+		dayKey === "unscheduled"
+			? "Unscheduled"
+			: format(new Date(dayKey), "MMM, EEE", {
+					in: tzDate,
+					locale,
+				});
+
+	return (
+		<div key={dayKey} className="border border-border/80">
+			<div className="flex justify-between gap-3">
+				<div className="inline-block">
+					<div
+						className={cn(
+							"px-1 flex flex-initial items-center gap-1.5 text-xs font-semibold uppercase tracking-wider",
+							isApptToday
+								? "bg-primary/10 text-primary border border-primary/60"
+								: "bg-background text-muted-foreground border border-border/60",
+						)}
+					>
+						<span className="font-bold text-base">{dateLabel}</span>
+						<span
+							className={cn(
+								"text-nowrap",
+								isApptToday ? "text-primary" : "text-muted-foreground/80",
+							)}
+						>
+							{monthAndDayLabel}
+						</span>
+					</div>
+				</div>
+
+				{availabilitySlots.some((s: any) => s.freeWindows?.length) && (
+					<div className="mt-1 flex flex-wrap gap-1 text-xs text-muted-foreground px-2 justify-end">
+						<span className="inline-block mr-1">Available time:</span>
+
+						{availabilitySlots.flatMap(
+							(slot: any) =>
+								slot.freeWindows?.map((fw: any) => (
+									<Badge
+										key={`${dayKey}-fw-${slot.startTime}-${slot.endTime}-${fw.startTime}-${fw.endTime}`}
+										variant="outline"
+										className="text-[10px] px-1"
+									>
+										{fw.startTime} &mdash; {fw.endTime}
+									</Badge>
+								)) || [],
+						)}
+					</div>
+				)}
+			</div>
+
+			<div>
+				{appointments.map((appt, idx: number) => {
+					const apptTime = appt.appointmentDateTime
+						? format(new Date(appt.appointmentDateTime), timeFormatDateFns, {
+								in: tzDate,
+								locale,
+							})
+						: "N/A";
+					const genderTitle =
+						appt.patientGender === "MALE"
+							? "Bapak "
+							: appt.patientGender === "FEMALE"
+								? "Ibu "
+								: "";
+					const title = `${genderTitle}${appt.patientName || "(No patient)"}`;
+					const statusDotVariant = getDotVariantStatus(appt.status);
+					const statusLine = tappt(`statuses.${appt.status}`);
+					const regLine = appt?.registrationNumber;
+					const packageLine = appt?.packageName;
+					const visitLine = appt?.totalVisit
+						? `Visit ${appt.visitNumber}/${appt.totalVisit}`
+						: null;
+
+					return (
+						<button
+							type="button"
+							key={appt.id}
+							className={cn(
+								"text-sm p-2 space-y-1 hover:bg-primary/5 w-full text-left",
+								idx !== appointments.length - 1 && "border-b",
+							)}
+							onClick={() => {
+								if (appt.registrationNumber) {
+									window.open(
+										`/admin-portal/appointments?registration_number=${appt.registrationNumber}`,
+										"_blank",
+									);
+								}
+							}}
+						>
+							<div className="flex justify-between gap-3 w-full">
+								<p className="font-bold tracking-tight flex-1">{apptTime}</p>
+
+								<DotBadgeWithLabel
+									size="xs"
+									className="relative flex-shrink-0"
+									variant={statusDotVariant}
+								>
+									<span
+										title={statusLine}
+										className="text-[0.7rem] tracking-tight uppercase line-clamp-1"
+									>
+										{statusLine}
+									</span>
+								</DotBadgeWithLabel>
+							</div>
+
+							<p className="font-semibold tracking-tight leading-tight capitalize">
+								{title}
+							</p>
+
+							<div className="!mt-2 text-xs flex items-center justify-between gap-3">
+								<div className="tracking-tight">
+									{visitLine && <span>{visitLine}</span>}
+									{packageLine && (
+										<>
+											<span className="mx-1">&bull;</span>
+											<span>{packageLine}</span>
+										</>
+									)}
+								</div>
+
+								{regLine && (
+									<span className="italic tracking-tighter">#{regLine}</span>
+								)}
+							</div>
+						</button>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
+// * therapist schedule column component
+interface TherapistScheduleColumnProps {
+	therapist: TherapistsOption;
+	entry?: TherapistSchedule;
+	isDateWithinFilter: (key: string) => boolean;
+	groupAppointmentsByDay: (
+		appointments: TherapistsApptSchedule[],
+	) => Record<string, TherapistsApptSchedule[]>;
+	globalPageProps: SchedulesPageGlobalProps;
+}
+
+function TherapistScheduleColumn({
+	therapist,
+	entry,
+	isDateWithinFilter,
+	groupAppointmentsByDay,
+	globalPageProps,
+}: TherapistScheduleColumnProps) {
+	const grouped = groupAppointmentsByDay(entry?.appointments || []);
+	const availabilityByDay = entry?.availabilityByDay || {};
+	const dayKeys = Array.from(
+		new Set([...Object.keys(grouped), ...Object.keys(availabilityByDay)]),
+	)
+		.filter((key) => isDateWithinFilter(key))
+		.filter((key) => {
+			const hasAppointments = (grouped[key]?.length || 0) > 0;
+			const hasAvailability = (availabilityByDay[key]?.length || 0) > 0;
+			return hasAppointments || hasAvailability;
+		})
+		.sort();
+
+	return (
+		<div
+			key={therapist.id}
+			className="md:w-[380px] w-full md:min-w-[380px] md:max-w-[380px] flex-shrink-0 flex flex-col gap-2 snap-start"
+		>
+			<div className="flex pb-2 items-center justify-between border-b border-border mr-2">
+				<HoverCard key={therapist.id} openDelay={10} closeDelay={100}>
+					<HoverCardTrigger asChild>
+						<Button
+							variant="ghost"
+							className="line-clamp-1 w-full truncate border shadow bg-background uppercase"
+						>
+							{therapist.name}
+						</Button>
+					</HoverCardTrigger>
+					<HoverCardContent className="flex w-[--radix-hover-card-trigger-width] flex-col gap-0.5 text-xs">
+						<div className="flex gap-4 flex-col">
+							<div className="flex items-center gap-2 text-left">
+								<Avatar className="w-8 h-8 border rounded-lg bg-muted">
+									<AvatarImage src="#" alt={therapist.name} />
+									<AvatarFallback
+										className={cn(
+											"text-xs rounded-lg",
+											therapist.user.email ===
+												globalPageProps.auth.currentUser?.user.email
+												? "bg-primary text-primary-foreground"
+												: therapist.user["isOnline?"]
+													? "bg-emerald-700 text-white"
+													: "",
+										)}
+									>
+										{generateInitials(therapist.name)}
+									</AvatarFallback>
+								</Avatar>
+								<div className="flex-1 space-y-0.5 leading-tight text-left">
+									<p className="font-bold uppercase truncate max-w-52 md:max-w-16 lg:max-w-full">
+										{therapist.name}
+									</p>
+									<p className="font-light">#{therapist.registrationNumber}</p>
+								</div>
+							</div>
+
+							<Separator />
+
+							<div className="flex w-full flex-col gap-2">
+								<dl className="flex items-center justify-between gap-2">
+									<dt className="text-muted-foreground text-nowrap">Type</dt>
+									<dd className="font-medium text-right">
+										{therapist.employmentType}
+									</dd>
+								</dl>
+								<dl className="flex items-center justify-between gap-2">
+									<dt className="text-muted-foreground text-nowrap">
+										Therapist at
+									</dt>
+									<dd className="font-medium text-right">
+										{therapist.service.name.replaceAll("_", " ")}
+									</dd>
+								</dl>
+							</div>
+						</div>
+					</HoverCardContent>
+				</HoverCard>
+			</div>
+
+			<div className="space-y-2 max-h-[calc(100vh-23rem)] overflow-y-auto pr-2">
+				{dayKeys.length === 0 && (
+					<div className="p-2 bg-background text-sm text-muted-foreground border border-border/60">
+						No schedules in this range.
+					</div>
+				)}
+
+				{dayKeys.map((dayKey) => (
+					<DayCard
+						key={dayKey}
+						dayKey={dayKey}
+						appointments={grouped[dayKey] || []}
+						availabilitySlots={availabilityByDay[dayKey] || []}
+					/>
+				))}
+			</div>
+		</div>
+	);
+}
+
+// * core component
 export default function SchedulesPage({
 	therapistsOption,
 	therapistsSchedule,
@@ -104,9 +386,8 @@ export default function SchedulesPage({
 	const { props: globalPageProps, url: pageURL } =
 		usePage<SchedulesPageGlobalProps>();
 	const { currentQuery } = globalPageProps.adminPortal;
-	const { locale, tzDate, timeFormatDateFns } = useDateContext();
+	const { locale, tzDate } = useDateContext();
 	const { t } = useTranslation("therapist-schedules");
-	const { t: tappt } = useTranslation("appointments");
 
 	// * helpers & filter data states
 	const parsedTherapists = useMemo(() => {
@@ -239,8 +520,33 @@ export default function SchedulesPage({
 				appointments: sortedAppointments,
 			};
 		}
+		// Ensure selected therapists are always in the map, even if no schedule data returned
+		for (const therapist of selectedTherapistOptions) {
+			const id = String(therapist.id);
+			if (!map[id]) {
+				map[id] = {
+					...therapist,
+					appointments: [],
+					availabilityByDay: {},
+				} as unknown as TherapistSchedule;
+			}
+		}
 		return map;
-	}, [filters.therapists, therapistsSchedule?.data]);
+	}, [filters.therapists, therapistsSchedule?.data, selectedTherapistOptions]);
+
+	const isDateWithinFilter = useCallback(
+		(dateString: string) => {
+			if (dateString === "unscheduled") return true;
+			const dateObj = new Date(dateString);
+			if (!isValid(dateObj)) return false;
+			const from = filters.date?.from;
+			const to = filters.date?.to;
+			if (from && dateObj < from) return false;
+			if (to && dateObj > to) return false;
+			return true;
+		},
+		[filters.date?.from, filters.date?.to],
+	);
 
 	const groupAppointmentsByDay = useCallback(
 		(appointments: TherapistsApptSchedule[]) => {
@@ -611,266 +917,16 @@ export default function SchedulesPage({
 					) : (
 						<div className="w-full overflow-x-auto pb-2 snap-x">
 							<div className="flex items-start gap-2 min-w-full">
-								{selectedTherapistOptions.map((t) => {
-									const entry = schedulesByTherapist[String(t.id)];
-									const grouped = groupAppointmentsByDay(
-										entry?.appointments || [],
-									);
-									const dayKeys = Object.keys(grouped).sort();
-
-									return (
-										<div
-											key={t.id}
-											className="md:w-[380px] w-full md:min-w-[380px] md:max-w-[380px] flex-shrink-0 flex flex-col gap-2 snap-start"
-										>
-											<div className="flex pb-2 items-center justify-between border-b border-border mr-2">
-												<HoverCard key={t.id} openDelay={10} closeDelay={100}>
-													<HoverCardTrigger asChild>
-														<Button
-															variant="ghost"
-															className="line-clamp-1 w-full truncate border shadow bg-background uppercase"
-														>
-															{t.name}
-														</Button>
-													</HoverCardTrigger>
-													<HoverCardContent className="flex w-[--radix-hover-card-trigger-width] flex-col gap-0.5 text-xs">
-														<div className="flex gap-4 flex-col">
-															<div className="flex items-center gap-2 text-left">
-																<Avatar className="w-8 h-8 border rounded-lg bg-muted">
-																	<AvatarImage src="#" alt={t.name} />
-																	<AvatarFallback
-																		className={cn(
-																			"text-xs rounded-lg",
-																			t.user.email ===
-																				globalPageProps.auth.currentUser?.user
-																					.email
-																				? "bg-primary text-primary-foreground"
-																				: t.user["isOnline?"]
-																					? "bg-emerald-700 text-white"
-																					: "",
-																		)}
-																	>
-																		{generateInitials(t.name)}
-																	</AvatarFallback>
-																</Avatar>
-																<div className="flex-1 space-y-0.5 leading-tight text-left">
-																	<p className="font-bold uppercase truncate max-w-52 md:max-w-16 lg:max-w-full">
-																		{t.name}
-																	</p>
-																	<p className="font-light">
-																		#{t.registrationNumber}
-																	</p>
-																</div>
-															</div>
-
-															<Separator />
-
-															<div className="flex w-full flex-col gap-2">
-																<dl className="flex items-center justify-between gap-2">
-																	<dt className="text-muted-foreground text-nowrap">
-																		Type
-																	</dt>
-																	<dd className="font-medium text-right">
-																		{t.employmentType}
-																	</dd>
-																</dl>
-																<dl className="flex items-center justify-between gap-2">
-																	<dt className="text-muted-foreground text-nowrap">
-																		Therapist at
-																	</dt>
-																	<dd className="font-medium text-right">
-																		{t.service.name.replaceAll("_", " ")}
-																	</dd>
-																</dl>
-															</div>
-														</div>
-													</HoverCardContent>
-												</HoverCard>
-											</div>
-
-											<div className="space-y-2 max-h-[calc(100vh-23rem)] overflow-y-auto pr-2">
-												{dayKeys.length === 0 && (
-													<div className="p-2 bg-background text-sm text-muted-foreground border border-border/60">
-														No schedules in this range.
-													</div>
-												)}
-
-												{dayKeys.map((dayKey) => {
-													const appointments = grouped[dayKey];
-													const availabilitySlots =
-														entry?.availabilityByDay?.[dayKey] || [];
-													const isApptToday = isToday(new Date(dayKey));
-													const dateLabel =
-														dayKey === "unscheduled"
-															? "Unscheduled"
-															: format(new Date(dayKey), "dd", {
-																	in: tzDate,
-																	locale,
-																});
-													const monthAndDayLabel =
-														dayKey === "unscheduled"
-															? "Unscheduled"
-															: format(new Date(dayKey), "MMM, EEE", {
-																	in: tzDate,
-																	locale,
-																});
-
-													return (
-														<div
-															key={dayKey}
-															className="border border-border/80"
-														>
-															<div className="flex justify-between gap-3">
-																<div className="inline-block">
-																	<div
-																		className={cn(
-																			"px-1 flex flex-initial items-center gap-1.5 text-xs font-semibold uppercase tracking-wider",
-																			isApptToday
-																				? "bg-primary/10 text-primary border border-primary/60"
-																				: "bg-background text-muted-foreground border border-border/60",
-																		)}
-																	>
-																		<span className="font-bold text-base">
-																			{dateLabel}
-																		</span>
-																		<span
-																			className={cn(
-																				"text-nowrap",
-																				isApptToday
-																					? "text-primary"
-																					: "text-muted-foreground/80",
-																			)}
-																		>
-																			{monthAndDayLabel}
-																		</span>
-																	</div>
-																</div>
-
-																{availabilitySlots.some(
-																	(s: any) => s.freeWindows?.length,
-																) && (
-																	<div className="mt-1 flex flex-wrap gap-1 text-xs text-muted-foreground px-2 justify-end">
-																		<span className="inline-block mr-1">
-																			Available time:
-																		</span>
-
-																		{availabilitySlots.flatMap(
-																			(slot: any) =>
-																				slot.freeWindows?.map((fw: any) => (
-																					<Badge
-																						key={`${dayKey}-fw-${slot.startTime}-${slot.endTime}-${fw.startTime}-${fw.endTime}`}
-																						variant="outline"
-																						className="text-[10px] px-1"
-																					>
-																						{fw.startTime} &mdash; {fw.endTime}
-																					</Badge>
-																				)) || [],
-																		)}
-																	</div>
-																)}
-															</div>
-
-															<div>
-																{appointments.map((appt, idx: number) => {
-																	const apptTime = appt.appointmentDateTime
-																		? format(
-																				new Date(appt.appointmentDateTime),
-																				timeFormatDateFns,
-																				{ in: tzDate, locale },
-																			)
-																		: "N/A";
-																	const genderTitle =
-																		appt.patientGender === "MALE"
-																			? "Bapak "
-																			: appt.patientGender === "FEMALE"
-																				? "Ibu "
-																				: "";
-																	const title = `${genderTitle}${appt.patientName || "(No patient)"}`;
-																	const statusDotVariant = getDotVariantStatus(
-																		appt.status,
-																	);
-																	const statusLine = tappt(
-																		`statuses.${appt.status}`,
-																	);
-																	const regLine = appt?.registrationNumber;
-																	const packageLine = appt?.packageName;
-																	const visitLine = appt?.totalVisit
-																		? `Visit ${appt.visitNumber}/${appt.totalVisit}`
-																		: null;
-
-																	return (
-																		<button
-																			type="button"
-																			key={appt.id}
-																			className={cn(
-																				"text-sm p-2 space-y-1 hover:bg-primary/5 w-full text-left",
-																				idx !== appointments.length - 1 &&
-																					"border-b",
-																			)}
-																			onClick={() => {
-																				if (appt.registrationNumber) {
-																					window.open(
-																						`/admin-portal/appointments?registration_number=${appt.registrationNumber}`,
-																						"_blank",
-																					);
-																				}
-																			}}
-																		>
-																			<div className="flex justify-between gap-3 w-full">
-																				<p className="font-bold tracking-tight flex-1">
-																					{apptTime}
-																				</p>
-
-																				<DotBadgeWithLabel
-																					size="xs"
-																					className="relative flex-shrink-0"
-																					variant={statusDotVariant}
-																				>
-																					<span
-																						title={statusLine}
-																						className="text-[0.7rem] tracking-tight uppercase line-clamp-1"
-																					>
-																						{statusLine}
-																					</span>
-																				</DotBadgeWithLabel>
-																			</div>
-
-																			<p className="font-semibold tracking-tight leading-tight capitalize">
-																				{title}
-																			</p>
-
-																			<div className="!mt-2 text-xs flex items-center justify-between gap-3">
-																				<div className="tracking-tight">
-																					{visitLine && (
-																						<span>{visitLine}</span>
-																					)}
-																					{packageLine && (
-																						<>
-																							<span className="mx-1">
-																								&bull;
-																							</span>
-																							<span>{packageLine}</span>
-																						</>
-																					)}
-																				</div>
-
-																				{regLine && (
-																					<span className="italic tracking-tighter">
-																						#{regLine}
-																					</span>
-																				)}
-																			</div>
-																		</button>
-																	);
-																})}
-															</div>
-														</div>
-													);
-												})}
-											</div>
-										</div>
-									);
-								})}
+								{selectedTherapistOptions.map((t) => (
+									<TherapistScheduleColumn
+										key={t.id}
+										therapist={t}
+										entry={schedulesByTherapist[String(t.id)]}
+										isDateWithinFilter={isDateWithinFilter}
+										groupAppointmentsByDay={groupAppointmentsByDay}
+										globalPageProps={globalPageProps}
+									/>
+								))}
 							</div>
 						</div>
 					)}
