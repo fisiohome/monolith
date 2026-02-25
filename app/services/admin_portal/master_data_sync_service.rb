@@ -1,6 +1,6 @@
 # * PLEASE NOTE:
 # * if sync data on admin portal data master spreadsheet
-#  * must set general access spreadsheet file to “Anyone with the link” with permission “Editor”.
+#  * must set general access spreadsheet file to "Anyone with the link" with permission "Editor".
 #  * test file: test/services/admin_portal/master_data_sync_service_test.rb
 
 module AdminPortal
@@ -571,6 +571,12 @@ module AdminPortal
       services = Service.all.index_by(&:name)
       locations = Location.all.index_by(&:city)
 
+      # Pre-load location-services mapping for special tier detection
+      location_services = LocationService.joins(:service)
+        .pluck(:location_id, "services.name")
+        .group_by(&:first)
+        .transform_values { |pairs| Set.new(pairs.map(&:last)) }
+
       # Process therapists in batches to manage memory usage
       total_rows = csv.count
       processed_rows = 0
@@ -599,18 +605,49 @@ module AdminPortal
             next
           end
 
-          # validate the service and location
-          brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
-          service = services[brand]
-          unless service
-            results[:skipped] << {name:, email:, reason: "Service for brand '#{brand}' not found"}
-            next
-          end
           city = row["City"]&.strip
           location = locations[city]
           unless location
             results[:skipped] << {name:, email:, reason: "Location for city '#{city}' not found"}
             next
+          end
+
+          # Determine service based on location's service relationships
+          brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
+          service = nil
+
+          # Extract base brand name (remove _SPECIAL_TIER suffix if present)
+          base_brand = brand.gsub("_SPECIAL_TIER", "")
+          # Further extract just the brand name (FISIOHOME, WICARAKU) by splitting on underscore
+          base_brand = base_brand.split("_").first
+
+          if ["FISIOHOME", "WICARAKU"].include?(base_brand)
+            # Check if location has special tier service
+            special_tier_service_name = "#{base_brand}_SPECIAL_TIER"
+            location_service_names = location_services[location.id] || Set.new
+
+            if location_service_names.include?(special_tier_service_name)
+              # Use special tier service if location has it, regardless of CSV brand value
+              service = services[special_tier_service_name]
+              unless service
+                results[:skipped] << {name:, email:, reason: "Special tier service '#{special_tier_service_name}' not found for location '#{city}'"}
+                next
+              end
+            else
+              # Location doesn't have special tier, use basic service
+              service = services[base_brand]
+              unless service
+                results[:skipped] << {name:, email:, reason: "Basic service for brand '#{base_brand}' not found for location '#{city}'"}
+                next
+              end
+            end
+          else
+            # For other brands, use their basic service
+            service = services[base_brand]
+            unless service
+              results[:skipped] << {name:, email:, reason: "Service for brand '#{base_brand}' not found"}
+              next
+            end
           end
 
           # define the coordinates
@@ -1702,7 +1739,13 @@ module AdminPortal
       changes = {}
       Array(records).compact.each do |record|
         next unless record&.saved_changes
-        changes.merge!(record.saved_changes.transform_values { |old, new| "#{old} → #{new}" })
+
+        # Filter out timestamp fields and other auto-managed fields
+        filtered_changes = record.saved_changes.reject do |attribute, _|
+          %w[created_at updated_at id].include?(attribute.to_s)
+        end
+
+        changes.merge!(filtered_changes.transform_values { |old, new| "#{old} → #{new}" })
       end
       changes.empty? ? nil : changes
     end
