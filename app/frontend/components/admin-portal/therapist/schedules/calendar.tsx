@@ -95,6 +95,7 @@ import PatientDetailsSection, {
 	PICDetailsSection,
 	TherapistDetailsSection,
 } from "./appointment-details";
+import { Badge } from "@/components/ui/badge";
 
 type GeneralProps = {
 	selectedDate: Date;
@@ -991,13 +992,20 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 	);
 	const therapistDetails = useMemo(() => therapist, [therapist]);
 	const picList = useMemo(() => appointment.admins, [appointment.admins]);
+	const genderTitle = useMemo(() => {
+		return appointment.patient?.gender === "MALE"
+			? "Bapak "
+			: appointment.patient?.gender === "FEMALE"
+				? "Ibu "
+				: "";
+	}, [appointment.patient?.gender]);
 
 	if (isRedirect) {
 		return (
-			<Button
-				variant="link"
+			<button
+				type="button"
 				className={cn(
-					"absolute left-1 right-1 z-20 p-2 rounded shadow cursor-pointer inset-2 border border-border h-full",
+					"absolute left-1 right-1 z-20 p-2 rounded shadow cursor-pointer inset-2 border border-border h-full font-normal",
 					blockColor,
 					className,
 					isPastTime && "opacity-75",
@@ -1014,26 +1022,37 @@ export const AppointmentBlock: React.FC<AppointmentBlockProps> = ({
 				}}
 			>
 				<div className="flex flex-col items-start justify-between w-full h-full text-xs line-clamp-1">
-					<div className="w-full space-y-0.5 text-left">
-						<div className="flex gap-1">
-							<p className="flex items-center gap-0.5 uppercase font-bold text-[10px]">
-								<Hash className="!size-2.5" />
-								<span>{appointment.registrationNumber}</span>
-							</p>
-
-							<span>&bull;</span>
-
-							<p className="font-light">Visit {appointment.visitProgress}</p>
+					<div className="w-full space-y-1 text-left">
+						<div className="flex justify-between gap-3">
+							<div>
+								<span>Visit {appointment.visitProgress}</span>
+								{appointment.package && (
+									<>
+										<span className="mx-1">&bull;</span>
+										<span>{appointment.package.name}</span>
+									</>
+								)}
+							</div>
+							<Badge variant="outline" className="bg-card px-1">
+								<span className="uppercase tracking-tight text-[0.7rem]">
+									{appointment.status}
+								</span>
+							</Badge>
 						</div>
 
-						<p className="font-semibold tracking-wide uppercase">
-							{appointment.patient?.name}
+						<p className="text-sm font-semibold tracking-tight leading-tight capitalize">
+							{`${genderTitle} ${appointment.patient?.name || "(No patient)"}`}
 						</p>
 					</div>
 
-					<p className="font-light uppercase">{appointmentTime}</p>
+					<div className="flex w-full items-center justify-between gap-3">
+						<span className="font-light uppercase">{appointmentTime}</span>
+						<span className="font-light italic">
+							#{appointment.registrationNumber}
+						</span>
+					</div>
 				</div>
-			</Button>
+			</button>
 		);
 	}
 
