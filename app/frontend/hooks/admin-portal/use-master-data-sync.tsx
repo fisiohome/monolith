@@ -80,16 +80,16 @@ export function useMasterDataSync({
 					if (onSyncFailed) {
 						setTimeout(onSyncFailed, 100);
 					}
-				} else if (data.status === "running" || data.status === "not_found") {
-					// Keep polling if running or not found yet
-					if (data.status === "running") {
-						setSyncStatus({
-							message: MESSAGES.SYNC_RUNNING,
-							type: "info",
-						});
-					}
+				} else if (data.status === "running") {
+					// Keep polling if running
+					setSyncStatus({
+						message: MESSAGES.SYNC_RUNNING,
+						type: "info",
+					});
 					setTimeout(poll, 2000);
 				}
+				// Note: "not_found" status means no recent sync and no running jobs
+				// so we don't need to continue polling in this case
 			} catch {
 				// Stop polling on error
 			}

@@ -466,6 +466,9 @@ module AdminPortal
       employment_type_filter = params[:employment_type_filter]&.upcase || "KARPIS"
       employment_type_filter = "KARPIS" unless Therapist.employment_types.key?(employment_type_filter)
 
+      # Clear any existing sync status before starting a new one
+      SyncStatusService.clear_sync_status(:therapists_and_schedules)
+
       # Enqueue background job with options
       MasterDataSyncJob.perform_later(:therapists_and_schedules, current_user&.id, {employment_type_filter:})
 
@@ -483,9 +486,9 @@ module AdminPortal
       status = SyncStatusService.get_latest_sync_status(:therapists_and_schedules)
 
       if status
-        # Clear the status after retrieving it to prevent repeated notifications
-        # but only after successfully sending the response
-        SyncStatusService.clear_sync_status(:therapists_and_schedules)
+        # Don't clear the status immediately - let it expire naturally (24 hours)
+        # This prevents the frontend from getting stuck in a polling loop
+        # The status will be cleared on the next sync operation
 
         render json: {
           status: status[:status],

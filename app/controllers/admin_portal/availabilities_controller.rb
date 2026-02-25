@@ -114,10 +114,13 @@ module AdminPortal
     end
 
     # ? we don't need this sync schedule because it's already included in therapists_and_schedules in therapists page
-    # def sync_data_master
-    #   MasterDataSyncJob.perform_later(:therapist_schedules, current_user&.id)
-    #   redirect_to admin_portal_availabilities_path, notice: "Schedule sync is running in the background. You'll be notified when it's complete."
-    # end
+    #     def sync_data_master
+    #       # # Clear any existing sync status before starting a new one
+    #       SyncStatusService.clear_sync_status(:therapist_schedules)
+    #
+    #       MasterDataSyncJob.perform_later(:therapist_schedules, current_user&.id)
+    #       redirect_to admin_portal_availabilities_path, notice: "Schedule sync is running in the background. You'll be notified when it's complete."
+    #     end
 
     # ? we don't need this sync schedule because it's already included in therapists_and_schedules in therapists page
     # def sync_status
@@ -125,6 +128,9 @@ module AdminPortal
     # end
 
     def sync_leaves
+      # Clear any existing sync status before starting a new one
+      SyncStatusService.clear_sync_status(:therapist_leaves)
+
       MasterDataSyncJob.perform_later(:therapist_leaves, current_user&.id)
       redirect_to admin_portal_availabilities_path, notice: "Leave sync is running in the background. You'll be notified when it's complete."
     end
@@ -144,7 +150,9 @@ module AdminPortal
       status = SyncStatusService.get_latest_sync_status(sync_type)
 
       if status
-        SyncStatusService.clear_sync_status(sync_type)
+        # Don't clear the status immediately - let it expire naturally (24 hours)
+        # This prevents the frontend from getting stuck in a polling loop
+        # The status will be cleared on the next sync operation
 
         render json: {
           status: status[:status],
