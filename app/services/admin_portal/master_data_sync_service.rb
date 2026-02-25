@@ -409,7 +409,7 @@ module AdminPortal
       # Build ignoring_loc_rules map for use in therapist_schedules
       @ignoring_loc_rules_map = csv.each_with_object({}) do |row, hash|
         name = row["Name"]&.strip
-        ignoring_loc_rules = row["Ignoring Location Rules"]&.strip&.upcase == "ACTIVE"
+        ignoring_loc_rules = normalize_boolean(row["Ignoring Location Rules"])
         hash[name] = ignoring_loc_rules if name.present?
       end
 
@@ -480,7 +480,18 @@ module AdminPortal
             account_holder_name = row["Account Holder Name"]&.strip&.to_s&.upcase
             bank_detail = BankDetail.find_or_initialize_by(bank_name:, account_number:)
             bank_detail.account_holder_name = account_holder_name
-            bank_detail.save! if bank_detail.changed? || bank_detail.new_record?
+            begin
+              bank_detail.save! if bank_detail.changed? || bank_detail.new_record?
+            rescue ActiveRecord::RecordNotUnique
+              # Handle concurrent inserts or existing record with same unique key
+              bank_detail = BankDetail.find_by(bank_name:, account_number:)
+              if bank_detail
+                bank_detail.account_holder_name = account_holder_name if bank_detail.account_holder_name != account_holder_name
+                bank_detail.save! if bank_detail.changed?
+              else
+                raise
+              end
+            end
 
             # Create or update Therapist
             phone_number = "+#{row["Phone Number"]&.strip&.to_s}"
@@ -488,9 +499,47 @@ module AdminPortal
             batch = row["Batch"]&.strip&.to_i
             modalities = row["Modalities"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
             specializations = row["Specializations"]&.strip&.to_s&.split(/\s*(?:dan|,)\s*/i)&.map(&:strip)&.compact_blank || []
-            employment_status = row["Status"]&.strip
+            employment_status = normalize_status(row["Status"])
+
+            # Parse contract period
+            contract_start_date = nil
+            contract_end_date = nil
+            contract_period = row["Contract Period"]&.strip
+
+            if contract_period.present?
+              # Handle both single date and date range (with or without spaces)
+              if contract_period.include?("-")
+                # Date range: "02/04/2026 - 02/04/2027" or "02/04/2026-02/04/2027"
+                start_date_str, end_date_str = contract_period.split(/-\s*/).map(&:strip)
+                begin
+                  contract_start_date = Date.strptime(start_date_str, "%d/%m/%Y") if start_date_str.present?
+                  contract_end_date = Date.strptime(end_date_str, "%d/%m/%Y") if end_date_str.present?
+                rescue => e
+                  Rails.logger.warn "Invalid date format in Contract Period '#{contract_period}' for #{name}: #{e.message}"
+                end
+              else
+                # Single date: "02/04/2026"
+                begin
+                  contract_start_date = Date.strptime(contract_period, "%d/%m/%Y")
+                rescue => e
+                  Rails.logger.warn "Invalid date format in Contract Period '#{contract_period}' for #{name}: #{e.message}"
+                end
+              end
+            end
+
             therapist = Therapist.find_or_initialize_by(name:, gender:)
-            therapist.assign_attributes(employment_type:, employment_status:, batch:, modalities:, specializations:, service:, user:, phone_number:)
+            therapist.assign_attributes(
+              employment_type:,
+              employment_status:,
+              batch:,
+              modalities:,
+              specializations:,
+              service:,
+              user:,
+              phone_number:,
+              contract_start_date:,
+              contract_end_date:
+            )
             if therapist.new_record?
               action = :created
               therapist.save!
@@ -578,7 +627,7 @@ module AdminPortal
         therapist_csv = fetch_and_parse_csv(gid: THERAPIST_GID)
         therapist_csv.each_with_object({}) do |row, hash|
           name = row["Name"]&.strip
-          ignoring_loc_rules = row["Ignoring Location Rules"]&.strip&.upcase == "ACTIVE"
+          ignoring_loc_rules = normalize_boolean(row["Ignoring Location Rules"])
           hash[name] = ignoring_loc_rules if name.present?
         end
       end
@@ -1355,6 +1404,30 @@ module AdminPortal
     end
 
     private
+
+    def normalize_status(value)
+      normalized = value.to_s.strip
+      return nil if normalized.blank?
+
+      upper = normalized.upcase
+      case upper
+      when "ACTIVE", "HOLD", "INACTIVE"
+        upper
+      when "TRUE", "YES", "Y", "1"
+        "ACTIVE"
+      when "FALSE", "NO", "N", "0"
+        "INACTIVE"
+      else
+        upper
+      end
+    end
+
+    def normalize_boolean(value)
+      normalized = value.to_s.strip
+      return false if normalized.blank?
+
+      %w[ACTIVE TRUE YES Y 1].include?(normalized.upcase)
+    end
 
     def fetch_and_parse_csv(gid:)
       url = URI("#{MASTER_DATA_URL}&gid=#{gid}")
