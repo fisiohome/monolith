@@ -351,7 +351,7 @@ module AdminPortal
           .preload(:appointments) {
             where(appointment_date_time: appointment_window)
               .where.not(status: invalid_statuses)
-              .includes(:patient, :package, :service)
+              .includes(:patient, :package, :service, :address_history)
               .order(:appointment_date_time)
           }
           .order(Arel.sql("LOWER(therapists.name) ASC"))
@@ -373,7 +373,8 @@ module AdminPortal
               registration_number: a.registration_number,
               status: a.status,
               appointment_date_time: a.appointment_date_time,
-              visit_number: a.visit_number
+              visit_number: a.visit_number,
+              address_line: a.address_history&.address_line
             }
           end
 

@@ -1,6 +1,13 @@
 import { Deferred, Head, router, usePage } from "@inertiajs/react";
 import { addMonths, format, isToday, isValid, parse } from "date-fns";
-import { CalendarIcon, Check, ChevronsUpDown, X } from "lucide-react";
+import {
+	CalendarIcon,
+	Check,
+	ChevronDownIcon,
+	ChevronsUpDown,
+	MapPinIcon,
+	X,
+} from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { useTranslation } from "react-i18next";
@@ -13,6 +20,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	Command,
 	CommandEmpty,
@@ -75,6 +87,7 @@ type TherapistsApptSchedule = Pick<
 	serviceCode: string;
 	serviceName: string;
 	totalVisit: number;
+	addressLine?: string | null;
 };
 
 type TherapistSchedule = Therapist & {
@@ -200,6 +213,7 @@ function DayCard({ dayKey, appointments, availabilitySlots }: DayCardProps) {
 					const visitLine = appt?.totalVisit
 						? `Visit ${appt.visitNumber}/${appt.totalVisit}`
 						: null;
+					const locationLine = appt?.addressLine || null;
 
 					return (
 						<button
@@ -238,6 +252,29 @@ function DayCard({ dayKey, appointments, availabilitySlots }: DayCardProps) {
 							<p className="font-semibold tracking-tight leading-tight capitalize">
 								{title}
 							</p>
+
+							{locationLine && (
+								<Collapsible
+									className="mt-2 data-[state=open]:bg-muted rounded-md bg-background border border-border/60"
+									onClick={(e) => e.stopPropagation()}
+								>
+									<CollapsibleTrigger asChild>
+										<Button
+											variant="ghost"
+											className="group w-full h-auto p-1.5 flex items-start justify-start gap-1.5 text-xs text-muted-foreground hover:bg-transparent"
+										>
+											<MapPinIcon className="size-3.5 shrink-0" />
+											<span className="line-clamp-1 text-left flex-1 whitespace-normal">
+												Visit Address
+											</span>
+											<ChevronDownIcon className="ml-auto size-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+										</Button>
+									</CollapsibleTrigger>
+									<CollapsibleContent className="pt-0 p-2.5 text-left text-xs text-muted-foreground whitespace-pre-wrap">
+										<span className="text-pretty">{locationLine}</span>
+									</CollapsibleContent>
+								</Collapsible>
+							)}
 
 							<div className="!mt-2 text-xs flex items-center justify-between gap-3">
 								<div className="tracking-tight">
