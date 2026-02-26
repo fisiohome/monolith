@@ -25,6 +25,24 @@ module AdminPortal
       })
     end
 
+    def orders
+      preparation = AdminPortal::PreparationOrdersAppointmentService.new(params)
+
+      render inertia: "AdminPortal/Appointment/Orders", props: deep_transform_keys_to_camel_case({
+        orders: InertiaRails.defer {
+          service_orders = preparation.fetch_orders
+
+          deep_transform_keys_to_camel_case(
+            {
+              data: service_orders[:data],
+              metadata: pagy_metadata(service_orders[:metadata])
+            }
+          )
+        },
+        selected_order: InertiaRails.defer { preparation.fetch_selected_order }
+      })
+    end
+
     def new
       @appointment = if params[:created]
         find_created_appointment(params[:created])

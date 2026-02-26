@@ -25,6 +25,7 @@ import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
 import { LoadingBasic } from "@/components/shared/loading";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -95,7 +96,6 @@ import PatientDetailsSection, {
 	PICDetailsSection,
 	TherapistDetailsSection,
 } from "./appointment-details";
-import { Badge } from "@/components/ui/badge";
 
 type GeneralProps = {
 	selectedDate: Date;

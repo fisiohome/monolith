@@ -60,7 +60,8 @@ module InertiaAdminPortal
                 new: new_admin_portal_appointment_path,
                 book: book_admin_portal_appointments_path,
                 sync: sync_data_master_admin_portal_appointments_path,
-                export: export_admin_portal_appointments_path
+                export: export_admin_portal_appointments_path,
+                orders: orders_admin_portal_appointments_path
               },
               availability: {
                 index: admin_portal_availabilities_path,
