@@ -10,7 +10,7 @@ module AdminPortal
     ADMIN_GID = "1493117737"
     BRAND_GID = "2090364532"
     PACKAGE_GID = "872007576"
-    THERAPIST_GID = "887408989"
+    THERAPIST_GID = Rails.env.development? ? "1510199675" : "887408989"
     THERAPIST_SCHEDULES_GID = "1843613331"
     THERAPIST_LEAVES_GID = "261776844"
     APPOINTMENT_GID = "350823925"
@@ -1035,8 +1035,13 @@ module AdminPortal
                 else
                   # Reset existing weekday availabilities (if any)
                   weekdays = %w[Monday Tuesday Wednesday Thursday Friday]
-                  default_start_time = "09:00".in_time_zone(Time.zone)
-                  default_end_time = "18:00".in_time_zone(Time.zone)
+                  if therapist.employment_type == "FLAT"
+                    default_start_time = "05:00".in_time_zone(Time.zone)
+                    default_end_time = "22:00".in_time_zone(Time.zone)
+                  else
+                    default_start_time = "09:00".in_time_zone(Time.zone)
+                    default_end_time = "18:00".in_time_zone(Time.zone)
+                  end
 
                   # Fetch existing weekday availabilities
                   existing_weekday_availabilities = existing_availabilities_scope.where(day_of_week: weekdays)

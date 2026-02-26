@@ -1,5 +1,5 @@
 import { router } from "@inertiajs/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // Message constants
 const MESSAGES = {
@@ -40,6 +40,10 @@ export function useMasterDataSync({
 	syncType = "default",
 }: UseMasterDataSyncOptions) {
 	const [isLoading, setIsLoading] = useState(false);
+	// Ref to track if sync callbacks have already fired this session,
+	// preventing loops when onSyncComplete triggers a page reload
+	const syncCallbackFiredRef = useRef(false);
+
 	const [syncStatus, setSyncStatus] = useState<SyncStatus>({
 		message: "",
 		type: null,
@@ -86,8 +90,11 @@ export function useMasterDataSync({
 						});
 					}
 
-					// Delay the onSyncComplete to ensure the status is properly handled
-					if (onSyncComplete) {
+					// Fire onSyncComplete only once per session to prevent reload loops
+					if (onSyncComplete && !syncCallbackFiredRef.current) {
+						syncCallbackFiredRef.current = true;
+						// Mark as dismissed so the next mount check won't re-trigger
+						localStorage.setItem(getDismissedKey(), Date.now().toString());
 						setTimeout(onSyncComplete, 100);
 					}
 				} else if (data.status === "failed") {
@@ -107,8 +114,10 @@ export function useMasterDataSync({
 						});
 					}
 
-					// Call onSyncFailed if provided
-					if (onSyncFailed) {
+					// Fire onSyncFailed only once per session to prevent reload loops
+					if (onSyncFailed && !syncCallbackFiredRef.current) {
+						syncCallbackFiredRef.current = true;
+						localStorage.setItem(getDismissedKey(), Date.now().toString());
 						setTimeout(onSyncFailed, 100);
 					}
 				} else if (data.status === "running") {
@@ -155,8 +164,10 @@ export function useMasterDataSync({
 					});
 				}
 
-				// Call onSyncComplete after a short delay to ensure status is displayed
-				if (onSyncComplete) {
+				// Fire onSyncComplete only once per session to prevent reload loops
+				if (onSyncComplete && !syncCallbackFiredRef.current) {
+					syncCallbackFiredRef.current = true;
+					localStorage.setItem(getDismissedKey(), Date.now().toString());
 					setTimeout(onSyncComplete, 100);
 				}
 			} else if (data.status === "failed") {
@@ -173,8 +184,10 @@ export function useMasterDataSync({
 					});
 				}
 
-				// Call onSyncFailed if provided
-				if (onSyncFailed) {
+				// Fire onSyncFailed only once per session to prevent reload loops
+				if (onSyncFailed && !syncCallbackFiredRef.current) {
+					syncCallbackFiredRef.current = true;
+					localStorage.setItem(getDismissedKey(), Date.now().toString());
 					setTimeout(onSyncFailed, 100);
 				}
 			} else if (data.status === "running") {
@@ -207,6 +220,8 @@ export function useMasterDataSync({
 	const triggerSync = useCallback(
 		(params?: Record<string, string>) => {
 			setIsLoading(true);
+			// Reset the callback-fired ref so the new sync result can trigger callbacks
+			syncCallbackFiredRef.current = false;
 			setSyncStatus({
 				message: MESSAGES.SYNC_RUNNING,
 				type: "info",
