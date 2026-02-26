@@ -54,6 +54,7 @@ export default function AvailabilityIndex({
 		statusEndpoint: `${globalProps.adminPortal.router.adminPortal.availability.index}/sync-leaves-status`,
 		onSyncComplete,
 		autoCheckOnMount: true,
+		syncType: "therapist_leaves",
 	});
 
 	return (
@@ -62,39 +63,41 @@ export default function AvailabilityIndex({
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
 				{/* Leave sync status notification */}
-				{leaveSyncStatus.message && (
-					<div
-						className={cn(
-							"p-4 rounded-md border relative",
-							leaveSyncStatus.type === "success" &&
-								"bg-green-50 border-green-200 text-green-800",
-							leaveSyncStatus.type === "error" &&
-								"bg-red-50 border-red-200 text-red-800",
-							leaveSyncStatus.type === "info" &&
-								"bg-blue-50 border-blue-200 text-blue-800",
-						)}
-					>
-						<button
-							onClick={clearLeaveStatus}
-							type="button"
-							className="absolute top-2 right-2 p-1 rounded-md hover:bg-black/10 transition-colors"
-							aria-label="Close notification"
+				{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
+					globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) &&
+					leaveSyncStatus.message && (
+						<div
+							className={cn(
+								"p-4 rounded-md border relative",
+								leaveSyncStatus.type === "success" &&
+									"bg-green-50 border-green-200 text-green-800",
+								leaveSyncStatus.type === "error" &&
+									"bg-red-50 border-red-200 text-red-800",
+								leaveSyncStatus.type === "info" &&
+									"bg-blue-50 border-blue-200 text-blue-800",
+							)}
 						>
-							<X className="h-4 w-4" />
-						</button>
-						<div className="flex items-center gap-2 pr-8">
-							{leaveSyncStatus.type === "info" && (
-								<LoaderIcon className="animate-spin h-4 w-4" />
-							)}
-							{leaveSyncStatus.type === "success" && (
-								<CalendarOff className="h-4 w-4" />
-							)}
-							<span className="text-sm font-medium">
-								{leaveSyncStatus.message}
-							</span>
+							<button
+								onClick={clearLeaveStatus}
+								type="button"
+								className="absolute top-2 right-2 p-1 rounded-md hover:bg-black/10 transition-colors"
+								aria-label="Close notification"
+							>
+								<X className="h-4 w-4" />
+							</button>
+							<div className="flex items-center gap-2 pr-8">
+								{leaveSyncStatus.type === "info" && (
+									<LoaderIcon className="animate-spin h-4 w-4" />
+								)}
+								{leaveSyncStatus.type === "success" && (
+									<CalendarOff className="h-4 w-4" />
+								)}
+								<span className="text-sm font-medium">
+									{leaveSyncStatus.message}
+								</span>
+							</div>
 						</div>
-					</div>
-				)}
+					)}
 
 				<div className="flex flex-col justify-between gap-4 md:flex-row">
 					<div>

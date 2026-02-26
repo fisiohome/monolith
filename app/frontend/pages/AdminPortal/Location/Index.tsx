@@ -77,6 +77,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 			statusEndpoint: `${globalProps.adminPortal.router.adminPortal.locationManagement.index}/sync-status`,
 			onSyncComplete,
 			autoCheckOnMount: true,
+			syncType: "locations",
 		},
 	);
 	const routeTo = {
@@ -291,37 +292,41 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 			<Head title={tl("head_title")} />
 
 			<PageContainer className="min-h-[100vh] flex-1 md:min-h-min space-y-4">
-				{syncStatus.message && (
-					<div
-						className={cn(
-							"p-4 rounded-md border relative",
-							syncStatus.type === "success" &&
-								"bg-green-50 border-green-200 text-green-800",
-							syncStatus.type === "error" &&
-								"bg-red-50 border-red-200 text-red-800",
-							syncStatus.type === "info" &&
-								"bg-blue-50 border-blue-200 text-blue-800",
-						)}
-					>
-						<button
-							onClick={clearStatus}
-							type="button"
-							className="absolute top-2 right-2 p-1 rounded-md hover:bg-black/10 transition-colors"
-							aria-label="Close notification"
+				{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
+					globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) &&
+					syncStatus.message && (
+						<div
+							className={cn(
+								"p-4 rounded-md border relative",
+								syncStatus.type === "success" &&
+									"bg-green-50 border-green-200 text-green-800",
+								syncStatus.type === "error" &&
+									"bg-red-50 border-red-200 text-red-800",
+								syncStatus.type === "info" &&
+									"bg-blue-50 border-blue-200 text-blue-800",
+							)}
 						>
-							<X className="h-4 w-4" />
-						</button>
-						<div className="flex items-center gap-2 pr-8">
-							{syncStatus.type === "info" && (
-								<LoaderIcon className="animate-spin h-4 w-4" />
-							)}
-							{syncStatus.type === "success" && (
-								<RefreshCcw className="h-4 w-4" />
-							)}
-							<span className="text-sm font-medium">{syncStatus.message}</span>
+							<button
+								onClick={clearStatus}
+								type="button"
+								className="absolute top-2 right-2 p-1 rounded-md hover:bg-black/10 transition-colors"
+								aria-label="Close notification"
+							>
+								<X className="h-4 w-4" />
+							</button>
+							<div className="flex items-center gap-2 pr-8">
+								{syncStatus.type === "info" && (
+									<LoaderIcon className="animate-spin h-4 w-4" />
+								)}
+								{syncStatus.type === "success" && (
+									<RefreshCcw className="h-4 w-4" />
+								)}
+								<span className="text-sm font-medium">
+									{syncStatus.message}
+								</span>
+							</div>
 						</div>
-					</div>
-				)}
+					)}
 				<div className="flex flex-col justify-between gap-4 md:flex-row">
 					<div>
 						<h1 className="text-lg font-bold tracking-tight uppercase">

@@ -21,6 +21,7 @@ export interface UseMasterDataSyncOptions {
 	onSyncComplete?: () => void;
 	onSyncFailed?: () => void;
 	autoCheckOnMount?: boolean;
+	syncType?: string; // Used for localStorage key
 }
 
 // Check if response is valid JSON - defined outside component to avoid recreating
@@ -36,6 +37,7 @@ export function useMasterDataSync({
 	onSyncComplete,
 	onSyncFailed,
 	autoCheckOnMount = true,
+	syncType = "default",
 }: UseMasterDataSyncOptions) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [syncStatus, setSyncStatus] = useState<SyncStatus>({
@@ -43,10 +45,17 @@ export function useMasterDataSync({
 		type: null,
 	});
 
-	// Clear sync status message
+	// Get localStorage key for dismissed notifications
+	const getDismissedKey = useCallback(() => {
+		return `sync_notification_dismissed_${syncType}`;
+	}, [syncType]);
+
+	// Clear sync status message and store dismissal timestamp
 	const clearStatus = useCallback(() => {
 		setSyncStatus({ message: "", type: null });
-	}, []);
+		// Store dismissal timestamp in localStorage
+		localStorage.setItem(getDismissedKey(), Date.now().toString());
+	}, [getDismissedKey]);
 
 	// Poll sync status
 	const pollSyncStatus = useCallback(() => {
@@ -61,21 +70,43 @@ export function useMasterDataSync({
 				const data = await response.json();
 
 				if (data.status === "completed") {
-					setSyncStatus({
-						message: data.message || MESSAGES.SYNC_COMPLETED,
-						type: "success",
-					});
-					// Remove auto-clear to let notification persist
+					// Check if notification was already dismissed
+					const dismissedTimestamp = localStorage.getItem(getDismissedKey());
+					const completedAt = data.completed_at
+						? new Date(data.completed_at).getTime()
+						: Date.now();
+
+					if (
+						!dismissedTimestamp ||
+						parseInt(dismissedTimestamp) < completedAt
+					) {
+						setSyncStatus({
+							message: data.message || MESSAGES.SYNC_COMPLETED,
+							type: "success",
+						});
+					}
+
 					// Delay the onSyncComplete to ensure the status is properly handled
 					if (onSyncComplete) {
 						setTimeout(onSyncComplete, 100);
 					}
 				} else if (data.status === "failed") {
-					setSyncStatus({
-						message: data.error || MESSAGES.SYNC_FAILED,
-						type: "error",
-					});
-					// Remove auto-clear to let notification persist
+					// Check if notification was already dismissed
+					const dismissedTimestamp = localStorage.getItem(getDismissedKey());
+					const completedAt = data.completed_at
+						? new Date(data.completed_at).getTime()
+						: Date.now();
+
+					if (
+						!dismissedTimestamp ||
+						parseInt(dismissedTimestamp) < completedAt
+					) {
+						setSyncStatus({
+							message: data.error || MESSAGES.SYNC_FAILED,
+							type: "error",
+						});
+					}
+
 					// Call onSyncFailed if provided
 					if (onSyncFailed) {
 						setTimeout(onSyncFailed, 100);
@@ -97,7 +128,7 @@ export function useMasterDataSync({
 
 		// Start polling after a short delay
 		setTimeout(poll, 2000);
-	}, [statusEndpoint, onSyncComplete, onSyncFailed]);
+	}, [statusEndpoint, onSyncComplete, onSyncFailed, getDismissedKey]);
 
 	// Check for existing sync status
 	const checkExistingSync = useCallback(async () => {
@@ -111,21 +142,37 @@ export function useMasterDataSync({
 			const data = await response.json();
 
 			if (data.status === "completed") {
-				setSyncStatus({
-					message: data.message || MESSAGES.SYNC_COMPLETED,
-					type: "success",
-				});
-				// Remove auto-clear to let notification persist
+				// Check if notification was already dismissed
+				const dismissedTimestamp = localStorage.getItem(getDismissedKey());
+				const completedAt = data.completed_at
+					? new Date(data.completed_at).getTime()
+					: Date.now();
+
+				if (!dismissedTimestamp || parseInt(dismissedTimestamp) < completedAt) {
+					setSyncStatus({
+						message: data.message || MESSAGES.SYNC_COMPLETED,
+						type: "success",
+					});
+				}
+
 				// Call onSyncComplete after a short delay to ensure status is displayed
 				if (onSyncComplete) {
 					setTimeout(onSyncComplete, 100);
 				}
 			} else if (data.status === "failed") {
-				setSyncStatus({
-					message: data.error || MESSAGES.SYNC_FAILED,
-					type: "error",
-				});
-				// Remove auto-clear to let notification persist
+				// Check if notification was already dismissed
+				const dismissedTimestamp = localStorage.getItem(getDismissedKey());
+				const completedAt = data.completed_at
+					? new Date(data.completed_at).getTime()
+					: Date.now();
+
+				if (!dismissedTimestamp || parseInt(dismissedTimestamp) < completedAt) {
+					setSyncStatus({
+						message: data.error || MESSAGES.SYNC_FAILED,
+						type: "error",
+					});
+				}
+
 				// Call onSyncFailed if provided
 				if (onSyncFailed) {
 					setTimeout(onSyncFailed, 100);
@@ -141,7 +188,13 @@ export function useMasterDataSync({
 		} catch {
 			// No status found, which is fine
 		}
-	}, [statusEndpoint, onSyncComplete, onSyncFailed, pollSyncStatus]);
+	}, [
+		statusEndpoint,
+		onSyncComplete,
+		onSyncFailed,
+		pollSyncStatus,
+		getDismissedKey,
+	]);
 
 	// Auto-check on mount
 	useEffect(() => {

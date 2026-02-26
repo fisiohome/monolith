@@ -10,7 +10,7 @@ module AdminPortal
     ADMIN_GID = "1493117737"
     BRAND_GID = "2090364532"
     PACKAGE_GID = "872007576"
-    THERAPIST_GID = Rails.env.development? ? "1510199675" : "887408989"
+    THERAPIST_GID = "887408989"
     THERAPIST_SCHEDULES_GID = "1843613331"
     THERAPIST_LEAVES_GID = "261776844"
     APPOINTMENT_GID = "350823925"
@@ -94,32 +94,28 @@ module AdminPortal
       failed_count = results[:failed].count
       skipped_count = results[:skipped].count
 
-      log_message = "Processed #{csv.count} locations: #{created_count} created, #{updated_count} updated"
+      log_message = "Processed #{csv.count} locations: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
       if created_count > 0
         created_reasons = results[:created].map { |c| "#{c[:city] || c[:state]} (#{c[:country]})" }.join(", ")
-        log_message += ", #{created_count} created: #{created_reasons}"
+        log_message += " Created: #{created_reasons}."
       end
       if updated_count > 0
         updated_details = results[:updated].map do |u|
           changes_str = format_changes_for_log(u[:changes])
           "#{u[:city] || u[:state]} (#{changes_str})"
         end.join(", ")
-        log_message += ", #{updated_count} updated: #{updated_details}"
-      end
-      if failed_count > 0
-        failure_reasons = results[:failed].map { |f| "#{f[:city] || f[:state]} (#{f[:error]})" }.join(", ")
-        log_message += ", #{failed_count} failed: #{failure_reasons}"
+        log_message += " Updated: #{updated_details}."
       end
       if skipped_count > 0
         skip_reasons = results[:skipped].map { |s| "#{s[:city] || s[:state]} (#{s[:reason]})" }.join(", ")
-        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+        log_message += " Skipped: #{skip_reasons}."
       end
-      log_message += "."
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:city] || f[:state]} (#{f[:error]})" }.join(", ")
+        log_message += " Failed: #{failure_reasons}."
+      end
 
-      message = "Processed #{csv.count} locations: #{created_count} created, #{updated_count} updated"
-      message += ", #{failed_count} failed" if failed_count > 0
-      message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += "."
+      message = "Processed #{csv.count} locations: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
 
       Rails.logger.info log_message
       {success: true, message:, log_message:, results:}
@@ -224,21 +220,17 @@ module AdminPortal
       failed_count = results[:failed].count
       skipped_count = results[:skipped].count
 
-      log_message = "Processed #{csv.count} admins: #{created_count} created, #{updated_count} updated"
+      log_message = "Processed #{csv.count} admins: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
       if created_count > 0
         created_reasons = results[:created].map { |c| "#{c[:name]} (#{c[:email]})" }.join(", ")
-        log_message += ", #{created_count} created: #{created_reasons}"
+        log_message += " Created: #{created_reasons}."
       end
       if updated_count > 0
         updated_details = results[:updated].map do |u|
           changes_str = format_changes_for_log(u[:changes])
           "#{u[:name]} (#{changes_str})"
         end.join(", ")
-        log_message += ", #{updated_count} updated: #{updated_details}"
-      end
-      if failed_count > 0
-        failure_reasons = results[:failed].map { |f| "#{f[:email]} (#{f[:error]})" }.join(", ")
-        log_message += ", #{failed_count} failed: #{failure_reasons}"
+        log_message += " Updated: #{updated_details}."
       end
       if skipped_count > 0
         skip_reasons = results[:skipped].group_by { |s| s[:reason] }
@@ -246,17 +238,18 @@ module AdminPortal
             if reason == "No changes needed"
               "#{items.count} #{reason}"
             else
-              "#{items.count} #{reason}: #{items.map(&:email).join(", ")}"
+              emails = items.map(&->(i) { i[:email] })
+              "#{items.count} #{reason}: #{emails.join(", ")}"
             end
           }.join(", ")
-        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+        log_message += " Skipped: #{skip_reasons}."
       end
-      log_message += "."
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:email]} (#{f[:error]})" }.join(", ")
+        log_message += " Failed: #{failure_reasons}."
+      end
 
-      message = "Processed #{csv.count} admins: #{created_count} created, #{updated_count} updated"
-      message += ", #{failed_count} failed" if failed_count > 0
-      message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += "."
+      message = "Processed #{csv.count} admins: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
 
       Rails.logger.info log_message
       {success: true, message:, log_message:, results:}
@@ -278,20 +271,17 @@ module AdminPortal
       brands_updated = brands_result.dig(:results, :updated)&.count || 0
       brands_failed = brands_result.dig(:results, :failed)&.count || 0
       brands_skipped = brands_result.dig(:results, :skipped)&.count || 0
+      brands_total = brands_created + brands_updated + brands_skipped + brands_failed
 
       packages_created = packages_result.dig(:results, :created)&.count || 0
       packages_updated = packages_result.dig(:results, :updated)&.count || 0
       packages_failed = packages_result.dig(:results, :failed)&.count || 0
       packages_skipped = packages_result.dig(:results, :skipped)&.count || 0
+      packages_total = packages_created + packages_updated + packages_skipped + packages_failed
 
-      # Build comprehensive UI message
-      message = "Brands: #{brands_created} created, #{brands_updated} updated"
-      message += ", #{brands_failed} failed" if brands_failed > 0
-      message += ", #{brands_skipped} skipped" if brands_skipped > 0
-      message += ". Packages: #{packages_created} created, #{packages_updated} updated"
-      message += ", #{packages_failed} failed" if packages_failed > 0
-      message += ", #{packages_skipped} skipped" if packages_skipped > 0
-      message += "."
+      # Build comprehensive UI message with row counts
+      message = "Processed #{brands_total} brands: #{brands_created} created, #{brands_updated} updated, #{brands_skipped} skipped, #{brands_failed} failed. "
+      message += "Processed #{packages_total} packages: #{packages_created} created, #{packages_updated} updated, #{packages_skipped} skipped, #{packages_failed} failed."
 
       # Combine messages for logging (with full details)
       log_message = "#{brands_result[:log_message]} #{packages_result[:log_message]}"
@@ -392,32 +382,28 @@ module AdminPortal
       failed_count = results[:failed].count
       skipped_count = results[:skipped].count
 
-      log_message = "Processed #{csv.count} brands: #{created_count} created, #{updated_count} updated"
+      log_message = "Processed #{csv.count} brands: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
       if created_count > 0
         created_reasons = results[:created].map { |c| "#{c[:name]} (#{c[:code]})" }.join(", ")
-        log_message += ", #{created_count} created: #{created_reasons}"
+        log_message += " Created: #{created_reasons}."
       end
       if updated_count > 0
         updated_details = results[:updated].map do |u|
           changes_str = format_changes_for_log(u[:changes])
           "#{u[:name]} (#{changes_str})"
         end.join(", ")
-        log_message += ", #{updated_count} updated: #{updated_details}"
-      end
-      if failed_count > 0
-        failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
-        log_message += ", #{failed_count} failed: #{failure_reasons}"
+        log_message += " Updated: #{updated_details}."
       end
       if skipped_count > 0
         skipped_reasons = results[:skipped].map { |s| "#{s[:name]} (#{s[:reason]})" }.join(", ")
-        log_message += ", #{skipped_count} skipped: #{skipped_reasons}"
+        log_message += " Skipped: #{skipped_reasons}."
       end
-      log_message += "."
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
+        log_message += " Failed: #{failure_reasons}."
+      end
 
-      message = "Processed #{csv.count} brands: #{created_count} created, #{updated_count} updated"
-      message += ", #{failed_count} failed" if failed_count > 0
-      message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += "."
+      message = "Processed #{csv.count} brands: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
 
       Rails.logger.info log_message
       {success: true, message:, log_message:, results:}
@@ -514,34 +500,30 @@ module AdminPortal
       failed_count = results[:failed].count
       skipped_count = results[:skipped].count
 
-      log_message = "Processed #{csv.count} packages: #{created_count} created, #{updated_count} updated"
+      log_message = "Processed #{csv.count} packages: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
       if created_count > 0
         created_reasons = results[:created].map { |c| "#{c[:brand]} - #{c[:package]}" }.join(", ")
-        log_message += ", #{created_count} created: #{created_reasons}"
+        log_message += " Created: #{created_reasons}."
       end
       if updated_count > 0
         updated_details = results[:updated].map do |u|
           changes_str = format_changes_for_log(u[:changes])
           "#{u[:brand]} - #{u[:package]} (#{changes_str})"
         end.join(", ")
-        log_message += ", #{updated_count} updated: #{updated_details}"
-      end
-      if failed_count > 0
-        failure_reasons = results[:failed].map { |f| "#{f[:package]} (#{f[:error]})" }.join(", ")
-        log_message += ", #{failed_count} failed: #{failure_reasons}"
+        log_message += " Updated: #{updated_details}."
       end
       if skipped_count > 0
         skip_reasons = results[:skipped].group_by { |s| s[:reason] }
           .map { |reason, items| "#{items.count} #{reason}" }
           .join(", ")
-        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+        log_message += " Skipped: #{skip_reasons}."
       end
-      log_message += "."
+      if failed_count > 0
+        failure_reasons = results[:failed].map { |f| "#{f[:package]} (#{f[:error]})" }.join(", ")
+        log_message += " Failed: #{failure_reasons}."
+      end
 
-      message = "Processed #{csv.count} packages: #{created_count} created, #{updated_count} updated"
-      message += ", #{failed_count} failed" if failed_count > 0
-      message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += "."
+      message = "Processed #{csv.count} packages: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
 
       Rails.logger.info log_message
       {success: true, message:, log_message:, results:}
@@ -565,7 +547,7 @@ module AdminPortal
       end
 
       # Track results
-      results = {created: [], updated: [], skipped: [], skipped_other_type: [], failed: []}
+      results = {created: [], updated: [], unchanged: [], skipped: [], skipped_other_type: [], failed: []}
 
       # Pre-load frequently accessed data to reduce queries
       services = Service.all.index_by(&:name)
@@ -771,6 +753,8 @@ module AdminPortal
                 # Collect all changes from therapist and associated records
                 changes = format_changes([therapist, user, therapist_address, address, bank_detail, therapist_bank_detail])
                 results[:updated] << {name:, email:, changes: changes}
+              elsif action == :unchanged
+                results[:unchanged] << {name:, email:}
               end
             end
           rescue ActiveRecord::Rollback
@@ -797,49 +781,44 @@ module AdminPortal
       # build results summary
       created_count = results[:created].count
       updated_count = results[:updated].count
+      unchanged_count = results[:unchanged].count
       skipped_count = results[:skipped].count
       skipped_other_type_count = results[:skipped_other_type].count
       failed_count = results[:failed].count
-      total_count = created_count + updated_count + skipped_count + failed_count
+      # Total count is all rows of the filtered employment type (excludes other employment types)
+      total_count = csv.count - skipped_other_type_count
 
       type_label = (employment_type_filter == "FLAT") ? Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "FLAT" }&.title_id : Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "KARPIS" }&.title_id
-      log_message = "Processed #{total_count} #{type_label} therapists: #{created_count} created, #{updated_count} updated"
+      log_message = "Processed #{total_count} #{type_label} therapists: #{created_count} created, #{updated_count} updated, #{unchanged_count} unchanged, #{skipped_count} skipped, #{failed_count} failed."
       if created_count > 0
         created_reasons = results[:created].map { |c| "#{c[:name]} (#{c[:email]})" }.join(", ")
-        log_message += ", #{created_count} created: #{created_reasons}"
+        log_message += " Created: #{created_reasons}."
       end
       if updated_count > 0
         updated_details = results[:updated].map do |u|
           changes_str = format_changes_for_log(u[:changes])
           "#{u[:name]} (#{changes_str})"
         end.join(", ")
-        log_message += ", #{updated_count} updated: #{updated_details}"
+        log_message += " Updated: #{updated_details}."
       end
       if skipped_count > 0
         skip_reasons = results[:skipped].group_by { |s| s[:reason] }
           .map { |reason, items| "#{items.count} #{reason}" }
           .join(", ")
-        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+        log_message += " Skipped: #{skip_reasons}."
       end
-
       if skipped_other_type_count > 0
-        log_message += ", #{skipped_other_type_count} skipped (other employment type)"
+        log_message += " Skipped (other employment type): #{skipped_other_type_count}."
       end
-
       if failed_count > 0
         failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
-        log_message += ", #{failed_count} failed: #{failure_reasons}"
+        log_message += " Failed: #{failure_reasons}."
       end
 
-      log_message += "."
-
-      message = "Processed #{total_count} #{type_label} therapists: #{created_count} created, #{updated_count} updated"
-      message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += ", #{failed_count} failed" if failed_count > 0
-      message += "."
+      message = "Processed #{total_count} #{type_label} therapists: #{created_count} created, #{updated_count} updated, #{unchanged_count} unchanged, #{skipped_count} skipped, #{failed_count} failed."
 
       Rails.logger.info log_message
-      {success: true, message:, log_message:, results:}
+      {success: true, message:, log_message:, results:, total_count:}
     rescue => e
       error_message = "Error syncing therapists: #{e.class} - #{e.message}"
       Rails.logger.error error_message
@@ -866,7 +845,7 @@ module AdminPortal
       end
 
       # Track results
-      results = {schedule_updated: [], skipped: [], failed: [], schedules_created: []}
+      results = {schedule_updated: [], unchanged: [], skipped: [], failed: [], schedules_created: []}
 
       # Get all therapists (including those without schedules)
       all_therapists = Therapist.includes(:user, active_address: :location)
@@ -901,6 +880,8 @@ module AdminPortal
               if schedule_record.persisted?
                 schedule_record.destroy
                 results[:schedule_updated] << {name:, email:, reason: skip_reason}
+              else
+                results[:skipped] << {name:, email:, reason: skip_reason}
               end
               next
             end
@@ -1086,6 +1067,8 @@ module AdminPortal
               if schedule_updated
                 changes = format_changes([schedule_record])
                 results[:schedule_updated] << {name:, email:, changes: changes}
+              else
+                results[:unchanged] << {name:, email:}
               end
             rescue => e
               results[:failed] << {name:, email:, error: e.message}
@@ -1107,39 +1090,40 @@ module AdminPortal
 
       # Return results
       schedule_updated_count = results[:schedule_updated].count
+      unchanged_count = results[:unchanged].count
       skipped_count = results[:skipped].count
       failed_count = results[:failed].count
       schedules_created_count = results[:schedules_created].count
 
-      log_message = "Processed schedules: #{schedules_created_count} schedules created, #{schedule_updated_count} schedule updates"
+      # Total count is all therapists processed (from database query)
+      total_count = total_rows
+      log_message = "Processed #{total_count} therapist schedules: #{schedules_created_count} created, #{schedule_updated_count} updated, #{unchanged_count} unchanged, #{skipped_count} skipped, #{failed_count} failed."
+      if schedules_created_count > 0
+        created_reasons = results[:schedules_created].map { |c| c[:name].to_s }.join(", ")
+        log_message += " Created: #{created_reasons}."
+      end
       if schedule_updated_count > 0
         updated_details = results[:schedule_updated].map do |u|
           changes_str = format_changes_for_log(u[:changes])
           "#{u[:name]} (#{changes_str})"
         end.join(", ")
-        log_message += ", #{schedule_updated_count} updated: #{updated_details}"
+        log_message += " Updated: #{updated_details}."
       end
       if skipped_count > 0
         skip_reasons = results[:skipped].group_by { |s| s[:reason] }
           .map { |reason, items| "#{items.count} #{reason}" }
           .join(", ")
-        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+        log_message += " Skipped: #{skip_reasons}."
       end
-
       if failed_count > 0
         failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
-        log_message += ", #{failed_count} failed: #{failure_reasons}"
+        log_message += " Failed: #{failure_reasons}."
       end
 
-      log_message += "."
-
-      message = "Processed schedules: #{schedules_created_count} created, #{schedule_updated_count} updated"
-      message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += ", #{failed_count} failed" if failed_count > 0
-      message += "."
+      message = "Processed #{total_count} therapist schedules: #{schedules_created_count} created, #{schedule_updated_count} updated, #{unchanged_count} unchanged, #{skipped_count} skipped, #{failed_count} failed."
 
       Rails.logger.info log_message
-      {success: true, message:, log_message:, results:}
+      {success: true, message:, log_message:, results:, total_count:}
     rescue => e
       error_message = "Error syncing therapist schedules: #{e.class} - #{e.message}"
       Rails.logger.error error_message
@@ -1158,25 +1142,23 @@ module AdminPortal
       # Extract counts from results
       therapists_created = therapist_result.dig(:results, :created)&.count || 0
       therapists_updated = therapist_result.dig(:results, :updated)&.count || 0
+      therapists_unchanged = therapist_result.dig(:results, :unchanged)&.count || 0
       therapists_failed = therapist_result.dig(:results, :failed)&.count || 0
       therapists_skipped = therapist_result.dig(:results, :skipped)&.count || 0
+      therapists_total = therapist_result[:total_count] || 0
 
       type_label = (employment_type_filter == "FLAT") ? Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "FLAT" }&.title_id : Therapist::EMPLOYMENT_TYPE_LABELS.find { |t| t.key == "KARPIS" }&.title_id
 
-      # Build comprehensive UI message
-      message = "#{type_label}: #{therapists_created} created, #{therapists_updated} updated"
-      message += ", #{therapists_failed} failed" if therapists_failed > 0
-      message += ", #{therapists_skipped} skipped" if therapists_skipped > 0
-
       schedules_created = schedule_result.dig(:results, :schedules_created)&.count || 0
       schedules_updated = schedule_result.dig(:results, :schedule_updated)&.count || 0
+      schedules_unchanged = schedule_result.dig(:results, :unchanged)&.count || 0
       schedules_failed = schedule_result.dig(:results, :failed)&.count || 0
       schedules_skipped = schedule_result.dig(:results, :skipped)&.count || 0
+      schedules_total = schedule_result[:total_count] || 0
 
-      message += ". Schedules: #{schedules_created} created, #{schedules_updated} updated"
-      message += ", #{schedules_failed} failed" if schedules_failed > 0
-      message += ", #{schedules_skipped} skipped" if schedules_skipped > 0
-      message += "."
+      # Build comprehensive UI message with row counts
+      message = "Processed #{therapists_total} #{type_label} therapists: #{therapists_created} created, #{therapists_updated} updated, #{therapists_unchanged} unchanged, #{therapists_skipped} skipped, #{therapists_failed} failed. "
+      message += "Processed #{schedules_total} schedules: #{schedules_created} created, #{schedules_updated} updated, #{schedules_unchanged} unchanged, #{schedules_skipped} skipped, #{schedules_failed} failed."
 
       # Combine messages for logging (with full details)
       log_message = therapist_result[:log_message].to_s
@@ -1305,17 +1287,17 @@ module AdminPortal
       skipped_count = results[:skipped].count
       failed_count = results[:failed].count
 
-      log_message = "Processed #{csv.count} therapist leaves: #{created_count} created, #{updated_count} updated"
+      log_message = "Processed #{csv.count} therapist leaves: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
       if created_count > 0
         created_reasons = results[:created].map { |c| "#{c[:name]} (#{c[:date]})" }.join(", ")
-        log_message += ", #{created_count} created: #{created_reasons}"
+        log_message += " Created: #{created_reasons}."
       end
       if updated_count > 0
         updated_details = results[:updated].map do |u|
           changes_str = format_changes_for_log(u[:changes])
           "#{u[:name]} (#{u[:date]}) - #{changes_str}"
         end.join(", ")
-        log_message += ", #{updated_count} updated: #{updated_details}"
+        log_message += " Updated: #{updated_details}."
       end
       if skipped_count > 0
         skip_reasons = results[:skipped].group_by { |s| s[:reason] }
@@ -1327,18 +1309,14 @@ module AdminPortal
             end
           }
           .join(", ")
-        log_message += ", #{skipped_count} skipped: #{skip_reasons}"
+        log_message += " Skipped: #{skip_reasons}."
       end
       if failed_count > 0
         failure_reasons = results[:failed].map { |f| "#{f[:name]} (#{f[:error]})" }.join(", ")
-        log_message += ", #{failed_count} failed: #{failure_reasons}"
+        log_message += " Failed: #{failure_reasons}."
       end
-      log_message += "."
 
-      message = "Processed #{csv.count} therapist leaves: #{created_count} created, #{updated_count} updated"
-      message += ", #{skipped_count} skipped" if skipped_count > 0
-      message += ", #{failed_count} failed" if failed_count > 0
-      message += "."
+      message = "Processed #{csv.count} therapist leaves: #{created_count} created, #{updated_count} updated, #{skipped_count} skipped, #{failed_count} failed."
 
       Rails.logger.info log_message
       {success: true, message:, log_message:, results:}
