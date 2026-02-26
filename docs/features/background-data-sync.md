@@ -23,7 +23,7 @@ Background Data Sync allows administrators to synchronize data from external sou
 
 ### 💡 **User-Friendly Notifications**
 - Clear, contextual messages at every step
-- Shows exactly how many records were created, updated, failed, or skipped
+- Shows exactly how many records were created, updated, unchanged, skipped, or failed
 - Color-coded alerts (blue for progress, green for success, red for errors)
 - Notifications stay visible until you dismiss them or refresh the page
 
@@ -60,8 +60,8 @@ Background sync is available on these admin pages:
 ### After Sync
 
 - **Success**: Green notification appears with detailed results
-  - Example: "Processed 1550 therapists: 0 created, 0 updated, 37 skipped"
-  - Example: "Brands: 5 created, 10 updated, 2 failed. Packages: 20 created, 30 updated, 3 skipped"
+  - Example: "Processed 151 Karyawan therapists: 2 created, 5 updated, 140 unchanged, 2 skipped, 2 failed."
+  - Example: "Processed 10 brands: 0 created, 0 updated, 10 unchanged, 0 skipped, 0 failed. Processed 50 packages: 2 created, 3 updated, 45 unchanged, 0 skipped, 0 failed."
 - **Failed**: Red notification explains what went wrong
 - Data automatically refreshes to show latest information
 - You can dismiss notifications anytime with the X button
@@ -72,12 +72,16 @@ Background sync is available on these admin pages:
 Sync results show you exactly what happened:
 - **Created** - New records added to the system
 - **Updated** - Existing records that were modified
+- **Unchanged** - Existing records that had no changes needed
+- **Skipped** - Records that were ignored (e.g., missing required fields, invalid data, wrong employment type)
 - **Failed** - Records that couldn't be processed (see logs for details)
-- **Skipped** - Records that were ignored (usually duplicates or invalid data)
 
 ### Example Results
-- **Therapists**: "Therapists: 10 created, 30 updated, 2 failed, 5 skipped, 3 FLAT skipped. Schedules: 5 created, 20 updated"
-- **Services**: "Processed 100 items: 10 created, 90 updated"
+- **Therapists & Schedules**: "Processed 151 Karyawan therapists: 2 created, 5 updated, 140 unchanged, 2 skipped, 2 failed. Processed 153 schedules: 0 created, 0 updated, 89 unchanged, 64 skipped, 0 failed."
+- **Locations**: "Processed 50 locations: 2 created, 3 updated, 40 unchanged, 3 skipped, 2 failed."
+- **Admins**: "Processed 20 admins: 1 created, 2 updated, 15 unchanged, 1 skipped, 1 failed."
+- **Brands & Packages**: "Processed 10 brands: 0 created, 0 updated, 10 unchanged, 0 skipped, 0 failed. Processed 50 packages: 2 created, 3 updated, 45 unchanged, 0 skipped, 0 failed."
+- **Therapist Leaves**: "Processed 30 therapist leaves: 5 created, 2 updated, 10 unchanged, 10 skipped, 3 failed."
 
 ## Status Indicators
 
@@ -142,9 +146,11 @@ For each sync operation, we capture:
 **Quick Problem Resolution**
 When issues occur, you'll know exactly:
 ```
-"Processed 50 therapists: 10 created, 30 updated, 2 failed: 
-John Doe (Email already exists), Jane Smith (Invalid phone format), 
-5 skipped: Bob FLAT (FLAT employment type)"
+"Processed 151 Karyawan therapists: 2 created, 5 updated, 140 unchanged, 2 skipped, 2 failed.
+Created: John Doe (john@example.com), Jane Smith (jane@example.com).
+Updated: Mike Johnson (phone_number: +628123456789 → +628123456780).
+Skipped: 2 Missing required fields.
+Failed: Bob Wilson (Validation failed: Specializations can't be blank)."
 ```
 
 **Team Accountability**
