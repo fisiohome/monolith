@@ -302,12 +302,12 @@ module AdminPortal
 
         if result[:success]
           respond_to do |format|
-            format.csv do
-              Rails.logger.info "Sending CSV file: #{result[:filename]}"
+            format.xlsx do
+              Rails.logger.info "Sending XLSX file: #{result[:filename]}"
 
               send_data result[:data],
                 filename: result[:filename],
-                type: "text/csv; charset=utf-8; header=present",
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 disposition: "attachment"
             end
 

@@ -445,11 +445,10 @@ export default function AppointmentIndex() {
 			},
 		);
 
-		// Force `.csv` format BEFORE the query string
+		// Force `.xlsx` format BEFORE the query string
 		const urlObj = new URL(fullUrl, window.location.origin);
-		const csvUrl = `${urlObj.pathname}.csv${urlObj.search}`;
-
-		window.location.href = csvUrl; // triggers the download
+		const xlsxUrl = `${urlObj.pathname}.xlsx${urlObj.search}`;
+		window.open(xlsxUrl, "_blank"); // triggers the download
 
 		setIsGenerateReport(true);
 		setTimeout(() => {
