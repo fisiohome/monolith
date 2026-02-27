@@ -833,7 +833,7 @@ module AdminPortal
       {success: false, error: error_message, log_message: error_message, results:}
     end
 
-    def therapist_schedules(employment_type_filter: nil)
+    def therapist_schedules(employment_type_filter: nil, use_ramadan_time: false)
       # Process therapist_schedules CSV
       schedules_csv = fetch_and_parse_csv(gid: THERAPIST_SCHEDULES_GID)
       required_schedule_headers = ["Therapist", "Day of Week", "Start Time", "End Time"]
@@ -1040,6 +1040,9 @@ module AdminPortal
                   if therapist.employment_type == "FLAT"
                     default_start_time = "05:00".in_time_zone(Time.zone)
                     default_end_time = "22:00".in_time_zone(Time.zone)
+                  elsif use_ramadan_time
+                    default_start_time = "08:00".in_time_zone(Time.zone)
+                    default_end_time = "17:00".in_time_zone(Time.zone)
                   else
                     default_start_time = "09:00".in_time_zone(Time.zone)
                     default_end_time = "18:00".in_time_zone(Time.zone)
@@ -1143,13 +1146,13 @@ module AdminPortal
       {success: false, error: error_message, log_message: error_message, results:}
     end
 
-    def therapists_and_schedules(employment_type_filter: "KARPIS")
+    def therapists_and_schedules(employment_type_filter: "KARPIS", use_ramadan_time: false)
       # First sync therapists (this builds @ignoring_loc_rules_map)
       therapist_result = therapists(employment_type_filter:)
       return therapist_result unless therapist_result[:success]
 
       # Then sync schedules for the requested employment type (uses @ignoring_loc_rules_map)
-      schedule_result = therapist_schedules(employment_type_filter:)
+      schedule_result = therapist_schedules(employment_type_filter:, use_ramadan_time:)
       return schedule_result unless schedule_result[:success]
 
       # Extract counts from results

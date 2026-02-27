@@ -476,14 +476,21 @@ module AdminPortal
       employment_type_filter = params[:employment_type_filter]&.upcase || "KARPIS"
       employment_type_filter = "KARPIS" unless Therapist.employment_types.key?(employment_type_filter)
 
+      # Get Ramadan time flag from params (default: false)
+      use_ramadan_time = params[:use_ramadan_time] == "true"
+
       # Clear any existing sync status before starting a new one
       SyncStatusService.clear_sync_status(:therapists_and_schedules)
 
       # Enqueue background job with options
-      MasterDataSyncJob.perform_later(:therapists_and_schedules, current_user&.id, {employment_type_filter:})
+      MasterDataSyncJob.perform_later(:therapists_and_schedules, current_user&.id, {
+        employment_type_filter:,
+        use_ramadan_time:
+      })
 
       type_label = (employment_type_filter == "FLAT") ? "Mitra" : "Karyawan"
-      redirect_to admin_portal_therapists_path, notice: "#{type_label} data sync is running in the background. You'll be notified when it's complete."
+      time_label = use_ramadan_time ? " (Ramadan Time)" : ""
+      redirect_to admin_portal_therapists_path, notice: "#{type_label} data sync#{time_label} is running in the background. You'll be notified when it's complete."
     end
 
     def sync_status

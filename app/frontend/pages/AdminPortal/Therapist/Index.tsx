@@ -18,7 +18,7 @@ import {
 	Trash2Icon,
 	X,
 } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PaginationTable from "@/components/admin-portal/shared/data-table-pagination";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
@@ -48,7 +48,13 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
 	Tooltip,
 	TooltipContent,
@@ -111,6 +117,10 @@ export default function Index({
 		// Refresh therapist data when sync completes
 		router.reload({ only: ["adminPortal", "therapists"] });
 	}, []);
+
+	// State for Ramadan time toggle
+	const [useRamadanTime, setUseRamadanTime] = useState(false);
+	const [popoverOpen, setPopoverOpen] = useState(false);
 
 	const { isLoading, syncStatus, triggerSync, clearStatus } = useMasterDataSync(
 		{
@@ -607,8 +617,8 @@ export default function Index({
 					<div className="flex flex-col gap-2 md:flex-row">
 						{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
 							globalProps?.auth?.currentUser?.["isAdminSupervisor?"]) && (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
+							<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+								<PopoverTrigger asChild>
 									<Button variant="primary-outline" disabled={isLoading}>
 										{isLoading ? (
 											<>
@@ -623,26 +633,72 @@ export default function Index({
 											</>
 										)}
 									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuLabel>Sync Therapists</DropdownMenuLabel>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										onClick={() =>
-											triggerSync({ employment_type_filter: "KARPIS" })
-										}
-									>
-										<span>Karyawan (KARPIS)</span>
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() =>
-											triggerSync({ employment_type_filter: "FLAT" })
-										}
-									>
-										<span>Mitra (FLAT)</span>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
+								</PopoverTrigger>
+								<PopoverContent className="w-72" align="end">
+									<div className="grid gap-4">
+										<div className="space-y-1 text-sm">
+											<h4 className="font-medium leading-none">Sync Options</h4>
+											<p className="text-muted-foreground">
+												Choose sync type and time settings
+											</p>
+										</div>
+
+										<div className="space-y-3">
+											<div className="flex items-center justify-between space-x-2">
+												<label
+													htmlFor="ramadan-time"
+													className="text-sm font-medium cursor-pointer"
+												>
+													Use Ramadan Time
+												</label>
+												<Switch
+													id="ramadan-time"
+													checked={useRamadanTime}
+													onCheckedChange={setUseRamadanTime}
+												/>
+											</div>
+											{useRamadanTime && (
+												<p className="text-xs text-muted-foreground">
+													Using Ramadan schedule: 8:00 AM - 5:00 PM
+												</p>
+											)}
+											<Separator />
+											<div className="space-y-1">
+												<Button
+													variant="default"
+													size="sm"
+													className="w-full"
+													disabled={isLoading}
+													onClick={() => {
+														triggerSync({
+															employment_type_filter: "KARPIS",
+															use_ramadan_time: useRamadanTime.toString(),
+														});
+														setPopoverOpen(false);
+													}}
+												>
+													{isLoading ? "Syncing..." : "Sync Karyawan (KARPIS)"}
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													className="w-full"
+													disabled={isLoading}
+													onClick={() => {
+														triggerSync({
+															employment_type_filter: "FLAT",
+															use_ramadan_time: useRamadanTime.toString(),
+														});
+														setPopoverOpen(false);
+													}}
+												>
+													{isLoading ? "Syncing..." : "Sync Mitra (FLAT)"}
+												</Button>
+											</div>
+										</div>
+									</div>
+								</PopoverContent>
+							</Popover>
 						)}
 
 						{(globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
