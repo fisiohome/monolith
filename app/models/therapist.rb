@@ -61,6 +61,8 @@ class Therapist < ApplicationRecord
 
   has_many :appointments, dependent: :nullify
 
+  before_save :normalize_telegram_id
+
   # * cycle callbacks
   before_create :assign_registration_number
   before_destroy :destroy_associated_bank_details, :destroy_associated_addresses, :destroy_associated_appointment_schedule
@@ -81,8 +83,9 @@ class Therapist < ApplicationRecord
   validates :batch, numericality: true, presence: true
   validates :phone_number, uniqueness: true, presence: true
   validates :registration_number, uniqueness: true
-  validates :telegram_id, uniqueness: true, allow_blank: true,
-    format: {with: /\A@[a-zA-Z0-9_]{5,32}\z/, message: "must be a valid Telegram username (e.g., @telegram-id)"}
+  validates :telegram_id, uniqueness: {allow_blank: true, case_sensitive: true},
+    format: {with: /\A@[a-zA-Z0-9_]{5,32}\z/, message: "must be a valid Telegram username (e.g., @telegram-id)"},
+    if: ->(therapist) { therapist.telegram_id.present? && therapist.telegram_id_changed? }
 
   self.implicit_order_column = "created_at"
 
@@ -169,5 +172,10 @@ class Therapist < ApplicationRecord
         suspend_end: suspend_duration ? Time.current + suspend_duration : nil
       )
     end
+  end
+
+  def normalize_telegram_id
+    # Convert empty telegram_id to nil to avoid unique constraint violations
+    self.telegram_id = nil if telegram_id.blank?
   end
 end

@@ -692,6 +692,8 @@ module AdminPortal
               # Normalize Telegram ID
               telegram_id_raw = row["Telegram ID"]&.strip
               telegram_id = normalize_telegram_id(telegram_id_raw) if telegram_id_raw.present?
+              # Ensure empty telegram_id is nil, not empty string
+              telegram_id = nil if telegram_id.blank?
 
               # Parse contract period
               contract_start_date = nil

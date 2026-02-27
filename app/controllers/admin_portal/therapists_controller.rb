@@ -539,7 +539,7 @@ module AdminPortal
 
     # Only allow a list of trusted parameters through.
     def therapist_params
-      params.require(:therapist).permit(
+      permitted_params = params.require(:therapist).permit(
         :name,
         :batch,
         :phone_number,
@@ -556,6 +556,11 @@ module AdminPortal
         bank_details: %i[id bank_name account_number account_holder_name active],
         addresses: %i[id country country_code state city postal_code address active lat lng]
       )
+
+      # Convert empty telegram_id to nil to avoid unique constraint violations
+      permitted_params[:telegram_id] = nil if permitted_params[:telegram_id].blank?
+
+      permitted_params
     end
 
     def render_upsert_form(therapist)
@@ -569,7 +574,7 @@ module AdminPortal
         therapist: serialize_therapist(
           therapist,
           {
-            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender contract_start_date contract_end_date]
+            only: %i[id name batch phone_number registration_number modalities specializations employment_status employment_type gender contract_start_date contract_end_date telegram_id]
           }
         ),
         genders: Therapist.genders.map { |key, value| value },
