@@ -343,21 +343,28 @@ module AdminPortal
       get_selected_therapists_with_appointments_lambda = lambda do
         return {data: []} if selected_therapist_ids_param.empty?
 
-        # Single query to fetch all selected therapists with schedules and filtered appointments
+        # First, fetch all filtered appointments for the selected therapists
+        filtered_appointments = Appointment
+          .where(therapist_id: selected_therapist_ids_param)
+          .where(appointment_date_time: appointment_window)
+          .where.not(status: invalid_statuses)
+          .includes(:patient, :package, :service, :address_history)
+          .order(:appointment_date_time)
+          .to_a
+
+        # Group appointments by therapist_id for easy lookup
+        appointments_by_therapist = filtered_appointments.group_by(&:therapist_id)
+
+        # Single query to fetch all selected therapists with schedules
         therapists = Therapist
           .where(id: selected_therapist_ids_param)
           .select(:id, :user_id, :service_id, :name, :employment_type, :employment_status, :gender, :registration_number)
           .includes(therapist_appointment_schedule: :therapist_weekly_availabilities)
-          .preload(:appointments) {
-            where(appointment_date_time: appointment_window)
-              .where.not(status: invalid_statuses)
-              .includes(:patient, :package, :service, :address_history)
-              .order(:appointment_date_time)
-          }
           .order(Arel.sql("LOWER(therapists.name) ASC"))
 
         data = therapists.map do |therapist|
-          appointments_raw = therapist.appointments.to_a
+          # Use the pre-filtered appointments for this therapist
+          appointments_raw = appointments_by_therapist[therapist.id] || []
           appointments = appointments_raw.map do |a|
             {
               id: a.id,

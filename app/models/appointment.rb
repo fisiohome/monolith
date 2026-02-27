@@ -292,28 +292,28 @@ class Appointment < ApplicationRecord
   }
   scope :apply_status_filter, ->(filter) {
     case filter
-    when "pending_therapist"
+    when "pending_therapist", "PENDING THERAPIST ASSIGNMENT"
       pending_therapist
-    when "pending_patient_approval"
+    when "pending_patient_approval", "PENDING PATIENT APPROVAL"
       pending_patient_approval
-    when "pending_payment"
+    when "pending_payment", "PENDING PAYMENT"
       pending_payment
     when "past"
       past
-    when "cancel"
+    when "cancel", "CANCELLED"
       cancelled
-    when "unschedule"
+    when "unschedule", "UNSCHEDULED"
       unscheduled
-    when "on_hold"
+    when "on_hold", "ON HOLD"
       on_hold
-    when "completed"
+    when "completed", "COMPLETED"
       completed
     when "upcoming"
       # Default scope for active appointments
       future.status_paid
     else
       # Default: today and future, excluding unscheduled, cancelled, and on hold
-      today_and_future.where.not(status: ["UNSCHEDULED", "CANCELLED", "ON_HOLD"])
+      today_and_future.where.not(status: ["UNSCHEDULED", "CANCELLED", "ON HOLD"])
     end
   }
   scope :pending_therapist, -> { where(status: ["PENDING THERAPIST ASSIGNMENT"]).today_and_future }
