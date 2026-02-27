@@ -526,7 +526,7 @@ const TherapistSelection = memo(
 						<div>
 							<p className="text-sm font-semibold">Employment Type Filter</p>
 							<p className="text-xs text-muted-foreground">
-								Filter therapists by employment type (KARPIS or FLAT)
+								Filter therapists by employment type (KARPIS or MITRA)
 							</p>
 						</div>
 						<div className="flex gap-2">
@@ -552,7 +552,7 @@ const TherapistSelection = memo(
 								size="sm"
 								onClick={() => setEmploymentType("FLAT")}
 							>
-								FLAT
+								MITRA
 							</Button>
 						</div>
 					</div>
