@@ -202,7 +202,7 @@ Only **Feasible** therapists are shown to users for selection.
 ├─────────────────────────────────────────────────────────────────────┤
 │  1. Fetch all therapists for service/location                       │
 │  2. Apply location rule filter (if location: true)                  │
-│  3. Check time availability (GetTherapistAvailableService)          │
+│  3. Check time availability (AvailabilityService)          │
 │  4. Serialize with availability_rules                               │
 └─────────────────────────────────────────────────────────────────────┘
                                 │

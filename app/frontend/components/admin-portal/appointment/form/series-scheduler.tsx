@@ -548,7 +548,10 @@ const useSeriesVisitForm = (index: number) => {
 	const mappingTherapists = useCallback(
 		(
 			therapists: TherapistOption[] | undefined,
-			options?: { bypassConstraints?: boolean },
+			options?: {
+				bypassConstraints?: boolean;
+				employmentType?: "KARPIS" | "FLAT" | "ALL";
+			},
 		) => {
 			const therapistsAvailable =
 				therapists?.filter((t) => t.availabilityDetails?.available) || [];

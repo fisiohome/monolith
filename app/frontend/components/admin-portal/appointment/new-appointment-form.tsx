@@ -1172,6 +1172,7 @@ export function AppointmentSchedulingForm() {
 														!watchAppointmentSchedulingValue.appointmentDateTime,
 													handler: async (options?: {
 														bypassConstraints?: boolean;
+														employmentType?: "KARPIS" | "FLAT" | "ALL";
 													}) => {
 														const isError = onCheckServiceError();
 														if (isError) return;

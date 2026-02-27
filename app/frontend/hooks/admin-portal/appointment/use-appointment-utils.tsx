@@ -1329,7 +1329,9 @@ export const useTherapistAvailability = ({
 				unavailable: therapistsUnavailable,
 			}));
 			if (therapistsAvailable?.length) {
-				onCalculateIsoline(therapistsAvailable, therapistsUnavailable, options);
+				onCalculateIsoline(therapistsAvailable, therapistsUnavailable, {
+					bypassConstraints: options?.bypassConstraints,
+				});
 			} else {
 				setIsTherapistFound(true);
 			}
@@ -1337,13 +1339,19 @@ export const useTherapistAvailability = ({
 		[onCalculateIsoline],
 	);
 	const onFindTherapists = useCallback(
-		(options?: { bypassConstraints?: boolean }) => {
-			const { bypassConstraints = false } = options ?? {};
+		(options?: {
+			bypassConstraints?: boolean;
+			employmentType?: "KARPIS" | "FLAT" | "ALL";
+		}) => {
+			const { bypassConstraints = false, employmentType = "ALL" } =
+				options ?? {};
 
 			const basePayload = {
 				preferredTherapistGender: preferredTherapistGenderValue,
 				appointmentDateTime: appointmentDateTImeValue,
 				isAllOfDay: isAllOfDayValue,
+				bypassConstraints: bypassConstraints,
+				employmentType: employmentType,
 			};
 
 			const payload =
@@ -1364,16 +1372,7 @@ export const useTherapistAvailability = ({
 				preserveScroll: true,
 				preserveState: true,
 				replace: false,
-				/**
-				 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
-				 * ? it's related to onSuccess callback error
-				 * ? see: https://fisiohome.atlassian.net/browse/PE-63?atlOrigin=eyJpIjoiN2RhNjVlYThmMjMwNDQ4MTk2NjIxN2NhZGRmMWIyMGYiLCJwIjoiaiJ9
-				 **/
-				// only:
-				// 	formType === "create"
-				// 		? []
-				// 		: ["adminPortal", "flash", "errors", "therapists"],
-				only: [],
+				only: ["adminPortal", "flash", "errors", "therapists"],
 				onStart: () => {
 					onChangeTherapistLoading(true);
 					onResetTherapistOptions();

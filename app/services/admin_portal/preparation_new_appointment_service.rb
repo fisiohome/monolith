@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module AdminPortal
   class PreparationNewAppointmentService
     include ApplicationHelper
@@ -5,7 +7,7 @@ module AdminPortal
     include LocationsHelper
     include TherapistsHelper
     include AppointmentsHelper
-    include TherapistQueryHelper
+    include AdminPortal::Therapists
     include AdminsHelper
 
     attr_reader :params
@@ -53,7 +55,24 @@ module AdminPortal
       location = Location.includes(:services).find(selected_location_id)
       service = Service.find(selected_service_id)
 
-      filtered_therapists(location:, service:, params: @params, formatter: method(:formatted_therapists))
+      # Get employment type filter from params
+      employment_type = @params[:employment_type] || "ALL"
+      # Get bypass constraints flag from params
+      bypass_constraints = @params[:bypass_constraints] || false
+
+      # using the batching
+      batch_size = @params[:batch_size] || AdminPortal::Therapists::QueryConfig::DEFAULT_BATCH_SIZE
+      extend AdminPortal::Therapists::BatchQueryHelper
+      filtered_therapists_in_batches(
+        location: location,
+        service: service,
+        params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints),
+        formatter: method(:formatted_therapists),
+        batch_size: batch_size
+      )
+
+      # ? if wanna not batching filtered processed
+      # filtered_therapists(location:, service:, params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints), formatter: method(:formatted_therapists))
     end
 
     def fetch_options_data

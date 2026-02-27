@@ -165,6 +165,7 @@ class Appointment < ApplicationRecord
   after_commit :snapshot_address_history, on: [:create]
   after_commit :snapshot_package_history, on: [:create]
   after_commit :track_status_change, on: [:create, :update], if: -> { saved_change_to_status? && updater.present? }
+  after_commit :invalidate_therapist_cache, on: [:create, :update, :destroy]
 
   def preferred_therapist_gender=(value)
     normalized = (value == "OTHER") ? "NO PREFERENCE" : value
@@ -640,6 +641,10 @@ class Appointment < ApplicationRecord
     return if preferred_therapist_gender.blank?
 
     self.preferred_therapist_gender = "NO PREFERENCE" if preferred_therapist_gender == "OTHER"
+  end
+
+  def invalidate_therapist_cache
+    AdminPortal::Therapists::AvailabilityCache.invalidate_therapist_cache(therapist_id) if therapist_id
   end
 
   def clear_details_if_on_hold

@@ -2,7 +2,7 @@ module AdminPortal
   class PreparationRescheduleAppointmentService
     include ApplicationHelper
     include TherapistsHelper
-    include TherapistQueryHelper
+    include AdminPortal::Therapists::QueryHelper
 
     def initialize(appointment, params)
       @appointment = appointment

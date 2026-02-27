@@ -356,7 +356,10 @@ export interface TherapistSelectionProps extends ComponentProps<"div"> {
 	};
 	find: {
 		isDisabled: boolean;
-		handler: (options?: { bypassConstraints?: boolean }) => Promise<void>;
+		handler: (options?: {
+			bypassConstraints?: boolean;
+			employmentType?: "KARPIS" | "FLAT" | "ALL";
+		}) => Promise<void>;
 	};
 	unfeasibleTherapists?: FeasibilityReportItem[];
 	onSelectTherapist: (value: { id: string; name: string }) => void;
@@ -392,6 +395,9 @@ const TherapistSelection = memo(
 		const isMobile = useIsMobile();
 		const [search, setSearch] = useState("");
 		const [isBypassConstraints, setIsBypassConstraints] = useState(false);
+		const [employmentType, setEmploymentType] = useState<
+			"KARPIS" | "FLAT" | "ALL"
+		>("ALL");
 		const debouncedSearchTerm = useDebounce(search, 250);
 		// Filter by search term first
 		const filteredTherapists = useMemo(
@@ -515,21 +521,58 @@ const TherapistSelection = memo(
 
 		return (
 			<div ref={ref} className={cn("flex flex-col gap-6", className)}>
-				<div className="flex items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
-					<div>
-						<p className="text-sm font-semibold">
-							Bypass distance & duration rules
-						</p>
-						<p className="text-xs text-muted-foreground">
-							Shows all available therapists even if travel limits flag them as
-							unreachable.
-						</p>
+				<div className="flex flex-col gap-3">
+					<div className="flex items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
+						<div>
+							<p className="text-sm font-semibold">Employment Type Filter</p>
+							<p className="text-xs text-muted-foreground">
+								Filter therapists by employment type (KARPIS or FLAT)
+							</p>
+						</div>
+						<div className="flex gap-2">
+							<Button
+								type="button"
+								variant={employmentType === "ALL" ? "default" : "outline"}
+								size="sm"
+								onClick={() => setEmploymentType("ALL")}
+							>
+								All
+							</Button>
+							<Button
+								type="button"
+								variant={employmentType === "KARPIS" ? "default" : "outline"}
+								size="sm"
+								onClick={() => setEmploymentType("KARPIS")}
+							>
+								KARPIS
+							</Button>
+							<Button
+								type="button"
+								variant={employmentType === "FLAT" ? "default" : "outline"}
+								size="sm"
+								onClick={() => setEmploymentType("FLAT")}
+							>
+								FLAT
+							</Button>
+						</div>
 					</div>
-					<Switch
-						checked={isBypassConstraints}
-						onCheckedChange={setIsBypassConstraints}
-						aria-label="Bypass distance and duration rules"
-					/>
+
+					<div className="flex items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
+						<div>
+							<p className="text-sm font-semibold">
+								Bypass distance & duration rules
+							</p>
+							<p className="text-xs text-muted-foreground">
+								Shows all available therapists even if travel limits flag them
+								as unreachable.
+							</p>
+						</div>
+						<Switch
+							checked={isBypassConstraints}
+							onCheckedChange={setIsBypassConstraints}
+							aria-label="Bypass distance and duration rules"
+						/>
+					</div>
 				</div>
 
 				{isLoading ? (
@@ -548,7 +591,10 @@ const TherapistSelection = memo(
 						onClick={async (event) => {
 							event.preventDefault();
 
-							await find.handler({ bypassConstraints: isBypassConstraints });
+							await find.handler({
+								bypassConstraints: isBypassConstraints,
+								employmentType,
+							});
 						}}
 					>
 						{tasf("therapist.button")}

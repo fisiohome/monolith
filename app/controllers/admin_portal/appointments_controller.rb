@@ -58,7 +58,7 @@ module AdminPortal
         appointment: @appointment.as_json,
         locations: InertiaRails.defer { preparation.fetch_locations },
         services: InertiaRails.defer { preparation.fetch_services },
-        therapists: -> { preparation.fetch_therapists },
+        therapists: InertiaRails.optional { preparation.fetch_therapists },
         patient_list: InertiaRails.optional { preparation.fetch_patient_list },
         patient_contact_list: InertiaRails.optional { preparation.fetch_patient_contact_list },
         appointment_reference: preparation.fetch_appointment_reference,

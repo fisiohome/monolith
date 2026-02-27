@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_25_081143) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -32,6 +32,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_25_081143) do
     t.datetime "updated_at", default: -> { "now()" }, null: false
     t.text "notes"
     t.uuid "user_id"
+    t.index ["latitude", "longitude"], name: "index_addresses_on_latitude_and_longitude", where: "((latitude <> (0)::double precision) AND (longitude <> (0)::double precision))"
     t.index ["location_id"], name: "index_addresses_on_location_id"
     t.index ["user_id"], name: "idx_addresses_user_id", where: "(user_id IS NOT NULL)"
   end
@@ -908,6 +909,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_25_081143) do
     t.date "contract_start_date", comment: "Optional contract start date for the therapist"
     t.date "contract_end_date", comment: "Optional contract end date for the therapist"
     t.string "telegram_id"
+    t.index ["employment_status", "employment_type"], name: "index_therapists_on_employment_status_and_employment_type"
     t.index ["modalities"], name: "index_therapists_on_modalities", using: :gin
     t.index ["phone_number"], name: "index_therapists_on_phone_number", unique: true
     t.index ["registration_number"], name: "index_therapists_on_registration_number", unique: true
@@ -1043,9 +1045,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_25_081143) do
   add_foreign_key "orders", "patients", name: "orders_patient_id_fkey"
   add_foreign_key "packages", "services"
   add_foreign_key "patient_addresses", "addresses"
-  add_foreign_key "patient_addresses", "patients"
+  add_foreign_key "patient_addresses", "patients", name: "fk_patient_addresses_patient_id", on_delete: :cascade
   add_foreign_key "patient_medical_records", "appointments"
-  add_foreign_key "patients", "users", name: "patients_user_id_fkey"
+  add_foreign_key "patients", "users", name: "patients_user_id_fkey", on_update: :cascade, on_delete: :nullify
   add_foreign_key "payments", "orders", name: "payments_order_id_fkey", on_delete: :cascade
   add_foreign_key "reminder_histories", "therapists", name: "fk_reminder_histories_therapist", on_delete: :cascade
   add_foreign_key "reschedule_request_histories", "reschedule_requests", name: "fk_reschedule_request_histories_request", on_delete: :cascade
@@ -1078,7 +1080,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_25_081143) do
   add_foreign_key "user_addresses", "addresses", name: "user_addresses_address_id_fkey", on_delete: :cascade
   add_foreign_key "user_addresses", "users", name: "fk_users_addresses"
   add_foreign_key "user_addresses", "users", name: "user_addresses_user_id_fkey", on_delete: :cascade
-  add_foreign_key "user_roles", "users", name: "fk_users_roles"
   add_foreign_key "user_roles", "users", name: "user_roles_user_id_fkey", on_update: :cascade, on_delete: :cascade
   add_foreign_key "voucher_packages", "packages", name: "fk_voucher_packages_package", on_delete: :cascade
   add_foreign_key "voucher_packages", "vouchers", name: "fk_voucher_packages_voucher", on_delete: :cascade
