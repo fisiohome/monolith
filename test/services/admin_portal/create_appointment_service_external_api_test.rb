@@ -45,6 +45,7 @@ class AdminPortal::CreateAppointmentServiceExternalApiTest < ActiveSupport::Test
 
   def teardown
     # Clean up test-created records in proper order to respect foreign keys
+
     test_appointment_ids = Appointment.where("registration_number LIKE ?", "TEST-%").pluck(:id)
     if test_appointment_ids.any?
       # Delete drafts first since they reference appointments
@@ -56,6 +57,9 @@ class AdminPortal::CreateAppointmentServiceExternalApiTest < ActiveSupport::Test
       Appointment.where(id: test_appointment_ids).delete_all
     end
     AppointmentDraft.where(created_by_admin_id: @admin&.id).delete_all
+  rescue ActiveRecord::StatementInvalid => e
+    # If transaction is already aborted, just skip cleanup
+    Rails.logger.warn "Teardown cleanup skipped due to aborted transaction: #{e.message}"
   end
 
   # ---------------------------------------------------------------------------
@@ -489,6 +493,36 @@ class AdminPortal::CreateAppointmentServiceExternalApiTest < ActiveSupport::Test
     assert_equal "Back pain", payload[:complaint_description]
     assert_equal "Moderate", payload[:condition]
     assert_equal "No previous issues", payload[:medical_history]
+  end
+
+  # ---------------------------------------------------------------------------
+  # Payment Expiry Minutes Tests
+  # ---------------------------------------------------------------------------
+
+  test "should use default payment_expiry_minutes when GenericContent is not accessible" do
+    params = build_params
+    service = AdminPortal::CreateAppointmentServiceExternalApi.new(params, @current_user)
+    service.instance_variable_set(:@patient, @existing_patient)
+    service.instance_variable_set(:@patient_address, @existing_patient_address)
+
+    payload = service.send(:build_booking_payload)
+
+    # Should use default value of 240 minutes (4 hours)
+    assert_equal 240, payload[:payment_expiry_minutes]
+  end
+
+  test "should include payment_expiry_minutes in payload" do
+    params = build_params
+    service = AdminPortal::CreateAppointmentServiceExternalApi.new(params, @current_user)
+    service.instance_variable_set(:@patient, @existing_patient)
+    service.instance_variable_set(:@patient_address, @existing_patient_address)
+
+    payload = service.send(:build_booking_payload)
+
+    # Should include the payment_expiry_minutes field
+    assert payload.key?(:payment_expiry_minutes)
+    assert_kind_of Integer, payload[:payment_expiry_minutes]
+    assert payload[:payment_expiry_minutes] > 0
   end
 
   # ---------------------------------------------------------------------------

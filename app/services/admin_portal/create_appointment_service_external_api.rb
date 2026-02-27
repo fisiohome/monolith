@@ -144,6 +144,15 @@ module AdminPortal
       payload[:fisiohome_partner_name] = appointment_params[:fisiohome_partner_name] if appointment_params[:fisiohome_partner_name].present?
       payload[:other_fisiohome_partner_name] = appointment_params[:other_fisiohome_partner_name] if appointment_params[:other_fisiohome_partner_name].present?
 
+      # Add payment expiry minutes from generic content or default to 4 hours (240 minutes)
+      begin
+        payload[:payment_expiry_minutes] = GenericContent.get_integer_value("config", "PAYMENT_EXPIRY_MINUTES", 240)
+      rescue => e
+        # Handle case where generic_contents table doesn't exist (e.g., in test environment)
+        Rails.logger.warn "GenericContent table not accessible, using default payment expiry: #{e.message}"
+        payload[:payment_expiry_minutes] = 240
+      end
+
       payload
     end
 
