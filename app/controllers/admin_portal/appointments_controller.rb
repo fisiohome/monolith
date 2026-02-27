@@ -110,15 +110,32 @@ module AdminPortal
 
       render inertia: "AdminPortal/Appointment/Reschedule", props: deep_transform_keys_to_camel_case({
         appointment: appointment_list,
-        therapists: -> { preparation.fetch_therapists },
+        therapists: InertiaRails.optional { preparation.fetch_therapists },
         options_data: InertiaRails.defer { preparation.fetch_options_data }
       })
     end
 
     def reschedule
-      result = UpdateAppointmentService.new(@appointment, params, current_user).call
+      logger.info("Rescheduling appointment #{@appointment&.registration_number} by user #{current_user&.email}")
 
-      if result[:success]
+      begin
+        result = UpdateAppointmentService.new(@appointment, params, current_user).call
+      rescue => e
+        logger.error("Exception in UpdateAppointmentService: #{e.class} - #{e.message}")
+        flash[:alert] = "An error occurred: #{e.message}"
+        redirect_to reschedule_admin_portal_appointments_path(@appointment)
+        return
+      end
+
+      # Handle case where service returns nil
+      if result.nil?
+        logger.error("UpdateAppointmentService returned nil result")
+        flash[:alert] = "An unexpected error occurred while rescheduling"
+        redirect_to reschedule_admin_portal_appointments_path(@appointment)
+        return
+      end
+
+      if result&.dig(:success)
         notice_msg =
           if result[:changed]
             "Appointment was successfully rescheduled."
@@ -128,18 +145,29 @@ module AdminPortal
 
         redirect_to admin_portal_appointments_path(rescheduled: @appointment.id), notice: notice_msg
       else
-        logger.error("Failed to reschedule: #{result[:error]}")
-        first_error = result[:error]&.full_messages&.first
-        error_message = result[:error]&.full_messages
+        error_obj = result&.dig(:error)
+        logger.error("Failed to reschedule: #{error_obj.inspect}")
+
+        # Handle different error types
+        if error_obj&.respond_to?(:full_messages)
+          error_messages = error_obj.full_messages
+          first_error = error_messages&.first || "Validation error occurred"
+          error_message = error_messages || ["Validation error occurred"]
+        else
+          first_error = error_obj.to_s
+          error_message = [error_obj.to_s]
+        end
 
         logger.error("Failed to reschedule the appointment: #{error_message}.")
         flash[:alert] = first_error
         redirect_to reschedule_admin_portal_appointments_path(@appointment),
           inertia: {
             errors: deep_transform_keys_to_camel_case(
-              result[:error]&.messages&.transform_values(&:uniq)&.merge({
-                fullMessages: error_message
-              })
+              (error_obj&.respond_to?(:messages) && error_obj.messages) ?
+                error_obj.messages.transform_values(&:uniq).merge({
+                  fullMessages: error_message
+                }) :
+                {base: [first_error], fullMessages: error_message}
             )
           }
       end
@@ -321,7 +349,6 @@ module AdminPortal
       rescue => e
         error_message = "Export failed: #{e.message}"
         Rails.logger.error error_message
-        Rails.logger.error e.backtrace.join("\n")
 
         redirect_to redirect_path, alert: error_message
       end

@@ -64,7 +64,6 @@ module Api
         end
       rescue => e
         Rails.logger.error "Draft save error: #{e.message}"
-        Rails.logger.error e.backtrace.join("\n")
         render json: {success: false, errors: [e.message]}, status: :internal_server_error
       end
 

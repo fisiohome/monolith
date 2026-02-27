@@ -174,7 +174,6 @@ class BackfillRegistrationNumbersJob < ApplicationJob
     Rails.logger.error "=" * 80
     Rails.logger.error "BACKFILL FAILED - Transaction rolled back"
     Rails.logger.error "Error: #{e.class} - #{e.message}"
-    Rails.logger.error e.backtrace.first(5).join("\n")
     Rails.logger.error "=" * 80
     raise
   end

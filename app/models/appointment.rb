@@ -4,6 +4,7 @@ class Appointment < ApplicationRecord
   # * define the attrs accessors, initializer, and the alias
   attr_accessor :updater  # Temporary attribute to track who updated
   attr_accessor :skip_auto_series_creation # Add a flag to control auto series creation
+  attr_accessor :skip_visit_sequence_validation # Add a flag to skip visit sequence validation during reschedule
 
   def initialize(*)
     super
@@ -206,7 +207,7 @@ class Appointment < ApplicationRecord
   validate :validate_paid_requires_therapist
   validate :validate_visit_sequence
   validate :unscheduled_appointment_requirements
-  validate :validate_appointment_sequence
+  validate :validate_appointment_sequence, unless: -> { skip_visit_sequence_validation? }
   validate :no_duplicate_appointment_time
   validate :no_overlapping_appointments
   validate :status_must_be_valid
@@ -414,6 +415,10 @@ class Appointment < ApplicationRecord
 
   def series_available?
     package.number_of_visit > 1
+  end
+
+  def skip_visit_sequence_validation?
+    skip_visit_sequence_validation == true
   end
 
   def unscheduled?
@@ -763,6 +768,14 @@ class Appointment < ApplicationRecord
   end
 
   def validate_appointment_sequence
+    if skip_visit_sequence_validation?
+      false
+    else
+      validate_appointment_sequence_without_condition
+    end
+  end
+
+  def validate_appointment_sequence_without_condition
     if initial_visit?
       validate_initial_visit_position
     elsif series?
@@ -786,6 +799,9 @@ class Appointment < ApplicationRecord
   end
 
   def validate_series_visit_position
+    # Skip validation if flag is set (for rescheduling)
+    return false if skip_visit_sequence_validation?
+
     # skip the validation for unscheduled series & if there's not have series
     return false unless series? && appointment_date_time.present?
 
@@ -890,13 +906,15 @@ class Appointment < ApplicationRecord
     return unless series?
     return if status_cancelled?
     # skip if there's error on validate appointment sequence
-    return if validate_appointment_sequence
+    return if validate_appointment_sequence_without_condition
 
     root = reference_appointment || self
     root.reload if root.persisted?  # Get fresh status from DB
     return if root.status_cancelled?
 
     root_status = root.status
+    return if root_status.nil? # Skip validation if root status is nil
+
     current_index = STATUS_ORDER.index(status)
     root_index = STATUS_ORDER.index(root.status)
     root_status_name = STATUS_METADATA[root_status][:name]

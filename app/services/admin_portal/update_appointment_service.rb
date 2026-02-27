@@ -46,6 +46,7 @@ module AdminPortal
     rescue ActiveRecord::RecordInvalid => e
       {success: false, error: e.record.errors, type: "RecordInvalid"}
     rescue => e
+      Rails.logger.error("UpdateAppointmentService failed: #{e.class} - #{e.message}")
       {success: false, error: e.message, type: "GeneralError"}
     end
 
@@ -53,6 +54,9 @@ module AdminPortal
 
     def apply_updates
       attrs = {}
+
+      # Skip visit sequence validation during reschedule since we handle reordering afterward
+      @appointment.skip_visit_sequence_validation = true if @appointment_params[:appointment_date_time].present?
 
       # Appointment Date/Time
       date_time_param = @appointment_params[:appointment_date_time]
