@@ -18,10 +18,6 @@ import { toast } from "sonner";
 import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
-	ResponsiveDialog,
-	type ResponsiveDialogProps,
-} from "@/components/shared/responsive-dialog";
-import {
 	AlertDialog,
 	AlertDialogAction,
 	AlertDialogCancel,
@@ -409,7 +405,31 @@ const DraftDetails = ({
 						<p className="text-xs uppercase text-muted-foreground">
 							{item.label}
 						</p>
-						{typeof item.value === "string" ? (
+						{item.label === "Last Step" ? (
+							<div>
+								<p className="font-semibold text-pretty mb-1">{item.value}</p>
+
+								{draft.currentStep === "patient_details" && (
+									<div className="flex gap-1 uppercase">
+										{draft.patientContactSource && (
+											<Badge variant="outline" className="text-xs p-0 px-0.5">
+												{draft.patientContactSource === "new"
+													? "New Contact"
+													: "Existing"}
+											</Badge>
+										)}
+
+										{draft.patientRecordSource && (
+											<Badge variant="outline" className="text-xs p-0 px-0.5">
+												{draft.patientRecordSource === "add"
+													? "New Patient"
+													: "Existing"}
+											</Badge>
+										)}
+									</div>
+								)}
+							</div>
+						) : typeof item.value === "string" ? (
 							<p className="font-semibold text-pretty">{item.value}</p>
 						) : (
 							item.value
@@ -444,13 +464,21 @@ const DraftDetails = ({
 	);
 };
 
-export default function AppointmentDrafts() {
+// Type for delete dialog state
+interface DeleteDialogState {
+	isOpen: boolean;
+	title: string;
+	description: string;
+	onOpenChange: (open: boolean) => void;
+}
+
+const AppointmentDrafts = () => {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentDraftsGlobalPageProps>();
 	const currentUser = globalProps.auth?.currentUser;
 
 	const [popoverOpen, setPopoverOpen] = useState(false);
-	const [deleteDialog, setDeleteDialog] = useState<ResponsiveDialogProps>({
+	const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>({
 		isOpen: false,
 		title: "",
 		description: "",
@@ -886,43 +914,39 @@ export default function AppointmentDrafts() {
 				</div>
 			</PageContainer>
 
-			<ResponsiveDialog {...deleteDialog}>
-				<div className="space-y-4">
-					<div className="flex justify-end gap-2 max-md:hidden">
-						<Button
-							variant="outline"
-							onClick={() =>
-								setDeleteDialog({
-									isOpen: false,
-									title: "",
-									description: "",
-									onOpenChange: () => {},
-								})
-							}
-							disabled={isDeleting}
-						>
-							Cancel
-						</Button>
-						<Button
-							variant="destructive"
+			<AlertDialog
+				open={deleteDialog.isOpen}
+				onOpenChange={(open) => {
+					if (!open) {
+						setDeleteDialog({
+							isOpen: false,
+							title: "",
+							description: "",
+							onOpenChange: () => {},
+						});
+						setDraftToDelete(null);
+					}
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>{deleteDialog.title}</AlertDialogTitle>
+						<AlertDialogDescription>
+							{deleteDialog.description}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+						<AlertDialogAction
 							onClick={confirmDeleteDraft}
 							disabled={isDeleting}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 						>
 							{isDeleting ? "Deleting..." : "Delete Draft"}
-						</Button>
-					</div>
-					<div className="md:hidden">
-						<Button
-							variant="destructive"
-							onClick={confirmDeleteDraft}
-							disabled={isDeleting}
-							className="w-full"
-						>
-							{isDeleting ? "Deleting..." : "Delete Draft"}
-						</Button>
-					</div>
-				</div>
-			</ResponsiveDialog>
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 
 			<AlertDialog
 				open={picConfirmDialog.isOpen}
@@ -954,4 +978,6 @@ export default function AppointmentDrafts() {
 			</AlertDialog>
 		</>
 	);
-}
+};
+
+export default AppointmentDrafts;

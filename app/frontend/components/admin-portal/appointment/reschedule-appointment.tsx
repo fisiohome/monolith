@@ -234,7 +234,7 @@ export const RescheduleFields = memo(function Component({
 											field.onChange(value);
 											formHooks.onResetAllTherapistState();
 										}}
-										defaultValue={field.value}
+										value={field.value}
 										orientation="horizontal"
 										className="grid grid-cols-1 gap-4 md:grid-cols-3"
 									>

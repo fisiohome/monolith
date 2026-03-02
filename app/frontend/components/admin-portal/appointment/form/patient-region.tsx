@@ -317,7 +317,7 @@ export default function PatientRegionForm() {
 						<FormControl>
 							<div className="flex items-center">
 								<Select
-									defaultValue={field.value}
+									value={field.value}
 									onValueChange={(value) => {
 										onResetCoordinate();
 										field.onChange(value);

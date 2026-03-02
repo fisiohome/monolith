@@ -274,7 +274,7 @@ export default function PatientContactForm() {
 
 													onHandleContactSource();
 												}}
-												defaultValue={field.value}
+												value={field.value}
 												orientation="horizontal"
 												className="grid grid-cols-2 gap-4"
 											>

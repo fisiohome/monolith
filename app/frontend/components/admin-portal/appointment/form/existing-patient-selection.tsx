@@ -572,7 +572,7 @@ export default function ExistingPatientSelection() {
 										field.onChange(event);
 										onHandleChangePatientSource();
 									}}
-									defaultValue={field.value}
+									value={field.value}
 									orientation="horizontal"
 									className="grid grid-cols-2 gap-4"
 								>

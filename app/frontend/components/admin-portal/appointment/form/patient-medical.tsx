@@ -150,7 +150,7 @@ export default function PatientMedicalForm() {
 											<FormControl>
 												<RadioGroup
 													onValueChange={field.onChange}
-													defaultValue={field.value}
+													value={field.value}
 													orientation="horizontal"
 													className="flex flex-col gap-3"
 												>

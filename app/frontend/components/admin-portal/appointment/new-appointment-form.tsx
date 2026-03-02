@@ -1013,7 +1013,7 @@ export function AppointmentSchedulingForm() {
 												field.onChange(value);
 												onResetAllTherapistState();
 											}}
-											defaultValue={field.value}
+											value={field.value}
 											orientation="horizontal"
 											className="grid grid-cols-1 gap-4 md:grid-cols-3"
 										>
@@ -1326,7 +1326,7 @@ export function AdditionalSettingsForm() {
 								<FormControl>
 									<RadioGroup
 										onValueChange={field.onChange}
-										defaultValue={String(!!field.value)}
+										value={String(!!field.value)}
 										orientation="horizontal"
 										className="flex flex-row items-center gap-5"
 									>

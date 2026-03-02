@@ -3,7 +3,7 @@ module AppointmentDraftsHelper
     @current_admin ||= current_user.admin
   end
 
-  def serialize_draft(draft)
+  def serialize_draft(draft, include_form_data: false)
     result = {
       id: draft.id,
       created_by_admin: {
@@ -39,6 +39,16 @@ module AppointmentDraftsHelper
         }
       end
     end
+
+    # Include form data if present and option is enabled
+    if include_form_data && draft.form_data.present?
+      result[:form_data] = draft.form_data
+    end
+
+    # Extract specific fields from form data for easier access
+    # JSONB columns return hash objects directly in Rails
+    result[:patient_record_source] = draft.form_data&.dig("formOptions", "patientRecordSource")
+    result[:patient_contact_source] = draft.form_data&.dig("formOptions", "patientContactSource")
 
     result
   end

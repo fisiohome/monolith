@@ -362,7 +362,7 @@ export default function PatientBasicInfoForm() {
 											<FormControl>
 												<RadioGroup
 													onValueChange={field.onChange}
-													defaultValue={field.value}
+													value={field.value}
 													orientation="horizontal"
 													className="grid grid-cols-2 gap-4"
 												>

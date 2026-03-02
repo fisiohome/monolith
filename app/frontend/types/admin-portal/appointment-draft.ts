@@ -22,4 +22,7 @@ export interface AppointmentDraft {
 		email: string | null;
 		isPrimary: boolean;
 	}>;
+	formData?: Record<string, any>;
+	patientRecordSource?: string;
+	patientContactSource?: string;
 }
