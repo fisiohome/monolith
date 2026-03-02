@@ -1,76 +1,76 @@
 {
-  "title": "Settings",
-  "description": "Manage your account settings and preferences.",
-  "account_security": {
-    "title": "Account and Security Settings",
-    "tab": {
-      "title": "Security",
-      "description": "About your security settings."
-    },
-    "change_password": {
-      "title": "Change Password",
-      "description": "Update your password to keep your account secure.",
-      "alert": "Make sure it's at least 8 characters long and includes a mix of letters, numbers, and a symbols or special characters.",
-      "form": {
-        "email": {
-          "label": "Email",
-          "placeholder": "Enter the email"
-        },
-        "new_password": {
-          "label": "New Password",
-          "placeholder": "Enter the new password"
-        },
-        "password_confirmation": {
-          "label": "Password Confirmation",
-          "placeholder": "Enter the password confirmation"
-        },
-        "current_password": {
-          "label": "Current Password",
-          "placeholder": "Enter the current password"
-        }
-      }
-    }
-  },
-  "appearance": {
-    "title": "Appearance Settings",
-    "tab": {
-      "title": "Appearance",
-      "description": "Customize the appearance of your account."
-    },
-    "language": {
-      "title": "Language",
-      "description": "Choose the language that you are most comfortable with to enhance your user experience.",
-      "choice": {
-        "english": "English",
-        "indonesian": "Indonesian"
-      }
-    },
-    "theme": {
-      "title": "Theme",
-      "description": "Select the theme for the interface.",
-      "choice": {
-        "system": "System Device",
-        "light": "Light",
-        "dark": "Dark"
-      }
-    },
-    "motion": {
-      "title": "Motion & Animation",
-      "description": "Enable or disable interface animations for a more comfortable experience.",
-      "choice": {
-        "title": "On-Off",
-        "description": "Turning off motion can help reduce distractions or discomfort for sensitive users.",
-        "on": "On",
-        "off": "Off"
-      }
-    },
-    "timeFormat": {
-      "title": "Time Format",
-      "description": "Choose how time is displayed throughout the application.",
-      "choice": {
-        "12": "12-hour (AM/PM)",
-        "24": "24-hour"
-      }
-    }
-  }
+	"title": "Settings",
+	"description": "Manage your account settings and preferences.",
+	"account_security": {
+		"title": "Account and Security Settings",
+		"tab": {
+			"title": "Security",
+			"description": "About your security settings."
+		},
+		"change_password": {
+			"title": "Change Password",
+			"description": "Update your password to keep your account secure.",
+			"alert": "Make sure it's at least 8 characters long and includes a mix of letters, numbers, and a symbols or special characters.",
+			"form": {
+				"email": {
+					"label": "Email",
+					"placeholder": "Enter the email"
+				},
+				"new_password": {
+					"label": "New Password",
+					"placeholder": "Enter the new password"
+				},
+				"password_confirmation": {
+					"label": "Password Confirmation",
+					"placeholder": "Enter the password confirmation"
+				},
+				"current_password": {
+					"label": "Current Password",
+					"placeholder": "Enter the current password"
+				}
+			}
+		}
+	},
+	"appearance": {
+		"title": "Appearance Settings",
+		"tab": {
+			"title": "Appearance",
+			"description": "Customize the appearance of your account."
+		},
+		"language": {
+			"title": "Language",
+			"description": "Choose the language that you are most comfortable with to enhance your user experience.",
+			"choice": {
+				"english": "English",
+				"indonesian": "Indonesian"
+			}
+		},
+		"theme": {
+			"title": "Theme",
+			"description": "Select the theme for the interface.",
+			"choice": {
+				"system": "System Device",
+				"light": "Light",
+				"dark": "Dark"
+			}
+		},
+		"motion": {
+			"title": "Motion & Animation",
+			"description": "Enable or disable interface animations for a more comfortable experience.",
+			"choice": {
+				"title": "On-Off",
+				"description": "Turning off motion can help reduce distractions or discomfort for sensitive users.",
+				"on": "On",
+				"off": "Off"
+			}
+		},
+		"timeFormat": {
+			"title": "Time Format",
+			"description": "Choose how time is displayed throughout the application.",
+			"choice": {
+				"12": "12-hour (AM/PM)",
+				"24": "24-hour"
+			}
+		}
+	}
 }

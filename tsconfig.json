@@ -1,32 +1,22 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ],
-  "compilerOptions": {
-    /* additional configs */
-    "baseUrl": "./app/frontend",
-    "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@/lib/*": [
-        "./lib/*"
-      ],
-      "@/styles/*": [
-        "./styles/*"
-      ],
-      "@/assets/*": [
-        "../assets/*"
-      ]
-    },
-  }
+	"files": [],
+	"references": [
+		{
+			"path": "./tsconfig.app.json"
+		},
+		{
+			"path": "./tsconfig.node.json"
+		}
+	],
+	"compilerOptions": {
+		/* additional configs */
+		"baseUrl": "./app/frontend",
+		"paths": {
+			"@/*": ["./*"],
+			"@/components/*": ["./components/*"],
+			"@/lib/*": ["./lib/*"],
+			"@/styles/*": ["./styles/*"],
+			"@/assets/*": ["../assets/*"]
+		}
+	}
 }

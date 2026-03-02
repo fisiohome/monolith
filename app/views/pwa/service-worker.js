@@ -1,26 +1,26 @@
 // Add a service worker for processing Web Push notifications:
 
 // The install event is fired when the service worker is first installed
-self.addEventListener('install', (event) => {
-  console.log('Service Worker installed');
+self.addEventListener("install", (_event) => {
+	console.log("Service Worker installed");
 });
 
 // The activate event is fired after the install event when the service worker is actually controlling the page
-self.addEventListener('activate', (event) => {
-  console.log('Service Worker activated');
+self.addEventListener("activate", (_event) => {
+	console.log("Service Worker activated");
 });
 
 self.addEventListener("push", async (event) => {
-  /**
-   * Extracts the title and options from the event data.
-   *
-   * @param {Event} event - The event object containing the data.
-   * @returns {Promise<{title: string, options: Object}>} A promise that resolves to an object containing the title and options.
-   */
-  console.log(await event.data)
-  const { title, options } = await event.data.json()
-  event.waitUntil(self.registration.showNotification(title, options))
-})
+	/**
+	 * Extracts the title and options from the event data.
+	 *
+	 * @param {Event} event - The event object containing the data.
+	 * @returns {Promise<{title: string, options: Object}>} A promise that resolves to an object containing the title and options.
+	 */
+	console.log(await event.data);
+	const { title, options } = await event.data.json();
+	event.waitUntil(self.registration.showNotification(title, options));
+});
 
 // self.addEventListener("notificationclick", function (event) {
 //   event.notification.close()
