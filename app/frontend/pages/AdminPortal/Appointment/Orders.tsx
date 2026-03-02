@@ -3,11 +3,16 @@ import type { ColumnDef, Row } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
+	Ban,
+	Cctv,
 	CheckIcon,
+	Clock3,
 	Copy,
 	CopyIcon,
+	DownloadIcon,
 	ExternalLinkIcon,
 	EyeIcon,
+	MapPinIcon,
 	MoreHorizontal,
 	SearchIcon,
 	X,
@@ -16,6 +21,7 @@ import { startTransition, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
+import { UpdatePICForm } from "@/components/admin-portal/appointment/feature-form";
 import ApptPagination from "@/components/admin-portal/appointment/pagination-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
@@ -57,6 +63,11 @@ import {
 } from "@/components/ui/table";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { cn, debounce, populateQueryParams } from "@/lib/utils";
+import type { Admin } from "@/types/admin-portal/admin";
+import type {
+	Appointment,
+	AppointmentStatuses,
+} from "@/types/admin-portal/appointment";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
 
@@ -65,6 +76,7 @@ import type { Metadata } from "@/types/pagy";
 interface OrderRow {
 	id: string;
 	registrationNumber: string;
+	patientId: string;
 	patientName: string | null;
 	packageName: string | null;
 	serviceName: string | null;
@@ -77,6 +89,15 @@ interface OrderRow {
 	invoiceNumber: string | null;
 	invoiceUrl: string | null;
 	createdAt: string;
+	therapistId: string | null;
+	firstAppointmentId: string | null;
+	appointments: {
+		id: string;
+		visitNumber: number;
+		totalPackageVisits: number;
+	}[];
+	latitude: number | null;
+	longitude: number | null;
 }
 
 interface OrderDetail {
@@ -139,6 +160,14 @@ interface OrdersPageProps {
 		metadata: Metadata;
 	};
 	selectedOrder?: OrderDetail;
+	selectedAppointment?: Appointment;
+	optionsData?: {
+		admins: Admin[];
+		statuses: {
+			key: keyof typeof AppointmentStatuses;
+			value: AppointmentStatuses;
+		}[];
+	};
 }
 
 interface OrdersGlobalPageProps extends BaseGlobalPageProps, OrdersPageProps {
@@ -154,7 +183,7 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
 	PAID: "bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80",
 	OVERPAID: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100/80",
 	REFUNDED:
-		"bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-100/80",
+		"bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-100/80",
 };
 
 const ORDER_STATUS_STYLES: Record<string, string> = {
@@ -171,7 +200,7 @@ const ORDER_STATUS_STYLES: Record<string, string> = {
 		"bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80",
 	CANCELLED: "bg-red-100 text-red-700 border-red-200 hover:bg-red-100/80",
 	REFUNDED:
-		"bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-100/80",
+		"bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-100/80",
 };
 
 const APPOINTMENT_STATUS_STYLES: Record<string, string> = {
@@ -216,6 +245,7 @@ const OrderActionsCell = ({
 	onOpenDetail: (id: string) => void;
 }) => {
 	const order = row.original;
+	const { props: globalProps, url: pageURL } = usePage<OrdersGlobalPageProps>();
 
 	const handleCopy = useCallback(async (value: string, label: string) => {
 		try {
@@ -248,6 +278,105 @@ const OrderActionsCell = ({
 		handleCopy(order.invoiceUrl, "Invoice URL");
 	}, [order.invoiceUrl, handleCopy]);
 
+	const onCopyPatientId = useCallback(() => {
+		if (!order.patientId) {
+			toast.error("Patient ID unavailable");
+			return;
+		}
+		handleCopy(order.patientId, "Patient ID");
+	}, [order.patientId, handleCopy]);
+
+	const onCopyTherapistId = useCallback(() => {
+		if (!order.therapistId) {
+			toast.error("Therapist ID unavailable");
+			return;
+		}
+		handleCopy(order.therapistId, "Therapist ID");
+	}, [order.therapistId, handleCopy]);
+
+	const onDownloadSoapReport = useCallback(
+		async (appointmentId: string, visitNumber: number, totalVisits: number) => {
+			try {
+				const url = `/admin-portal/appointments/${appointmentId}/soap-report`;
+				window.open(url, "_blank", "noopener,noreferrer");
+				toast.success(`Downloading SOAP Visit ${visitNumber}/${totalVisits}`);
+			} catch (error) {
+				const message = `Failed to download SOAP report`;
+				console.error(`${message}: ${error}`);
+				toast.error(message);
+			}
+		},
+		[],
+	);
+
+	const onViewOnGoogleMaps = useCallback(() => {
+		if (!order.latitude || !order.longitude) {
+			toast.error("Location unavailable");
+			return;
+		}
+		window.open(
+			`https://maps.google.com/?q=${order.latitude},${order.longitude}`,
+			"_blank",
+		);
+	}, [order.latitude, order.longitude]);
+
+	// for open the update pic form
+	const openUpdatePicForm = useCallback(() => {
+		if (order.firstAppointmentId) {
+			router.get(
+				pageURL,
+				{ update_pic: order.firstAppointmentId },
+				{
+					only: [
+						"adminPortal",
+						"flash",
+						"errors",
+						"selectedAppointment",
+						"optionsData",
+					],
+					preserveScroll: true,
+					preserveState: true,
+				},
+			);
+		} else {
+			toast.error("Appointment ID unavailable");
+		}
+	}, [order.firstAppointmentId, pageURL]);
+
+	// for open the reschedule page
+	const openReschedulePage = useCallback(
+		(id: string) => {
+			if (id) {
+				router.visit(
+					`${globalProps.adminPortal.router.adminPortal.appointment.index}/${id}/reschedule`,
+				);
+			} else {
+				toast.error("Appointment ID unavailable");
+			}
+		},
+		[globalProps.adminPortal.router.adminPortal.appointment.index],
+	);
+
+	// for open the cancel appointment modal
+	const openCancelPage = useCallback(
+		(id: string) => {
+			if (id) {
+				router.get(
+					pageURL,
+					{ cancel: id },
+					{
+						only: ["adminPortal", "flash", "errors", "selectedAppointment"],
+						preserveScroll: true,
+						preserveState: true,
+					},
+				);
+			} else {
+				toast.error("Appointment ID unavailable");
+			}
+		},
+		[pageURL],
+	);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -267,9 +396,16 @@ const OrderActionsCell = ({
 						<EyeIcon className="opacity-60" aria-hidden="true" />
 						View details
 					</DropdownMenuItem>
-				</DropdownMenuGroup>
-				<DropdownMenuSeparator />
-				<DropdownMenuGroup>
+					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							onViewOnGoogleMaps();
+						}}
+						disabled={!order.latitude || !order.longitude}
+					>
+						<MapPinIcon className="opacity-60" aria-hidden="true" />
+						View on Google Maps
+					</DropdownMenuItem>
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>
 							<Copy className="opacity-60" aria-hidden="true" />
@@ -283,7 +419,10 @@ const OrderActionsCell = ({
 								>
 									Invoice URL
 								</DropdownMenuItem>
-								<DropdownMenuItem onSelect={onCopyRegNumber}>
+								<DropdownMenuItem
+									onSelect={onCopyRegNumber}
+									disabled={!order.registrationNumber}
+								>
 									Appt Reg. Number
 								</DropdownMenuItem>
 								<DropdownMenuItem
@@ -292,10 +431,108 @@ const OrderActionsCell = ({
 								>
 									No. Invoice
 								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={onCopyPatientId}
+									disabled={!order.patientId}
+								>
+									Patient ID
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={onCopyTherapistId}
+									disabled={!order.therapistId}
+								>
+									Therapist ID
+								</DropdownMenuItem>
+							</DropdownMenuSubContent>
+						</DropdownMenuPortal>
+					</DropdownMenuSub>
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger disabled={!order.appointments?.length}>
+							<DownloadIcon className="opacity-60" aria-hidden="true" />
+							Download
+						</DropdownMenuSubTrigger>
+						<DropdownMenuPortal>
+							<DropdownMenuSubContent>
+								{order.appointments?.map((appt) => (
+									<DropdownMenuItem
+										key={appt.id}
+										onSelect={() => {
+											onDownloadSoapReport(
+												appt.id,
+												appt.visitNumber,
+												appt.totalPackageVisits,
+											);
+										}}
+									>
+										Download SOAP Visit {appt.visitNumber}/
+										{appt.totalPackageVisits}
+									</DropdownMenuItem>
+								))}
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>
 					</DropdownMenuSub>
 				</DropdownMenuGroup>
+
+				<DropdownMenuSeparator />
+
+				<DropdownMenuGroup>
+					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							openUpdatePicForm();
+						}}
+						disabled={!order.firstAppointmentId}
+					>
+						<Cctv className="opacity-60" aria-hidden="true" />
+						Update PIC
+					</DropdownMenuItem>
+
+					{order.status !== "CANCELLED" && order.status !== "REFUNDED" ? (
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger disabled={!order.appointments?.length}>
+								<Clock3 className="opacity-60" aria-hidden="true" />
+								Reschedule
+							</DropdownMenuSubTrigger>
+							<DropdownMenuPortal>
+								<DropdownMenuSubContent>
+									{order.appointments?.map((appt) => (
+										<DropdownMenuItem
+											key={appt.id}
+											onSelect={(e) => {
+												e.preventDefault();
+												openReschedulePage(appt.id);
+											}}
+										>
+											Visit {appt.visitNumber}/{appt.totalPackageVisits}
+										</DropdownMenuItem>
+									))}
+								</DropdownMenuSubContent>
+							</DropdownMenuPortal>
+						</DropdownMenuSub>
+					) : null}
+				</DropdownMenuGroup>
+
+				{order.status !== "CANCELLED" && order.status !== "REFUNDED" ? (
+					<>
+						<DropdownMenuSeparator />
+
+						<DropdownMenuGroup>
+							<DropdownMenuItem
+								className="text-destructive focus:text-destructive"
+								onSelect={(e) => {
+									e.preventDefault();
+									if (order.firstAppointmentId) {
+										openCancelPage(order.firstAppointmentId);
+									}
+								}}
+								disabled={!order.firstAppointmentId}
+							>
+								<Ban className="opacity-60" aria-hidden="true" />
+								Cancel Booking
+							</DropdownMenuItem>
+						</DropdownMenuGroup>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -904,15 +1141,20 @@ export default function AppointmentOrders() {
 		[metadata],
 	);
 
-	// ── Dialog (view order detail) ─────────────────────────────────────────
+	// ── Dialogs ─────────────────────────────────────────
 	const dialogMode = useMemo(() => {
 		const q = globalProps.adminPortal?.currentQuery;
-		return !!q?.viewOrder;
+		return {
+			viewOrder: !!q?.viewOrder,
+			updatePIC: !!q?.updatePic,
+		};
 	}, [globalProps.adminPortal?.currentQuery]);
 
-	const dialog = useMemo<Omit<ResponsiveDialogProps, "children">>(
+	const { t } = useTranslation("appointments");
+
+	const dialogViewOrder = useMemo<Omit<ResponsiveDialogProps, "children">>(
 		() => ({
-			isOpen: dialogMode,
+			isOpen: dialogMode.viewOrder,
 			title: "Order Details",
 			description: "View order details and related appointments",
 			dialogWidth: "680px",
@@ -936,7 +1178,41 @@ export default function AppointmentOrders() {
 				}
 			},
 		}),
-		[dialogMode, pageURL],
+		[dialogMode.viewOrder, pageURL],
+	);
+
+	const dialogUpdatePIC = useMemo<Omit<ResponsiveDialogProps, "children">>(
+		() => ({
+			isOpen: dialogMode.updatePIC,
+			title: t("modal.update_pic.title"),
+			description: t("modal.update_pic.description"),
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						update_pic: null,
+					});
+					startTransition(() => {
+						router.get(
+							fullUrl,
+							{},
+							{
+								only: [
+									"adminPortal",
+									"flash",
+									"errors",
+									"selectedAppointment",
+									"optionsData",
+								],
+								preserveScroll: true,
+								preserveState: true,
+								replace: false,
+							},
+						);
+					});
+				}
+			},
+		}),
+		[dialogMode.updatePIC, pageURL, t],
 	);
 
 	const openOrderDetail = useCallback(
@@ -1091,11 +1367,20 @@ export default function AppointmentOrders() {
 			</PageContainer>
 
 			{/* Order Detail Dialog */}
-			{globalProps?.selectedOrder && dialog.isOpen && (
-				<ResponsiveDialog {...dialog}>
+			{globalProps?.selectedOrder && dialogViewOrder.isOpen && (
+				<ResponsiveDialog {...dialogViewOrder}>
 					<OrderDetailContent
 						order={globalProps.selectedOrder}
-						onClose={() => dialog.onOpenChange?.(false)}
+						onClose={() => dialogViewOrder.onOpenChange?.(false)}
+					/>
+				</ResponsiveDialog>
+			)}
+
+			{/* Update PIC Dialog */}
+			{globalProps?.selectedAppointment && dialogUpdatePIC.isOpen && (
+				<ResponsiveDialog {...dialogUpdatePIC}>
+					<UpdatePICForm
+						selectedAppointment={globalProps.selectedAppointment}
 					/>
 				</ResponsiveDialog>
 			)}

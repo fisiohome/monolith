@@ -51,6 +51,7 @@ Rails.application.routes.draw do
             put "sync-data-master" => "appointments#sync_data_master"
             get "export" => "appointments#export", :default => {format: :csv}
             get "orders" => "appointments#orders"
+            get ":id/soap-report" => "appointments#download_soap_pdf"
           end
         end
 

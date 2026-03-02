@@ -40,16 +40,7 @@ export interface ApptTableProps {
 }
 
 const ApptTable = memo(({ data }: ApptTableProps) => {
-	const { props: globalProps } = usePage<AppointmentIndexGlobalPageProps>();
 	const { tzDate } = useDateContext();
-	const isSuperAdmin = useMemo(
-		() => globalProps.auth.currentUser?.["isSuperAdmin?"] || false,
-		[globalProps.auth.currentUser],
-	);
-	const isAdminSupervisor = useMemo(
-		() => globalProps.auth.currentUser?.["isAdminSupervisor?"] || false,
-		[globalProps.auth.currentUser],
-	);
 	const columns = useMemo(() => getColumns(), []);
 	const table = useReactTable({
 		data,
@@ -96,12 +87,8 @@ const ApptTable = memo(({ data }: ApptTableProps) => {
 				<TableBody>
 					{table.getRowModel().rows?.length ? (
 						table.getRowModel().rows.map((row) => {
-							const isAdminPIC =
-								row.original.admins?.some(
-									(admin) => admin.id === globalProps.auth.currentUser?.id,
-								) || false;
-
 							const schedule = row.original;
+
 							// Check if the appointment was created within the last 24 hours
 							const isFreshAppt =
 								differenceInHours(
@@ -158,9 +145,6 @@ const ApptTable = memo(({ data }: ApptTableProps) => {
 													>
 														<AppointmentDetails
 															row={row}
-															isSuperAdmin={isSuperAdmin}
-															isAdminSupervisor={isAdminSupervisor}
-															isAdminPIC={isAdminPIC}
 															isFreshAppt={isFreshAppt}
 														/>
 													</motion.div>
@@ -189,9 +173,6 @@ export default ApptTable;
 // * expandable component
 export interface AppointmentDetailsProps {
 	row: Row<Appointment>;
-	isSuperAdmin: boolean;
-	isAdminSupervisor: boolean;
-	isAdminPIC: boolean;
 	isFreshAppt?: boolean;
 }
 
@@ -200,8 +181,7 @@ export const AppointmentDetails = memo((props: AppointmentDetailsProps) => {
 	const isMobile = useIsMobile();
 	const { url: pageURL } = usePage<AppointmentIndexGlobalPageProps>();
 
-	const { row, isSuperAdmin, isAdminSupervisor, isAdminPIC, isFreshAppt } =
-		props;
+	const { row, isFreshAppt } = props;
 	const appointment = row.original;
 	const seeDetailVisitSeries = useCallback(
 		(registrationNumber: string) => {
@@ -281,13 +261,7 @@ export const AppointmentDetails = memo((props: AppointmentDetailsProps) => {
 					</div>
 				</div>
 				<div className="col-span-full">
-					<AppointmentActionButtons
-						schedule={appointment}
-						isExpanded={true}
-						isSuperAdmin={isSuperAdmin}
-						isAdminPIC={isAdminPIC}
-						isAdminSupervisor={isAdminSupervisor}
-					/>
+					<AppointmentActionButtons schedule={appointment} isExpanded={true} />
 				</div>
 			</div>
 		</div>

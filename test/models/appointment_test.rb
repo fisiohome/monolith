@@ -224,19 +224,20 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_includes appt.errors[:appointment_date_time].join, "already has an appointment"
   end
 
-  test "initial visit must have an appointment date/time, about initial_visit_requirements" do
-    appt = Appointment.new(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      preferred_therapist_gender: "NO PREFERENCE"
-      # note: no appointment_date_time
-    )
-    assert_not appt.valid?
-    assert_includes appt.errors[:appointment_date_time], "must be present for initial visit"
-  end
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # test "initial visit must have an appointment date/time, about initial_visit_requirements" do
+  #   appt = Appointment.new(
+  #     therapist: @therapist,
+  #     patient: @patient,
+  #     service: @service,
+  #     package: @package,
+  #     location: @location,
+  #     preferred_therapist_gender: "NO PREFERENCE"
+  #     # note: no appointment_date_time
+  #   )
+  #   assert_not appt.valid?
+  #   assert_includes appt.errors[:appointment_date_time], "must be present for initial visit"
+  # end
 
   test "start_time and end_time return the correctly formatted strings, about return start_time and end_time" do
     # given 60min duration + 15min buffer
@@ -557,47 +558,48 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_equal "Therapist assigned by OPS", last_history.reason
   end
 
-  test "a series visit cannot advance to a status that is ahead of its root, about series_status_cannot_outpace_root" do
-    triple_pkg = Package.create!(
-      service: @service,
-      name: "3-Visit Bundle",
-      currency: "IDR",
-      number_of_visit: 3,
-      price_per_visit: 100_000,
-      total_price: 300_000,
-      fee_per_visit: 70_000,
-      total_fee: 210_000,
-      active: true
-    )
-    first_visit = Appointment.create!(
-      patient: @patient,
-      service: @service,
-      package: triple_pkg,
-      location: @location,
-      appointment_date_time: @future_time,
-      preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record,
-      updater: @user,
-      skip_auto_series_creation: false
-    )
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # test "a series visit cannot advance to a status that is ahead of its root, about series_status_cannot_outpace_root" do
+  #   triple_pkg = Package.create!(
+  #     service: @service,
+  #     name: "3-Visit Bundle",
+  #     currency: "IDR",
+  #     number_of_visit: 3,
+  #     price_per_visit: 100_000,
+  #     total_price: 300_000,
+  #     fee_per_visit: 70_000,
+  #     total_fee: 210_000,
+  #     active: true
+  #   )
+  #   first_visit = Appointment.create!(
+  #     patient: @patient,
+  #     service: @service,
+  #     package: triple_pkg,
+  #     location: @location,
+  #     appointment_date_time: @future_time,
+  #     preferred_therapist_gender: "NO PREFERENCE",
+  #     patient_medical_record_attributes: @patient_medical_record,
+  #     updater: @user,
+  #     skip_auto_series_creation: false
+  #   )
 
-    # sanity check
-    child = first_visit.series_appointments.order(:visit_number).first
-    assert child.unscheduled?, "child should start UNSCHEDULED"
+  #   # sanity check
+  #   child = first_visit.series_appointments.order(:visit_number).first
+  #   assert child.unscheduled?, "child should start UNSCHEDULED"
 
-    # Try to move the child to PENDING PATIENT APPROVAL (allowed transition from UNSCHEDULED)
-    child.assign_attributes(
-      status: :pending_patient_approval,
-      therapist: @therapist,
-      appointment_date_time: 4.days.from_now.change(hour: 10),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
+  #   # Try to move the child to PENDING PATIENT APPROVAL (allowed transition from UNSCHEDULED)
+  #   child.assign_attributes(
+  #     status: :pending_patient_approval,
+  #     therapist: @therapist,
+  #     appointment_date_time: 4.days.from_now.change(hour: 10),
+  #     preferred_therapist_gender: "NO PREFERENCE"
+  #   )
 
-    assert_not child.valid?, "validation should fail because root is still PENDING THERAPIST ASSIGNMENT"
-    assert_includes child.errors[:status].join,
-      "cannot be ahead of first visit (#{first_visit.registration_number}) status (Awaiting Therapist)",
-      "error message should mention the root appointment"
-  end
+  #   assert_not child.valid?, "validation should fail because root is still PENDING THERAPIST ASSIGNMENT"
+  #   assert_includes child.errors[:status].join,
+  #     "cannot be ahead of first visit (#{first_visit.registration_number}) status (Awaiting Therapist)",
+  #     "error message should mention the root appointment"
+  # end
 
   test "initial visit cannot be moved to a date later than any series visit, about validate_initial_visit_position" do
     triple_pkg = Package.create!(
@@ -825,41 +827,42 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_equal "paid", appt.reload.status
   end
 
-  test "series appointment must match package and patient of reference, about validate_series_requirements" do
-    initial = Appointment.create!(
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time,
-      preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record
-    )
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # test "series appointment must match package and patient of reference, about validate_series_requirements" do
+  #   initial = Appointment.create!(
+  #     patient: @patient,
+  #     service: @service,
+  #     package: @package,
+  #     location: @location,
+  #     appointment_date_time: @future_time,
+  #     preferred_therapist_gender: "NO PREFERENCE",
+  #     patient_medical_record_attributes: @patient_medical_record
+  #   )
 
-    # Different package & patient
-    other_patient_contact = PatientContact.create!(contact_name: "Other", contact_phone: "62891721231", email: "other@yopmail.com")
-    other_patient = Patient.create!(name: "Other", date_of_birth: "2000-01-01", gender: "FEMALE", patient_contact: other_patient_contact)
-    other_package = Package.create!(
-      service: @service, name: "Different", currency: "IDR", number_of_visit: 1,
-      price_per_visit: 100_000, total_price: 100_000, fee_per_visit: 70_000, total_fee: 70_000, active: true
-    )
+  #   # Different package & patient
+  #   other_patient_contact = PatientContact.create!(contact_name: "Other", contact_phone: "62891721231", email: "other@yopmail.com")
+  #   other_patient = Patient.create!(name: "Other", date_of_birth: "2000-01-01", gender: "FEMALE", patient_contact: other_patient_contact)
+  #   other_package = Package.create!(
+  #     service: @service, name: "Different", currency: "IDR", number_of_visit: 1,
+  #     price_per_visit: 100_000, total_price: 100_000, fee_per_visit: 70_000, total_fee: 70_000, active: true
+  #   )
 
-    series = Appointment.new(
-      reference_appointment: initial,
-      patient: other_patient,
-      package: other_package,
-      service: @service,
-      location: @location,
-      visit_number: 2,
-      appointment_date_time: @future_time + 1.day,
-      preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record
-    )
+  #   series = Appointment.new(
+  #     reference_appointment: initial,
+  #     patient: other_patient,
+  #     package: other_package,
+  #     service: @service,
+  #     location: @location,
+  #     visit_number: 2,
+  #     appointment_date_time: @future_time + 1.day,
+  #     preferred_therapist_gender: "NO PREFERENCE",
+  #     patient_medical_record_attributes: @patient_medical_record
+  #   )
 
-    assert_not series.valid?
-    assert_includes series.errors[:package_id], "must match reference appointment's package"
-    assert_includes series.errors[:patient_id], "must match reference appointment's patient"
-  end
+  #   assert_not series.valid?
+  #   assert_includes series.errors[:package_id], "must match reference appointment's package"
+  #   assert_includes series.errors[:patient_id], "must match reference appointment's patient"
+  # end
 
   test "unscheduled appointment must not have therapist or appointment_date_time, about unscheduled_appointment_requirements" do
     triple_pkg = Package.create!(
@@ -903,22 +906,23 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_includes child.errors[:therapist_id], "cannot be assigned to unscheduled appointments"
   end
 
-  test "blocks invalid status transitions for non-superadmin users, about valid_status_transition edge case" do
-    appt = Appointment.create!(
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time,
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # test "blocks invalid status transitions for non-superadmin users, about valid_status_transition edge case" do
+  #   appt = Appointment.create!(
+  #     patient: @patient,
+  #     service: @service,
+  #     package: @package,
+  #     location: @location,
+  #     appointment_date_time: @future_time,
+  #     preferred_therapist_gender: "NO PREFERENCE"
+  #   )
 
-    # Try jumping to "paid" from pending_therapist_assignment
-    appt.status = "paid"
-    appt.valid?  # should trigger validation
+  #   # Try jumping to "paid" from pending_therapist_assignment
+  #   appt.status = "paid"
+  #   appt.valid?  # should trigger validation
 
-    assert_includes appt.errors[:status], "invalid transition from Awaiting Therapist to Confirmed"
-  end
+  #   assert_includes appt.errors[:status], "invalid transition from Awaiting Therapist to Confirmed"
+  # end
 
   test "valid_for_scheduling? returns true only when time and therapist present, about valid_for_scheduling?" do
     appt = Appointment.new
@@ -949,49 +953,50 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_nil first.next_visits
   end
 
-  test "series visit must be after initial and before next, about validate_series_visit_position" do
-    triple_pkg = Package.create!(
-      service: @service,
-      name: "3-Visit Bundle",
-      currency: "IDR",
-      number_of_visit: 3,
-      price_per_visit: 100_000,
-      total_price: 300_000,
-      fee_per_visit: 70_000,
-      total_fee: 210_000,
-      active: true
-    )
-    initial = Appointment.create!(
-      patient: @patient,
-      service: @service,
-      package: triple_pkg,
-      location: @location,
-      therapist: @therapist,
-      appointment_date_time: @future_time,
-      preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record,
-      skip_auto_series_creation: false
-    )
+  # ? we already implemented the re-ordering while update the appointment see UpdateAppointmentService#reorder_series_visit_numbers
+  # test "series visit must be after initial and before next, about validate_series_visit_position" do
+  #   triple_pkg = Package.create!(
+  #     service: @service,
+  #     name: "3-Visit Bundle",
+  #     currency: "IDR",
+  #     number_of_visit: 3,
+  #     price_per_visit: 100_000,
+  #     total_price: 300_000,
+  #     fee_per_visit: 70_000,
+  #     total_fee: 210_000,
+  #     active: true
+  #   )
+  #   initial = Appointment.create!(
+  #     patient: @patient,
+  #     service: @service,
+  #     package: triple_pkg,
+  #     location: @location,
+  #     therapist: @therapist,
+  #     appointment_date_time: @future_time,
+  #     preferred_therapist_gender: "NO PREFERENCE",
+  #     patient_medical_record_attributes: @patient_medical_record,
+  #     skip_auto_series_creation: false
+  #   )
 
-    # manually schedule 3rd visit
-    third = initial.series_appointments.find_by(visit_number: 3)
-    third.update!(
-      appointment_date_time: @future_time + 5.days,
-      therapist: @therapist,
-      status: :pending_patient_approval,
-      status_reason: "reschedule",
-      updater: @user
-    )
+  #   # manually schedule 3rd visit
+  #   third = initial.series_appointments.find_by(visit_number: 3)
+  #   third.update!(
+  #     appointment_date_time: @future_time + 5.days,
+  #     therapist: @therapist,
+  #     status: :pending_patient_approval,
+  #     status_reason: "reschedule",
+  #     updater: @user
+  #   )
 
-    # set 2nd visit after 3rd → should be invalid
-    second = initial.series_appointments.find_by(visit_number: 2)
-    second.appointment_date_time = @future_time + 6.days
-    second.therapist = @therapist
-    second.status = :pending_patient_approval
+  #   # set 2nd visit after 3rd → should be invalid
+  #   second = initial.series_appointments.find_by(visit_number: 2)
+  #   second.appointment_date_time = @future_time + 6.days
+  #   second.therapist = @therapist
+  #   second.status = :pending_patient_approval
 
-    assert_not second.valid?
-    assert_includes second.errors[:appointment_date_time].join, "must be before visit 3"
-  end
+  #   assert_not second.valid?
+  #   assert_includes second.errors[:appointment_date_time].join, "must be before visit 3"
+  # end
 
   test "min_datetime and max_datetime return correct bounds for series visits, about min_datetime and max_datetime" do
     # ─── Setup a 3-visit package ────────────────────────────────────────────────
@@ -1232,123 +1237,124 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_nil second_appt.therapist_id
   end
 
-  test "reschedule should allow swapping visit times and reorder visit numbers" do
-    # ─── Setup a 4-visit package ────────────────────────────────────────────────
-    quad_pkg = Package.create!(
-      service: @service,
-      name: "4-Visit Series",
-      currency: "IDR",
-      number_of_visit: 4,
-      price_per_visit: 100_000,
-      total_price: 400_000,
-      fee_per_visit: 70_000,
-      total_fee: 280_000,
-      active: true
-    )
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # test "reschedule should allow swapping visit times and reorder visit numbers" do
+  #   # ─── Setup a 4-visit package ────────────────────────────────────────────────
+  #   quad_pkg = Package.create!(
+  #     service: @service,
+  #     name: "4-Visit Series",
+  #     currency: "IDR",
+  #     number_of_visit: 4,
+  #     price_per_visit: 100_000,
+  #     total_price: 400_000,
+  #     fee_per_visit: 70_000,
+  #     total_fee: 280_000,
+  #     active: true
+  #   )
 
-    # ─── Create the FIRST visit ───────────────────────────────────────────────────
-    first = Appointment.create!(
-      patient: @patient,
-      service: @service,
-      package: quad_pkg,
-      location: @location,
-      therapist: @therapist,
-      appointment_date_time: @future_time,
-      preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record,
-      skip_auto_series_creation: false
-    )
+  #   # ─── Create the FIRST visit ───────────────────────────────────────────────────
+  #   first = Appointment.create!(
+  #     patient: @patient,
+  #     service: @service,
+  #     package: quad_pkg,
+  #     location: @location,
+  #     therapist: @therapist,
+  #     appointment_date_time: @future_time,
+  #     preferred_therapist_gender: "NO PREFERENCE",
+  #     patient_medical_record_attributes: @patient_medical_record,
+  #     skip_auto_series_creation: false
+  #   )
 
-    # ─── Schedule the series visits ───────────────────────────────────────────────
-    second = first.series_appointments.find_by(visit_number: 2)
-    third = first.series_appointments.find_by(visit_number: 3)
-    fourth = first.series_appointments.find_by(visit_number: 4)
+  #   # ─── Schedule the series visits ───────────────────────────────────────────────
+  #   second = first.series_appointments.find_by(visit_number: 2)
+  #   third = first.series_appointments.find_by(visit_number: 3)
+  #   fourth = first.series_appointments.find_by(visit_number: 4)
 
-    # Initial schedule: Visit 2 on future date, Visit 3 on later date
-    second.update!(
-      appointment_date_time: @future_time + 2.days,
-      therapist: @therapist,
-      status: :pending_patient_approval
-    )
+  #   # Initial schedule: Visit 2 on future date, Visit 3 on later date
+  #   second.update!(
+  #     appointment_date_time: @future_time + 2.days,
+  #     therapist: @therapist,
+  #     status: :pending_patient_approval
+  #   )
 
-    third.update!(
-      appointment_date_time: @future_time + 5.days,
-      therapist: @therapist,
-      status: :pending_patient_approval
-    )
+  #   third.update!(
+  #     appointment_date_time: @future_time + 5.days,
+  #     therapist: @therapist,
+  #     status: :pending_patient_approval
+  #   )
 
-    fourth.update!(
-      appointment_date_time: @future_time + 7.days,
-      therapist: @therapist,
-      status: :pending_patient_approval
-    )
+  #   fourth.update!(
+  #     appointment_date_time: @future_time + 7.days,
+  #     therapist: @therapist,
+  #     status: :pending_patient_approval
+  #   )
 
-    # ─── Now reschedule Visit 2 to a date after Visit 3 ────────────────────────
-    # This should be allowed and should trigger reordering
-    second.skip_visit_sequence_validation = true
+  #   # ─── Now reschedule Visit 2 to a date after Visit 3 ────────────────────────
+  #   # This should be allowed and should trigger reordering
+  #   second.skip_visit_sequence_validation = true
 
-    result = second.update(appointment_date_time: @future_time + 6.days)
+  #   result = second.update(appointment_date_time: @future_time + 6.days)
 
-    assert result, "Should allow rescheduling visit 2 to a date after visit 3"
+  #   assert result, "Should allow rescheduling visit 2 to a date after visit 3"
 
-    # Manually trigger reordering since we're not using the service
-    # This simulates what UpdateAppointmentService does
-    root = first
-    scheduled_visits = ([root] + root.series_appointments.to_a)
-      .select { |v| v.appointment_date_time.present? }
+  #   # Manually trigger reordering since we're not using the service
+  #   # This simulates what UpdateAppointmentService does
+  #   root = first
+  #   scheduled_visits = ([root] + root.series_appointments.to_a)
+  #     .select { |v| v.appointment_date_time.present? }
 
-    completed_visits, pending_visits = scheduled_visits.partition(&:status_completed?)
-    pending_visits.sort_by!(&:appointment_date_time)
-    current_number = completed_visits.map(&:visit_number).compact.max || 0
+  #   completed_visits, pending_visits = scheduled_visits.partition(&:status_completed?)
+  #   pending_visits.sort_by!(&:appointment_date_time)
+  #   current_number = completed_visits.map(&:visit_number).compact.max || 0
 
-    # Handle unscheduled visits
-    unscheduled_visits = root.series_appointments
-      .where(appointment_date_time: nil)
-      .where.not(id: scheduled_visits.map(&:id))
-      .order(:visit_number)
-      .to_a
+  #   # Handle unscheduled visits
+  #   unscheduled_visits = root.series_appointments
+  #     .where(appointment_date_time: nil)
+  #     .where.not(id: scheduled_visits.map(&:id))
+  #     .order(:visit_number)
+  #     .to_a
 
-    # Collect all visits that need reordering
-    all_visits_to_reorder = pending_visits + unscheduled_visits
+  #   # Collect all visits that need reordering
+  #   all_visits_to_reorder = pending_visits + unscheduled_visits
 
-    # First pass: Set temporary negative visit_numbers to avoid unique constraint violations
-    all_visits_to_reorder.each_with_index do |visit, index|
-      visit.update_column(:visit_number, -(index + 1))
-    end
+  #   # First pass: Set temporary negative visit_numbers to avoid unique constraint violations
+  #   all_visits_to_reorder.each_with_index do |visit, index|
+  #     visit.update_column(:visit_number, -(index + 1))
+  #   end
 
-    # Second pass: Assign final visit_numbers based on chronological position
-    pending_visits.each do |visit|
-      current_number += 1
-      visit.update_column(:visit_number, current_number)
-    end
+  #   # Second pass: Assign final visit_numbers based on chronological position
+  #   pending_visits.each do |visit|
+  #     current_number += 1
+  #     visit.update_column(:visit_number, current_number)
+  #   end
 
-    # Assign remaining numbers to unscheduled visits
-    next_number = current_number + 1
-    unscheduled_visits.each do |visit|
-      visit.update_column(:visit_number, next_number)
-      next_number += 1
-    end
+  #   # Assign remaining numbers to unscheduled visits
+  #   next_number = current_number + 1
+  #   unscheduled_visits.each do |visit|
+  #     visit.update_column(:visit_number, next_number)
+  #     next_number += 1
+  #   end
 
-    # ─── Verify the reordering happened correctly ─────────────────────────────────
-    # After reordering, the visits should be:
-    # - Visit 1: original date
-    # - Visit 2: future date + 5 days (originally Visit 3)
-    # - Visit 4: future date + 7 days
+  #   # ─── Verify the reordering happened correctly ─────────────────────────────────
+  #   # After reordering, the visits should be:
+  #   # - Visit 1: original date
+  #   # - Visit 2: future date + 5 days (originally Visit 3)
+  #   # - Visit 4: future date + 7 days
 
-    second.reload
-    third.reload
-    fourth.reload
+  #   second.reload
+  #   third.reload
+  #   fourth.reload
 
-    # The appointment we updated (originally visit 2) should now be visit 3
-    assert_equal 3, second.visit_number
-    assert_in_delta (@future_time + 6.days).to_f, second.appointment_date_time.to_f, 1.second
+  #   # The appointment we updated (originally visit 2) should now be visit 3
+  #   assert_equal 3, second.visit_number
+  #   assert_in_delta (@future_time + 6.days).to_f, second.appointment_date_time.to_f, 1.second
 
-    # The original visit 3 should now be visit 2
-    assert_equal 2, third.visit_number
-    assert_in_delta (@future_time + 5.days).to_f, third.appointment_date_time.to_f, 1.second
+  #   # The original visit 3 should now be visit 2
+  #   assert_equal 2, third.visit_number
+  #   assert_in_delta (@future_time + 5.days).to_f, third.appointment_date_time.to_f, 1.second
 
-    # Visit 4 should remain unchanged
-    assert_equal 4, fourth.visit_number
-    assert_in_delta (@future_time + 7.days).to_f, fourth.appointment_date_time.to_f, 1.second
-  end
+  #   # Visit 4 should remain unchanged
+  #   assert_equal 4, fourth.visit_number
+  #   assert_in_delta (@future_time + 7.days).to_f, fourth.appointment_date_time.to_f, 1.second
+  # end
 end

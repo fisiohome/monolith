@@ -191,13 +191,15 @@ class Appointment < ApplicationRecord
   validates :fisiohome_partner_name, presence: true, inclusion: {in: FISIOHOME_PARTNER_NAMES}, if: :fisiohome_partner_booking?
   validates :other_fisiohome_partner_name, presence: true, if: -> { fisiohome_partner_name == "Other" }
 
-  with_options if: :initial_visit? do
-    validate :initial_visit_requirements
-  end
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # with_options if: :initial_visit? do
+  #   validate :initial_visit_requirements
+  # end
 
-  with_options unless: :initial_visit? do
-    validate :validate_series_requirements
-  end
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # with_options unless: :initial_visit? do
+  #   validate :validate_series_requirements
+  # end
 
   with_options unless: -> { unscheduled? || status_on_hold? || status_cancelled? } do
     validates :appointment_date_time, presence: true
@@ -210,9 +212,12 @@ class Appointment < ApplicationRecord
   validate :validate_appointment_sequence, unless: -> { skip_visit_sequence_validation? }
   validate :no_duplicate_appointment_time
   validate :no_overlapping_appointments
-  validate :status_must_be_valid
-  validate :valid_status_transition
-  validate :series_status_cannot_outpace_root
+  # ? no need strictly check for update status
+  # validate :status_must_be_valid
+  # ? no need strictly check for update status
+  # validate :valid_status_transition
+  # ? no need strictly check for update status
+  # validate :series_status_cannot_outpace_root
   validate :therapist_daily_limit
 
   validates_associated :address_history
@@ -513,24 +518,24 @@ class Appointment < ApplicationRecord
   end
 
   def cascade_cancellation(updater: nil, reason: nil)
-    return unless initial_visit?
-
-    series_appointments.where.not(status: :cancelled).find_each do |appt|
-      appt.update(  # Use update instead of update! for validation handling
+    Appointment.where(registration_number: registration_number).where.not(id: id).where.not(status: :cancelled).find_each do |appt|
+      appt.assign_attributes(
         status: :cancelled,
         status_reason: reason,
-        updater:
+        updater: updater
       )
+      appt.save(validate: false)
     end
   end
 
   def cascade_hold(updater: nil, reason: nil)
-    series_appointments.where.not(status: [:on_hold, :completed]).find_each do |appt|
-      appt.update(
+    Appointment.where(registration_number: registration_number).where.not(id: id).where.not(status: [:on_hold, :completed]).find_each do |appt|
+      appt.assign_attributes(
         status: :on_hold,
         status_reason: reason,
         updater: updater
       )
+      appt.save(validate: false)
     end
   end
 
@@ -607,12 +612,13 @@ class Appointment < ApplicationRecord
   end
 
   def cancel!
-    unless cancellable?
-      base_message = "Cannot cancel series appointment"
-      error_message = (series? && !reference_appointment.status_cancelled?) ? "#{base_message}. First visit has not been cancelled (current status: #{status_human_readable[:name]})" : "#{base_message}, #{status_human_readable[:description]}"
-      errors.add(:base, error_message)
-      return false
-    end
+    # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+    # unless cancellable?
+    #   base_message = "Cannot cancel series appointment"
+    #   error_message = (series? && !reference_appointment.status_cancelled?) ? "#{base_message}. First visit has not been cancelled (current status: #{status_human_readable[:name]})" : "#{base_message}, #{status_human_readable[:description]}"
+    #   errors.add(:base, error_message)
+    #   return false
+    # end
 
     transaction do
       if update(status: :cancelled, status_reason:, updater:)
@@ -669,22 +675,24 @@ class Appointment < ApplicationRecord
   # * define the validation methods
   # Validation: Ensure appointment time is in the future
   def appointment_date_time_in_the_future
+    return if status_cancelled? || status_completed? || (persisted? && !appointment_date_time_changed?)
     return if appointment_date_time.blank? || appointment_date_time > Time.current
 
     errors.add(:appointment_date_time, "must be in the future")
   end
 
+  # ? no need strictly check for update status
   # Validation: Ensure status is valid
-  def status_must_be_valid
-    return if status.blank?
+  # def status_must_be_valid
+  #   return if status.blank?
 
-    valid_keys = self.class.statuses.keys.map(&:to_s)
-    valid_values = self.class.statuses.values
+  #   valid_keys = self.class.statuses.keys.map(&:to_s)
+  #   valid_values = self.class.statuses.values
 
-    unless valid_keys.include?(status.to_s) || valid_values.include?(status.to_s)
-      errors.add(:status, "#{status} is not a valid appointment status")
-    end
-  end
+  #   unless valid_keys.include?(status.to_s) || valid_values.include?(status.to_s)
+  #     errors.add(:status, "#{status} is not a valid appointment status")
+  #   end
+  # end
 
   # Validation: Prevents a patient from having two appointments at the exact same date and time.
   def no_duplicate_appointment_time
@@ -734,16 +742,18 @@ class Appointment < ApplicationRecord
     end
   end
 
-  def initial_visit_requirements
-    errors.add(:appointment_date_time, "initial visit cannot be unscheduled") if unscheduled?
-    errors.add(:appointment_date_time, "must be present for initial visit") if appointment_date_time.blank?
-  end
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # def initial_visit_requirements
+  #   errors.add(:appointment_date_time, "initial visit cannot be unscheduled") if unscheduled?
+  #   errors.add(:appointment_date_time, "must be present for initial visit") if appointment_date_time.blank?
+  # end
 
-  def validate_series_requirements
-    errors.add(:appointment_reference_id, "cannot be modified") if appointment_reference_id_changed? && persisted?
-    errors.add(:package_id, "must match reference appointment's package") if reference_appointment&.package_id != package_id
-    errors.add(:patient_id, "must match reference appointment's patient") if reference_appointment&.patient_id != patient_id
-  end
+  # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
+  # def validate_series_requirements
+  #   errors.add(:appointment_reference_id, "cannot be modified") if appointment_reference_id_changed? && persisted?
+  #   errors.add(:package_id, "must match reference appointment's package") if reference_appointment&.package_id != package_id
+  #   errors.add(:patient_id, "must match reference appointment's patient") if reference_appointment&.patient_id != patient_id
+  # end
 
   def unscheduled_appointment_requirements
     return unless unscheduled?
@@ -901,56 +911,58 @@ class Appointment < ApplicationRecord
     end
   end
 
+  # ? no need strictly check for update status
   # ? Bug ticket documentation see: https://fisiohome.atlassian.net/browse/PE-64?atlOrigin=eyJpIjoiODcyNmJjNDU1YzVlNDBlMGJjY2VhYzJjNzQxMGU1NmUiLCJwIjoiaiJ9
-  def series_status_cannot_outpace_root
-    return unless series?
-    return if status_cancelled?
-    # skip if there's error on validate appointment sequence
-    return if validate_appointment_sequence_without_condition
+  # def series_status_cannot_outpace_root
+  #   return unless series?
+  #   return if status_cancelled?
+  #   # skip if there's error on validate appointment sequence
+  #   return if validate_appointment_sequence_without_condition
 
-    root = reference_appointment || self
-    root.reload if root.persisted?  # Get fresh status from DB
-    return if root.status_cancelled?
+  #   root = reference_appointment || self
+  #   root.reload if root.persisted?  # Get fresh status from DB
+  #   return if root.status_cancelled?
 
-    root_status = root.status
-    return if root_status.nil? # Skip validation if root status is nil
+  #   root_status = root.status
+  #   return if root_status.nil? # Skip validation if root status is nil
 
-    current_index = STATUS_ORDER.index(status)
-    root_index = STATUS_ORDER.index(root.status)
-    root_status_name = STATUS_METADATA[root_status][:name]
+  #   current_index = STATUS_ORDER.index(status)
+  #   root_index = STATUS_ORDER.index(root.status)
+  #   root_status_name = STATUS_METADATA[root_status][:name]
 
-    if current_index > root_index
-      errors.add(:status, "cannot be ahead of first visit (#{root.registration_number}) status (#{root_status_name})")
-    end
-  end
+  #   if current_index > root_index
+  #     errors.add(:status, "cannot be ahead of first visit (#{root.registration_number}) status (#{root_status_name})")
+  #   end
+  # end
 
-  def valid_status_transition
-    # Skip for new records or cancellation
-    return if status_was.nil? || status_cancelled?
+  # ? no need strictly check for update status
+  # def valid_status_transition
+  #   # Skip for new records or cancellation
+  #   return if status_was.nil? || status_cancelled?
 
-    # ! SUPER_ADMIN can do anything about the status update
-    return if updater_is_super_admin? || updater_is_admin_supervisor?
+  #   # ! SUPER_ADMIN can do anything about the status update
+  #   return if updater_is_super_admin? || updater_is_admin_supervisor?
 
-    previous_status = status_was
-    new_status = status
+  #   previous_status = status_was
+  #   new_status = status
 
-    allowed_transitions = {
-      "cancelled" => [],  # Once cancelled, no more transitions
-      "unscheduled" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
-      "on_hold" => ["unscheduled", "on_hold", "pending_therapist_assignment", "pending_patient_approval"],
-      "pending_therapist_assignment" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
-      "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "on_hold", "cancelled", "paid"],
-      "pending_payment" => ["pending_payment", "paid", "cancelled"],
-      "paid" => ["on_hold", "paid", "completed", "cancelled"],
-      "completed" => []
-    }
+  #   allowed_transitions = {
+  #     "cancelled" => [],  # Once cancelled, no more transitions
+  #     "unscheduled" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
+  #     "on_hold" => ["unscheduled", "on_hold", "pending_therapist_assignment", "pending_patient_approval"],
+  #     "pending_therapist_assignment" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "on_hold", "cancelled"],
+  #     "pending_patient_approval" => ["unscheduled", "pending_therapist_assignment", "pending_patient_approval", "pending_payment", "on_hold", "cancelled", "paid"],
+  #     "pending_payment" => ["pending_payment", "paid", "cancelled"],
+  #     "paid" => ["on_hold", "paid", "completed", "cancelled"],
+  #     "completed" => []
+  #   }
 
-    previous_status_name = STATUS_METADATA[previous_status][:name]
-    new_status_name = STATUS_METADATA[new_status][:name]
-    unless allowed_transitions[previous_status]&.include?(new_status)
-      errors.add(:status, "invalid transition from #{previous_status_name} to #{new_status_name}")
-    end
-  end
+  #   previous_status_name = STATUS_METADATA[previous_status][:name]
+  #   new_status_name = STATUS_METADATA[new_status][:name]
+  #   unless allowed_transitions[previous_status]&.include?(new_status)
+  #     errors.add(:status, "invalid transition from #{previous_status_name} to #{new_status_name}")
+  #   end
+  # end
 
   def therapist_daily_limit
     return if appointment_date_time.blank? || therapist_id.blank? || status_cancelled?

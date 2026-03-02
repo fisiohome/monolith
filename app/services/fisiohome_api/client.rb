@@ -6,7 +6,7 @@ module FisiohomeApi
       def connection
         @connection ||= Faraday.new(url: base_url) do |faraday|
           # Automatically JSON-encode request bodies and add the proper
-          # "Content-Type: application/json" header so callers don’t need to.
+          # "Content-Type: application/json" header so callers don't need to.
           faraday.request :json
 
           # Parse JSON responses (when the server responds with application/json)
@@ -18,6 +18,14 @@ module FisiohomeApi
         end
       end
 
+      # Creates a connection for binary file downloads (without JSON middleware)
+      def binary_connection
+        @binary_connection ||= Faraday.new(url: base_url) do |faraday|
+          # Use the default Net::HTTP adapter
+          faraday.adapter Faraday.default_adapter
+        end
+      end
+
       # Performs a GET request to the external API
       # @param path [String] the API endpoint path
       # @param params [Hash] query parameters
@@ -25,6 +33,15 @@ module FisiohomeApi
       # @return [Faraday::Response] the HTTP response
       def get(path, params: {}, headers: {})
         connection.get(path, params, auth_headers.merge(headers))
+      end
+
+      # Performs a binary GET request for file downloads
+      # @param path [String] the API endpoint path
+      # @param params [Hash] query parameters
+      # @param headers [Hash] additional headers
+      # @return [Faraday::Response] the HTTP response
+      def get_binary(path, params: {}, headers: {})
+        binary_connection.get(path, params, auth_headers.merge(headers))
       end
 
       # Performs a POST request to the external API

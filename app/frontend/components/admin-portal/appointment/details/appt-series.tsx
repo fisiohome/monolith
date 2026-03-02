@@ -62,7 +62,7 @@ const SeriesItem = memo(function Component({
 							getBadgeVariantStatus(appointment.status),
 						)}
 					>
-						{t(`statuses.${appointment.status}`)}
+						{appointment.status ? t(`statuses.${appointment.status}`) : "N/A"}
 					</Badge>
 				</div>
 			</div>

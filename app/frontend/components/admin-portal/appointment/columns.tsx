@@ -147,6 +147,8 @@ const StatusCell = memo(({ row }: { row: Row<Appointment> }) => {
 	const status = row.original.status;
 	const statusDotVariant = getDotVariantStatus(status);
 
+	if (!status) return "N/A";
+
 	return (
 		<div className="relative">
 			<DotBadgeWithLabel
@@ -326,21 +328,7 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 	const appointment = row.original;
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentIndexGlobalPageProps>();
-	const { auth } = globalProps;
 	const copyRegistrationNumber = useCopyRegistrationNumber();
-	const isAdminPIC = useMemo(() => {
-		const currentAccountId = auth.currentUser?.id;
-
-		return !!appointment.admins?.some((admin) => admin.id === currentAccountId);
-	}, [auth.currentUser?.id, appointment.admins]);
-	const isSuperAdmin = useMemo(
-		() => !!auth.currentUser?.["isSuperAdmin?"],
-		[auth.currentUser?.["isSuperAdmin?"]],
-	);
-	const isAdminSupervisor = useMemo(
-		() => !!auth.currentUser?.["isAdminSupervisor?"],
-		[auth.currentUser?.["isAdminSupervisor?"]],
-	);
 
 	const isShow = useMemo(() => {
 		const updateStatus = getPermission.updateStatus(appointment);
@@ -445,9 +433,7 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 		[pageURL, globalProps.adminPortal.router.adminPortal.appointment.index],
 	);
 
-	const canShowActions =
-		(isSuperAdmin || isAdminPIC || isAdminSupervisor) &&
-		appointment.status !== "cancelled";
+	const canShowActions = appointment.status !== "cancelled";
 
 	return (
 		<DropdownMenu>
@@ -472,7 +458,10 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 								>
 									Invoice URL
 								</DropdownMenuItem>
-								<DropdownMenuItem onSelect={onCopyRegNumber}>
+								<DropdownMenuItem
+									onSelect={onCopyRegNumber}
+									disabled={!appointment.registrationNumber}
+								>
 									Appt Reg. Number
 								</DropdownMenuItem>
 								<DropdownMenuItem
@@ -481,10 +470,16 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 								>
 									No. Invoice
 								</DropdownMenuItem>
-								<DropdownMenuItem onSelect={onCopyPatientNumber}>
+								<DropdownMenuItem
+									onSelect={onCopyPatientNumber}
+									disabled={!appointment.patientId}
+								>
 									Patient ID
 								</DropdownMenuItem>
-								<DropdownMenuItem onSelect={onCopyTherapistNumber}>
+								<DropdownMenuItem
+									onSelect={onCopyTherapistNumber}
+									disabled={!appointment.therapistId}
+								>
 									Therapist ID
 								</DropdownMenuItem>
 							</DropdownMenuSubContent>
@@ -502,10 +497,12 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 						View on Google Maps
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
-				{canShowActions && (
-					<>
-						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
+
+				<DropdownMenuSeparator />
+
+				<DropdownMenuGroup>
+					{canShowActions && (
+						<>
 							{isShow.reschedule && (
 								<DropdownMenuItem
 									onSelect={() => routeTo.reschedule(String(appointment.id))}
@@ -523,16 +520,17 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 									Update Status
 								</DropdownMenuItem>
 							)}
+						</>
+					)}
 
-							<DropdownMenuItem
-								onSelect={() => routeTo.updatePic(String(appointment.id))}
-							>
-								<Cctv className="opacity-60" aria-hidden="true" />
-								Update PIC
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-					</>
-				)}
+					<DropdownMenuItem
+						onSelect={() => routeTo.updatePic(String(appointment.id))}
+					>
+						<Cctv className="opacity-60" aria-hidden="true" />
+						Update PIC
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+
 				{canShowActions && isShow.cancel && (
 					<>
 						<DropdownMenuSeparator />

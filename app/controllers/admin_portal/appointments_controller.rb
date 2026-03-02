@@ -3,7 +3,7 @@ module AdminPortal
     include AppointmentsHelper
 
     before_action :authenticate_user!
-    before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule]
+    before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params, current_user)
@@ -39,7 +39,9 @@ module AdminPortal
             }
           )
         },
-        selected_order: InertiaRails.defer { preparation.fetch_selected_order }
+        selected_order: InertiaRails.defer { preparation.fetch_selected_order },
+        selected_appointment: InertiaRails.defer { preparation.fetch_selected_appointment },
+        options_data: InertiaRails.defer { preparation.fetch_options_data }
       })
     end
 
@@ -212,7 +214,7 @@ module AdminPortal
     end
 
     def cancel_external
-      Rails.logger.info "Starting external API cancel process for appointment ID: #{params[:id]}"
+      Rails.logger.info "Starting external API cancel process for order ID: #{params[:id]}"
 
       # Find appointment by order ID
       @appointment = Appointment.joins(:order).find_by(orders: {id: params[:id]})
@@ -249,25 +251,43 @@ module AdminPortal
 
       begin
         ActiveRecord::Base.transaction do
-          current_admin_ids = @appointment.admin_ids
-          new_admin_ids = params.dig(:form_data, :admin_ids)
+          appointments = Appointment.where(registration_number: @appointment.registration_number)
+          new_admin_ids = params.dig(:form_data, :admin_ids) || []
 
-          # Remove admins not in new list
-          (current_admin_ids - new_admin_ids).each do |admin_id|
-            AppointmentAdmin.find_by(appointment: @appointment, admin_id: admin_id)&.destroy!
-          end
+          appointments.each do |appt|
+            current_admin_ids = appt.admin_ids
 
-          # Add new admins
-          (new_admin_ids - current_admin_ids).each do |admin_id|
-            AppointmentAdmin.create!(appointment: @appointment, admin_id: admin_id)
+            # Remove admins not in new list
+            (current_admin_ids - new_admin_ids).each do |admin_id|
+              AppointmentAdmin.find_by(appointment: appt, admin_id: admin_id)&.destroy!
+            end
+
+            # Add new admins
+            (new_admin_ids - current_admin_ids).each do |admin_id|
+              AppointmentAdmin.create!(appointment: appt, admin_id: admin_id)
+            end
           end
         end # Transaction commits here if no exceptions
 
         Rails.logger.info "Appointment #{@appointment.registration_number} admin PIC(s) updated successfully."
-        redirect_to admin_portal_appointments_path(request.query_parameters.except("update_pic")), notice: "Admin PIC(s) updated successfully."
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters.except("update_pic"))
+        else
+          admin_portal_appointments_path(request.query_parameters.except("update_pic"))
+        end
+
+        redirect_to redirect_path, notice: "Admin PIC(s) updated successfully."
       rescue => e
         Rails.logger.error "Failed to update admin PIC(s) for appointment #{@appointment.registration_number}: #{e.message}"
-        redirect_to admin_portal_appointments_path(request.query_parameters), alert: "Failed to update admins PIC(s): #{e.message}"
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
+        else
+          admin_portal_appointments_path(request.query_parameters)
+        end
+
+        redirect_to redirect_path, alert: "Failed to update admins PIC(s): #{e.message}"
       ensure
         Rails.logger.info "Finished process to update the admin PIC(s) for appointment #{@appointment.registration_number}"
       end
@@ -351,6 +371,98 @@ module AdminPortal
         Rails.logger.error error_message
 
         redirect_to redirect_path, alert: error_message
+      end
+    end
+
+    def download_soap_pdf
+      appointment_id = params[:id]
+
+      Rails.logger.info "Attempting to download SOAP PDF for appointment ID: #{appointment_id}"
+
+      unless @appointment
+        Rails.logger.error "Appointment not found for ID: #{appointment_id}"
+        respond_to do |format|
+          format.html {
+            flash[:alert] = "Appointment not found"
+            # redirect_to admin_portal_appointments_path
+          }
+          format.json { render json: {error: "Appointment not found"}, status: :not_found }
+        end
+        return
+      end
+
+      begin
+        # Make request to external API using binary connection
+        api_url = "/api/v1/appointments/#{appointment_id}/report"
+        Rails.logger.info "Making request to external API: #{api_url}"
+
+        response = FisiohomeApi::Client.get_binary(api_url)
+
+        Rails.logger.info "External API response status: #{response.status}"
+        Rails.logger.info "External API response headers: #{response.headers.inspect}"
+
+        if response.success?
+          # Check if response is a PDF
+          content_type = response.headers["content-type"]
+
+          Rails.logger.info "Response content-type: #{content_type}"
+          Rails.logger.info "Response body size: #{response.body&.bytesize} bytes"
+
+          if content_type&.include?("application/pdf")
+            # Extract filename from Content-Disposition header if present
+            content_disposition = response.headers["content-disposition"]
+            filename = "soap_report_#{appointment_id}.pdf"
+
+            if content_disposition&.match?(/filename=(?:"([^"]+)"|([^;]+))/)
+              filename = $1 || $2
+            end
+
+            Rails.logger.info "Streaming PDF to user with filename: #{filename}"
+
+            # Stream the PDF to the user
+            respond_to do |format|
+              format.any {
+                send_data response.body,
+                  filename: filename,
+                  type: "application/pdf",
+                  disposition: "attachment"
+              }
+            end
+
+            Rails.logger.info "Successfully downloaded SOAP PDF for appointment #{appointment_id}"
+          else
+            Rails.logger.error "Unexpected content type from external API: #{content_type}"
+            Rails.logger.error "Response body preview: #{response.body&.first(200)}"
+            respond_to do |format|
+              format.html {
+                flash[:alert] = "Invalid file format received from external API"
+                # redirect_to orders_admin_portal_appointments_path
+              }
+              format.json { render json: {error: "Invalid file format received from external API"}, status: :unprocessable_entity }
+            end
+          end
+        else
+          error_message = "Failed to download SOAP report: HTTP #{response.status}"
+          Rails.logger.error "#{error_message} - #{response.body}"
+          respond_to do |format|
+            format.html {
+              flash[:alert] = error_message
+              # redirect_to orders_admin_portal_appointments_path
+            }
+            format.json { render json: {error: error_message}, status: response.status }
+          end
+        end
+      rescue => e
+        error_message = "Error downloading SOAP report: #{e.message}"
+        Rails.logger.error error_message
+        Rails.logger.error e.backtrace.join("\n")
+        respond_to do |format|
+          format.html {
+            flash[:alert] = error_message
+            # redirect_to orders_admin_portal_appointments_path
+          }
+          format.json { render json: {error: error_message}, status: :internal_server_error }
+        end
       end
     end
 

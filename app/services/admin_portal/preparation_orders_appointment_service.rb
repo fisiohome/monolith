@@ -2,10 +2,13 @@ module AdminPortal
   class PreparationOrdersAppointmentService
     include Pagy::Backend
     include ApplicationHelper
+    include AppointmentsHelper
+    include ServicesHelper
 
     def initialize(params)
       @params = params
       @selected_id = @params[:view_order]
+      @selected_update_pic_id = @params[:update_pic]
     end
 
     def fetch_orders
@@ -33,11 +36,29 @@ module AdminPortal
       deep_transform_keys_to_camel_case(serialize_order_detail(order))
     end
 
+    def fetch_selected_appointment
+      return nil if @selected_update_pic_id.blank?
+
+      appointment = Appointment.includes(:order).find_by(id: @selected_update_pic_id)
+      return nil unless appointment
+
+      deep_transform_keys_to_camel_case(serialize_appointment(appointment, {include_order: true}))
+    end
+
+    def fetch_options_data
+      return nil if @selected_update_pic_id.blank?
+
+      admins = Admin.all.map { |admin| deep_transform_keys_to_camel_case(serialize_admin(admin).as_json) }
+      statuses = Appointment.statuses.map { |key, value| {key:, value:} }.as_json
+
+      {admins:, statuses:}
+    end
+
     private
 
     def filtered_orders_relation
       orders = Order
-        .includes(:patient, package: :service)
+        .includes(:patient, package: :service, appointments: :address_history)
         .order(created_at: :desc)
 
       # Search by string (registration number, invoice number, patient name, voucher code)
@@ -66,9 +87,11 @@ module AdminPortal
     end
 
     def serialize_order(order)
+      first_appointment = order.appointments.first
       {
         id: order.id,
         registration_number: order.registration_number,
+        patient_id: order.patient_id,
         patient_name: order.patient&.name,
         package_name: order.package&.name,
         service_name: order.package&.service&.name,
@@ -80,7 +103,12 @@ module AdminPortal
         status: order.status,
         invoice_number: order.invoice_number,
         invoice_url: order.invoice_url,
-        created_at: order.created_at&.iso8601
+        created_at: order.created_at&.iso8601,
+        therapist_id: first_appointment&.therapist_id,
+        first_appointment_id: first_appointment&.id,
+        appointments: order.appointments.map { |a| { id: a.id, visit_number: a.visit_number, total_package_visits: a.total_package_visits } },
+        latitude: first_appointment&.address_history&.latitude,
+        longitude: first_appointment&.address_history&.longitude
       }
     end
 

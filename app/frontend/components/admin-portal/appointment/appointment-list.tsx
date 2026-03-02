@@ -116,8 +116,7 @@ export interface ScheduleListProps {
 export function ScheduleList({ schedule }: ScheduleListProps) {
 	const isMobile = useIsMobile();
 	const { locale, tzDate, timeFormatDateFns } = useDateContext();
-	const { props: globalProps, url: pageURL } =
-		usePage<AppointmentIndexGlobalPageProps>();
+	const { url: pageURL } = usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
 	const distanceBadgeVariant = useMemo(
 		() => getBadgeVariantStatus(schedule.status),
@@ -152,19 +151,6 @@ export function ScheduleList({ schedule }: ScheduleListProps) {
 
 		return { time, period, distance };
 	}, [schedule.appointmentDateTime, locale, tzDate, timeFormatDateFns]);
-	const isAdminPIC = useMemo(() => {
-		const currentAccountId = globalProps.auth.currentUser?.id;
-
-		return !!schedule.admins?.some((admin) => admin.id === currentAccountId);
-	}, [globalProps.auth.currentUser?.id, schedule?.admins]);
-	const isSuperAdmin = useMemo(
-		() => !!globalProps.auth.currentUser?.["isSuperAdmin?"],
-		[globalProps.auth.currentUser?.["isSuperAdmin?"]],
-	);
-	const isAdminSupervisor = useMemo(
-		() => !!globalProps.auth.currentUser?.["isAdminSupervisor?"],
-		[globalProps.auth.currentUser?.["isAdminSupervisor?"]],
-	);
 	const isFreshAppt = useMemo(
 		() =>
 			differenceInHours(new Date(), parseISO(schedule.createdAt), {
@@ -477,9 +463,6 @@ export function ScheduleList({ schedule }: ScheduleListProps) {
 									<AppointmentActionButtons
 										schedule={schedule}
 										isExpanded={isExpanded}
-										isSuperAdmin={isSuperAdmin}
-										isAdminPIC={isAdminPIC}
-										isAdminSupervisor={isAdminSupervisor}
 									/>
 								</ExpandableCardFooter>
 							</ExpandableContent>

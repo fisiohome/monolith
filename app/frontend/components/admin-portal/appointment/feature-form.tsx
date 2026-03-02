@@ -68,7 +68,7 @@ export function CancelAppointmentForm({
 
 	const formSchema = z.object({
 		id: z.string(),
-		orderId: z.string().min(1, "Order ID is required"),
+		orderId: z.string(),
 		reason: z
 			.string()
 			.min(10, "Cancellation reason must be at least 10 characters"),
@@ -81,7 +81,7 @@ export function CancelAppointmentForm({
 			orderId: selectedAppointment.order?.id || "",
 			reason: "",
 		},
-		mode: "onSubmit",
+		mode: "all",
 	});
 
 	const onSubmit = (values: z.infer<typeof formSchema>) => {

@@ -14,8 +14,7 @@ export const getPermission = {
 		appt.status !== "completed" &&
 		appt.status !== "unscheduled" &&
 		appt.status !== "on_hold",
-	cancel: (appt: Appointment) =>
-		appt.initialVisit && appt.status !== "completed",
+	cancel: (appt: Appointment) => appt.status !== "completed",
 	createSeries: (appt: Appointment) =>
 		appt.totalPackageVisits > 1 &&
 		appt.visitNumber !== appt.totalPackageVisits &&
@@ -27,9 +26,6 @@ export const getPermission = {
 interface AppointmentActionButtonsProps extends ComponentProps<"div"> {
 	schedule: ScheduleListProps["schedule"];
 	isExpanded: boolean;
-	isSuperAdmin: boolean;
-	isAdminPIC: boolean;
-	isAdminSupervisor: boolean;
 	buttonSize?: "xs" | "sm" | "default" | "lg" | "xl";
 }
 
@@ -37,9 +33,6 @@ const AppointmentActionButtons = memo(function Component({
 	className,
 	schedule,
 	isExpanded: _isExpanded,
-	isAdminPIC,
-	isAdminSupervisor,
-	isSuperAdmin,
 	buttonSize = "default",
 }: AppointmentActionButtonsProps) {
 	const { props: globalProps, url: pageURL } =
@@ -139,10 +132,24 @@ const AppointmentActionButtons = memo(function Component({
 				className,
 			)}
 		>
-			{(isSuperAdmin || isAdminPIC || isAdminSupervisor) &&
-				schedule.status !== "cancelled" && (
-					<>
-						{/* {isShow.createSeries && (
+			<Button
+				variant="accent-outline"
+				className="w-full lg:w-auto"
+				size={buttonSize}
+				onClick={(event) => {
+					event.preventDefault();
+					event.stopPropagation();
+
+					routeTo.updatePic(String(schedule.id));
+				}}
+			>
+				<Cctv />
+				{t("button.update_pic")}
+			</Button>
+
+			{schedule.status !== "cancelled" && (
+				<>
+					{/* {isShow.createSeries && (
                 <Button
                   variant="primary-outline"
                   className="w-full lg:w-auto"
@@ -158,73 +165,58 @@ const AppointmentActionButtons = memo(function Component({
                 </Button>
               )} */}
 
-						{isShow.reschedule && (
-							<Button
-								variant="primary-outline"
-								className="w-full lg:w-auto"
-								size={buttonSize}
-								onClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-
-									routeTo.reschedule(String(schedule.id));
-								}}
-							>
-								<Clock3 />
-								{t("button.reschedule")}
-							</Button>
-						)}
-
-						{isShow.updateStatus && (
-							<Button
-								variant="primary-outline"
-								className="w-full lg:w-auto"
-								size={buttonSize}
-								onClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-
-									routeTo.updateStatus(String(schedule.id));
-								}}
-							>
-								<Activity />
-								{t("button.update_status")}
-							</Button>
-						)}
-
+					{isShow.reschedule && (
 						<Button
-							variant="accent-outline"
+							variant="primary-outline"
 							className="w-full lg:w-auto"
 							size={buttonSize}
 							onClick={(event) => {
 								event.preventDefault();
 								event.stopPropagation();
 
-								routeTo.updatePic(String(schedule.id));
+								routeTo.reschedule(String(schedule.id));
 							}}
 						>
-							<Cctv />
-							{t("button.update_pic")}
+							<Clock3 />
+							{t("button.reschedule")}
 						</Button>
+					)}
 
-						{isShow.cancel && (
-							<Button
-								variant="destructive"
-								className="w-full lg:w-auto"
-								size={buttonSize}
-								onClick={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
+					{isShow.updateStatus && (
+						<Button
+							variant="primary-outline"
+							className="w-full lg:w-auto"
+							size={buttonSize}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
 
-									routeTo.cancel(String(schedule.id));
-								}}
-							>
-								<Ban />
-								{t("button.cancel_booking")}
-							</Button>
-						)}
-					</>
-				)}
+								routeTo.updateStatus(String(schedule.id));
+							}}
+						>
+							<Activity />
+							{t("button.update_status")}
+						</Button>
+					)}
+
+					{isShow.cancel && (
+						<Button
+							variant="destructive"
+							className="w-full lg:w-auto"
+							size={buttonSize}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+
+								routeTo.cancel(String(schedule.id));
+							}}
+						>
+							<Ban />
+							{t("button.cancel_booking")}
+						</Button>
+					)}
+				</>
+			)}
 		</div>
 	);
 });
