@@ -14,6 +14,7 @@ import type { Therapist } from "./therapist";
 export enum AppointmentStatuses {
 	cancelled = "CANCELLED",
 	unscheduled = "UNSCHEDULED",
+	scheduled = "SCHEDULED",
 	on_hold = "ON HOLD",
 	pending_therapist_assignment = "PENDING THERAPIST ASSIGNMENT",
 	pending_patient_approval = "PENDING PATIENT APPROVAL",

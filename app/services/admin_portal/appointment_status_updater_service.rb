@@ -1,6 +1,7 @@
 module AdminPortal
   class AppointmentStatusUpdaterService
     TRANSITION_METHODS = {
+      "scheduled" => :set_scheduled!,
       # "pending_therapist_assignment" => :schedule!,
       "on_hold" => :hold!,
       "pending_patient_approval" => :assign_therapist!,

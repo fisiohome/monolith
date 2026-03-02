@@ -301,40 +301,25 @@ export function UpdateStatusForm({
 	);
 	const appointmentStatuses = useMemo(() => {
 		const { optionsData } = globalProps;
-		const { status: appointmentStatus, isPaid } = selectedAppointment || {};
 
-		if (!optionsData?.statuses) return [];
+		if (!optionsData?.statuses) {
+			console.log("No optionsData.statuses available");
+			return [];
+		}
 
 		const excludedStatuses = new Set([
 			"unscheduled",
 			"cancelled",
-			...(appointmentStatus === "pending_therapist_assignment"
-				? ["pending_patient_approval", "pending_payment", "paid", "completed"]
-				: []),
-			...(appointmentStatus === "pending_patient_approval"
-				? ["pending_therapist_assignment", "completed"]
-				: []),
-			...(isPaid && appointmentStatus === "pending_patient_approval"
-				? ["pending_payment"]
-				: []),
-			...(!isPaid && appointmentStatus === "pending_patient_approval"
-				? ["paid"]
-				: []),
-			...(isPaid &&
-			appointmentStatus !== "pending_therapist_assignment" &&
-			appointmentStatus !== "pending_patient_approval"
-				? [
-						"pending_therapist_assignment",
-						"pending_patient_approval",
-						"pending_payment",
-					]
-				: []),
+			"pending_therapist_assignment",
+			"pending_patient_approval",
 		]);
 
-		return optionsData.statuses.filter(
+		const filteredStatuses = optionsData.statuses.filter(
 			(status) => !excludedStatuses.has(status.key),
 		);
-	}, [globalProps.optionsData?.statuses, selectedAppointment, globalProps]);
+
+		return filteredStatuses;
+	}, [globalProps.optionsData?.statuses, globalProps]);
 	const formSchema = z.object({
 		id: z.string(),
 		status: z.enum(
@@ -385,7 +370,7 @@ export function UpdateStatusForm({
 						render={({ field }) => (
 							<FormItem className="flex flex-col">
 								{/* <FormLabel>{t("fields.appointment_status.label")}</FormLabel> */}
-								<Popover>
+								<Popover modal>
 									<PopoverTrigger asChild>
 										<FormControl>
 											<Button
@@ -394,12 +379,17 @@ export function UpdateStatusForm({
 													"w-full justify-between font-normal shadow-inner bg-sidebar",
 													!field.value && "text-muted-foreground",
 												)}
+												disabled={isLoading}
 											>
 												<p>
 													{field.value
-														? appointmentStatuses.find(
-																(status) => status.key === field.value,
-															)?.value
+														? (appointmentStatuses.find(
+																(s) => s.key === field.value,
+															)?.value ??
+															globalProps?.optionsData?.statuses?.find(
+																(s) => s.key === field.value,
+															)?.value ??
+															"")
 														: t("fields.appointment_status.placeholder")}
 												</p>
 
@@ -407,7 +397,11 @@ export function UpdateStatusForm({
 											</Button>
 										</FormControl>
 									</PopoverTrigger>
-									<PopoverContent align="start" side="bottom" className="p-0 ">
+									<PopoverContent
+										align="start"
+										side="bottom"
+										className="w-[var(--radix-popover-trigger-width)] p-0 "
+									>
 										<Command>
 											<CommandInput
 												disabled={isLoading}
@@ -429,9 +423,11 @@ export function UpdateStatusForm({
 															<CommandItem
 																value={status.value}
 																key={status.key}
-																disabled={status.key === field.value}
+																disabled={
+																	selectedAppointment.status === status.key
+																}
 																onSelect={() => {
-																	form.setValue("status", status.key);
+																	field.onChange(status.key);
 																}}
 															>
 																{status.value}

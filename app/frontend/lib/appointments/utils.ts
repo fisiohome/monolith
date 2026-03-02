@@ -4,6 +4,8 @@ import type { Appointment } from "@/types/admin-portal/appointment";
 const BADGE_STYLES: Record<Appointment["status"], string> = {
 	unscheduled:
 		"text-gray-800 bg-gray-100 border-gray-400 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-500",
+	scheduled:
+		"text-blue-800 bg-blue-100 border-blue-400 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-500",
 	on_hold:
 		"text-blue-800 bg-blue-100 border-blue-400 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-500",
 	pending_patient_approval:
@@ -24,6 +26,7 @@ export const getBadgeVariantStatus = (status: Appointment["status"]) =>
 const DOT_STYLES: Record<Appointment["status"], VariantDotBadge["variant"]> = {
 	cancelled: "destructive",
 	unscheduled: "outline",
+	scheduled: "blue",
 	on_hold: "blue",
 	pending_patient_approval: "warning",
 	pending_payment: "warning",

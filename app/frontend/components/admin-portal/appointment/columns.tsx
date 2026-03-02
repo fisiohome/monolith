@@ -150,6 +150,9 @@ const StatusCell = memo(({ row }: { row: Row<Appointment> }) => {
 
 	if (!status) return "N/A";
 
+	// Fallback for undefined statuses
+	const statusText = t(`statuses.${status}`, status);
+
 	return (
 		<div className="relative">
 			<DotBadgeWithLabel
@@ -158,10 +161,10 @@ const StatusCell = memo(({ row }: { row: Row<Appointment> }) => {
 				variant={statusDotVariant}
 			>
 				<span
-					title={t(`statuses.${status}`)}
+					title={statusText}
 					className="tracking-wide line-clamp-1"
 				>
-					{t(`statuses.${status}`)}
+					{statusText}
 				</span>
 			</DotBadgeWithLabel>
 		</div>

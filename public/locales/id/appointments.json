@@ -15,6 +15,7 @@
 		"cancelled": "DIBATALKAN",
 		"paid": "TERBAYAR",
 		"unscheduled": "TIDAK TERJADWAL",
+		"scheduled": "TERJADWAL",
 		"on_hold": "DITANGGUHKAN",
 		"completed": "SELESAI"
 	},

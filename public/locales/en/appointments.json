@@ -15,6 +15,7 @@
 		"cancelled": "CANCELLED",
 		"paid": "PAID",
 		"unscheduled": "UNSCHEDULED",
+		"scheduled": "SCHEDULED",
 		"on_hold": "ON HOLD",
 		"completed": "COMPLETED"
 	},

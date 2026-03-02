@@ -53,6 +53,7 @@ class Appointment < ApplicationRecord
     pending_patient_approval
     pending_payment
     paid
+    scheduled
     completed
   ].freeze
   STATUS_METADATA = {
@@ -84,6 +85,10 @@ class Appointment < ApplicationRecord
       name: "Confirmed",
       description: "Appointment confirmed and paid"
     },
+    "scheduled" => {
+      name: "Scheduled",
+      description: "Appointment has been scheduled"
+    },
     "completed" => {
       name: "Completed",
       description: "Appointment has been completed"
@@ -99,6 +104,7 @@ class Appointment < ApplicationRecord
     pending_patient_approval: "PENDING PATIENT APPROVAL",
     pending_payment: "PENDING PAYMENT",
     paid: "PAID",
+    scheduled: "SCHEDULED",
     completed: "COMPLETED"
   }, prefix: true
 
@@ -430,6 +436,10 @@ class Appointment < ApplicationRecord
     status_unscheduled?
   end
 
+  def scheduled?
+    status_scheduled?
+  end
+
   def schedulable?
     unscheduled? || status_pending_therapist_assignment? || status_pending_patient_approval?
   end
@@ -505,7 +515,21 @@ class Appointment < ApplicationRecord
   end
 
   def status_human_readable
-    STATUS_METADATA[status]
+    STATUS_METADATA[status] || {
+      name: status.to_s.humanize,
+      description: "Status: #{status.to_s.humanize}"
+    }
+  end
+
+  def set_scheduled!
+    transaction do
+      if update(status: :scheduled, status_reason:, updater:)
+        true
+      else
+        errors.add(:base, "Cannot set appointment to scheduled")
+        false
+      end
+    end
   end
 
   # Check if this appointment or its reference (first visit) is paid
