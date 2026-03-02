@@ -106,7 +106,7 @@ module AdminPortal
         created_at: order.created_at&.iso8601,
         therapist_id: first_appointment&.therapist_id,
         first_appointment_id: first_appointment&.id,
-        appointments: order.appointments.map { |a| { id: a.id, visit_number: a.visit_number, total_package_visits: a.total_package_visits } },
+        appointments: order.appointments.map { |a| {id: a.id, visit_number: a.visit_number, total_package_visits: a.total_package_visits} },
         latitude: first_appointment&.address_history&.latitude,
         longitude: first_appointment&.address_history&.longitude
       }

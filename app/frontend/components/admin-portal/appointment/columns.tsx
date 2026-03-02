@@ -9,6 +9,7 @@ import {
 	ChevronUp,
 	Clock3,
 	Copy,
+	Download,
 	Hash,
 	MapPinIcon,
 	MoreHorizontal,
@@ -381,6 +382,30 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 		copyRegistrationNumber(appointment.invoiceUrl, "Invoice URL");
 	}, [appointment.invoiceUrl, copyRegistrationNumber]);
 
+	const onDownloadSoapReport = useCallback(async () => {
+		try {
+			const url = `/admin-portal/appointments/${appointment.id}/soap-report`;
+			window.open(url, "_blank", "noopener,noreferrer");
+			toast.success("Downloading SOAP report");
+		} catch (error) {
+			const message = "Failed to download SOAP report";
+			console.error(`${message}: ${error}`);
+			toast.error(message);
+		}
+	}, [appointment.id]);
+
+	const onDownloadSoapFinal = useCallback(async () => {
+		try {
+			const url = `/admin-portal/appointments/${appointment.id}/soap-report-final`;
+			window.open(url, "_blank", "noopener,noreferrer");
+			toast.success("Downloading Final SOAP report");
+		} catch (error) {
+			const message = "Failed to download Final SOAP report";
+			console.error(`${message}: ${error}`);
+			toast.error(message);
+		}
+	}, [appointment.id]);
+
 	const routeTo = useMemo(
 		() => ({
 			cancel: (id: string) =>
@@ -443,13 +468,27 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 					<MoreHorizontal className="w-4 h-4" />
 				</Button>
 			</DropdownMenuTrigger>
+
 			<DropdownMenuContent align="end">
 				<DropdownMenuGroup>
+					<DropdownMenuItem
+						onSelect={() => {
+							window.open(
+								`https://www.google.com/maps/search/?api=1&query=${appointment?.visitAddress?.coordinates.x},${appointment.visitAddress?.coordinates.y}`,
+							);
+						}}
+						disabled={!appointment?.visitAddress?.coordinates}
+					>
+						<MapPinIcon className="opacity-60" aria-hidden="true" />
+						View on Google Maps
+					</DropdownMenuItem>
+
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>
 							<Copy className="opacity-60" aria-hidden="true" />
 							Copy
 						</DropdownMenuSubTrigger>
+
 						<DropdownMenuPortal>
 							<DropdownMenuSubContent>
 								<DropdownMenuItem
@@ -485,16 +524,20 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>
 					</DropdownMenuSub>
+
+					<DropdownMenuItem onSelect={onDownloadSoapReport}>
+						<Download className="opacity-60" aria-hidden="true" />
+						Download SOAP Report
+					</DropdownMenuItem>
+
 					<DropdownMenuItem
-						onSelect={() => {
-							window.open(
-								`https://www.google.com/maps/search/?api=1&query=${appointment?.visitAddress?.coordinates.x},${appointment.visitAddress?.coordinates.y}`,
-							);
-						}}
-						disabled={!appointment?.visitAddress?.coordinates}
+						onSelect={onDownloadSoapFinal}
+						disabled={
+							appointment.visitNumber !== appointment.totalPackageVisits
+						}
 					>
-						<MapPinIcon className="opacity-60" aria-hidden="true" />
-						View on Google Maps
+						<Download className="opacity-60" aria-hidden="true" />
+						Download Final SOAP
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 

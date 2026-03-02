@@ -3,7 +3,7 @@ module AdminPortal
     include AppointmentsHelper
 
     before_action :authenticate_user!
-    before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf]
+    before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf, :download_soap_final_pdf]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params, current_user)
@@ -200,16 +200,24 @@ module AdminPortal
 
       if success
         Rails.logger.info "Appointment #{@appointment.registration_number} cancelled."
-        redirect_to(
-          admin_portal_appointments_path(request.query_parameters.except("cancel")),
-          notice: message
-        )
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters.except("cancel"))
+        else
+          admin_portal_appointments_path(request.query_parameters.except("cancel"))
+        end
+
+        redirect_to redirect_path, notice: message
       else
         Rails.logger.warn "Failed to cancel the appointment #{@appointment.registration_number}: #{message}"
-        redirect_to(
-          admin_portal_appointments_path(request.query_parameters),
-          alert: message
-        )
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
+        else
+          admin_portal_appointments_path(request.query_parameters)
+        end
+
+        redirect_to redirect_path, alert: message
       end
     end
 
@@ -221,10 +229,14 @@ module AdminPortal
 
       unless @appointment
         Rails.logger.error "Appointment not found for order ID: #{params[:id]}"
-        redirect_to(
-          admin_portal_appointments_path(request.query_parameters),
-          alert: "Appointment not found"
-        )
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
+        else
+          admin_portal_appointments_path(request.query_parameters)
+        end
+
+        redirect_to redirect_path, alert: "Appointment not found"
         return
       end
 
@@ -233,16 +245,23 @@ module AdminPortal
       result = CancelAppointmentServiceExternalApi.new(@appointment, current_user, cancellation_reason).call
 
       if result[:success]
-        redirect_to(
-          admin_portal_appointments_path(request.query_parameters.except("cancel")),
-          notice: result[:message] || "Appointment cancelled successfully via external API."
-        )
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters.except("cancel"))
+        else
+          admin_portal_appointments_path(request.query_parameters.except("cancel"))
+        end
+
+        redirect_to redirect_path, notice: result[:message] || "Appointment cancelled successfully via external API."
       else
         Rails.logger.warn "Failed to cancel appointment #{@appointment.registration_number} via external API: #{result[:error]}"
-        redirect_to(
-          admin_portal_appointments_path(request.query_parameters),
-          alert: result[:error]
-        )
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
+        else
+          admin_portal_appointments_path(request.query_parameters)
+        end
+
+        redirect_to redirect_path, alert: result[:error]
       end
     end
 
@@ -381,88 +400,90 @@ module AdminPortal
 
       unless @appointment
         Rails.logger.error "Appointment not found for ID: #{appointment_id}"
-        respond_to do |format|
-          format.html {
-            flash[:alert] = "Appointment not found"
-            # redirect_to admin_portal_appointments_path
-          }
-          format.json { render json: {error: "Appointment not found"}, status: :not_found }
+        flash[:alert] = "Appointment not found"
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
+        else
+          admin_portal_appointments_path(request.query_parameters)
         end
+
+        redirect_to redirect_path
         return
       end
 
-      begin
-        # Make request to external API using binary connection
-        api_url = "/api/v1/appointments/#{appointment_id}/report"
-        Rails.logger.info "Making request to external API: #{api_url}"
+      # Use the download service with per-visit SOAP type
+      service = DownloadFileServiceExternalApi.new(appointment_id, soap_type: DownloadFileServiceExternalApi::SOAP_PER_VISIT)
+      result = service.call
 
-        response = FisiohomeApi::Client.get_binary(api_url)
+      if result[:success]
+        # Stream the PDF to the user
+        send_data result[:data],
+          filename: result[:filename],
+          type: "application/pdf",
+          disposition: "attachment"
 
-        Rails.logger.info "External API response status: #{response.status}"
-        Rails.logger.info "External API response headers: #{response.headers.inspect}"
+        Rails.logger.info "Successfully downloaded SOAP PDF for appointment #{appointment_id}"
+      else
+        error_message = result[:error]
+        Rails.logger.error "Failed to download SOAP PDF: #{error_message}"
 
-        if response.success?
-          # Check if response is a PDF
-          content_type = response.headers["content-type"]
+        flash[:alert] = error_message
 
-          Rails.logger.info "Response content-type: #{content_type}"
-          Rails.logger.info "Response body size: #{response.body&.bytesize} bytes"
-
-          if content_type&.include?("application/pdf")
-            # Extract filename from Content-Disposition header if present
-            content_disposition = response.headers["content-disposition"]
-            filename = "soap_report_#{appointment_id}.pdf"
-
-            if content_disposition&.match?(/filename=(?:"([^"]+)"|([^;]+))/)
-              filename = $1 || $2
-            end
-
-            Rails.logger.info "Streaming PDF to user with filename: #{filename}"
-
-            # Stream the PDF to the user
-            respond_to do |format|
-              format.any {
-                send_data response.body,
-                  filename: filename,
-                  type: "application/pdf",
-                  disposition: "attachment"
-              }
-            end
-
-            Rails.logger.info "Successfully downloaded SOAP PDF for appointment #{appointment_id}"
-          else
-            Rails.logger.error "Unexpected content type from external API: #{content_type}"
-            Rails.logger.error "Response body preview: #{response.body&.first(200)}"
-            respond_to do |format|
-              format.html {
-                flash[:alert] = "Invalid file format received from external API"
-                # redirect_to orders_admin_portal_appointments_path
-              }
-              format.json { render json: {error: "Invalid file format received from external API"}, status: :unprocessable_entity }
-            end
-          end
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
         else
-          error_message = "Failed to download SOAP report: HTTP #{response.status}"
-          Rails.logger.error "#{error_message} - #{response.body}"
-          respond_to do |format|
-            format.html {
-              flash[:alert] = error_message
-              # redirect_to orders_admin_portal_appointments_path
-            }
-            format.json { render json: {error: error_message}, status: response.status }
-          end
+          admin_portal_appointments_path(request.query_parameters)
         end
-      rescue => e
-        error_message = "Error downloading SOAP report: #{e.message}"
-        Rails.logger.error error_message
-        Rails.logger.error e.backtrace.join("\n")
-        respond_to do |format|
-          format.html {
-            flash[:alert] = error_message
-            # redirect_to orders_admin_portal_appointments_path
-          }
-          format.json { render json: {error: error_message}, status: :internal_server_error }
+
+        redirect_to redirect_path
+      end
+    end
+
+    def download_soap_final_pdf
+      appointment_id = params[:id]
+
+      Rails.logger.info "Attempting to download Final SOAP PDF for appointment ID: #{appointment_id}"
+
+      unless @appointment
+        Rails.logger.error "Appointment not found for ID: #{appointment_id}"
+        flash[:alert] = "Appointment not found"
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
+        else
+          admin_portal_appointments_path(request.query_parameters)
         end
+
+        redirect_to redirect_path
+        return
+      end
+
+      # Use the download service with final SOAP type
+      service = DownloadFileServiceExternalApi.new(appointment_id, soap_type: DownloadFileServiceExternalApi::SOAP_FINAL)
+      result = service.call
+
+      if result[:success]
+        # Stream the PDF to the user
+        send_data result[:data],
+          filename: result[:filename],
+          type: "application/pdf",
+          disposition: "attachment"
+
+        Rails.logger.info "Successfully downloaded Final SOAP PDF for appointment #{appointment_id}"
+      else
+        error_message = result[:error]
+        Rails.logger.error "Failed to download Final SOAP PDF: #{error_message}"
+
+        flash[:alert] = error_message
+
+        redirect_path = if request.referer&.include?(orders_admin_portal_appointments_path)
+          orders_admin_portal_appointments_path(request.query_parameters)
+        else
+          admin_portal_appointments_path(request.query_parameters)
+        end
+
+        redirect_to redirect_path
       end
     end
 

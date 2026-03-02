@@ -294,6 +294,7 @@ const OrderActionsCell = ({
 		handleCopy(order.therapistId, "Therapist ID");
 	}, [order.therapistId, handleCopy]);
 
+	// for download soap report
 	const onDownloadSoapReport = useCallback(
 		async (appointmentId: string, visitNumber: number, totalVisits: number) => {
 			try {
@@ -308,6 +309,28 @@ const OrderActionsCell = ({
 		},
 		[],
 	);
+
+	const onDownloadSoapFinal = useCallback(async () => {
+		// Find the last appointment (highest visit number)
+		if (!order.appointments || order.appointments.length === 0) {
+			toast.error("No appointments found");
+			return;
+		}
+
+		const lastAppointment = order.appointments.reduce((last, current) =>
+			current.visitNumber > last.visitNumber ? current : last,
+		);
+
+		try {
+			const url = `/admin-portal/appointments/${lastAppointment.id}/soap-report-final`;
+			window.open(url, "_blank", "noopener,noreferrer");
+			toast.success("Downloading Final SOAP Report");
+		} catch (error) {
+			const message = `Failed to download Final SOAP report`;
+			console.error(`${message}: ${error}`);
+			toast.error(message);
+		}
+	}, [order.appointments]);
 
 	const onViewOnGoogleMaps = useCallback(() => {
 		if (!order.latitude || !order.longitude) {
@@ -385,6 +408,7 @@ const OrderActionsCell = ({
 					<MoreHorizontal className="w-4 h-4" />
 				</Button>
 			</DropdownMenuTrigger>
+
 			<DropdownMenuContent align="end">
 				<DropdownMenuGroup>
 					<DropdownMenuItem
@@ -396,6 +420,7 @@ const OrderActionsCell = ({
 						<EyeIcon className="opacity-60" aria-hidden="true" />
 						View details
 					</DropdownMenuItem>
+
 					<DropdownMenuItem
 						onSelect={(e) => {
 							e.preventDefault();
@@ -406,11 +431,13 @@ const OrderActionsCell = ({
 						<MapPinIcon className="opacity-60" aria-hidden="true" />
 						View on Google Maps
 					</DropdownMenuItem>
+
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>
 							<Copy className="opacity-60" aria-hidden="true" />
 							Copy
 						</DropdownMenuSubTrigger>
+
 						<DropdownMenuPortal>
 							<DropdownMenuSubContent>
 								<DropdownMenuItem
@@ -446,10 +473,11 @@ const OrderActionsCell = ({
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>
 					</DropdownMenuSub>
+
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger disabled={!order.appointments?.length}>
 							<DownloadIcon className="opacity-60" aria-hidden="true" />
-							Download
+							Download SOAP
 						</DropdownMenuSubTrigger>
 						<DropdownMenuPortal>
 							<DropdownMenuSubContent>
@@ -464,13 +492,21 @@ const OrderActionsCell = ({
 											);
 										}}
 									>
-										Download SOAP Visit {appt.visitNumber}/
-										{appt.totalPackageVisits}
+										Visit {appt.visitNumber}/{appt.totalPackageVisits}
 									</DropdownMenuItem>
 								))}
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>
 					</DropdownMenuSub>
+
+					<DropdownMenuItem
+						onSelect={() => {
+							onDownloadSoapFinal();
+						}}
+					>
+						<DownloadIcon className="opacity-60" aria-hidden="true" />
+						Download Final SOAP
+					</DropdownMenuItem>
 				</DropdownMenuGroup>
 
 				<DropdownMenuSeparator />
