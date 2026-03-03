@@ -66,7 +66,7 @@ export const CONTACT_INFORMATION_SCHEMA = z.object({
 		.string()
 		.min(1, { message: "Contact phone number is required" })
 		.refine(isValidPhoneNumber, { message: "Invalid phone number" }),
-	email: z.string().email("Invalid email").optional(),
+	email: z.string().email("Invalid email").or(z.literal("")).optional(),
 	miitelLink: z.string().url("MiiTel link must be a valid URL").optional(),
 });
 export type ContactInformationSchema = z.infer<

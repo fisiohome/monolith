@@ -412,7 +412,10 @@ const DraftDetails = ({
 								{draft.currentStep === "patient_details" && (
 									<div className="flex gap-1 uppercase">
 										{draft.patientContactSource && (
-											<Badge variant="outline" className="text-xs p-0 px-0.5">
+											<Badge
+												variant="outline"
+												className="text-[10px] border p-0 px-1 rounded-full font-bold bg-sidebar"
+											>
 												{draft.patientContactSource === "new"
 													? "New Contact"
 													: "Existing"}
@@ -420,7 +423,10 @@ const DraftDetails = ({
 										)}
 
 										{draft.patientRecordSource && (
-											<Badge variant="outline" className="text-xs p-0 px-0.5">
+											<Badge
+												variant="outline"
+												className="text-[10px] border p-0 px-1 rounded-full font-bold bg-sidebar"
+											>
 												{draft.patientRecordSource === "add"
 													? "New Patient"
 													: "Existing"}

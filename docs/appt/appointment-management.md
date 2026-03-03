@@ -66,6 +66,97 @@ The system enforces status transitions to maintain data integrity:
    - Series appointments cannot have a status ahead of their initial visit
    - Cancelling an initial visit cascades to all series appointments
 
+## Patient Information Requirements
+
+When creating appointments, the system collects patient contact information with specific validation rules:
+
+### Contact Information Fields
+
+| Field | Required | Format | Notes |
+|-------|----------|--------|-------|
+| **Contact Name** | ✅ Yes | Min 3 characters | Must be provided |
+| **Contact Phone** | ✅ Yes | Valid phone format | International format supported (E.164) |
+| **Email** | ❌ Optional | Valid email format | Can be blank or omitted |
+| **MiiTel Link** | ❌ Optional | Valid URL format | Optional call recording link |
+
+### Email Validation Rules
+
+The email field is **optional** to support scenarios where:
+- Patient doesn't have an email address
+- Contact person prefers phone-only communication
+- Quick appointment creation without complete information
+
+**Backend Validation** (`PatientContact` model):
+```ruby
+validates :email, 
+  allow_blank: true,           # Email can be blank
+  uniqueness: true,             # Must be unique if provided
+  format: {                     # Valid email format required if provided
+    with: URI::MailTo::EMAIL_REGEXP, 
+    message: "must be a valid email address"
+  }
+```
+
+**Frontend Validation** (Zod schema):
+```typescript
+email: z.string().email("Invalid email").or(z.literal("")).optional()
+```
+- Accepts valid email addresses
+- Accepts empty strings
+- Accepts undefined/null values
+- Shows validation error only if email is provided with invalid format
+
+### Contact Lookup Logic
+
+When creating appointments, the system searches for existing patient contacts in priority order:
+
+1. **Email-based lookup** (if email provided):
+   ```ruby
+   email = contact_params[:email].to_s.downcase.presence
+   PatientContact.find_by(email: email) if email
+   ```
+
+2. **Phone-based lookup** (if email not provided or not found):
+   ```ruby
+   phone = contact_params[:contact_phone].to_s.gsub(/\D/, "").presence
+   PatientContact.find_by(contact_phone: phone) if phone
+   ```
+
+3. **Create new contact** (if neither found):
+   ```ruby
+   PatientContact.create!(contact_params)
+   ```
+
+This ensures:
+- Existing contacts are reused when possible
+- Phone number alone is sufficient for contact identification
+- Email uniqueness is maintained when provided
+- Duplicate contacts are prevented
+
+### Form Behavior
+
+**UI Presentation**:
+- Email field is shown but not marked as required
+- No asterisk (*) indicator on email label
+- Form can be submitted without email
+
+**Data Flow**:
+```
+User Input → Frontend Validation → Backend Service → Model Validation
+    ↓              ↓                      ↓                   ↓
+Optional     Accept empty         Use .presence()      allow_blank: true
+             or valid email       for safe checks
+```
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `app/models/patient_contact.rb` | Model validation rules |
+| `app/services/admin_portal/create_appointment_service_external_api.rb` | Contact lookup logic |
+| `app/frontend/lib/appointments/form.ts` | Frontend Zod schema validation |
+| `app/frontend/components/admin-portal/appointment/form/patient-contact.tsx` | Contact form UI |
+
 ## Key Validations
 
 ### 1. Time Collision Prevention
