@@ -64,6 +64,9 @@ module AdminPortal
       #
       # @return [Array<String>] Array of available time slot start times in 'HH:MM' format
       def available_time_slots_for_date
+        # Return empty array if no schedule found
+        return [] if @schedule.blank?
+
         # 1. Determine the date and therapist's time zone
         date = @appointment_date_time_server_time.to_date
         therapist_time_zone = @schedule.time_zone.presence || Time.zone.name
