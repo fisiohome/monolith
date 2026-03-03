@@ -61,6 +61,7 @@ class Therapist < ApplicationRecord
 
   has_many :appointments, dependent: :nullify
 
+  before_validation :sync_telegram_fields
   before_save :normalize_telegram_id
 
   # * cycle callbacks
@@ -135,6 +136,17 @@ class Therapist < ApplicationRecord
     result
   end
 
+  # * Telegram field management - override getters for fallback logic
+  def telegram_id
+    # Return telegram_id if present, otherwise fallback to telegram_username
+    self[:telegram_id].presence || self[:telegram_username].presence
+  end
+
+  def telegram_username
+    # Return telegram_username if present, otherwise fallback to telegram_id
+    self[:telegram_username].presence || self[:telegram_id].presence
+  end
+
   private
 
   def destroy_associated_user
@@ -199,5 +211,10 @@ class Therapist < ApplicationRecord
   def normalize_telegram_id
     # Convert empty telegram_id to nil to avoid unique constraint violations
     self.telegram_id = nil if telegram_id.blank?
+  end
+
+  def sync_telegram_fields
+    # telegram_id is the primary field, telegram_username follows it
+    self.telegram_username = (telegram_id.presence)
   end
 end

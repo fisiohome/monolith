@@ -1568,14 +1568,14 @@ function PersonalInformationForm({
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel className="capitalize">
-							Telegram ID{" "}
-							<span className="text-sm italic font-light">- (optional)</span>
+							Telegram Username{" "}
+							<span className="text-sm italic font-light">- (optional, e.g., @username)</span>
 						</FormLabel>
 						<FormControl>
 							<Input
 								{...field}
 								type="text"
-								placeholder="Enter the Telegram ID (e.g., @telegram-id)..."
+								placeholder="Enter Telegram username (e.g., @username)..."
 								autoComplete="off"
 							/>
 						</FormControl>
