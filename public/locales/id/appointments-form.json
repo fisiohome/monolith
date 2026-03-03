@@ -136,6 +136,10 @@
 			"title": "Error",
 			"description": "Hei, hanya pengingat untuk mencari dan memilih pasien dalam catatan terlebih dahulu."
 		},
+		"alert_location_missing": {
+			"title": "Informasi Lokasi Diperlukan",
+			"description": "Pastikan koordinat lokasi pasien (latitude dan longitude) telah diatur dengan benar. Informasi ini diperlukan untuk penjadwalan janji temu."
+		},
 		"alert_empty_basic": {
 			"title": "Error",
 			"description": "Mungkin ada beberapa data yang perlu dikoreksi."

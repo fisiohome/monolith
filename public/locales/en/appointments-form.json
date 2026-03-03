@@ -136,6 +136,10 @@
 			"title": "Error",
 			"description": "Hey, just a friendly reminder to search and select the patient in the record first."
 		},
+		"alert_location_missing": {
+			"title": "Location Information Required",
+			"description": "Please ensure the patient's location coordinates (latitude and longitude) are properly set. This information is required for appointment scheduling."
+		},
 		"alert_empty_basic": {
 			"title": "Error",
 			"description": "There may be some data that is in need of correction."

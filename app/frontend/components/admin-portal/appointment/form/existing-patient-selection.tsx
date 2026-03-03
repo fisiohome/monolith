@@ -558,6 +558,27 @@ export default function ExistingPatientSelection() {
 		};
 	}, [mode, isExistingPatientSource]);
 
+	// * memoize alert error detection
+	const alertError = useMemo(() => {
+		const hasPatientDetailsErrors = !!form?.formState?.errors?.patientDetails;
+		const hasContactInformationErrors =
+			!!form?.formState?.errors?.contactInformation;
+		const hasLocationErrors =
+			!!form?.formState?.errors?.patientDetails?.latitude ||
+			!!form?.formState?.errors?.patientDetails?.longitude;
+
+		return {
+			shouldShow:
+				(hasPatientDetailsErrors || hasContactInformationErrors) &&
+				isExistingPatientSource,
+			isLocationError: hasLocationErrors,
+		};
+	}, [
+		form?.formState?.errors?.patientDetails,
+		form?.formState?.errors?.contactInformation,
+		isExistingPatientSource,
+	]);
+
 	return (
 		<Fragment>
 			{isShow.patientRecordRadio && (
@@ -603,19 +624,21 @@ export default function ExistingPatientSelection() {
 				/>
 			)}
 
-			{(!!form?.formState?.errors?.patientDetails ||
-				!!form?.formState?.errors?.contactInformation) &&
-				isExistingPatientSource && (
-					<Alert variant="destructive" className="col-span-full">
-						<AlertCircle className="size-4" />
-						<AlertTitle className="text-xs">
-							{tpp("alert_empty.title")}
-						</AlertTitle>
-						<AlertDescription className="text-xs">
-							{tpp("alert_empty.description")}
-						</AlertDescription>
-					</Alert>
-				)}
+			{alertError.shouldShow && (
+				<Alert variant="destructive" className="col-span-full">
+					<AlertCircle className="size-4" />
+					<AlertTitle className="text-xs">
+						{alertError.isLocationError
+							? tpp("alert_location_missing.title")
+							: tpp("alert_empty.title")}
+					</AlertTitle>
+					<AlertDescription className="text-xs">
+						{alertError.isLocationError
+							? tpp("alert_location_missing.description")
+							: tpp("alert_empty.description")}
+					</AlertDescription>
+				</Alert>
+			)}
 
 			{isShow.existingPatientSource && (
 				<Fragment>
