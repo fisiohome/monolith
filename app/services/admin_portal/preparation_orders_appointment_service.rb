@@ -9,6 +9,7 @@ module AdminPortal
       @params = params
       @selected_id = @params[:view_order]
       @selected_update_pic_id = @params[:update_pic]
+      @selected_update_status_id = @params[:update_status]
     end
 
     def fetch_orders
@@ -37,16 +38,18 @@ module AdminPortal
     end
 
     def fetch_selected_appointment
-      return nil if @selected_update_pic_id.blank?
+      selected_id = @selected_update_pic_id || @selected_update_status_id
+      return nil if selected_id.blank?
 
-      appointment = Appointment.includes(:order).find_by(id: @selected_update_pic_id)
+      appointment = Appointment.includes(:order).find_by(id: selected_id)
       return nil unless appointment
 
       deep_transform_keys_to_camel_case(serialize_appointment(appointment, {include_order: true}))
     end
 
     def fetch_options_data
-      return nil if @selected_update_pic_id.blank?
+      selected_id = @selected_update_pic_id || @selected_update_status_id
+      return nil if selected_id.blank?
 
       admins = Admin.all.map { |admin| deep_transform_keys_to_camel_case(serialize_admin(admin).as_json) }
       statuses = Appointment.statuses.map { |key, value| {key:, value:} }.as_json
@@ -106,7 +109,14 @@ module AdminPortal
         created_at: order.created_at&.iso8601,
         therapist_id: first_appointment&.therapist_id,
         first_appointment_id: first_appointment&.id,
-        appointments: order.appointments.map { |a| {id: a.id, visit_number: a.visit_number, total_package_visits: a.total_package_visits} },
+        appointments: order.appointments.map { |a|
+          {
+            id: a.id,
+            visit_number: a.visit_number,
+            total_package_visits: a.total_package_visits,
+            status: a.status
+          }
+        },
         latitude: first_appointment&.address_history&.latitude,
         longitude: first_appointment&.address_history&.longitude
       }

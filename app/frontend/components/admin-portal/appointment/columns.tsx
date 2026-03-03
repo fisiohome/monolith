@@ -160,10 +160,7 @@ const StatusCell = memo(({ row }: { row: Row<Appointment> }) => {
 				className="relative flex-shrink-0 text-left"
 				variant={statusDotVariant}
 			>
-				<span
-					title={statusText}
-					className="tracking-wide line-clamp-1"
-				>
+				<span title={statusText} className="tracking-wide line-clamp-1">
 					{statusText}
 				</span>
 			</DotBadgeWithLabel>
@@ -672,7 +669,11 @@ const getColumns = (): ColumnDef<Appointment>[] => [
 	},
 	{
 		id: "actions",
-		cell: ({ row }) => <ActionsCell row={row} />,
+		cell: ({ row }) => (
+			<div className="flex justify-end items-center">
+				<ActionsCell row={row} />
+			</div>
+		),
 	},
 ];
 

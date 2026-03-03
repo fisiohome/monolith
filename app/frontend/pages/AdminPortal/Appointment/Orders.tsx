@@ -3,6 +3,7 @@ import type { ColumnDef, Row } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
+	ActivityIcon,
 	Ban,
 	Cctv,
 	CheckIcon,
@@ -21,7 +22,11 @@ import { startTransition, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
-import { UpdatePICForm } from "@/components/admin-portal/appointment/feature-form";
+import { getPermission } from "@/components/admin-portal/appointment/details/action-buttons";
+import {
+	UpdatePICForm,
+	UpdateStatusForm,
+} from "@/components/admin-portal/appointment/feature-form";
 import ApptPagination from "@/components/admin-portal/appointment/pagination-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
 import {
@@ -92,9 +97,10 @@ interface OrderRow {
 	therapistId: string | null;
 	firstAppointmentId: string | null;
 	appointments: {
-		id: string;
-		visitNumber: number;
-		totalPackageVisits: number;
+		id: Appointment["id"];
+		visitNumber: Appointment["visitNumber"];
+		totalPackageVisits: Appointment["totalPackageVisits"];
+		status: Appointment["status"];
 	}[];
 	latitude: number | null;
 	longitude: number | null;
@@ -214,6 +220,7 @@ const APPOINTMENT_STATUS_STYLES: Record<string, string> = {
 	"PENDING PAYMENT": "bg-amber-100 text-amber-700 hover:bg-amber-100/80",
 	PAID: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100/80",
 	COMPLETED: "bg-emerald-100 text-emerald-700 hover:bg-emerald-100/80",
+	SCHEDULED: "bg-blue-100 text-blue-700 hover:bg-blue-100/80",
 };
 
 function formatCurrency(amount: number): string {
@@ -246,6 +253,24 @@ const OrderActionsCell = ({
 }) => {
 	const order = row.original;
 	const { props: globalProps, url: pageURL } = usePage<OrdersGlobalPageProps>();
+	const { t: tappt } = useTranslation("appointments", {
+		useSuspense: false,
+	});
+
+	const permission = useMemo(() => {
+		const isOrderCancelled = order.status === "CANCELLED";
+		const isOrderRefunded = order.status === "REFUNDED";
+		const isOrderCompleted = order.status === "COMPLETED";
+		const markOrderDone =
+			isOrderCancelled || isOrderRefunded || isOrderCompleted;
+
+		return {
+			cannotUpdatePic: !order.firstAppointmentId,
+			cannotReschedule: !order.appointments?.length || markOrderDone,
+			cannotUpdateStatus: !order.appointments?.length || markOrderDone,
+			cannotCancelBooking: !order.firstAppointmentId || markOrderDone,
+		};
+	}, [order.appointments?.length, order.firstAppointmentId, order.status]);
 
 	const handleCopy = useCallback(async (value: string, label: string) => {
 		try {
@@ -378,6 +403,33 @@ const OrderActionsCell = ({
 			}
 		},
 		[globalProps.adminPortal.router.adminPortal.appointment.index],
+	);
+
+	// for open the update status page
+	const openUpdateStatusPage = useCallback(
+		(id: string) => {
+			if (id) {
+				router.get(
+					pageURL,
+					{ update_status: id },
+					{
+						only: [
+							"adminPortal",
+							"flash",
+							"errors",
+							"selectedAppointment",
+							"optionsData",
+						],
+						preserveScroll: true,
+						preserveState: true,
+						replace: false,
+					},
+				);
+			} else {
+				toast.error("Appointment ID unavailable");
+			}
+		},
+		[pageURL],
 	);
 
 	// for open the cancel appointment modal
@@ -517,58 +569,76 @@ const OrderActionsCell = ({
 							e.preventDefault();
 							openUpdatePicForm();
 						}}
-						disabled={!order.firstAppointmentId}
+						disabled={permission.cannotUpdatePic}
 					>
 						<Cctv className="opacity-60" aria-hidden="true" />
-						Update PIC
+						{tappt("button.update_pic")}
 					</DropdownMenuItem>
 
-					{order.status !== "CANCELLED" && order.status !== "REFUNDED" ? (
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger disabled={!order.appointments?.length}>
-								<Clock3 className="opacity-60" aria-hidden="true" />
-								Reschedule
-							</DropdownMenuSubTrigger>
-							<DropdownMenuPortal>
-								<DropdownMenuSubContent>
-									{order.appointments?.map((appt) => (
-										<DropdownMenuItem
-											key={appt.id}
-											onSelect={(e) => {
-												e.preventDefault();
-												openReschedulePage(appt.id);
-											}}
-										>
-											Visit {appt.visitNumber}/{appt.totalPackageVisits}
-										</DropdownMenuItem>
-									))}
-								</DropdownMenuSubContent>
-							</DropdownMenuPortal>
-						</DropdownMenuSub>
-					) : null}
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger disabled={permission.cannotReschedule}>
+							<Clock3 className="opacity-60" aria-hidden="true" />
+							{tappt("button.reschedule")}
+						</DropdownMenuSubTrigger>
+						<DropdownMenuPortal>
+							<DropdownMenuSubContent>
+								{order.appointments?.map((appt) => (
+									<DropdownMenuItem
+										key={appt.id}
+										onSelect={(e) => {
+											e.preventDefault();
+											openReschedulePage(appt.id);
+										}}
+										disabled={!getPermission.reschedule(appt as Appointment)}
+									>
+										Visit {appt.visitNumber}/{appt.totalPackageVisits}
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuSubContent>
+						</DropdownMenuPortal>
+					</DropdownMenuSub>
+
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger disabled={permission.cannotUpdateStatus}>
+							<ActivityIcon className="opacity-60" aria-hidden="true" />
+							{tappt("button.update_status")}
+						</DropdownMenuSubTrigger>
+						<DropdownMenuPortal>
+							<DropdownMenuSubContent>
+								{order.appointments?.map((appt) => (
+									<DropdownMenuItem
+										key={appt.id}
+										onSelect={(e) => {
+											e.preventDefault();
+											openUpdateStatusPage(appt.id);
+										}}
+										disabled={!getPermission.updateStatus(appt as Appointment)}
+									>
+										Visit {appt.visitNumber}/{appt.totalPackageVisits}
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuSubContent>
+						</DropdownMenuPortal>
+					</DropdownMenuSub>
 				</DropdownMenuGroup>
 
-				{order.status !== "CANCELLED" && order.status !== "REFUNDED" ? (
-					<>
-						<DropdownMenuSeparator />
+				<DropdownMenuSeparator />
 
-						<DropdownMenuGroup>
-							<DropdownMenuItem
-								className="text-destructive focus:text-destructive"
-								onSelect={(e) => {
-									e.preventDefault();
-									if (order.firstAppointmentId) {
-										openCancelPage(order.firstAppointmentId);
-									}
-								}}
-								disabled={!order.firstAppointmentId}
-							>
-								<Ban className="opacity-60" aria-hidden="true" />
-								Cancel Booking
-							</DropdownMenuItem>
-						</DropdownMenuGroup>
-					</>
-				) : null}
+				<DropdownMenuGroup>
+					<DropdownMenuItem
+						className="text-destructive focus:text-destructive"
+						onSelect={(e) => {
+							e.preventDefault();
+							if (order.firstAppointmentId) {
+								openCancelPage(order.firstAppointmentId);
+							}
+						}}
+						disabled={permission.cannotCancelBooking}
+					>
+						<Ban className="opacity-60" aria-hidden="true" />
+						{tappt("button.cancel_booking")}
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -633,39 +703,43 @@ const orderColumns = (
 	},
 	{
 		accessorKey: "paymentStatus",
-		header: "Payment",
+		header: () => <div className="text-center">Payment</div>,
 		cell: ({ row }) => (
-			<Badge
-				className={cn(
-					"text-[10px] border px-1",
-					PAYMENT_STATUS_STYLES[row.original.paymentStatus] ||
-						"bg-background hover:bg-background/80",
-				)}
-			>
-				{row.original.paymentStatus.replace(/_/g, " ")}
-			</Badge>
+			<div className="flex items-center justify-center">
+				<Badge
+					className={cn(
+						"text-[10px] border p-0 px-1 rounded-full font-bold",
+						PAYMENT_STATUS_STYLES[row.original.paymentStatus] ||
+							"bg-background hover:bg-background/80",
+					)}
+				>
+					{row.original.paymentStatus.replace(/_/g, " ")}
+				</Badge>
+			</div>
 		),
 	},
 	{
 		accessorKey: "status",
-		header: "Status",
+		header: () => <div className="text-center">Status</div>,
 		cell: ({ row }) => (
-			<Badge
-				className={cn(
-					"text-[10px] border px-1",
-					ORDER_STATUS_STYLES[row.original.status] ||
-						"bg-background hover:bg-background/80",
-				)}
-			>
-				{row.original.status.replace(/_/g, " ")}
-			</Badge>
+			<div className="flex items-center justify-center">
+				<Badge
+					className={cn(
+						"text-[10px] border p-0 px-1 rounded-full font-bold",
+						ORDER_STATUS_STYLES[row.original.status] ||
+							"bg-background hover:bg-background/80",
+					)}
+				>
+					{row.original.status.replace(/_/g, " ")}
+				</Badge>
+			</div>
 		),
 	},
 	{
 		accessorKey: "invoiceNumber",
 		header: "Invoice",
 		cell: ({ row }) => (
-			<span className="select-all text-sm text-muted-foreground text-nowrap">
+			<span className="select-all text-sm text-muted-foreground text-nowrap italic">
 				{row.original.invoiceNumber || "—"}
 			</span>
 		),
@@ -744,7 +818,7 @@ function OrderDetailContent({
 						value={
 							<Badge
 								className={cn(
-									"text-[10px] border",
+									"text-[10px] border p-0 px-1 rounded-full font-bold",
 									PAYMENT_STATUS_STYLES[order.paymentStatus] ||
 										"bg-background hover:bg-background/80",
 								)}
@@ -858,7 +932,7 @@ function OrderDetailContent({
 						value={
 							<Badge
 								className={cn(
-									"text-[10px] border",
+									"text-[10px] border p-0 px-1 rounded-full font-bold",
 									ORDER_STATUS_STYLES[order.status] ||
 										"bg-background hover:bg-background/80",
 								)}
@@ -877,7 +951,23 @@ function OrderDetailContent({
 					{order.cancelledAt && (
 						<InfoItem
 							label="Cancelled"
-							value={`${formatDateTime(order.cancelledAt)}${order.cancelledBy ? ` (${order.cancelledBy})` : ""}`}
+							valueClassName=""
+							value={
+								<>
+									<p className="font-semibold text-sm text-pretty leading-snug">
+										{formatDateTime(order.cancelledAt)}
+									</p>
+
+									{order.cancelledBy && (
+										<Badge
+											variant="outline"
+											className="text-[10px] italic border p-0 px-1 rounded-full font-bold bg-card"
+										>
+											By {order.cancelledBy}
+										</Badge>
+									)}
+								</>
+							}
 						/>
 					)}
 				</div>
@@ -952,7 +1042,7 @@ function OrderDetailContent({
 											<TableCell className="py-1.5">
 												<Badge
 													className={cn(
-														"text-[10px] border-transparent uppercase",
+														"text-[10px] border p-0 px-1 rounded-full font-bold",
 														APPOINTMENT_STATUS_STYLES[
 															appt.status.toUpperCase()
 														] || "bg-background hover:bg-background/80",
@@ -989,7 +1079,7 @@ function InfoItem({
 	valueClassName?: string;
 }) {
 	return (
-		<div className="space-y-0.5 rounded-md bg-background px-3 py-2">
+		<div className="space-y-0.5 rounded-md bg-muted px-3 py-2">
 			<p className="text-[11px] uppercase text-muted-foreground tracking-wide">
 				{label}
 			</p>
@@ -1183,6 +1273,7 @@ export default function AppointmentOrders() {
 		return {
 			viewOrder: !!q?.viewOrder,
 			updatePIC: !!q?.updatePic,
+			updateStatus: !!q?.updateStatus,
 		};
 	}, [globalProps.adminPortal?.currentQuery]);
 
@@ -1249,6 +1340,40 @@ export default function AppointmentOrders() {
 			},
 		}),
 		[dialogMode.updatePIC, pageURL, t],
+	);
+
+	const dialogUpdateStatus = useMemo<Omit<ResponsiveDialogProps, "children">>(
+		() => ({
+			isOpen: dialogMode.updateStatus,
+			title: t("modal.update_status.title"),
+			description: t("modal.update_status.description"),
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						update_status: null,
+					});
+					startTransition(() => {
+						router.get(
+							fullUrl,
+							{},
+							{
+								only: [
+									"adminPortal",
+									"flash",
+									"errors",
+									"selectedAppointment",
+									"optionsData",
+								],
+								preserveScroll: true,
+								preserveState: true,
+								replace: false,
+							},
+						);
+					});
+				}
+			},
+		}),
+		[dialogMode.updateStatus, pageURL, t],
 	);
 
 	const openOrderDetail = useCallback(
@@ -1416,6 +1541,15 @@ export default function AppointmentOrders() {
 			{globalProps?.selectedAppointment && dialogUpdatePIC.isOpen && (
 				<ResponsiveDialog {...dialogUpdatePIC}>
 					<UpdatePICForm
+						selectedAppointment={globalProps.selectedAppointment}
+					/>
+				</ResponsiveDialog>
+			)}
+
+			{/* Update Status Dialog */}
+			{globalProps?.selectedAppointment && dialogUpdateStatus.isOpen && (
+				<ResponsiveDialog {...dialogUpdateStatus}>
+					<UpdateStatusForm
 						selectedAppointment={globalProps.selectedAppointment}
 					/>
 				</ResponsiveDialog>
