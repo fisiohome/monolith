@@ -11,9 +11,12 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
+  create_schema "therapists"
+
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+  enable_extension "uuid-ossp"
 
   # Custom types defined in this database.
   # Note that some types may not work with other database engines. Be careful if changing database.
@@ -32,7 +35,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.datetime "updated_at", default: -> { "now()" }, null: false
     t.text "notes"
     t.uuid "user_id"
-    t.index ["latitude", "longitude"], name: "index_addresses_on_latitude_and_longitude", where: "((latitude <> (0)::double precision) AND (longitude <> (0)::double precision))"
+    t.index ["latitude", "longitude"], name: "idx_addresses_coordinates"
     t.index ["location_id"], name: "index_addresses_on_location_id"
     t.index ["user_id"], name: "idx_addresses_user_id", where: "(user_id IS NOT NULL)"
   end
@@ -57,11 +60,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.point "coordinates", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["appointment_id"], name: "idx_appointment_address_histories_appointment_id"
     t.index ["appointment_id"], name: "index_appointment_address_histories_on_appointment_id"
-    t.index ["location_id"], name: "idx_appointment_address_histories_location_id"
     t.index ["location_id"], name: "index_appointment_address_histories_on_location_id"
-    t.unique_constraint ["appointment_id"], name: "uq_appointment_address_history"
   end
 
   create_table "appointment_admins", force: :cascade do |t|
@@ -246,7 +246,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.index ["service_id"], name: "index_appointments_on_service_id"
     t.index ["status", "appointment_date_time"], name: "idx_appointments_status_datetime"
     t.index ["therapist_id", "appointment_date_time", "status"], name: "idx_appointments_therapist_datetime_status"
-    t.index ["therapist_id", "appointment_date_time"], name: "idx_appointments_active_therapist_datetime", where: "((status)::text <> ALL (ARRAY[('CANCELLED'::character varying)::text, ('NO_SHOW'::character varying)::text]))"
+    t.index ["therapist_id", "appointment_date_time"], name: "idx_appointments_active_therapist_datetime", where: "(((status)::text <> ALL (ARRAY[('CANCELLED'::character varying)::text, ('NO_SHOW'::character varying)::text])) AND (appointment_date_time IS NOT NULL))"
     t.index ["therapist_id"], name: "index_appointments_on_therapist_id"
     t.index ["visit_number"], name: "index_appointments_on_visit_number"
   end
@@ -435,14 +435,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "patient_contact_id"
+    t.string "patient_number", limit: 20, null: false, comment: "Formatted patient ID (FH-P-0000001) - auto-generated on insert"
     t.uuid "user_id"
     t.datetime "deleted_at", precision: nil
-    t.string "patient_number", limit: 20, null: false, comment: "Formatted patient ID (FH-P-0000001) - auto-generated on insert"
     t.index ["deleted_at"], name: "idx_patients_deleted_at"
     t.index ["name", "date_of_birth", "gender"], name: "index_patients_manual_unique", unique: true, where: "((user_id IS NULL) AND (deleted_at IS NULL))"
     t.index ["patient_contact_id"], name: "index_patients_on_patient_contact_id"
     t.index ["patient_number"], name: "idx_patients_patient_number", unique: true
     t.index ["user_id", "name", "date_of_birth", "gender"], name: "index_patients_on_user_id_and_name_and_date_of_birth_and_gender", unique: true, where: "((user_id IS NOT NULL) AND (deleted_at IS NULL))"
+    t.index ["user_id"], name: "idx_patients_user_id"
   end
 
   create_table "payments", id: :uuid, default: -> { "gen_random_uuid()" }, comment: "Payment transactions from payment gateways", force: :cascade do |t|
@@ -771,6 +772,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.uuid "created_by", comment: "User who initiated the sync job. NULL if user was deleted"
     t.datetime "cancelled_at", precision: nil, comment: "Timestamp when job was cancelled by user"
     t.datetime "last_heartbeat_at", precision: nil, comment: "Last heartbeat from worker, used for stale job detection"
+    t.boolean "only_create", default: false, null: false
+    t.boolean "skip_status_update", default: false, null: false, comment: "If true, skip updating the status field on existing appointment records during sync"
     t.index ["created_at"], name: "idx_sync_logs_created_at", order: :desc
     t.index ["created_by"], name: "idx_sync_logs_created_by"
     t.index ["last_heartbeat_at"], name: "idx_sync_logs_processing_heartbeat", where: "((status)::text = 'PROCESSING'::text)"
@@ -816,6 +819,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.datetime "updated_at", null: false
     t.index ["address_id"], name: "index_therapist_addresses_on_address_id"
     t.index ["therapist_id", "active"], name: "index_therapist_addresses_on_therapist_id_and_active", unique: true, where: "(active = true)"
+    t.index ["therapist_id"], name: "idx_therapists_location"
     t.index ["therapist_id"], name: "index_therapist_addresses_on_therapist_id"
   end
 
@@ -906,16 +910,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.datetime "updated_at", null: false
     t.bigint "service_id"
     t.virtual "therapist_type", type: :string, limit: 20, as: "\nCASE\n    WHEN (employment_type = 'KARPIS'::employment_type_enum) THEN 'internal'::text\n    WHEN (employment_type = 'FLAT'::employment_type_enum) THEN 'external'::text\n    ELSE 'external'::text\nEND", stored: true
+    t.string "telegram_username", limit: 255
     t.date "contract_start_date", comment: "Optional contract start date for the therapist"
     t.date "contract_end_date", comment: "Optional contract end date for the therapist"
     t.string "telegram_id"
     t.index ["employment_status", "employment_type"], name: "index_therapists_on_employment_status_and_employment_type"
+    t.index ["employment_type"], name: "idx_therapists_employment_type"
     t.index ["modalities"], name: "index_therapists_on_modalities", using: :gin
     t.index ["phone_number"], name: "index_therapists_on_phone_number", unique: true
     t.index ["registration_number"], name: "index_therapists_on_registration_number", unique: true
     t.index ["service_id"], name: "index_therapists_on_service_id"
     t.index ["specializations"], name: "index_therapists_on_specializations", using: :gin
     t.index ["telegram_id"], name: "index_therapists_on_telegram_id", unique: true
+    t.index ["therapist_type"], name: "idx_therapists_type"
     t.index ["user_id"], name: "index_therapists_on_user_id"
   end
 
@@ -923,22 +930,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.uuid "user_id", null: false
     t.bigint "address_id", null: false
     t.boolean "active", default: false, comment: "Whether this is the active/primary address for the user"
-    t.timestamptz "created_at", default: -> { "now()" }, null: false
-    t.timestamptz "updated_at", default: -> { "now()" }, null: false
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "now()" }, null: false
     t.index ["active"], name: "idx_user_addresses_active"
     t.index ["address_id"], name: "idx_user_addresses_address_id"
     t.index ["user_id"], name: "idx_user_addresses_user_id"
   end
 
-  create_table "user_roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "user_id", null: false
-    t.string "role", limit: 50, null: false
-    t.timestamptz "created_at", null: false
-    t.timestamptz "updated_at", null: false
-    t.timestamptz "deleted_at"
+  create_table "user_roles", id: :uuid, default: -> { "gen_random_uuid()" }, comment: "Many-to-many relationship between users and roles", force: :cascade do |t|
+    t.uuid "user_id", null: false, comment: "Reference to users table"
+    t.string "role", limit: 50, null: false, comment: "Role name: ADMIN, STAFF, THERAPIST, CUSTOMER, or USER"
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "deleted_at", precision: nil
     t.index ["deleted_at"], name: "idx_user_roles_deleted_at"
     t.index ["role"], name: "idx_user_roles_role"
+    t.index ["user_id", "role"], name: "idx_user_roles_user_role", unique: true, where: "(deleted_at IS NULL)", comment: "Ensure a user cannot have duplicate active roles"
     t.index ["user_id"], name: "idx_user_roles_user_id"
+    t.check_constraint "role::text = ANY (ARRAY['ADMIN'::character varying::text, 'STAFF'::character varying::text, 'THERAPIST'::character varying::text, 'CUSTOMER'::character varying::text, 'USER'::character varying::text])", name: "user_roles_role_check"
   end
 
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -950,19 +959,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.integer "sign_in_count", default: 0, null: false
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
-    t.string "current_sign_in_ip", limit: 45
-    t.string "last_sign_in_ip", limit: 45
-    t.text "unconfirmed_email"
-    t.timestamptz "created_at"
-    t.timestamptz "updated_at"
+    t.string "current_sign_in_ip"
+    t.string "last_sign_in_ip"
+    t.string "unconfirmed_email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.datetime "last_online_at"
     t.datetime "suspend_at"
     t.datetime "suspend_end"
     t.string "first_name", limit: 255, comment: "User first name (moved from customers table)"
     t.string "last_name", limit: 255, comment: "User last name (moved from customers table)"
-    t.string "phone_number", limit: 50, comment: "User phone number (moved from customers table)"
+    t.string "phone_number", limit: 20, comment: "User phone number (moved from customers table)"
     t.string "registration_source", limit: 50, comment: "Platform/channel where user registered from (e.g., WEB, MOBILE_ANDROID, MOBILE_IOS, ADMIN_PANEL). Used for acquisition analytics and tracking."
-    t.index ["email"], name: "idx_users_email", unique: true
+    t.index ["email"], name: "idx_users_email"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["first_name"], name: "idx_users_first_name"
     t.index ["last_name"], name: "idx_users_last_name"
@@ -1078,7 +1087,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
   add_foreign_key "therapist_weekly_availabilities", "therapist_appointment_schedules"
   add_foreign_key "therapists", "users", name: "therapists_user_id_fkey", on_update: :cascade, on_delete: :cascade
   add_foreign_key "user_addresses", "addresses", name: "user_addresses_address_id_fkey", on_delete: :cascade
-  add_foreign_key "user_addresses", "users", name: "fk_users_addresses"
   add_foreign_key "user_addresses", "users", name: "user_addresses_user_id_fkey", on_delete: :cascade
   add_foreign_key "user_roles", "users", name: "user_roles_user_id_fkey", on_update: :cascade, on_delete: :cascade
   add_foreign_key "voucher_packages", "packages", name: "fk_voucher_packages_package", on_delete: :cascade

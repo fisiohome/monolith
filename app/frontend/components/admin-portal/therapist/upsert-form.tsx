@@ -1569,7 +1569,9 @@ function PersonalInformationForm({
 					<FormItem>
 						<FormLabel className="capitalize">
 							Telegram Username{" "}
-							<span className="text-sm italic font-light">- (optional, e.g., @username)</span>
+							<span className="text-sm italic font-light">
+								- (optional, e.g., @username)
+							</span>
 						</FormLabel>
 						<FormControl>
 							<Input
