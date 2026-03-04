@@ -61,7 +61,7 @@ export const DEFAULT_VALUES_PATIENT_CONTACT = {
 export const CONTACT_INFORMATION_SCHEMA = z.object({
 	contactName: z
 		.string()
-		.min(3, "Contact name is required with minimum 3 characters"),
+		.min(1, "Contact name is required with minimum 3 characters"),
 	contactPhone: z
 		.string()
 		.min(1, { message: "Contact phone number is required" })
@@ -77,7 +77,7 @@ export type ContactInformationSchema = z.infer<
 export const PATIENT_DETAILS_SCHEMA = z.object({
 	fullName: z
 		.string()
-		.min(3, "Patient full name is required with minimum 3 characters"),
+		.min(1, "Patient full name is required with minimum 3 characters"),
 	dateOfBirth: z.coerce
 		.date()
 		// Ensure the date is in the past
