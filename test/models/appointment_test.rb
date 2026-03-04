@@ -224,6 +224,166 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_includes appt.errors[:appointment_date_time].join, "already has an appointment"
   end
 
+  test "allows overlapping appointments when existing appointment is cancelled, about no_overlapping_appointments" do
+    # Existing cancelled appointment: 10:00-11:00
+    cancelled_appt = Appointment.create!(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 10),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    # Explicitly set status to cancelled after creation
+    cancelled_appt.update!(status: "CANCELLED")
+
+    # Try overlapping with cancelled appointment: 10:30-11:30
+    appt = Appointment.new(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 10, min: 30),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert appt.valid?, "Should allow overlap when existing appointment is cancelled"
+  end
+
+  test "allows overlapping appointments when existing appointment is on hold, about no_overlapping_appointments" do
+    # Existing on hold appointment: 10:00-11:00
+    on_hold_appt = Appointment.create!(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 10),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    # Explicitly set status to on hold after creation
+    on_hold_appt.update!(status: "ON HOLD")
+
+    # Try overlapping with on hold appointment: 10:30-11:30
+    appt = Appointment.new(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 10, min: 30),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert appt.valid?, "Should allow overlap when existing appointment is on hold"
+  end
+
+  test "allows overlapping appointments when existing appointment is pending therapist assignment, about no_overlapping_appointments" do
+    # Existing pending therapist assignment appointment: 10:00-11:00
+    pending_appt = Appointment.create!(
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 10),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    # Explicitly set status to pending therapist assignment after creation
+    pending_appt.update!(status: "PENDING THERAPIST ASSIGNMENT")
+
+    # Try overlapping with pending therapist assignment appointment: 10:30-11:30
+    appt = Appointment.new(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 10, min: 30),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert appt.valid?, "Should allow overlap when existing appointment is pending therapist assignment"
+  end
+
+  test "allows duplicate appointment time when existing appointment is cancelled, about no_duplicate_appointment_time" do
+    # Existing cancelled appointment at 9am
+    cancelled_appt = Appointment.create!(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 9),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    # Explicitly set status to cancelled after creation
+    cancelled_appt.update!(status: "CANCELLED")
+
+    # New appointment at exactly same time as cancelled one
+    appt = Appointment.new(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 9),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert appt.valid?, "Should allow same time when existing appointment is cancelled"
+  end
+
+  test "allows duplicate appointment time when existing appointment is on hold, about no_duplicate_appointment_time" do
+    # Existing on hold appointment at 9am
+    on_hold_appt = Appointment.create!(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 9),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    # Explicitly set status to on hold after creation
+    on_hold_appt.update!(status: "ON HOLD")
+
+    # New appointment at exactly same time as on hold one
+    appt = Appointment.new(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 9),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert appt.valid?, "Should allow same time when existing appointment is on hold"
+  end
+
+  test "allows duplicate appointment time when existing appointment is pending therapist assignment, about no_duplicate_appointment_time" do
+    # Existing pending therapist assignment appointment at 9am
+    pending_appt = Appointment.create!(
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 9),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    # Explicitly set status to pending therapist assignment after creation
+    pending_appt.update!(status: "PENDING THERAPIST ASSIGNMENT")
+
+    # New appointment at exactly same time as pending therapist assignment one
+    appt = Appointment.new(
+      therapist: @therapist,
+      patient: @patient,
+      service: @service,
+      package: @package,
+      location: @location,
+      appointment_date_time: @future_time.change(hour: 9),
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert appt.valid?, "Should allow same time when existing appointment is pending therapist assignment"
+  end
+
   # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
   # test "initial visit must have an appointment date/time, about initial_visit_requirements" do
   #   appt = Appointment.new(

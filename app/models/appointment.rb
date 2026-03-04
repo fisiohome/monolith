@@ -725,6 +725,7 @@ class Appointment < ApplicationRecord
     conflicting = Appointment
       .where(patient: patient, appointment_date_time: appointment_date_time)
       .where.not(id: id)
+      .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
       .first
 
     return unless conflicting
@@ -743,6 +744,7 @@ class Appointment < ApplicationRecord
     Appointment.where(patient: patient)
       .where.not(id: id)
       .where.not(therapist_id: nil)
+      .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
       .find_each do |existing|
       next unless existing.therapist&.therapist_appointment_schedule
 

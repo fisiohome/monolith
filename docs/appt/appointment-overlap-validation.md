@@ -10,7 +10,7 @@ The appointment system includes multiple layers of validation to prevent overlap
 
 ### 1. Patient Overlap Prevention (`no_overlapping_appointments`)
 
-**Location**: `app/models/appointment.rb` (line 726-755)
+**Location**: `app/models/appointment.rb` (line 738-767)
 
 Prevents a patient from having overlapping appointments, even if they have different start times.
 
@@ -24,6 +24,7 @@ def no_overlapping_appointments
   Appointment.where(patient: patient)
     .where.not(id: id)
     .where.not(therapist_id: nil)
+    .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
     .find_each do |existing|
     # Skip if therapist doesn't have schedule
     next unless existing.therapist&.therapist_appointment_schedule
@@ -39,7 +40,7 @@ end
 ```
 
 **Key Points**:
-- Only skips validation if appointment status is `CANCELLED`
+- Skips validation for non-active statuses: `CANCELLED`, `UNSCHEDULED`, `ON HOLD`, `PENDING THERAPIST ASSIGNMENT`
 - Requires therapist to be assigned (ignores appointments without therapists)
 - Uses total duration including buffer time from therapist's schedule
 
@@ -72,7 +73,35 @@ end
 - Applies to all visits in a package series
 - Shows specific visit number in error message
 
-### 3. Therapist Daily Limit (`therapist_daily_limit`)
+### 3. Exact Time Match Prevention (`no_duplicate_appointment_time`)
+
+**Location**: `app/models/appointment.rb` (line 722-735)
+
+Prevents a patient from having two appointments at the exact same date and time.
+
+```ruby
+def no_duplicate_appointment_time
+  return if appointment_date_time.blank? || patient.blank?
+
+  conflicting = Appointment
+    .where(patient: patient, appointment_date_time: appointment_date_time)
+    .where.not(id: id)
+    .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
+    .first
+
+  return unless conflicting
+
+  formatted_date_time = appointment_date_time.strftime("%B %d, %Y at %I:%M %p")
+  errors.add(:appointment_date_time, "already has an appointment (#{conflicting.registration_number}) on #{formatted_date_time}")
+end
+```
+
+**Key Points**:
+- Skips validation for non-active statuses: `CANCELLED`, `UNSCHEDULED`, `ON HOLD`, `PENDING THERAPIST ASSIGNMENT`
+- Checks for exact time matches (not overlapping ranges)
+- Provides formatted error message with registration number
+
+### 4. Therapist Daily Limit (`therapist_daily_limit`)
 
 **Location**: `app/models/appointment.rb` (line 980-1005)
 
@@ -97,9 +126,51 @@ end
 ```
 
 **Key Points**:
-- Only skips if status is `CANCELLED`
+- Skips validation for non-active statuses: `CANCELLED`, `UNSCHEDULED`, `ON HOLD`, `PENDING THERAPIST ASSIGNMENT`
 - Counts all non-cancelled appointments for the day
 - Includes current appointment in count if creating new
+
+### 5. Therapist Availability Service
+
+**Location**: `app/services/admin_portal/therapists/availability_service.rb`
+
+The `AvailabilityService` provides comprehensive therapist availability checking with the same status exclusions as the appointment model validations.
+
+#### Key Methods with Status Exclusions:
+
+**`available_time_slots_for_date`** (line 76-85)
+```ruby
+@therapist.appointments
+  .where(appointment_date_time: date.all_day)
+  .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
+  .where.not(id: @current_appointment_id)
+```
+
+**`max_daily_appointments_check`** (line 475-477)
+```ruby
+@therapist.appointments
+  .where(appointment_date_time: date.all_day)
+  .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
+```
+
+**`no_overlapping_appointments_check`** (line 509-511)
+```ruby
+conflicting_appointments = @therapist.appointments
+  .where.not(id: @current_appointment_id)
+  .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
+```
+
+**`fetch_adjacent_appointment_addresses`** (line 561-563)
+```ruby
+@therapist.appointments
+  .where.not(id: @current_appointment_id)
+  .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
+```
+
+**Key Points**:
+- All methods consistently exclude the same non-active statuses
+- Ensures therapist availability calculations ignore cancelled, unscheduled, on hold, and pending therapist assignment appointments
+- Maintains consistency between model validations and availability service
 
 ## Status-Based Validation Rules
 
@@ -107,12 +178,10 @@ end
 
 | Status | Description | Validated |
 |--------|-------------|-----------|
-| `PENDING THERAPIST ASSIGNMENT` | Waiting for therapist | ✅ Yes |
 | `PENDING PATIENT APPROVAL` | Waiting for patient confirmation | ✅ Yes |
 | `PENDING PAYMENT` | Waiting for payment | ✅ Yes |
 | `PAID` | Confirmed and paid | ✅ Yes |
 | `COMPLETED` | Appointment completed | ✅ Yes |
-| `ON HOLD` | Temporarily paused | ✅ Yes |
 | `SCHEDULED` | Scheduled appointment | ✅ Yes |
 
 ### Statuses That ARE NOT Validated for Overlap
@@ -121,6 +190,8 @@ end
 |--------|-------------|-----------|
 | `CANCELLED` | Appointment cancelled | ❌ No |
 | `UNSCHEDULED` | No date/time set | ❌ No |
+| `ON HOLD` | Temporarily paused | ❌ No |
+| `PENDING THERAPIST ASSIGNMENT` | Waiting for therapist | ❌ No |
 
 ## Overlap Calculation Logic
 
@@ -146,12 +217,12 @@ total_duration_minutes = therapist.therapist_appointment_schedule.appointment_du
 ### When Validations Run
 
 1. **Creating New Appointment**
-   - All validations run unless status is `CANCELLED`
+   - All validations run unless status is non-active (`CANCELLED`, `UNSCHEDULED`, `ON HOLD`, `PENDING THERAPIST ASSIGNMENT`)
 
 2. **Updating Appointment**
    - `appointment_date_time` changed → All validations run
    - `therapist_id` changed → All validations run
-   - Status changed → Some validations may skip
+   - Status changed → Some validations may skip for non-active statuses
 
 3. **Rescheduling**
    - All validations run with new date/time
@@ -273,3 +344,31 @@ Potential improvements to consider:
 2. **Advanced Scheduling**: Implement optimization algorithms for better therapist utilization
 3. **Real-time Updates**: Use WebSockets for live availability updates
 4. **Conflict Resolution**: Suggest alternative times when conflicts occur
+
+## Consistency Across System
+
+The appointment overlap validation system maintains consistency across multiple layers:
+
+### Model vs Service Alignment
+Both the `Appointment` model validations and `AvailabilityService` use identical status exclusions:
+
+```ruby
+# Used in both model validations and availability service
+EXCLUDED_STATUSES = ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"]
+```
+
+### Benefits of This Approach
+- **Predictable Behavior**: Same rules apply everywhere in the system
+- **Reduced Bugs**: No mismatched validation logic between layers
+- **Easier Maintenance**: Single source of truth for status exclusions
+- **Consistent UX**: Users see the same availability regardless of entry point
+
+### Validation Coverage
+- ✅ Patient overlap prevention (model)
+- ✅ Exact time match prevention (model)  
+- ✅ Therapist availability checking (service)
+- ✅ Daily appointment limits (both)
+- ✅ Time slot generation (service)
+- ✅ Adjacent appointment logic (service)
+
+All components work together to provide a robust, consistent scheduling system.

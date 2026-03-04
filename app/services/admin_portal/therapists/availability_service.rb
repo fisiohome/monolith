@@ -79,7 +79,7 @@ module AdminPortal
         else
           @therapist.appointments
             .where(appointment_date_time: date.all_day)
-            .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+            .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
             .where.not(id: @current_appointment_id)
             .to_a
         end
@@ -474,7 +474,7 @@ module AdminPortal
         date = appointment_date_time_in_tz.to_date
         count = @therapist.appointments
           .where(appointment_date_time: date.all_day)
-          .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+          .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
           .count
 
         if count + 1 > @schedule.max_daily_appointments
@@ -508,7 +508,7 @@ module AdminPortal
         # Uses SQL interval arithmetic for efficient overlap detection
         conflicting_appointments = @therapist.appointments
           .where.not(id: @current_appointment_id)
-          .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+          .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
           .where(
             "(appointment_date_time < ?) AND ((appointment_date_time + (? * interval '1 minute')) > ?)",
             new_end_with_buffer,
@@ -560,7 +560,7 @@ module AdminPortal
           # Fallback to database query if not preloaded
           @therapist.appointments
             .where.not(id: @current_appointment_id)
-            .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+            .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
             .where(appointment_date_time: @appointment_date_time_server_time.to_date.all_day)
             .includes(:location)
             .to_a

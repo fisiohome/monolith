@@ -34,7 +34,7 @@ Packages can include multiple visits (e.g., 5 sessions). The system:
 | Status | Database Value | Description |
 |--------|----------------|-------------|
 | **Unscheduled** | `UNSCHEDULED` | Appointment has not been scheduled yet |
-| **On Hold** | `ON HOLD` | Appointment is temporarily paused |
+| **On Hold** | `ON HOLD` | Appointment is temporarily paused - clears date and therapist assignment |
 | **Pending Therapist Assignment** | `PENDING THERAPIST ASSIGNMENT` | Waiting for therapist to be assigned |
 | **Pending Patient Approval** | `PENDING PATIENT APPROVAL` | Waiting for patient confirmation |
 | **Pending Payment** | `PENDING PAYMENT` | Waiting for payment processing |
@@ -56,7 +56,8 @@ The system enforces status transitions to maintain data integrity:
 2. **Special Cases**:
    - Any status → Cancelled (with proper permissions)
    - Paid → On Hold (for temporary pauses)
-   - On Hold → Paid (when resuming)
+   - On Hold → Paid/Unscheduled/Pending Therapist Assignment/Pending Patient Approval (when resuming)
+   - On Hold appointments automatically clear appointment_date_time and therapist_id
 
 3. **Role-Based Overrides**:
    - SUPER ADMIN and ADMIN SUPERVISOR can bypass certain restrictions
@@ -65,6 +66,70 @@ The system enforces status transitions to maintain data integrity:
 4. **Series Constraints**:
    - Series appointments cannot have a status ahead of their initial visit
    - Cancelling an initial visit cascades to all series appointments
+   - Putting initial visit on hold cascades to all series appointments (except completed ones)
+
+## ON_HOLD Status Details
+
+### Purpose and Behavior
+
+The **ON_HOLD** status is used to temporarily pause appointments when:
+
+- Patient requests postponement
+- Therapist availability changes
+- Payment or insurance issues need resolution
+- Administrative review is required
+- Service location or logistics need confirmation
+
+### Automatic Data Clearing
+
+When an appointment changes to ON_HOLD status, the system automatically:
+
+```ruby
+def clear_details_if_on_hold
+  self.appointment_date_time = nil    # Removes scheduled date/time
+  self.therapist_id = nil             # Removes therapist assignment
+end
+```
+
+This ensures:
+- Appointment cannot be accidentally completed while on hold
+- Therapist schedule is freed up for other appointments
+- Date/time slot becomes available for other patients
+
+### Cascade Effects
+
+For initial visits (reference appointments):
+- All series appointments with same registration number also go ON_HOLD
+- Except appointments already completed or already ON_HOLD
+- Prevents partial series execution while initial visit is paused
+
+### Valid Transitions FROM On Hold
+
+- **On Hold → Unscheduled**: Return to unscheduled state
+- **On Hold → Pending Therapist Assignment**: Ready to assign therapist
+- **On Hold → Pending Patient Approval**: Skip therapist assignment, go directly to patient confirmation
+- **On Hold → Paid**: Resume directly to paid status (admin override)
+
+### Validation Rules
+
+Appointments with ON_HOLD status:
+- **Do NOT require** appointment_date_time (automatically cleared)
+- **Do NOT require** therapist_id (automatically cleared)
+- **Can still maintain** patient, service, and package relationships
+- **Preserve** visit number and series integrity
+
+### Query Examples
+
+```ruby
+# Find all on-hold appointments
+Appointment.on_hold
+
+# Find on-hold appointments for specific patient
+Appointment.where(patient: patient).on_hold
+
+# Check if appointment can be resumed
+appointment.status_on_hold? #=> true/false
+```
 
 ## Patient Information Requirements
 
@@ -328,6 +393,7 @@ scope :today_and_future, -> { where("appointment_date_time >= ?", Time.current) 
 scope :pending_payment, -> { where(status: "PENDING PAYMENT") }
 scope :paid, -> { where(status: "PAID") }
 scope :completed, -> { where(status: "COMPLETED") }
+scope :on_hold, -> { where(status: "ON HOLD") }
 
 # Initial visits only
 scope :initial_visits, -> { where(appointment_reference_id: nil) }
