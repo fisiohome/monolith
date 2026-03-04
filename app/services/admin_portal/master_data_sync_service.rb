@@ -1036,7 +1036,9 @@ module AdminPortal
                   end
                 else
                   # Reset existing weekday availabilities (if any)
-                  weekdays = %w[Monday Tuesday Wednesday Thursday Friday]
+                  weekdays = (therapist.employment_type == "FLAT") ?
+                    %w[Monday Tuesday Wednesday Thursday Friday Saturday Sunday] :
+                    %w[Monday Tuesday Wednesday Thursday Friday]
                   if therapist.employment_type == "FLAT"
                     default_start_time = "05:00".in_time_zone(Time.zone)
                     default_end_time = "22:00".in_time_zone(Time.zone)
