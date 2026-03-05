@@ -196,23 +196,15 @@ module AdminPortal
         .order(:visit_number)
         .to_a
 
-      # Collect ALL visits in the series for temporary numbering
-      # This MUST include completed visits to avoid unique constraint violations
-      all_visits_in_series = scheduled_visits + unscheduled_visits
+      # Collect all visits that need reordering
+      all_visits_to_reorder = pending_visits + unscheduled_visits
 
       # First pass: Set temporary negative visit_numbers to avoid unique constraint violations
-      # Include ALL visits (completed, pending, unscheduled) to prevent conflicts
-      all_visits_in_series.each_with_index do |visit, index|
+      all_visits_to_reorder.each_with_index do |visit, index|
         visit.update_column(:visit_number, -(index + 1))
       end
 
       # Second pass: Assign final visit_numbers based on chronological position
-      # Completed visits keep their original numbers
-      completed_visits.each do |visit|
-        visit.update_column(:visit_number, visit.visit_number.abs)
-      end
-
-      # Pending visits get sequential numbers after completed visits
       pending_visits.each do |visit|
         current_number += 1
         visit.update_column(:visit_number, current_number)
@@ -221,8 +213,8 @@ module AdminPortal
       # Assign remaining numbers to unscheduled visits
       next_number = current_number + 1
       unscheduled_visits.each do |visit|
-        next_number += 1
         visit.update_column(:visit_number, next_number)
+        next_number += 1
       end
     end
 
