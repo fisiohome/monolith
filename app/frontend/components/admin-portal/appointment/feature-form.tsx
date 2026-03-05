@@ -308,6 +308,7 @@ export function UpdateStatusForm({
 		}
 
 		const excludedStatuses = new Set([
+			"on_hold",
 			"unscheduled",
 			"cancelled",
 			"pending_therapist_assignment",
