@@ -35,15 +35,31 @@ module AdminPortal
           )
         end
 
-        # Filter by location rules at SQL level when possible
-        base_scope = base_scope.where(
-          "(therapist_appointment_schedules.availability_rules IS NULL OR " \
-          "therapist_appointment_schedules.availability_rules::text = '[]' OR " \
-          "NOT EXISTS (SELECT 1 FROM json_array_elements(therapist_appointment_schedules.availability_rules) " \
-          "WHERE value->>'location' = 'true') OR " \
-          "addresses.location_id IN (?))",
-          location_ids
-        )
+        # Check if this is a Jabodetabek location
+        jabodetabek_keywords = ["JAKARTA", "BOGOR", "DEPOK", "TANGERANG", "BEKASI", "KEPULAUAN SERIBU"]
+        is_jabodetabek_location = jabodetabek_keywords.any? { |kw| location.city&.include?(kw) }
+
+        # Filter therapists based on their availability rules and location
+        base_scope = if is_jabodetabek_location
+          # For Jabodetabek: Use complex availability rules filtering
+          # This SQL filter handles the following cases:
+          # 1. No availability rules defined (NULL) - therapist is available everywhere
+          # 2. Empty availability rules array ('[]') - therapist is available everywhere
+          # 3. No location-specific rules exist in the array - therapist is available everywhere
+          # 4. Therapist's address location matches one of the target location IDs
+          # This ensures we only include therapists who can serve the requested location
+          base_scope.where(
+            "(therapist_appointment_schedules.availability_rules IS NULL OR " \
+            "therapist_appointment_schedules.availability_rules::text = '[]' OR " \
+            "NOT EXISTS (SELECT 1 FROM json_array_elements(therapist_appointment_schedules.availability_rules) " \
+            "WHERE value->>'location' = 'true') OR " \
+            "addresses.location_id IN (?))",
+            location_ids
+          )
+        else
+          # For non-Jabodetabek: Use simple location filtering only
+          base_scope.where(addresses: {location_id: location_ids})
+        end
 
         # Get total count for progress tracking
         total_count = base_scope.count
@@ -124,7 +140,7 @@ module AdminPortal
         all_appointments = Appointment
           .where(therapist_id: therapists.map(&:id))
           .where(appointment_date_time: appointment_date.all_day)
-          .where.not(status: ["CANCELLED", "UNSCHEDULED"])
+          .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
           .where.not(id: current_appointment_id)
           .includes(:location)
           .group_by(&:therapist_id)
