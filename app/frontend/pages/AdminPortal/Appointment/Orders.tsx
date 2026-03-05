@@ -1,4 +1,4 @@
-import { Deferred, Head, router, usePage } from "@inertiajs/react";
+import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
@@ -644,9 +644,13 @@ const OrderActionsCell = ({
 	);
 };
 
-const orderColumns = (
-	openOrderDetail: (orderId: string) => void,
-): ColumnDef<OrderRow>[] => [
+const orderColumns = ({
+	pageURL,
+	openOrderDetail,
+}: {
+	pageURL: string;
+	openOrderDetail: (orderId: string) => void;
+}): ColumnDef<OrderRow>[] => [
 	{
 		accessorKey: "registrationNumber",
 		header: "Reg. No",
@@ -654,19 +658,39 @@ const orderColumns = (
 			headerClassName: "sticky left-0 z-10 bg-card",
 			cellClassName: "sticky left-0 z-10 bg-card",
 		},
-		cell: ({ row }) => (
-			<span className="font-mono text-sm font-bold text-nowrap">
-				{row.original.registrationNumber}
-			</span>
-		),
+		cell: ({ row }) => {
+			const { fullUrl } = populateQueryParams(pageURL, {
+				view_order: row.original.id,
+			});
+
+			return (
+				<div>
+					<Link
+						href={fullUrl}
+						preserveScroll
+						preserveState
+						only={["adminPortal", "flash", "errors", "selectedOrder"]}
+					>
+						<span className="font-mono text-sm font-bold text-nowrap text-primary hover:underline">
+							{row.original.registrationNumber}
+						</span>
+					</Link>
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "patientName",
 		header: "Patient",
 		cell: ({ row }) => (
-			<span className="text-sm uppercase">
-				{row.original.patientName || "—"}
-			</span>
+			<div className="max-w-[200px]">
+				<span
+					title={row.original.patientName || "—"}
+					className="text-sm uppercase text-pretty"
+				>
+					{row.original.patientName || "—"}
+				</span>
+			</div>
 		),
 	},
 	{
@@ -689,17 +713,6 @@ const orderColumns = (
 				</div>
 			);
 		},
-	},
-	{
-		accessorKey: "totalAmount",
-		header: () => <div className="text-right">Total</div>,
-		cell: ({ row }) => (
-			<div className="text-right">
-				<span className="text-sm font-medium text-nowrap">
-					{formatCurrency(row.original.totalAmount)}
-				</span>
-			</div>
-		),
 	},
 	{
 		accessorKey: "paymentStatus",
@@ -1044,7 +1057,7 @@ function OrderDetailContent({
 													className={cn(
 														"text-[10px] border p-0 px-1 rounded-full font-bold",
 														APPOINTMENT_STATUS_STYLES[
-															appt.status.toUpperCase()
+															appt.status.replaceAll("_", " ").toUpperCase()
 														] || "bg-background hover:bg-background/80",
 													)}
 												>
@@ -1059,6 +1072,7 @@ function OrderDetailContent({
 					</div>
 				</>
 			)}
+
 			{/* Close Button */}
 			<div className="hidden md:flex justify-end pt-2">
 				<Button variant="outline" size="sm" onClick={onClose}>
@@ -1402,8 +1416,8 @@ export default function AppointmentOrders() {
 	);
 
 	const tableColumns = useMemo(
-		() => orderColumns(openOrderDetail),
-		[openOrderDetail],
+		() => orderColumns({ pageURL, openOrderDetail }),
+		[pageURL, openOrderDetail],
 	);
 
 	return (

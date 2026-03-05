@@ -1411,7 +1411,7 @@ const AddressSection = memo(function Component({
 
 			{/* Display Patient Addresses and no addresses */}
 			{!patient.patientAddresses || patient.patientAddresses.length === 0 ? (
-				<div className="text-center py-4 text-gray-500 text-sm">
+				<div className="text-center py-4 text-muted-foreground text-sm">
 					No addresses available
 				</div>
 			) : (
@@ -1425,12 +1425,12 @@ const AddressSection = memo(function Component({
 							className={cn(
 								"relative rounded-lg border text-sm",
 								patientAddress.active
-									? "border-green-200 bg-green-50"
-									: "border-gray-200 bg-gray-50",
+									? "border-primary/20 bg-primary/5"
+									: "border-muted/20 bg-muted/50",
 							)}
 						>
 							{patientAddress.active && (
-								<span className="absolute bottom-0 right-0 inline-flex items-center px-2 py-1 text-[10px] font-medium bg-green-100 text-green-800 uppercase">
+								<span className="absolute bottom-0 right-0 inline-flex items-center px-2 py-1 text-[10px] font-medium bg-primary/10 text-primary uppercase">
 									Active
 								</span>
 							)}
@@ -1514,7 +1514,7 @@ const AddressSection = memo(function Component({
 
 															<CollapsibleTrigger asChild>
 																{showMoreStates[patientAddress.id] && (
-																	<span className="text-blue-600 text-[10px] shrink-0 uppercase">
+																	<span className="text-primary text-[10px] shrink-0 uppercase">
 																		Show more
 																	</span>
 																)}
