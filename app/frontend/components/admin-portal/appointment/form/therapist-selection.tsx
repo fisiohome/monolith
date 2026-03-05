@@ -36,6 +36,7 @@ import {
 import { Input } from "@/components/ui/extended/input";
 import { Spinner } from "@/components/ui/kibo-ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import type {
 	FeasibilityReportItem,
@@ -48,6 +49,206 @@ import { cn } from "@/lib/utils";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { Therapist } from "@/types/admin-portal/therapist";
 import { TimeSlotButton } from "./date-time";
+
+// * Helper function to group therapists by city
+const groupTherapistsByCity = (
+	therapists: TherapistOption[],
+	visitLocationCity?: string,
+) => {
+	const grouped = therapists.reduce(
+		(acc, therapist) => {
+			const city = therapist.activeAddress?.location?.city || "Unknown City";
+			if (!acc[city]) {
+				acc[city] = [];
+			}
+			acc[city].push(therapist);
+			return acc;
+		},
+		{} as Record<string, TherapistOption[]>,
+	);
+
+	// Sort cities: prioritize visit location city first, then alphabetically
+	const sortedGroups = Object.entries(grouped)
+		.sort(([cityA], [cityB]) => {
+			if (cityA === "Unknown City") return 1;
+			if (cityB === "Unknown City") return -1;
+
+			// Prioritize visit location city
+			if (visitLocationCity) {
+				if (cityA.toLowerCase() === visitLocationCity.toLowerCase()) return -1;
+				if (cityB.toLowerCase() === visitLocationCity.toLowerCase()) return 1;
+			}
+
+			return cityA.localeCompare(cityB);
+		})
+		.map(([city, therapists]) => ({
+			city,
+			therapists: therapists.sort((a, b) => a.name.localeCompare(b.name)),
+		}));
+
+	return sortedGroups;
+};
+
+// * City group component
+const CityGroup = forwardRef<
+	HTMLDivElement,
+	{
+		city: string;
+		therapists: TherapistOption[];
+		selectedTherapistName: string | undefined;
+		onSelectTherapist: (therapist: { id: string; name: string }) => void;
+		onPersist: (therapist: TherapistOption | null) => void;
+		isAllOfDay: boolean;
+		toggleTimeSlot: (id: string) => void;
+		isOpenTimeSlot: (id: string) => boolean;
+		selectedTimeSlot: string | undefined;
+		onSelectTimeSlot?: (time: string) => void;
+		getVisitLabels?: (therapist: TherapistOption) => string[];
+		isLast: boolean;
+	}
+>(
+	(
+		{
+			city,
+			therapists,
+			selectedTherapistName,
+			onSelectTherapist,
+			onPersist,
+			isAllOfDay,
+			toggleTimeSlot,
+			isOpenTimeSlot,
+			selectedTimeSlot,
+			onSelectTimeSlot,
+			getVisitLabels,
+			isLast,
+		},
+		ref,
+	) => {
+		const isMobile = useIsMobile();
+
+		return (
+			<div ref={ref} className="space-y-4">
+				{/* City Header */}
+				<div className="sticky top-16 z-10 bg-background backdrop-blur-sm border border-border/50 p-1 pb-2">
+					<div className="flex items-center gap-2">
+						<MapPin className="size-4 text-muted-foreground opacity-60" />
+						<h3 className="font-semibold text-sm text-foreground">{city}</h3>
+						<Badge
+							variant="outline"
+							className="text-xs p-1 rounded-full shrink-0"
+						>
+							{therapists.length}
+						</Badge>
+					</div>
+				</div>
+
+				{/* Therapists in this city */}
+				<div className="grid gap-2 mt-4">
+					{therapists.map((t) => {
+						const visitLabels = getVisitLabels ? getVisitLabels(t) : undefined;
+
+						return (
+							<div key={t.id}>
+								<div>
+									<TherapistSelectButton
+										badgeItems={visitLabels}
+										selected={selectedTherapistName === t.name}
+										onSelect={() => {
+											if (isAllOfDay) {
+												toggleTimeSlot(t.id);
+												return;
+											}
+
+											// save values for react-hook-form
+											onSelectTherapist(
+												selectedTherapistName === t.name
+													? DEFAULT_VALUES_THERAPIST
+													: { id: t.id, name: t.name },
+											);
+											// save values for session-storage form-selection object
+											onPersist(selectedTherapistName === t.name ? null : t);
+										}}
+									>
+										<CardTherapist
+											therapist={{
+												name: t.name,
+												gender: t.gender,
+												id: t.id,
+												registrationNumber: t.registrationNumber,
+												employmentType: t.employmentType,
+											}}
+											className={cn(!!visitLabels?.length && "mt-5")}
+										/>
+									</TherapistSelectButton>
+								</div>
+
+								{!!t.availabilityDetails?.availableSlots?.length &&
+									!!isAllOfDay && (
+										<div>
+											<Button
+												type="button"
+												variant="outline"
+												size={isMobile ? "default" : "sm"}
+												className="w-full !border-t-0 shadow-none"
+												onClick={() => toggleTimeSlot(t.id)}
+											>
+												<span className="font-light uppercase">
+													Suggested Time Slots
+												</span>
+												<ChevronDown
+													className={cn(
+														"transition-transform duration-100 text-muted-foreground/50",
+														isOpenTimeSlot(t.id) ? "rotate-180" : "",
+													)}
+												/>
+											</Button>
+
+											{isOpenTimeSlot(t.id) && (
+												<div className="grid grid-cols-3 gap-2 mt-2 md:grid-cols-6 xl:grid-cols-7">
+													{t.availabilityDetails?.availableSlots?.map(
+														(slot) => (
+															<TimeSlotButton
+																key={slot}
+																time={slot}
+																isSelected={selectedTimeSlot === slot || false}
+																onSelect={() => {
+																	if (
+																		onSelectTimeSlot &&
+																		typeof onSelectTimeSlot === "function"
+																	) {
+																		onSelectTimeSlot(slot);
+																	}
+
+																	// save values for react-hook-form
+																	onSelectTherapist(
+																		selectedTherapistName === t.name
+																			? DEFAULT_VALUES_THERAPIST
+																			: { id: t.id, name: t.name },
+																	);
+
+																	// save values for session-storage form-selection object
+																	onPersist(
+																		selectedTherapistName === t.name ? null : t,
+																	);
+																}}
+															/>
+														),
+													)}
+												</div>
+											)}
+										</div>
+									)}
+							</div>
+						);
+					})}
+				</div>
+
+				{isLast && <Separator className="my-6" />}
+			</div>
+		);
+	},
+);
+CityGroup.displayName = "CityGroup";
 
 // * button selection list
 type TherapistSelectButtonProps = {
@@ -346,7 +547,7 @@ UnfeasibleTherapistsDialog.displayName = "UnfeasibleTherapistsDialog";
 export interface TherapistSelectionProps extends ComponentProps<"div"> {
 	items: TherapistOption[];
 	config: {
-		height?: number;
+		height?: string;
 		isLoading: boolean;
 		selectedTherapist?: TherapistOption;
 		selectedTherapistName: string | undefined;
@@ -374,7 +575,7 @@ const TherapistSelection = memo(
 			items,
 			config: {
 				isLoading,
-				height = 525,
+				height = "60dvh",
 				selectedTherapistName,
 				selectedTherapist,
 				selectedTimeSlot,
@@ -415,6 +616,18 @@ const TherapistSelection = memo(
 				}),
 			[items, debouncedSearchTerm],
 		);
+		// Extract visit location city for prioritization
+		const visitLocationCity = useMemo(() => {
+			if (appt?.visitAddress?.addressLine) {
+				// Try to extract city from address line, or use location city if available
+				return (
+					appt.location?.city ||
+					appt.visitAddress.addressLine.split(",").pop()?.trim()
+				);
+			}
+			return appt?.location?.city;
+		}, [appt]);
+
 		const allVisitIds = useMemo(
 			() => new Set(appt?.allVisits?.map((v) => v.id) || []),
 			[appt?.allVisits],
@@ -443,6 +656,17 @@ const TherapistSelection = memo(
 				),
 			[filteredTherapists, allVisitIds],
 		);
+		// Memoize grouped therapists to avoid recomputation
+		const suggestedTherapistsByCity = useMemo(
+			() => groupTherapistsByCity(suggestedTherapists, visitLocationCity),
+			[suggestedTherapists, visitLocationCity],
+		);
+
+		const otherTherapistsByCity = useMemo(
+			() => groupTherapistsByCity(otherTherapists, visitLocationCity),
+			[otherTherapists, visitLocationCity],
+		);
+
 		// Helper to get visit progress labels for a therapist assigned in this appointment's series to show in the suggested badge
 		const getAssignedVisitProgress = useCallback(
 			(therapist: TherapistOption, appt?: Appointment) => {
@@ -521,8 +745,8 @@ const TherapistSelection = memo(
 
 		return (
 			<div ref={ref} className={cn("flex flex-col gap-6", className)}>
-				<div className="flex flex-col gap-3">
-					<div className="flex items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
+				<div className="flex flex-col gap-2">
+					<div className="flex flex-col md:flex-row items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
 						<div>
 							<p className="text-sm font-semibold">Employment Type Filter</p>
 							<p className="text-xs text-muted-foreground">
@@ -603,10 +827,10 @@ const TherapistSelection = memo(
 
 				<ScrollArea
 					className="relative p-3 text-sm border rounded-md border-border bg-sidebar text-muted-foreground"
-					style={{ height }}
+					style={{ height: items?.length ? (height as string) : "auto" }}
 				>
 					{!isLoading && items?.length > 0 && (
-						<div className="sticky top-0 z-10 pb-2 bg-sidebar mb-[0.5rem]">
+						<div className="sticky top-0 z-20 pb-2 bg-sidebar mb-[0.5rem]">
 							<Input
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
@@ -643,112 +867,34 @@ const TherapistSelection = memo(
 											</p>
 										</div>
 
-										<div className="grid gap-3">
-											{suggestedTherapists.map((t) => {
-												const visitLabels = getAssignedVisitProgress(t, appt);
-
-												return (
-													<div key={t.id}>
-														<div>
-															<TherapistSelectButton
-																badgeItems={visitLabels}
-																selected={selectedTherapistName === t.name}
-																onSelect={() => {
-																	// save values for react-hook-form
-																	onSelectTherapist(
-																		selectedTherapistName === t.name
-																			? DEFAULT_VALUES_THERAPIST
-																			: { id: t.id, name: t.name },
-																	);
-
-																	// save values for session-storage form-selection object
-																	onPersist(
-																		selectedTherapistName === t.name ? null : t,
-																	);
-																}}
-															>
-																<CardTherapist
-																	therapist={{
-																		name: t.name,
-																		gender: t.gender,
-																		id: t.id,
-																		registrationNumber: t.registrationNumber,
-																		employmentType: t.employmentType,
-																	}}
-																	className={cn(
-																		!!visitLabels?.length && "mt-5",
-																	)}
-																/>
-															</TherapistSelectButton>
-														</div>
-
-														{!!t.availabilityDetails?.availableSlots?.length &&
-															!!isAllOfDay && (
-																<div>
-																	<Button
-																		type="button"
-																		variant="outline"
-																		size={isMobile ? "default" : "sm"}
-																		className="w-full !border-t-0 shadow-none"
-																		onClick={() => toggleTimeSlot(t.id)}
-																	>
-																		<span className="font-light uppercase">
-																			Suggested Time Slots
-																		</span>
-																		<ChevronDown
-																			className={cn(
-																				"transition-transform duration-100 text-muted-foreground/50",
-																				isOpenTimeSlot(t.id)
-																					? "rotate-180"
-																					: "",
-																			)}
-																		/>
-																	</Button>
-
-																	{isOpenTimeSlot(t.id) && (
-																		<div className="grid grid-cols-3 gap-2 mt-2 md:grid-cols-6 xl:grid-cols-7">
-																			{t.availabilityDetails?.availableSlots?.map(
-																				(slot) => (
-																					<TimeSlotButton
-																						key={slot}
-																						time={slot}
-																						isSelected={
-																							selectedTimeSlot === slot || false
-																						}
-																						onSelect={() => {
-																							if (
-																								onSelectTimeSlot &&
-																								typeof onSelectTimeSlot ===
-																									"function"
-																							) {
-																								onSelectTimeSlot(slot);
-																							}
-
-																							// save values for react-hook-form
-																							onSelectTherapist(
-																								selectedTherapistName === t.name
-																									? DEFAULT_VALUES_THERAPIST
-																									: { id: t.id, name: t.name },
-																							);
-
-																							// save values for session-storage form-selection object
-																							onPersist(
-																								selectedTherapistName === t.name
-																									? null
-																									: t,
-																							);
-																						}}
-																					/>
-																				),
-																			)}
-																		</div>
-																	)}
-																</div>
-															)}
-													</div>
-												);
-											})}
-										</div>
+										{suggestedTherapistsByCity.map(
+											({ city, therapists }, index) => (
+												<Fragment key={city}>
+													<CityGroup
+														city={city}
+														therapists={therapists}
+														selectedTherapistName={selectedTherapistName}
+														onSelectTherapist={onSelectTherapist}
+														onPersist={onPersist}
+														isAllOfDay={isAllOfDay || false}
+														toggleTimeSlot={toggleTimeSlot}
+														isOpenTimeSlot={isOpenTimeSlot}
+														selectedTimeSlot={selectedTimeSlot}
+														onSelectTimeSlot={onSelectTimeSlot}
+														getVisitLabels={(t) =>
+															getAssignedVisitProgress(t, appt)
+														}
+														isLast={
+															index < suggestedTherapistsByCity.length - 1
+														}
+													/>
+													{/* 
+													{index < suggestedTherapistsByCity.length - 1 && (
+														<div className="border-t border-border my-6" />
+													)} */}
+												</Fragment>
+											),
+										)}
 									</div>
 								)}
 
@@ -762,106 +908,29 @@ const TherapistSelection = memo(
 											</div>
 										)}
 
-										<div className="grid gap-3">
-											{otherTherapists.map((t) => (
-												<div key={t.id}>
-													<div>
-														<TherapistSelectButton
-															selected={selectedTherapistName === t.name}
-															onSelect={() => {
-																if (isAllOfDay) {
-																	toggleTimeSlot(t.id);
-																	return;
-																}
+										{otherTherapistsByCity.map(
+											({ city, therapists }, index) => (
+												<Fragment key={city}>
+													<CityGroup
+														city={city}
+														therapists={therapists}
+														selectedTherapistName={selectedTherapistName}
+														onSelectTherapist={onSelectTherapist}
+														onPersist={onPersist}
+														isAllOfDay={isAllOfDay || false}
+														toggleTimeSlot={toggleTimeSlot}
+														isOpenTimeSlot={isOpenTimeSlot}
+														selectedTimeSlot={selectedTimeSlot}
+														onSelectTimeSlot={onSelectTimeSlot}
+														isLast={index < otherTherapistsByCity.length - 1}
+													/>
 
-																// save values for react-hook-form
-																onSelectTherapist(
-																	selectedTherapistName === t.name
-																		? DEFAULT_VALUES_THERAPIST
-																		: { id: t.id, name: t.name },
-																);
-																// save values for session-storage form-selection object
-																onPersist(
-																	selectedTherapistName === t.name ? null : t,
-																);
-															}}
-														>
-															<CardTherapist
-																therapist={{
-																	name: t.name,
-																	gender: t.gender,
-																	id: t.id,
-																	registrationNumber: t.registrationNumber,
-																	employmentType: t.employmentType,
-																}}
-															/>
-														</TherapistSelectButton>
-													</div>
-
-													{!!t.availabilityDetails?.availableSlots?.length &&
-														!!isAllOfDay && (
-															<div>
-																<Button
-																	type="button"
-																	variant="outline"
-																	size={isMobile ? "default" : "sm"}
-																	className="w-full !border-t-0 shadow-none"
-																	onClick={() => toggleTimeSlot(t.id)}
-																>
-																	<span className="font-light uppercase">
-																		Suggested Time Slots
-																	</span>
-																	<ChevronDown
-																		className={cn(
-																			"transition-transform duration-100 text-muted-foreground/50",
-																			isOpenTimeSlot(t.id) ? "rotate-180" : "",
-																		)}
-																	/>
-																</Button>
-
-																{isOpenTimeSlot(t.id) && (
-																	<div className="grid grid-cols-3 gap-2 mt-2 md:grid-cols-6 xl:grid-cols-7">
-																		{t.availabilityDetails?.availableSlots?.map(
-																			(slot) => (
-																				<TimeSlotButton
-																					key={slot}
-																					time={slot}
-																					isSelected={
-																						selectedTimeSlot === slot || false
-																					}
-																					onSelect={() => {
-																						if (
-																							onSelectTimeSlot &&
-																							typeof onSelectTimeSlot ===
-																								"function"
-																						) {
-																							onSelectTimeSlot(slot);
-																						}
-
-																						// save values for react-hook-form
-																						onSelectTherapist(
-																							selectedTherapistName === t.name
-																								? DEFAULT_VALUES_THERAPIST
-																								: { id: t.id, name: t.name },
-																						);
-
-																						// save values for session-storage form-selection object
-																						onPersist(
-																							selectedTherapistName === t.name
-																								? null
-																								: t,
-																						);
-																					}}
-																				/>
-																			),
-																		)}
-																	</div>
-																)}
-															</div>
-														)}
-												</div>
-											))}
-										</div>
+													{/* {index < otherTherapistsByCity.length - 1 && (
+														<div className="border-t border-border my-6" />
+													)} */}
+												</Fragment>
+											),
+										)}
 									</div>
 								)}
 							</Fragment>
