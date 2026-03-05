@@ -72,16 +72,10 @@ module AdminPortal
     # Collects all other visits (excluding current appointment) that have scheduled dates/times
     # Returns array of hashes with date, time, and visit_number for each scheduled visit
     def collect_disabled_visits
-      return [] unless @appointment&.reference_appointment || @appointment&.series_appointments&.any?
+      return [] if @appointment&.registration_number.blank?
 
-      # Get all related appointments (same series)
-      all_visits = if @appointment.reference_appointment
-        # This is a series appointment, get all siblings including the reference
-        [@appointment.reference_appointment] + @appointment.reference_appointment.series_appointments.to_a
-      else
-        # This is a reference appointment, get all series appointments
-        [@appointment] + @appointment.series_appointments.to_a
-      end
+      # Get all appointments with the same registration number
+      all_visits = Appointment.where(registration_number: @appointment.registration_number)
 
       # Filter out current appointment and collect only those with scheduled date/time
       all_visits

@@ -1,12 +1,23 @@
 import { Deferred } from "@inertiajs/react";
 import { useIsFirstRender } from "@uidotdev/usehooks";
-import { AlertCircle, Hospital, Info, LoaderIcon } from "lucide-react";
-import { type ComponentProps, memo, useEffect } from "react";
+import {
+	AlertCircle,
+	ChevronDown,
+	Hospital,
+	Info,
+	LoaderIcon,
+} from "lucide-react";
+import { type ComponentProps, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import HereMap from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	FormControl,
 	FormField,
@@ -26,6 +37,62 @@ import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
 import DateTimePicker from "./form/date-time";
 import TherapistSelection from "./form/therapist-selection";
+
+// Helper component to display visit list
+const VisitListDisplay = ({ message }: { message: string }) => {
+	const [isOpen, setIsOpen] = useState(false);
+
+	const parseVisits = (msg: string) => {
+		// Extract all visit patterns using regex
+		const visitRegex = /Visit\s+\d+\s+\([^)]+\)/g;
+		const visits = msg.match(visitRegex) || [];
+
+		// Clean each visit
+		return visits.map((visit) =>
+			visit
+				.replace(/[\r\n]+/g, " ") // Remove line breaks
+				.replace(/\s+/g, " ") // Normalize spaces
+				.replace(/\(\s+/g, "(") // Fix opening parenthesis
+				.replace(/\s+\)/g, ")") // Fix closing parenthesis
+				.replace(/\s+—\s+/g, " — ") // Fix dash spacing
+				.trim(),
+		);
+	};
+
+	const visits = parseVisits(message);
+	const visitCount = visits.length;
+
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
+			<CollapsibleTrigger asChild>
+				<button
+					type="button"
+					className="flex items-center gap-2 text-sm font-medium hover:text-amber-700 transition-colors"
+				>
+					<span>Other scheduled visits ({visitCount}):</span>
+					<ChevronDown
+						className={cn(
+							"h-4 w-4 transition-transform duration-200",
+							isOpen && "rotate-180",
+						)}
+					/>
+				</button>
+			</CollapsibleTrigger>
+			<CollapsibleContent className="mt-2 space-y-2">
+				<ul className="ml-4 space-y-1 list-disc">
+					{visits.map((visit) => (
+						<li key={visit} className="text-xs">
+							{visit}
+						</li>
+					))}
+				</ul>
+				<div className="text-amber-600 font-medium text-xs">
+					These dates/times are unavailable.
+				</div>
+			</CollapsibleContent>
+		</Collapsible>
+	);
+};
 
 export interface FormActionButtonsprops extends ComponentProps<"div"> {
 	isLoading: boolean;
@@ -299,7 +366,9 @@ export const RescheduleFields = memo(function Component({
 									<Info className="size-3.5 shrink-0" />
 									<AlertTitle>Info</AlertTitle>
 									<AlertDescription className="text-xs text-pretty">
-										{formHooks.apptDateTime.message}
+										<VisitListDisplay
+											message={formHooks.apptDateTime.message}
+										/>
 									</AlertDescription>
 								</Alert>
 							)}

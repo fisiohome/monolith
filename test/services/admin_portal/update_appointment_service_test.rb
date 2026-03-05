@@ -306,6 +306,81 @@ class AdminPortal::UpdateAppointmentServiceTest < ActiveSupport::TestCase
 
     # Completed visit should retain its visit_number
     assert_equal original_visit_number, @visit_2.reload.visit_number
+
+    # Other visits should be reordered around the completed visit
+    @initial_appointment.reload
+    @visit_3.reload
+
+    # Visit numbers should be unique and sequential
+    all_visit_numbers = [@initial_appointment.visit_number, @visit_2.visit_number, @visit_3.visit_number].sort
+    assert_equal [1, 2, 3], all_visit_numbers, "All visit numbers should be unique and sequential"
+  end
+
+  test "should preserve completed visit numbers when completed visit is in middle" do
+    # Mark visit_2 as completed (visit number 2)
+    @visit_2.update_columns(status: "COMPLETED")
+    original_completed_number = @visit_2.visit_number
+
+    # Move visit_3 to BEFORE visit 2 to change chronological order
+    # This should force reordering where completed visit gets a new number
+    new_datetime = @visit_2.appointment_date_time - 1.day
+    params = build_params(appointment_date_time: new_datetime)
+
+    service = AdminPortal::UpdateAppointmentService.new(@visit_3, params, @current_user)
+    service.call
+
+    # With True Chronological Order: ALL visits are renumbered based on date
+    # Completed visit NO LONGER preserves its original number
+    @initial_appointment.reload
+    @visit_2.reload
+    @visit_3.reload
+
+    # All visits should be renumbered chronologically: visit 1 (earliest) gets 1, visit 3 (now middle) gets 2, visit 2 (completed, now latest) gets 3
+    all_visit_numbers = [@initial_appointment.visit_number, @visit_2.visit_number, @visit_3.visit_number].sort
+    assert_equal [1, 2, 3], all_visit_numbers, "Should maintain true chronological order for all visits"
+
+    # Verify specific positions
+    assert_equal 1, @initial_appointment.visit_number, "Earliest visit should get visit number 1"
+    assert_equal 2, @visit_3.visit_number, "Middle visit should get visit number 2"
+    assert_equal 3, @visit_2.visit_number, "Completed visit (now latest) should get visit number 3"
+
+    # Verify completed visit was renumbered (this is the new behavior)
+    assert_not_equal original_completed_number, @visit_2.visit_number, "Completed visit should be renumbered for true chronological order"
+  end
+
+  test "should handle completed visit in middle with chronological reschedule" do
+    # Create scenario: visit 1, visit 2(completed), visit 3
+    @visit_2.update_columns(status: "COMPLETED")
+    original_completed_number = @visit_2.visit_number
+
+    # Reschedule visit 3 to BEFORE visit 1 - this should make visit 3 the earliest
+    new_datetime = @initial_appointment.appointment_date_time - 1.day
+    params = build_params(appointment_date_time: new_datetime)
+
+    service = AdminPortal::UpdateAppointmentService.new(@visit_3, params, @current_user)
+    result = service.call
+
+    # Verify service was successful
+    assert result[:success], "Service should succeed, but got error: #{result[:error]}"
+
+    # Reload all appointments to get latest state
+    @initial_appointment.reload
+    @visit_2.reload
+    @visit_3.reload
+
+    # With True Chronological Order: ALL visits are renumbered based on date
+    # Completed visit NO LONGER preserves its original number
+    # visit 3 (now earliest) gets 1, visit 1 gets 2, visit 2 (completed) gets 3
+    all_visit_numbers = [@initial_appointment.visit_number, @visit_2.visit_number, @visit_3.visit_number].sort
+    assert_equal [1, 2, 3], all_visit_numbers, "Should maintain true chronological order for all visits"
+
+    # Verify specific positions - completed visit NO LONGER keeps original number
+    assert_equal 1, @visit_3.visit_number, "Rescheduled visit (now earliest) should get visit number 1"
+    assert_equal 2, @initial_appointment.visit_number, "Middle visit should get visit number 2"
+    assert_equal 3, @visit_2.visit_number, "Completed visit should be renumbered to 3 (chronological order prioritized)"
+
+    # Verify completed visit changed (this is the new behavior)
+    assert_not_equal original_completed_number, @visit_2.visit_number, "Completed visit should be renumbered for true chronological order"
   end
 
   test "should assign remaining numbers to unscheduled visits after reorder" do

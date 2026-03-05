@@ -2,6 +2,11 @@
 
 The appointment system manages home healthcare visits between therapists and patients, supporting multi-visit packages with sophisticated scheduling and status tracking.
 
+**Key Topics:**
+- **[Query Architecture](./appointment-query-architecture.md)** - Registration number-based queries and performance optimization
+- **[Visit Number Reordering](./rescheduling/visit-number-reordering-fix.md)** - True chronological ordering and anomaly handling
+- **[Appointment Rescheduling](./rescheduling/appointment-rescheduling.md)** - Complete rescheduling workflow and documentation
+
 ## Appointment Structure
 
 ### Initial Visit vs Series Appointments
@@ -423,12 +428,12 @@ Appointment.where(
 ```ruby
 def paid?
   status_paid? || 
-  reference_appointment&.status_paid? || 
-  reference_appointment&.status_completed?
+    Appointment.find_by(registration_number: registration_number)&.status_paid? || 
+    Appointment.find_by(registration_number: registration_number)&.status_completed?
 end
 ```
 
-- Series appointments inherit paid status from initial visit
+- Series appointments inherit paid status from initial visit via registration number lookup
 - Payment can be made for entire package or individual visits
 - Status cascades from initial visit to series
 
@@ -632,3 +637,13 @@ Planned improvements:
 3. **Smart Scheduling**: AI-powered appointment optimization
 4. **Patient Preferences**: Remember patient scheduling preferences
 5. **Telehealth Integration**: Mixed in-person/remote appointments
+
+---
+
+## Query Architecture
+
+The appointment system uses **registration number-based queries** instead of `reference_appointment` delegations for better performance and data consistency.
+
+**For detailed technical documentation**, see: **[Appointment Query Architecture](./appointment-query-architecture.md)**
+
+---

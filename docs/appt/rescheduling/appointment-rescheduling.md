@@ -117,7 +117,8 @@ def reorder_series_visits
   return unless series? && appointment_date_time_changed?
 
   # Get all visits including initial
-  all_visits = [reference_appointment] + reference_appointment.series_appointments
+  initial_visit = Appointment.find_by(registration_number: registration_number, appointment_reference_id: nil)
+  all_visits = [initial_visit] + initial_visit.series_appointments
   
   # Sort by date and update visit numbers
   all_visits.sort_by(&:appointment_date_time).each_with_index do |visit, index|
@@ -168,12 +169,13 @@ end
 2. **Series Order**: Cannot schedule before previous visits
    ```ruby
    def min_date
-     previous_visit = reference_appointment.series_appointments
-       .where("visit_number < ?", visit_number)
-       .order(:visit_number)
-       .last
-     previous_visit&.appointment_date_time || Date.current
-   end
+    initial_visit = Appointment.find_by(registration_number: registration_number, appointment_reference_id: nil)
+    previous_visit = initial_visit.series_appointments
+      .where("visit_number < ?", visit_number)
+      .order(:visit_number)
+      .last
+    previous_visit&.appointment_date_time || Date.current
+  end
    ```
 
 3. **Business Hours**: Must be within therapist's working hours

@@ -647,8 +647,9 @@ To delete a flag:
 
 For detailed information on specific features, please refer to:
 
-- **[Appointment Management](./appointment-management.md)** - Complete guide to appointment lifecycle, status workflows, and series management
-- **[Appointment Rescheduling](./appointment-rescheduling.md)** - Detailed rescheduling process, validations, and visit reordering
-- **[Appointment Overlap Validation](./appointment-overlap-validation.md)** - Technical details on overlap prevention and validation rules
+- **[Appointment Management](./appt/appointment-management.md)** - Complete guide to appointment lifecycle, status workflows, and series management
+- **[Appointment Rescheduling](./appt/rescheduling/appointment-rescheduling.md)** - Detailed rescheduling process, validations, and visit reordering
+- **[Appointment Overlap Validation](./appt/appointment-overlap-validation.md)** - Technical details on overlap prevention and validation rules
+- **[Appointment Query Architecture](./appt/appointment-query-architecture.md)** - Registration number-based queries and performance optimization
 
 ---

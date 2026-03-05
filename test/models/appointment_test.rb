@@ -508,20 +508,22 @@ class AppointmentTest < ActiveSupport::TestCase
     )
 
     # ─── Expectations ────────────────────────────────────────────────────────────
-    assert_equal 2, first_visit.series_appointments.count, "should create two follow-up visits"
+    all_visits = first_visit.all_visits_in_series
+    series_visits = all_visits.where.not(visit_number: 1) # Exclude the initial visit
 
-    assert first_visit.series_appointments.all? { |c| c.registration_number == first_visit.registration_number },
+    assert_equal 2, series_visits.count, "should create two follow-up visits"
+
+    assert series_visits.all? { |c| c.registration_number == first_visit.registration_number },
       "all series appointments should have the same registration number as the initial visit"
 
-    visit_numbers = first_visit.series_appointments.order(:visit_number).pluck(:visit_number)
+    visit_numbers = series_visits.order(:visit_number).pluck(:visit_number)
     assert_equal [2, 3], visit_numbers, "follow-ups should be visit #2 and #3"
 
-    assert first_visit.series_appointments.all?(&:unscheduled?), "each child should start UNSCHEDULED"
-    assert first_visit.series_appointments.all? { |c| c.appointment_reference_id == first_visit.id },
-      "each child should point back to the initial visit"
+    assert series_visits.all?(&:unscheduled?), "each child should start UNSCHEDULED"
+    # Note: appointment_reference_id is no longer used, we use registration_number instead
 
     # every child gets a stubbed or copied medical record
-    assert first_visit.series_appointments.all? { |c| c.patient_medical_record.present? },
+    assert series_visits.all? { |c| c.patient_medical_record.present? },
       "each child visit should have its own medical record"
   end
 
@@ -663,8 +665,10 @@ class AppointmentTest < ActiveSupport::TestCase
     )
 
     # ── Sanity check ────────────────────────────────────────────────────────────
-    assert_equal 2, first_visit.series_appointments.count, "setup should have spawned two child visits"
-    assert first_visit.series_appointments.all?(&:unscheduled?), "children start UNSCHEDULED"
+    all_visits = first_visit.all_visits_in_series
+    series_visits = all_visits.where.not(visit_number: 1) # Exclude the initial visit
+    assert_equal 2, series_visits.count, "setup should have spawned two child visits"
+    assert series_visits.all?(&:unscheduled?), "children start UNSCHEDULED"
 
     # ── Perform the cancellation ───────────────────────────────────────────────
     first_visit.status_reason = "Patient requested"
@@ -675,10 +679,10 @@ class AppointmentTest < ActiveSupport::TestCase
     first_visit.reload
     assert_equal "cancelled", first_visit.status
 
-    first_visit.series_appointments.each do |child|
+    series_visits.each do |child|
       child.reload
       assert_equal "cancelled", child.status, "series visit #{child.visit_number} should also be cancelled"
-      assert_equal first_visit.id, child.appointment_reference_id, "child should still point to its root"
+      assert_equal first_visit.registration_number, child.registration_number, "child should have same registration number"
     end
   end
 
@@ -790,7 +794,8 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_equal "pending_patient_approval", first_visit.status
 
     # update the series appointment to pending patient approval as well
-    child = first_visit.series_appointments.order(:visit_number).first
+    all_visits = first_visit.all_visits_in_series
+    child = all_visits.where.not(visit_number: 1).order(:visit_number).first
     child.update!(
       status: :pending_patient_approval,
       therapist: @therapist,
@@ -936,17 +941,39 @@ class AppointmentTest < ActiveSupport::TestCase
     assert appt.initial_visit?
     assert appt.cancellable?
 
+    # Create a package with multiple visits
+    multi_pkg = Package.create!(
+      service: @service,
+      name: "3-Visit Bundle",
+      currency: "IDR",
+      number_of_visit: 3,
+      price_per_visit: 100_000,
+      total_price: 300_000,
+      fee_per_visit: 70_000,
+      total_fee: 210_000,
+      active: true
+    )
+
     parent = Appointment.create!(
       patient: @patient,
       service: @service,
-      package: @package,
+      package: multi_pkg,
       location: @location,
       appointment_date_time: @future_time,
       preferred_therapist_gender: "NO PREFERENCE"
     )
     parent.cancel!
 
-    series = Appointment.new(reference_appointment: parent, visit_number: 2)
+    # Create series appointment with same registration number
+    series = Appointment.create!(
+      registration_number: parent.registration_number,
+      visit_number: 2,
+      patient: @patient,
+      service: @service,
+      package: multi_pkg,
+      location: @location,
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
     assert series.cancellable?
   end
 
@@ -1051,7 +1078,8 @@ class AppointmentTest < ActiveSupport::TestCase
 
     # sanity check
     assert_equal "pending_patient_approval", first_visit.status
-    child = first_visit.series_appointments.order(:visit_number).first
+    all_visits = first_visit.all_visits_in_series
+    child = all_visits.where.not(visit_number: 1).order(:visit_number).first
     child.update!(
       status: :pending_patient_approval,
       therapist: @therapist,
@@ -1187,8 +1215,9 @@ class AppointmentTest < ActiveSupport::TestCase
     )
 
     # ─── Grab the auto-built series appointments ────────────────────────────────
-    second = first.series_appointments.find_by(visit_number: 2)
-    third = first.series_appointments.find_by(visit_number: 3)
+    all_visits = first.all_visits_in_series
+    second = all_visits.find_by(visit_number: 2)
+    third = all_visits.find_by(visit_number: 3)
 
     # ─── Schedule them at t1 = t0 + 1.day, t2 = t0 + 2.days ────────────────────
     t1 = t0 + 1.day
@@ -1246,7 +1275,8 @@ class AppointmentTest < ActiveSupport::TestCase
     )
 
     # Ensure series appointments were created
-    series_appointments = initial.series_appointments
+    all_visits = initial.all_visits_in_series
+    series_appointments = all_visits.where.not(visit_number: 1)
     assert_equal 2, series_appointments.count
 
     # Schedule the second appointment
@@ -1308,8 +1338,9 @@ class AppointmentTest < ActiveSupport::TestCase
     first_visit.update!(status: :completed)
 
     # Get series visits
-    second_visit = first_visit.series_appointments.find_by(visit_number: 2)
-    third_visit = first_visit.series_appointments.find_by(visit_number: 3)
+    all_visits = first_visit.all_visits_in_series
+    second_visit = all_visits.find_by(visit_number: 2)
+    third_visit = all_visits.find_by(visit_number: 3)
 
     # Set up the second visit as completed
     second_visit.update!(
@@ -1377,7 +1408,8 @@ class AppointmentTest < ActiveSupport::TestCase
     )
 
     # Schedule the second appointment
-    second_appt = initial.series_appointments.find_by(visit_number: 2)
+    all_visits = initial.all_visits_in_series
+    second_appt = all_visits.find_by(visit_number: 2)
     second_appt.update!(
       appointment_date_time: @future_time + 1.week,
       therapist: @therapist,

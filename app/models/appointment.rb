@@ -154,8 +154,7 @@ class Appointment < ApplicationRecord
   has_many :order_details, through: :order
 
   # * define the delegations
-  delegate :preferred_therapist_gender, :patient, :service, :package, :location, :admins, :address_history, :package_history,
-    to: :reference_appointment, prefix: true, allow_nil: true
+  # * Note: Removed reference_appointment delegations as we now use registration number-based queries
 
   # * cycle callbacks
   before_validation :generate_registration_number, on: :create
@@ -388,8 +387,16 @@ class Appointment < ApplicationRecord
     appointment_reference_id.nil? && visit_number == 1
   end
 
+  def initial_visit
+    # Get the first visit (visit_number = 1) for the same registration number
+    Appointment.where(registration_number: registration_number)
+      .find_by(visit_number: 1)
+  end
+
   def series?
-    appointment_reference_id.present?
+    # Check if there are multiple appointments with the same registration number
+    registration_number.present? &&
+      Appointment.where(registration_number: registration_number).count > 1
   end
 
   # Get total visits from historical package data at time of creation
@@ -402,20 +409,25 @@ class Appointment < ApplicationRecord
   end
 
   def series_completion
-    completed_serie = reference_appointment&.series_appointments&.count.to_i
+    # Count completed series visits (excluding initial visit)
+    completed_series = Appointment.where(registration_number: registration_number)
+      .where.not(visit_number: 1)
+      .where(status: :completed)
+      .count
     total = total_package_visits - 1 # Subtract initial visit
-    "#{completed_serie}/#{total}"
+    "#{completed_series}/#{total}"
   end
 
   def next_available_visit_number
     # For initial visits, start counting from 2
     return 2 if initial_visit? && package.number_of_visit >= 2
 
-    # For sequents appointment in multi-visit packages
-    if reference_appointment
-      current_max = reference_appointment.series_appointments.maximum(:visit_number) || 1
+    # For subsequent appointments in multi-visit packages
+    if registration_number.present?
+      current_max = Appointment.where(registration_number: registration_number)
+        .maximum(:visit_number) || 1
       next_num = current_max + 1
-      (next_num <= reference_appointment.total_package_visits) ? next_num : nil
+      (next_num <= total_package_visits) ? next_num : nil
     end
   end
 
@@ -449,42 +461,36 @@ class Appointment < ApplicationRecord
   end
 
   def next_visits
-    series_appointments.find_by("visit_number > ?", visit_number)
+    Appointment.where(registration_number: registration_number)
+      .where("visit_number > ?", visit_number)
+      .first
   end
 
   # Returns an Array of appointments: the initial visit first, then
   # all of its series_appointments sorted by visit_number.
   def all_visits_in_series
-    root = reference_appointment || self
-    # include the root visit, then children
-    ([root] + root.series_appointments.order(:visit_number))
+    # Get all appointments with the same registration number, sorted by visit number
+    Appointment.where(registration_number: registration_number).order(:visit_number)
   end
 
   # returns the immediately preceding appointment in the series (or nil)
   def previous_visit
     return nil if initial_visit?
 
-    # series visits: look up earlier-numbered series, falling back to the root
-    reference_appointment
-      .series_appointments
+    # Find the previous visit by visit number
+    Appointment.where(registration_number: registration_number)
       .where("visit_number < ?", visit_number)
       .order(visit_number: :desc)
-      .first ||
-      reference_appointment
+      .first
   end
 
   # returns the immediately following appointment in the series (or nil)
   def next_visit
-    if initial_visit?
-      # first visit → first series appointment
-      series_appointments.order(visit_number: :asc).first
-    else
-      # series visit → next-numbered series
-      reference_appointment.series_appointments
-        .where("visit_number > ?", visit_number)
-        .order(visit_number: :asc)
-        .first
-    end
+    # Find the next visit by visit number
+    Appointment.where(registration_number: registration_number)
+      .where("visit_number > ?", visit_number)
+      .order(visit_number: :asc)
+      .first
   end
 
   # helpers to expose min/max datetimes
@@ -507,7 +513,7 @@ class Appointment < ApplicationRecord
   def cancellable?
     # Initial visits can always be cancelled
     # Series appointments can be cancelled if initial visit is cancelled
-    initial_visit? || (series? && reference_appointment.status_cancelled?)
+    initial_visit? || (series? && initial_visit&.status_cancelled?)
   end
 
   def should_create_series?
@@ -534,7 +540,7 @@ class Appointment < ApplicationRecord
 
   # Check if this appointment or its reference (first visit) is paid
   def paid?
-    status_paid? || reference_appointment&.status_paid? || reference_appointment&.status_completed?
+    status_paid? || initial_visit&.status_paid? || initial_visit&.status_completed?
   end
 
   def completed?
@@ -661,7 +667,21 @@ class Appointment < ApplicationRecord
         cascade_hold(updater:, reason: status_reason)
         true
       elsif update(status: :on_hold, status_reason:, updater:)
-        reference_appointment&.cascade_hold(updater:, reason: status_reason)
+        # Cascade hold to all other appointments with same registration number
+        # but exclude the initial visit when this is a series appointment
+        cascade_scope = Appointment.where(registration_number: registration_number)
+          .where.not(id: id)
+          .where.not(status: [:on_hold, :completed])
+
+        # Exclude initial visit if this is not an initial visit
+        unless initial_visit?
+          initial = initial_visit
+          cascade_scope = cascade_scope.where.not(id: initial.id) if initial
+        end
+
+        cascade_scope.find_each do |appt|
+          appt.update(status: :on_hold, status_reason: status_reason, updater: updater)
+        end
         true
       else
         errors.add(:base, "Failed to hold appointment: #{errors.full_messages.join(", ")}")
@@ -822,7 +842,10 @@ class Appointment < ApplicationRecord
   end
 
   def validate_initial_visit_position
-    first_series = series_appointments.order(:appointment_date_time).first
+    first_series = Appointment.where(registration_number: registration_number)
+      .where.not(visit_number: 1)
+      .order(:appointment_date_time)
+      .first
     return false unless first_series
 
     return false if first_series.appointment_date_time.blank?
@@ -841,7 +864,7 @@ class Appointment < ApplicationRecord
     # skip the validation for unscheduled series & if there's not have series
     return false unless series? && appointment_date_time.present?
 
-    initial = reference_appointment
+    initial = initial_visit
 
     # First visit must be scheduled before any series visits
     if initial.appointment_date_time.blank?
@@ -870,8 +893,8 @@ class Appointment < ApplicationRecord
 
   def validate_no_overlapping_visits(initial)
     # Get all other visits in the series (excluding current) that have scheduled times
-    other_visits = ([initial] + initial.series_appointments.to_a)
-      .reject { |appt| appt.id == id }
+    other_visits = Appointment.where(registration_number: registration_number)
+      .where.not(id: id)
       .select { |appt| appt.appointment_date_time.present? }
 
     # Calculate this visit's time range
@@ -904,8 +927,8 @@ class Appointment < ApplicationRecord
   # @param initial [Appointment] the initial/root appointment of the series
   # @return [Array<Appointment>] siblings with scheduled appointment times
   def series_siblings(initial)
-    ([initial] + initial.series_appointments.to_a)
-      .reject { |appt| appt.id == id }
+    Appointment.where(registration_number: registration_number)
+      .where.not(id: id)
       .select { |appt| appt.appointment_date_time.present? }
   end
 
@@ -1131,7 +1154,7 @@ class Appointment < ApplicationRecord
 
     # Add the fields that DO differ for each child
     (2..total_package_visits).each do |visit_no|
-      sequel = series_appointments.create!(
+      sequel = Appointment.create!(
         scrubbed_template.merge(
           visit_number: visit_no,
           appointment_date_time: nil,
@@ -1139,7 +1162,8 @@ class Appointment < ApplicationRecord
           status: :unscheduled,
           skip_auto_series_creation: true,  # Prevent infinite recursion
           updater: updater,
-          admins: admins
+          admins: admins,
+          registration_number: registration_number
         )
       )
 

@@ -185,9 +185,9 @@ module AdminPortal
 
       return if scheduled_visits.empty?
 
-      completed_visits, pending_visits = scheduled_visits.partition(&:status_completed?)
-      pending_visits.sort_by!(&:appointment_date_time)
-      current_number = completed_visits.map(&:visit_number).compact.max || 0
+      # Sort ALL visits chronologically - no distinction between completed and pending
+      # True Chronological Order is prioritized over completed visit preservation
+      all_visits_chronological = scheduled_visits.sort_by(&:appointment_date_time)
 
       # Handle unscheduled visits
       unscheduled_visits = root.series_appointments
@@ -196,16 +196,19 @@ module AdminPortal
         .order(:visit_number)
         .to_a
 
-      # Collect all visits that need reordering
-      all_visits_to_reorder = pending_visits + unscheduled_visits
-
       # First pass: Set temporary negative visit_numbers to avoid unique constraint violations
+      # Use a large negative number to ensure no conflicts with existing data
+      all_visits_to_reorder = all_visits_chronological + unscheduled_visits
       all_visits_to_reorder.each_with_index do |visit, index|
-        visit.update_column(:visit_number, -(index + 1))
+        # Use very negative numbers to avoid any potential conflicts
+        temp_number = -(10000 + index + 1)
+        visit.update_column(:visit_number, temp_number)
       end
 
       # Second pass: Assign final visit_numbers based on chronological position
-      pending_visits.each do |visit|
+      # True Chronological Order - ALL visits get sequential numbers based on date
+      current_number = 0
+      all_visits_chronological.each do |visit|
         current_number += 1
         visit.update_column(:visit_number, current_number)
       end
