@@ -36,7 +36,7 @@
 
 require_relative "../../config/environment"
 
-therapist_id = "0c9a01bd-1fcb-4a05-8540-9c671ae8e8d0"
+therapist_id = "178c5519-8713-4d98-87e1-e64bd6f1fae9"
 therapist = Therapist.find_by(id: therapist_id)
 
 if therapist.nil?
@@ -47,8 +47,8 @@ end
 # service_id = therapist.service_id || Service.first&.id
 # location = therapist.active_address&.location
 # location_id = location&.id || Location.first&.id
-service_id = 1
-location_id = 2
+service_id = 2
+location_id = 91
 
 if location_id.nil?
   puts "No valid location found for testing."
@@ -104,20 +104,22 @@ def test_fetch(params, scenario_name, expected_therapist_id)
   end
 end
 
-# Scenario: UI Request
-ui_params = {
-  patient_query: "sarah",
-  location_id: "2",
-  service_id: "1",
+# Scenario: User's actual payload
+user_payload_params = {
+  patient_contact_query: "Nam",
+  location_id: "91",
+  service_id: "2",
   preferred_therapist_gender: "NO PREFERENCE",
-  appointment_date_time: "Fri Feb 27 2026 00:00:00 GMT+0700 (Indochina Time)",
-  is_all_of_day: "true"
+  appointment_date_time: "Fri Mar 06 2026 00:00:00 GMT+0700 (Indochina Time)",
+  is_all_of_day: "true",
+  bypass_constraints: "true",
+  employment_type: "ALL"
 }
-test_fetch(ui_params, "UI Request Simulation", therapist.id)
+test_fetch(user_payload_params, "User's Actual Payload", therapist.id)
 
 # Scenario: Missing service/location/address should still return therapist
 missing_data_params = {
-  patient_query: therapist.name.split.first, # minimal query
+  patient_contact_query: therapist.name.split.first, # minimal query
   location_id: nil,
   service_id: nil,
   preferred_therapist_gender: "NO PREFERENCE",
@@ -126,3 +128,55 @@ missing_data_params = {
 }
 
 test_fetch(missing_data_params, "Missing service/location/address", therapist.id)
+
+# Scenario: Correct location (90) instead of 91
+correct_location_params = {
+  patient_contact_query: "Nam",
+  location_id: "90", # Use therapist's actual location
+  service_id: "2",
+  preferred_therapist_gender: "NO PREFERENCE",
+  appointment_date_time: "Fri Mar 06 2026 00:00:00 GMT+0700 (Indochina Time)",
+  is_all_of_day: "true",
+  bypass_constraints: "true",
+  employment_type: "ALL"
+}
+test_fetch(correct_location_params, "Correct Location (90)", therapist.id)
+
+# Scenario: Check if therapist appears without date/time constraints
+no_date_params = {
+  patient_contact_query: "Nam",
+  location_id: "90",
+  service_id: "2",
+  preferred_therapist_gender: "NO PREFERENCE",
+  appointment_date_time: nil,
+  is_all_of_day: "true",
+  bypass_constraints: "true",
+  employment_type: "ALL"
+}
+test_fetch(no_date_params, "No Date/Time Constraints", therapist.id)
+
+# Scenario: Check if therapist appears in nearby location (91 - KAB. GOWA)
+nearby_location_params = {
+  patient_contact_query: "Wahdat", # Use therapist's actual name
+  location_id: "91", # KAB. GOWA (different from therapist's location)
+  service_id: "2",
+  preferred_therapist_gender: "FEMALE", # Match therapist gender
+  appointment_date_time: "Fri Mar 06 2026 00:00:00 GMT+0700 (Indochina Time)",
+  is_all_of_day: "true",
+  bypass_constraints: "true",
+  employment_type: "ALL"
+}
+test_fetch(nearby_location_params, "Nearby Location (KAB. GOWA)", therapist.id)
+
+# Scenario: Check if location filtering is strict or flexible
+flexible_params = {
+  patient_contact_query: "Wahdat",
+  location_id: "91",
+  service_id: "2",
+  preferred_therapist_gender: "FEMALE",
+  appointment_date_time: nil,
+  is_all_of_day: "true",
+  bypass_constraints: "true",
+  employment_type: "ALL"
+}
+test_fetch(flexible_params, "Flexible Location Search", therapist.id)

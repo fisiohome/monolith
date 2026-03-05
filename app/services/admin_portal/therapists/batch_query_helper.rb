@@ -39,6 +39,12 @@ module AdminPortal
         jabodetabek_keywords = ["JAKARTA", "BOGOR", "DEPOK", "TANGERANG", "BEKASI", "KEPULAUAN SERIBU"]
         is_jabodetabek_location = jabodetabek_keywords.any? { |kw| location.city&.include?(kw) }
 
+        # Get Jabodetabek location IDs for filtering
+        jabodetabek_location_ids = Location.where(
+          "city LIKE ANY (ARRAY[?])",
+          jabodetabek_keywords.map { |kw| "%#{kw}%" }
+        ).pluck(:id)
+
         # Filter therapists based on their availability rules and location
         base_scope = if is_jabodetabek_location
           # For Jabodetabek: Use complex availability rules filtering
@@ -57,8 +63,22 @@ module AdminPortal
             location_ids
           )
         else
-          # For non-Jabodetabek: Use simple location filtering only
-          base_scope.where(addresses: {location_id: location_ids})
+          # For non-Jabodetabek: Exclude Jabodetabek therapists unless they have specific location rules
+          # This ensures:
+          # 1. Non-Jabodetabek therapists without location rules can serve any location
+          # 2. Jabodetabek therapists are excluded UNLESS they have location rules that include this location
+          base_scope.where(
+            "(" \
+            "  (addresses.location_id NOT IN (?) AND " \
+            "   (therapist_appointment_schedules.availability_rules IS NULL OR " \
+            "    therapist_appointment_schedules.availability_rules::text = '[]' OR " \
+            "    NOT EXISTS (SELECT 1 FROM json_array_elements(therapist_appointment_schedules.availability_rules) " \
+            "                WHERE value->>'location' = 'true'))) OR " \
+            "  addresses.location_id IN (?)" \
+            ")",
+            jabodetabek_location_ids,
+            location_ids
+          )
         end
 
         # Get total count for progress tracking
