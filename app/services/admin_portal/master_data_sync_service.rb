@@ -6,6 +6,8 @@
 module AdminPortal
   class MasterDataSyncService
     MASTER_DATA_URL = "https://docs.google.com/spreadsheets/d/1gERBdLgZPWrOF-rl5pXCx6mIyKOYi64KKbxjmxpTbvM/export?format=csv"
+    MASTER_DATA_THERAPISTS_KARPIS = "https://docs.google.com/spreadsheets/d/1E-8fr0bRFveQGYZdtWunvydvSGt5_aQ8nfPig3j22vM/export?format=csv&gid=0"
+    MASTER_DATA_THERAPISTS_FLAT = "https://docs.google.com/spreadsheets/d/1m-Fh7AjMskRoOqj5jc8afFGG-dSGB5rwGzFttyiLxqE/export?format=csv&gid=0"
     LOCATION_GID = "0"
     ADMIN_GID = "1493117737"
     BRAND_GID = "2090364532"
@@ -540,8 +542,16 @@ module AdminPortal
     end
 
     def therapists(employment_type_filter: "KARPIS")
-      # Process therapists CSV
-      csv = fetch_and_parse_csv(gid: THERAPIST_GID)
+      # Use different URLs based on employment type
+      csv = if employment_type_filter == "KARPIS"
+        fetch_and_parse_csv_from_url(MASTER_DATA_THERAPISTS_KARPIS)
+      elsif employment_type_filter == "FLAT"
+        fetch_and_parse_csv_from_url(MASTER_DATA_THERAPISTS_FLAT)
+      else
+        # Fallback to original behavior for other types
+        fetch_and_parse_csv(gid: THERAPIST_GID)
+      end
+
       required_therapist_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Address Line", "Brand"]
       validate_headers(csv, required_therapist_headers)
 
@@ -844,7 +854,16 @@ module AdminPortal
 
       # Use ignoring_loc_rules_map from therapists method if available, otherwise fetch
       ignoring_loc_rules_map = @ignoring_loc_rules_map || begin
-        therapist_csv = fetch_and_parse_csv(gid: THERAPIST_GID)
+        # Use different URLs based on employment type
+        therapist_csv = if employment_type_filter == "KARPIS"
+          fetch_and_parse_csv_from_url(MASTER_DATA_THERAPISTS_KARPIS)
+        elsif employment_type_filter == "FLAT"
+          fetch_and_parse_csv_from_url(MASTER_DATA_THERAPISTS_FLAT)
+        else
+          # Fallback to original behavior
+          fetch_and_parse_csv(gid: THERAPIST_GID)
+        end
+
         therapist_csv.each_with_object({}) do |row, hash|
           name = row["Name"]&.strip
           ignoring_loc_rules = normalize_boolean(row["Ignoring Location Rules"])
@@ -1811,6 +1830,14 @@ module AdminPortal
       CSV.parse(data, headers: true)
     rescue OpenURI::HTTPError, CSV::MalformedCSVError => e
       Rails.logger.error "Failed to fetch or parse CSV: #{e.class} - #{e.message}"
+      raise
+    end
+
+    def fetch_and_parse_csv_from_url(url)
+      data = URI.open(url).read # rubocop:disable Security/Open
+      CSV.parse(data, headers: true)
+    rescue OpenURI::HTTPError, CSV::MalformedCSVError => e
+      Rails.logger.error "Failed to fetch or parse CSV from URL: #{e.class} - #{e.message}"
       raise
     end
 
