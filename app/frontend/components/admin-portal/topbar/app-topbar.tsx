@@ -1,3 +1,4 @@
+import { usePage } from "@inertiajs/react";
 import {
 	Clock1,
 	Clock2,
@@ -17,6 +18,8 @@ import { useDateContext } from "@/components/providers/date-provider";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { CURRENT_DATE_TOPBAR, INTERVAL_TOPBAR_DATE } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import type { GlobalPageProps } from "@/types/globals";
 
 const CLOCK_ICONS = [
 	Clock1,
@@ -35,6 +38,7 @@ const CLOCK_ICONS = [
 const CURRENT_HOUR = new Date().getHours() % 12 || 12 - 1;
 
 export default function AppTopBar() {
+	const { props: globalProps } = usePage<GlobalPageProps>();
 	const { locale, tzDate } = useDateContext();
 	const [currentDate, setCurrentDate] = useState(
 		CURRENT_DATE_TOPBAR({ locale, timezone: tzDate }),
@@ -56,7 +60,14 @@ export default function AppTopBar() {
 	}, [locale, tzDate]);
 
 	return (
-		<header className="sticky top-0 z-30 flex flex-row items-center justify-between h-16 gap-2 bg-background rounded-xl shrink-0 motion-preset-bounce">
+		<header
+			className={cn(
+				"sticky z-30 flex flex-row items-center justify-between h-auto py-2 gap-2 bg-background rounded-xl shrink-0 motion-preset-bounce",
+				globalProps.adminPortal.railsEnv !== "production"
+					? "top-8 md:top-9"
+					: "top-0",
+			)}
+		>
 			<div className="flex items-center gap-2 px-4">
 				<SidebarTrigger className="-ml-1" />
 

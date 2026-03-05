@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { IS_TABLET_MEDIA_QUERY } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import type { GlobalPageProps } from "@/types/globals";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
@@ -30,7 +31,12 @@ export default function AppSidebar({
 			collapsible={isMobile || isTablet ? "offcanvas" : "icon"}
 			{...props}
 		>
-			<SidebarHeader className="motion-preset-bounce">
+			<SidebarHeader
+				className={cn(
+					"motion-preset-bounce transition-all duration-150 ease-in-out transform-gpu",
+					globalProps.adminPortal.railsEnv !== "production" ? "pt-8" : "pt-0",
+				)}
+			>
 				<SidebarMenu>
 					<SidebarMenuItem>
 						<SidebarMenuButton size="lg" asChild>

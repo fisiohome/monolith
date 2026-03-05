@@ -37,7 +37,19 @@
 
   </head>
 
-  <body>
+  <body class="relative">
+    <% unless Rails.env.production? %>
+      <div class="sticky z-50 top-0 bg-secondary text-secondary-foreground px-4 p-2 transition-all duration-300 ease-in-out transform-gpu h-full">
+					<div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+						<p class="text-xs md:text-sm flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-test-tube-diagonal-icon lucide-test-tube-diagonal shrink-0"><path d="M21 7 6.82 21.18a2.83 2.83 0 0 1-3.99-.01a2.83 2.83 0 0 1 0-4L17 3"/><path d="m16 2 6 6"/><path d="M12 16H4"/></svg>
+              
+              <span class="text-pretty">This is a development/staging server for testing purposes only</span>
+						</p>
+					</div>
+				</div>
+    <% end %>
+    
     <main class="mx-auto w-full border-border/40 dark:border-border min-[1800px]:max-w-[1536px] min-[1800px]:border-x rounded-xl">
       <!-- 
         <p class="notice"><%= notice %></p>

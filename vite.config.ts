@@ -18,6 +18,7 @@ export default defineConfig({
 		alias: {
 			"@": path.resolve(__dirname, "./app/frontend"),
 			"@/components/*": path.resolve(__dirname, "./app/frontend/components"),
+			"@/hooks/*": path.resolve(__dirname, "./app/frontend/hooks"),
 			"@/lib/*": path.resolve(__dirname, "./app/frontend/lib"),
 			"@/styles/*": path.resolve(__dirname, "./app/frontend/styles"),
 			"@/assets/*": path.resolve(__dirname, "./app/assets"),

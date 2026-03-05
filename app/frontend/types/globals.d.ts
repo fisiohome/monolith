@@ -31,6 +31,7 @@ export interface FlashMessage {
 export interface AdminPortal {
 	currentLocale: string;
 	currentTimezone: string;
+	railsEnv: string;
 	currentQuery: Record<string, string> | null;
 	router: {
 		root: string;
