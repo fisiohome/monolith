@@ -1,5 +1,4 @@
 import { startOfDay } from "date-fns";
-import { isValidPhoneNumber } from "react-phone-number-input";
 import { z } from "zod";
 import type { FormMode } from "@/components/admin-portal/appointment/new-appointment-form";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
@@ -64,8 +63,7 @@ export const CONTACT_INFORMATION_SCHEMA = z.object({
 		.min(1, "Contact name is required with minimum 3 characters"),
 	contactPhone: z
 		.string()
-		.min(1, { message: "Contact phone number is required" })
-		.refine(isValidPhoneNumber, { message: "Invalid phone number" }),
+		.min(1, { message: "Contact phone number is required" }),
 	email: z.string().email("Invalid email").or(z.literal("")).optional(),
 	miitelLink: z.string().url("MiiTel link must be a valid URL").optional(),
 });
