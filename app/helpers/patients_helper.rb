@@ -28,7 +28,25 @@ module PatientsHelper
 
       # Serialize patient addresses with their associated address record
       if options.fetch(:include_patient_addresses, false) && patient.patient_addresses.present?
-        patient_serialized["patient_addresses"] = patient.patient_addresses.map do |pa|
+        # Group addresses by content to remove duplicates
+        # Keep only the most recent (or active) version of each unique address
+        address_groups = patient.patient_addresses.group_by { |pa| pa.address&.address }
+
+        unique_addresses = address_groups.map do |address_content, addresses|
+          # Sort by priority: active first, then most recent
+          prioritized = addresses.sort_by do |pa|
+            [pa.active ? 0 : 1, -pa.created_at.to_i]
+          end
+          # Take only the highest priority (first) address from each group
+          prioritized.first
+        end
+
+        # Final sort: active first, then most recent
+        sorted_addresses = unique_addresses.sort_by do |pa|
+          [pa.active ? 0 : 1, -pa.created_at.to_i]
+        end
+
+        patient_serialized["patient_addresses"] = sorted_addresses.map do |pa|
           pa.as_json(only: options[:patient_addresses_only]).merge(
             "address" => pa.address.as_json(only: options[:address_only]).merge(
               "location" => serialize_location(pa.address.location, only: options[:location_only])

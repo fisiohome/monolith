@@ -366,7 +366,12 @@ export default function PatientContactForm() {
 											name="contactInformation.email"
 											render={({ field }) => (
 												<FormItem className="col-span-1">
-													<FormLabel>{tpc("fields.email.label")}</FormLabel>
+													<FormLabel>
+														{tpc("fields.email.label")}{" "}
+														<span className="text-sm italic font-light">
+															- (optional)
+														</span>
+													</FormLabel>
 													<FormControl>
 														<Input
 															{...field}
@@ -393,7 +398,10 @@ export default function PatientContactForm() {
 											render={({ field }) => (
 												<FormItem>
 													<FormLabel>
-														{tpc("fields.miitel_link.label")}
+														{tpc("fields.miitel_link.label")}{" "}
+														<span className="text-sm italic font-light">
+															- (optional)
+														</span>
 													</FormLabel>
 													<FormControl>
 														<Input

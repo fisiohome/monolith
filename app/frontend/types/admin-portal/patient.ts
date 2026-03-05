@@ -12,7 +12,7 @@ interface PatientContact {
 	updatedAt: string;
 }
 
-interface PatientActiveAddress {
+export interface PatientActiveAddress {
 	id: number;
 	locationId: number;
 	latitude: number;

@@ -4,29 +4,50 @@ import { format } from "date-fns";
 import {
 	AlertCircle,
 	CalendarIcon,
+	CheckIcon,
+	EllipsisVerticalIcon,
 	IdCard,
 	LoaderIcon,
+	PencilIcon,
 	SquarePen,
 	X,
 } from "lucide-react";
 import {
 	Fragment,
+	type MutableRefObject,
 	memo,
 	Suspense,
 	useCallback,
+	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { isValidPhoneNumber } from "react-phone-number-input";
+import { toast } from "sonner";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { z } from "zod";
+import HereMap, { type HereMapProps } from "@/components/shared/here-map";
 import { LoadingBasic } from "@/components/shared/loading";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar, type CalendarProps } from "@/components/ui/calendar";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import {
 	Drawer,
 	DrawerClose,
@@ -36,6 +57,12 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 } from "@/components/ui/drawer";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
 	Form,
 	FormControl,
@@ -53,33 +80,49 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { getGenderIcon } from "@/hooks/use-gender";
 import { GENDERS } from "@/lib/constants";
+import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
 import { calculateAge, cn, populateQueryParams } from "@/lib/utils";
 import { idSchema } from "@/lib/validation";
 import type { PatientIndexGlobalPageProps } from "@/pages/AdminPortal/Patient/Index";
+import type { PatientActiveAddress } from "@/types/admin-portal/patient";
+import AddAddressSection from "./form-create";
+
+const ADDRESS_FORM_SCHEMA = z.object({
+	address: z.string().min(1, "Address is required"),
+	postalCode: z.string().optional(),
+	coordinate: z.string().optional(),
+	locationId: z.coerce.number().min(1, "Location is required"),
+	notes: z.string().optional(),
+});
+type AddressFormSchema = z.infer<typeof ADDRESS_FORM_SCHEMA>;
 
 const FORM_SCHEMA = z.object({
 	contact: z.object({
 		id: idSchema,
-		contactName: z
-			.string()
-			.min(3, "Contact name is required with minimum 3 characters"),
+		contactName: z.string().min(1, "Contact name is required"),
 		contactPhone: z
 			.string()
 			.min(1, { message: "Contact phone number is required" })
 			.refine(isValidPhoneNumber, { message: "Invalid phone number" }),
-		email: z.string().email("Invalid email").optional(),
+		email: z.string().email("Invalid email").or(z.literal("")).optional(),
 		miitelLink: z.string().url("MiiTel link must be a valid URL").optional(),
 	}),
 	profile: z.object({
 		id: idSchema,
-		fullName: z
-			.string()
-			.min(3, "Patient full name is required with minimum 3 characters"),
+		fullName: z.string().min(1, "Patient full name is required"),
 		dateOfBirth: z.coerce
 			.date()
 			// Ensure the date is in the past
@@ -93,6 +136,7 @@ const FORM_SCHEMA = z.object({
 	}),
 });
 type FormSchema = z.infer<typeof FORM_SCHEMA>;
+
 type PatientUpdatePayload = {
 	contact: FormSchema["contact"];
 	profile: Pick<FormSchema["profile"], "id" | "dateOfBirth" | "gender"> & {
@@ -115,8 +159,11 @@ const FormEdit = memo(function Component({
 	const { props: globalProps, url: pageURL } =
 		usePage<PatientIndexGlobalPageProps>();
 
-	// * for form management state
+	// ===== STATE MANAGEMENT =====
 	const [isLoading, setIsLoading] = useState(false);
+	const leftColumnRef = useRef<HTMLDivElement | null>(null);
+
+	// ===== FORM CONFIGURATION =====
 	const formDefaultvalues = useMemo(() => {
 		const { contact } = patient;
 
@@ -137,11 +184,14 @@ const FormEdit = memo(function Component({
 			},
 		} satisfies FormSchema;
 	}, [patient]);
+
 	const form = useForm({
 		resolver: zodResolver(FORM_SCHEMA),
 		defaultValues: { ...formDefaultvalues },
 		mode: "onChange",
 	});
+
+	// ===== EVENT HANDLERS =====
 	const onSubmit = useCallback(
 		(values: FormSchema) => {
 			console.group();
@@ -201,6 +251,8 @@ const FormEdit = memo(function Component({
 			pageURL,
 		],
 	);
+
+	// ===== COMPUTED VALUES =====
 	const errorsServerValidation = useMemo(
 		() => (globalProps?.errors?.fullMessages as unknown as string[]) || null,
 		[globalProps?.errors?.fullMessages],
@@ -208,9 +260,14 @@ const FormEdit = memo(function Component({
 
 	return (
 		<Drawer open={open} onOpenChange={onOpenChange}>
-			<DrawerContent className="flex flex-col rounded-t-[10px] mt-24 max-h-[90%] fixed bottom-0 left-0 right-0 outline-none bg-card">
-				<div className="flex-1 overflow-y-auto">
-					<div className="w-full max-w-sm mx-auto">
+			<DrawerContent
+				onInteractOutside={(event) => {
+					event.preventDefault();
+				}}
+				className="flex flex-col rounded-t-[10px] mt-24 max-h-[90%] fixed bottom-0 left-0 right-0 outline-none bg-card"
+			>
+				<div className="flex-1 overflow-y-auto overflow-x-hidden">
+					<div className="w-full lg:max-w-5xl mx-auto min-w-0">
 						<DrawerHeader>
 							<DrawerTitle>{tpef("title")}</DrawerTitle>
 							<DrawerDescription className="max-w-xs">
@@ -221,12 +278,25 @@ const FormEdit = memo(function Component({
 						<Form {...form}>
 							<form onSubmit={form.handleSubmit(onSubmit)}>
 								<Suspense fallback={<LoadingBasic columnBased={true} />}>
-									<div className={"grid gap-2 p-4"}>
-										<ContactSection />
+									<div
+										className={
+											"grid items-start grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 min-w-0 overflow-hidden"
+										}
+									>
+										<div className="grid gap-4" ref={leftColumnRef}>
+											<ContactSection />
 
-										<Separator className="my-4" />
+											<Separator className="mt-4" />
 
-										<ProfileSection />
+											<ProfileSection />
+										</div>
+
+										<Separator className="mt-4 md:hidden" />
+
+										<AddressSection
+											patient={patient}
+											leftColumnRef={leftColumnRef}
+										/>
 
 										{/* for showing the alert error if there's any server validation error */}
 										{!!errorsServerValidation?.length && (
@@ -248,9 +318,10 @@ const FormEdit = memo(function Component({
 									</div>
 								</Suspense>
 
-								<DrawerFooter>
+								<DrawerFooter className="gap-4 lg:flex-row lg:gap-2 lg:justify-end">
 									<Button
 										type="submit"
+										size="lg"
 										disabled={isLoading || !form.formState.isValid}
 									>
 										{isLoading ? (
@@ -267,6 +338,8 @@ const FormEdit = memo(function Component({
 										<Button
 											disabled={isLoading}
 											variant="outline"
+											type="button"
+											size="lg"
 											className="shadow-none bg-card"
 										>
 											{td("modal.close")}
@@ -292,25 +365,95 @@ const ContactSection = memo(function Component() {
 		keyPrefix: "patient_contact",
 	});
 
+	// ===== STATE MANAGEMENT =====
 	const [isLoading, setIsLoading] = useState(false);
 	const [isOpen, setisOpen] = useState(false);
-	const form = useFormContext<FormSchema>();
-	const watchContact = useWatch({ control: form.control, name: "contact" });
-	const onSave = useCallback(() => {
-		setIsLoading(true);
 
+	// ===== FORM & DATA =====
+	const form = useFormContext<FormSchema>();
+	const { props: globalProps, url: pageURL } =
+		usePage<PatientIndexGlobalPageProps>();
+	const watchContact = useWatch({ control: form.control, name: "contact" });
+
+	// ===== EVENT HANDLERS =====
+	const onSave = useCallback(async () => {
+		setIsLoading(true);
 		try {
-			form.setValue("contact", watchContact);
+			console.log("Updating patient contact:", {
+				contactId: watchContact.id,
+				...watchContact,
+			});
+
+			// Get patient ID from form context
+			const patientId = form.getValues("profile.id");
+
+			// Generate the submit URL
+			const baseURL =
+				globalProps.adminPortal.router.adminPortal.patientManagement.index;
+			const submitURL = `${baseURL}/${patientId}`;
+			const { queryParams } = populateQueryParams(pageURL);
+			const { fullUrl } = populateQueryParams(submitURL, queryParams);
+
+			// Define the submit config
+			const submitConfig = {
+				preserveScroll: true,
+				preserveState: true,
+				replace: false,
+				only: ["adminPortal", "flash", "errors", "patients", "selectedPatient"],
+				onSuccess: (_page: any) => {
+					// Close the contact drawer but keep parent drawer open
+					setisOpen(false);
+
+					// Show success toast
+					toast.success("Contact updated successfully");
+				},
+				onError: (errors: any) => {
+					console.error("Failed to update contact:", errors);
+					toast.error("Failed to update contact");
+				},
+				onFinish: () => {
+					// Always close drawer when request finishes
+					setisOpen(false);
+				},
+			} as any;
+
+			// Define the payload
+			const payload = deepTransformKeysToSnakeCase({
+				patient: {
+					contact: {
+						id: watchContact.id,
+						contactName: watchContact.contactName,
+						contactPhone: watchContact.contactPhone,
+						email: watchContact.email,
+						miitelLink: watchContact.miitelLink,
+					},
+					profile: {
+						id: patientId,
+						name: form.getValues("profile.fullName"),
+						dateOfBirth: form.getValues("profile.dateOfBirth"),
+						gender: form.getValues("profile.gender"),
+					},
+				},
+			});
+
+			// Make the API call using Inertia.js
+			router.put(fullUrl, payload, submitConfig);
+
+			console.log("Contact update submitted...");
+		} catch (error) {
+			console.error("Failed to update contact:", error);
+			toast.error("Failed to update contact");
 		} finally {
-			setTimeout(() => setIsLoading(false), 250);
-			setTimeout(() => setisOpen(false), 350);
+			setIsLoading(false);
 		}
-	}, [watchContact, form.setValue]);
+	}, [watchContact, form, globalProps, pageURL]);
 
 	return (
 		<div className="grid gap-2">
 			<div className="flex items-center justify-between">
-				<p className="text-xs font-light uppercase">{tpl("contact")}</p>
+				<p className="text-xs font-semibold tracking-wider text-muted-foreground/75 uppercase">
+					{tpl("contact")}
+				</p>
 
 				<Button
 					variant="link"
@@ -355,7 +498,12 @@ const ContactSection = memo(function Component() {
 				}}
 				setBackgroundColorOnScale
 			>
-				<DrawerContent className="flex flex-col rounded-t-[10px] mt-24 max-h-[85%] fixed bottom-0 left-0 right-0 outline-none bg-card">
+				<DrawerContent
+					onInteractOutside={(event) => {
+						event.preventDefault();
+					}}
+					className="flex flex-col rounded-t-[10px] mt-24 max-h-[85%] fixed bottom-0 left-0 right-0 outline-none bg-card"
+				>
 					<div className="flex-1 overflow-y-auto">
 						<div className="w-full max-w-sm mx-auto">
 							<DrawerHeader>
@@ -412,7 +560,12 @@ const ContactSection = memo(function Component() {
 									name="contact.email"
 									render={({ field }) => (
 										<FormItem className="col-span-1">
-											<FormLabel>{tpc("fields.email.label")}</FormLabel>
+											<FormLabel>
+												{tpc("fields.email.label")}{" "}
+												<span className="text-sm italic font-light">
+													- (optional)
+												</span>
+											</FormLabel>
 											<FormControl>
 												<Input
 													{...field}
@@ -433,7 +586,12 @@ const ContactSection = memo(function Component() {
 									name="contact.miitelLink"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>{tpc("fields.miitel_link.label")}</FormLabel>
+											<FormLabel>
+												{tpc("fields.miitel_link.label")}{" "}
+												<span className="text-sm italic font-light">
+													- (optional)
+												</span>
+											</FormLabel>
 											<FormControl>
 												<Input
 													{...field}
@@ -449,9 +607,10 @@ const ContactSection = memo(function Component() {
 								/>
 							</div>
 
-							<DrawerFooter>
+							<DrawerFooter className="gap-4">
 								<Button
 									type="button"
+									size="lg"
 									disabled={isLoading || !form.formState.isValid}
 									onClick={(event) => {
 										event.preventDefault();
@@ -469,6 +628,18 @@ const ContactSection = memo(function Component() {
 										<span>{td("modal.save")}</span>
 									)}
 								</Button>
+
+								<DrawerClose asChild>
+									<Button
+										disabled={isLoading}
+										size="lg"
+										variant="outline"
+										type="button"
+										className="shadow-none bg-card"
+									>
+										{td("modal.close")}
+									</Button>
+								</DrawerClose>
 							</DrawerFooter>
 						</div>
 					</div>
@@ -479,13 +650,17 @@ const ContactSection = memo(function Component() {
 });
 
 const ProfileSection = memo(function Component() {
+	// ===== TRANSLATIONS =====
 	const { t: tpl } = useTranslation("patients", { keyPrefix: "list" });
 	const { t: tpp } = useTranslation("appointments-form", {
 		keyPrefix: "patient_profile",
 	});
 	const { props: globalProps } = usePage<PatientIndexGlobalPageProps>();
 
+	// ===== FORM & DATA =====
 	const form = useFormContext<FormSchema>();
+
+	// ===== CONFIGURATION =====
 	const dateOfBirthCalendarProps = useMemo<CalendarProps>(() => {
 		return {
 			// Show 100 years range
@@ -495,6 +670,8 @@ const ProfileSection = memo(function Component() {
 			disabled: (date) => date >= new Date(),
 		};
 	}, []);
+
+	// ===== EVENT HANDLERS =====
 	// * automatically calculate the age from date of birth changes
 	const doUpdateAge = useCallback(
 		(value: Date | null | undefined) => {
@@ -510,6 +687,8 @@ const ProfileSection = memo(function Component() {
 		},
 		[form.setValue, form.trigger],
 	);
+
+	// ===== COMPUTED VALUES =====
 	const patientGenderOptions = useMemo(
 		() => globalProps.optionsData?.patientGenders || [],
 		[globalProps.optionsData?.patientGenders],
@@ -517,7 +696,9 @@ const ProfileSection = memo(function Component() {
 
 	return (
 		<div className="grid gap-2">
-			<p className="text-xs font-light uppercase">{tpl("profile")}</p>
+			<p className="text-xs font-semibold tracking-wider text-muted-foreground/75 uppercase">
+				{tpl("profile")}
+			</p>
 
 			<div className="grid gap-4">
 				<FormField
@@ -552,6 +733,7 @@ const ProfileSection = memo(function Component() {
 									<PopoverTrigger asChild>
 										<FormControl>
 											<Button
+												type="button"
 												variant={"outline"}
 												className={cn(
 													"relative w-full flex justify-between font-normal shadow-inner bg-input",
@@ -565,9 +747,8 @@ const ProfileSection = memo(function Component() {
 												</p>
 
 												{field.value ? (
-													<button
-														type="button"
-														aria-label={tpp("fields.dob.clear")}
+													// biome-ignore lint/a11y/noStaticElementInteractions: -
+													<div
 														className="cursor-pointer"
 														onClick={(event) => {
 															event.preventDefault();
@@ -579,9 +760,13 @@ const ProfileSection = memo(function Component() {
 															);
 															doUpdateAge(null);
 														}}
+														onKeyDown={(e) => {
+															e.preventDefault();
+															e.stopPropagation();
+														}}
 													>
 														<X className="opacity-50" />
-													</button>
+													</div>
 												) : (
 													<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
 												)}
@@ -689,6 +874,1052 @@ const ProfileSection = memo(function Component() {
 					/>
 				</Deferred>
 			</div>
+		</div>
+	);
+});
+
+const AddressSection = memo(function Component({
+	patient,
+	leftColumnRef,
+}: {
+	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
+	leftColumnRef: MutableRefObject<HTMLDivElement | null>;
+}) {
+	const { t: tpl } = useTranslation("patients", { keyPrefix: "list" });
+	const { t: td } = useTranslation("translation", { keyPrefix: "components" });
+	const { props: globalProps, url: pageURL } =
+		usePage<PatientIndexGlobalPageProps>();
+
+	// ===== STATE MANAGEMENT =====
+	const textRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+	const [showMoreStates, setShowMoreStates] = useState<{
+		[key: string]: boolean;
+	}>({});
+	const [maxHeight, setMaxHeight] = useState<string>("auto");
+	const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+	// const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+	const [selectedAddress, setSelectedAddress] = useState<{
+		active: boolean;
+		address: PatientActiveAddress;
+		addressId: number;
+		id: number;
+		patientId: number;
+		updatedAt: string;
+	} | null>(null);
+	const [isAddressFormLoading, setIsAddressFormLoading] = useState(false);
+	const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
+	const hereMapRef = useRef<any>(null);
+	const [latLngInputMethod, setLatLngInputMethod] = useState<
+		"manual" | "automatic"
+	>("manual");
+	const [isGeocoding, setIsGeocoding] = useState(false);
+	const [geocodingError, setGeocodingError] = useState<string | null>(null);
+
+	// ===== FORM CONFIGURATION =====
+	const addressForm = useForm<AddressFormSchema>({
+		resolver: zodResolver(ADDRESS_FORM_SCHEMA),
+		defaultValues: {
+			address: "",
+			postalCode: "",
+			coordinate: "",
+			locationId: 0,
+			notes: "",
+		},
+		mode: "onChange",
+	});
+
+	// ===== FORM WATCHERS =====
+	const coordinate = addressForm.watch("coordinate");
+	const address = addressForm.watch("address");
+	const locationId = addressForm.watch("locationId");
+	const postalCode = addressForm.watch("postalCode");
+
+	// ===== HELPER FUNCTIONS =====
+	// Check if coordinates are filled
+	const hasCoordinates = coordinate && coordinate.trim() !== "";
+
+	// Handle field changes with coordinate reset warning
+	const handleFieldChangeWithWarning = (fieldName: string, newValue: any) => {
+		if (hasCoordinates) {
+			const confirmReset = window.confirm(
+				"Warning: Changing this field will reset the coordinates. Do you want to continue?",
+			);
+			if (!confirmReset) {
+				return;
+			}
+			// Reset coordinates if user confirms
+			addressForm.setValue("coordinate", "");
+		}
+		// Set the new value
+		addressForm.setValue(fieldName as any, newValue);
+	};
+
+	// ===== LOCATION DATA PROCESSING =====
+	// Group locations by country and state for dropdown, and create flattened list for search
+	const { groupedLocations, flattenedLocations } = useMemo(() => {
+		const locations = globalProps.filterOptions?.locations || [];
+
+		const grouped = locations.reduce(
+			(countries, location) => {
+				const country = location.country || "Unknown Country";
+
+				if (!countries[country]) {
+					countries[country] = {};
+				}
+
+				const state = location.state || "Unknown State";
+
+				if (!countries[country][state]) {
+					countries[country][state] = [];
+				}
+
+				countries[country][state].push(location);
+				return countries;
+			},
+			{} as Record<string, Record<string, typeof locations>>,
+		);
+
+		// Create flattened list for search functionality
+		const flattened = locations.map((location) => ({
+			...location,
+			displayText:
+				`${location.city}, ${location.state || ""}, ${location.country || ""}`
+					.replace(/,\s*,/g, ",")
+					.replace(/,$/, ""),
+		}));
+
+		return { groupedLocations: grouped, flattenedLocations: flattened };
+	}, [globalProps.filterOptions?.locations]);
+
+	// ===== MAP CONFIGURATION =====
+	// Memoize HereMap props to prevent unnecessary recalculations
+	const hereMapProps = useMemo(() => {
+		let coords: number[] = MAP_DEFAULT_COORDINATE;
+		if (coordinate) {
+			const [lat, lng] = coordinate.split(",").map((s) => parseFloat(s.trim()));
+			if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+				coords = [lat, lng];
+			}
+		}
+
+		const location = flattenedLocations.find((loc) => loc.id === locationId);
+
+		return {
+			coordinate: coords,
+			address: {
+				address: address || "",
+				city: location?.city || "",
+				state: location?.state || "",
+				country: location?.country || "",
+				postalCode: postalCode || "",
+			},
+			options: { disabledEvent: true },
+			className: "w-full",
+			height: "400px",
+		} satisfies HereMapProps;
+	}, [coordinate, address, locationId, postalCode, flattenedLocations]);
+
+	// ===== EFFECTS =====
+	// Reset address form when selected address changes
+	useEffect(() => {
+		if (selectedAddress) {
+			const latitude = selectedAddress.address.latitude;
+			const longitude = selectedAddress.address.longitude;
+
+			addressForm.reset({
+				address: selectedAddress.address.address,
+				postalCode: selectedAddress?.address?.postalCode || "",
+				coordinate:
+					latitude !== null && longitude !== null
+						? `${latitude}, ${longitude}`
+						: "",
+				locationId: selectedAddress.address.locationId,
+				notes: selectedAddress?.address?.notes || "",
+			});
+		}
+	}, [selectedAddress, addressForm]);
+
+	// Effect to detect text overflow for "Show More" functionality, Checks if each address text exceeds 2 lines and updates showMoreStates accordingly
+	useEffect(() => {
+		const newStates: { [key: string]: boolean } = {};
+		patient.patientAddresses?.forEach((patientAddress) => {
+			const element = textRefs.current[patientAddress.id];
+			if (element) {
+				// Check if text is overflowing (has more than 2 lines)
+				const lineHeight =
+					parseFloat(getComputedStyle(element).lineHeight) || 20;
+				const maxHeight = lineHeight * 2;
+				newStates[patientAddress.id] = element.scrollHeight > maxHeight;
+			}
+		});
+		setShowMoreStates(newStates);
+	}, [patient.patientAddresses]);
+
+	// Effect to sync the right column (address section) height with the left column, Uses ResizeObserver to dynamically update height when left column resizes
+	useEffect(() => {
+		const updateMaxHeight = () => {
+			if (leftColumnRef.current) {
+				const height = leftColumnRef.current.offsetHeight;
+				setMaxHeight(`${height}px`);
+			}
+		};
+
+		// Initial height calculation
+		updateMaxHeight();
+
+		// Set up observer to handle dynamic resizing
+		const resizeObserver = new ResizeObserver(updateMaxHeight);
+		if (leftColumnRef.current) {
+			resizeObserver.observe(leftColumnRef.current);
+		}
+
+		// Cleanup observer on unmount
+		return () => resizeObserver.disconnect();
+	}, [leftColumnRef.current]);
+
+	// ===== API HANDLERS =====
+	const handleSetActiveAddress = async (patientAddress: any) => {
+		if (!patientAddress) return;
+
+		setIsAddressFormLoading(true);
+		try {
+			console.log("Setting address as active:", {
+				patientAddressId: patientAddress.id,
+				currentActive: patientAddress.active,
+			});
+
+			// Generate the submit URL
+			const baseURL =
+				globalProps.adminPortal.router.adminPortal.patientManagement.index;
+			const submitURL = `${baseURL}/${patient.id}`;
+			const { queryParams } = populateQueryParams(pageURL);
+			const { fullUrl } = populateQueryParams(submitURL, queryParams);
+
+			// Define the payload for setting active address
+			const payload = deepTransformKeysToSnakeCase({
+				patient: {
+					profile: {
+						id: patient.id,
+						name: patient.name,
+						dateOfBirth: patient.dateOfBirth,
+						gender: patient.gender,
+					},
+					setActiveAddress: {
+						patientAddressId: patientAddress.id,
+						active: !patientAddress.active,
+					},
+				},
+			});
+
+			// Make the API call using Inertia.js
+			router.put(fullUrl, payload, {
+				preserveScroll: true,
+				preserveState: true,
+				replace: false,
+				only: ["adminPortal", "flash", "errors", "patients", "selectedPatient"],
+				onSuccess: () => {
+					toast.success(
+						patientAddress.active
+							? "Address deactivated successfully"
+							: "Address set as active successfully",
+					);
+				},
+				onError: (errors: any) => {
+					console.error("Failed to set active address:", errors);
+					toast.error("Failed to update address status");
+				},
+			});
+
+			console.log("Active address update submitted...");
+		} catch (error) {
+			console.error("Failed to set active address:", error);
+			toast.error("Failed to update address status");
+		} finally {
+			setIsAddressFormLoading(false);
+		}
+	};
+
+	const handleAddressSubmit = async (data: AddressFormSchema) => {
+		if (!selectedAddress) return;
+
+		setIsAddressFormLoading(true);
+		try {
+			console.log("Updating address:", {
+				addressId: selectedAddress.addressId,
+				...data,
+			});
+
+			// Generate the submit URL
+			const baseURL =
+				globalProps.adminPortal.router.adminPortal.patientManagement.index;
+			const submitURL = `${baseURL}/${patient.id}`;
+			const { queryParams } = populateQueryParams(pageURL);
+			const { fullUrl } = populateQueryParams(submitURL, queryParams);
+
+			// Define the submit config
+			const submitConfig = {
+				preserveScroll: true,
+				preserveState: true,
+				replace: false,
+				only: ["adminPortal", "flash", "errors", "patients", "selectedPatient"],
+				onSuccess: (_page: any) => {
+					// Close the address drawer but keep parent drawer open
+					setIsEditDrawerOpen(false);
+
+					// Show success toast
+					toast.success("Address updated successfully");
+				},
+				onError: (errors: any) => {
+					console.error("Failed to update address:", errors);
+					toast.error("Failed to update address");
+				},
+				onFinish: () => {
+					// Always close drawer when request finishes
+					setIsEditDrawerOpen(false);
+				},
+			} as any;
+
+			// Parse coordinate string to numbers for the payload
+			let latitude = null;
+			let longitude = null;
+			if (data.coordinate) {
+				const [lat, lng] = data.coordinate
+					.split(",")
+					.map((s) => parseFloat(s.trim()));
+				if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+					latitude = lat;
+					longitude = lng;
+				}
+			}
+
+			// Define the payload
+			const payload = deepTransformKeysToSnakeCase({
+				patient: {
+					profile: {
+						id: patient.id,
+						name: patient.name,
+						dateOfBirth: patient.dateOfBirth,
+						gender: patient.gender,
+					},
+					patientAddress: {
+						id: selectedAddress.id, // Use patient_address ID, not address ID
+						address: data.address,
+						postalCode: data.postalCode,
+						latitude,
+						longitude,
+						locationId: data.locationId,
+						notes: data.notes,
+					},
+				},
+			});
+
+			router.put(fullUrl, payload, submitConfig);
+
+			console.log("Address update submitted...");
+		} catch (error) {
+			console.error("Failed to update address:", error);
+		} finally {
+			setIsAddressFormLoading(false);
+		}
+	};
+
+	// ===== COORDINATE HANDLERS =====
+	const handleResetCoordinates = useCallback(() => {
+		addressForm.setValue("coordinate", "");
+		setGeocodingError(null);
+
+		// Clear markers from map
+		if (hereMapRef.current?.marker?.onRemove) {
+			hereMapRef.current.marker.onRemove();
+		}
+	}, [addressForm]);
+
+	// Handle view on Google Maps
+	const handleViewOnGoogleMaps = useCallback(() => {
+		const coordStr = addressForm.getValues("coordinate");
+		if (coordStr) {
+			const [lat, lng] = coordStr.split(",").map((s) => parseFloat(s.trim()));
+			if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+				window.open(
+					`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+					"_blank",
+				);
+			}
+		}
+	}, [addressForm]);
+
+	// ===== GEOCODING =====
+	const handleGeocoding = useCallback(async () => {
+		const address = addressForm.getValues("address");
+		const locationId = addressForm.getValues("locationId");
+
+		// Clear any previous errors
+		setGeocodingError(null);
+
+		if (!address || address.trim() === "") {
+			console.error("Address is required for geocoding");
+			// Show error toast
+			if (typeof window !== "undefined" && (window as any).toast) {
+				(window as any).toast.error("Please enter an address before geocoding");
+			}
+			setGeocodingError("Please enter an address before geocoding");
+			return;
+		}
+
+		if (!locationId) {
+			console.error("Location is required for geocoding");
+			// Show error toast
+			if (typeof window !== "undefined" && (window as any).toast) {
+				(window as any).toast.error("Please select a region before geocoding");
+			}
+			setGeocodingError("Please select a region before geocoding");
+			return;
+		}
+
+		setIsGeocoding(true);
+		try {
+			// Get location details for better geocoding
+			const location = flattenedLocations.find((loc) => loc.id === locationId);
+			const fullAddress = location
+				? `${address}, ${location.city}, ${location.state}, ${location.country}`
+				: address;
+
+			console.log("Geocoding address:", fullAddress);
+
+			// Ensure we have a non-empty address for the API
+			if (!fullAddress || fullAddress.trim() === "") {
+				throw new Error("Address cannot be empty for geocoding");
+			}
+
+			// Use Here Maps geocoding via the map component
+			if (hereMapRef.current?.geocode?.onCalculate) {
+				try {
+					// First, ensure the map has the current address data
+					// The map component uses the address from hereMapProps, so we need to
+					// make sure the form data is up-to-date before geocoding
+					const currentAddress = addressForm.getValues("address");
+
+					// Double-check we have valid address data
+					if (!currentAddress?.trim()) {
+						throw new Error("Address cannot be empty for geocoding");
+					}
+
+					console.log("Geocoding with address:", currentAddress);
+
+					const result = await hereMapRef.current.geocode.onCalculate();
+
+					if (result?.position) {
+						const { lat, lng } = result.position;
+						addressForm.setValue("coordinate", `${lat}, ${lng}`);
+						console.log("Geocoding successful:", { lat, lng });
+
+						// Add marker to map at the calculated position
+						if (hereMapRef.current?.marker?.onAdd) {
+							const location = flattenedLocations.find(
+								(loc) => loc.id === locationId,
+							);
+							const fullAddress = location
+								? `${address}, ${location.city}, ${location.state}, ${location.country}`
+								: address;
+
+							hereMapRef.current.marker.onAdd(
+								[
+									{
+										position: { lat, lng },
+										address: fullAddress,
+									},
+								],
+								{ changeMapView: true },
+							);
+						}
+
+						// Clear any errors on success
+						setGeocodingError(null);
+
+						// Show success toast
+						toast.success("Coordinates calculated successfully");
+					} else {
+						throw new Error("No results found for the address");
+					}
+				} catch (geocodeError) {
+					console.error("HERE Maps geocoding error:", geocodeError);
+
+					// Check if it's the empty parameter error
+					if (
+						geocodeError instanceof Error &&
+						(geocodeError.message.includes("non-empty") ||
+							geocodeError.message.includes("Illegal input") ||
+							geocodeError.message.includes("Value must be non-empty"))
+					) {
+						const errorMessage =
+							"Address cannot be empty for geocoding. Please ensure the address field is filled out.";
+						setGeocodingError(errorMessage);
+						throw new Error(errorMessage);
+					}
+
+					throw geocodeError;
+				}
+			} else {
+				const message = "Here Maps geocoding not available";
+				console.warn(message);
+				setGeocodingError(message);
+				toast.error(message);
+			}
+		} catch (error) {
+			console.error("Geocoding failed:", error);
+
+			let errorMessage = "Failed to calculate coordinates";
+			if (error instanceof Error) {
+				if (error.message.includes("non-empty")) {
+					errorMessage = "Address cannot be empty";
+				} else if (error.message.includes("No results found")) {
+					errorMessage =
+						"Address not found, please check the address and try again";
+				} else {
+					errorMessage = error.message;
+				}
+			}
+
+			setGeocodingError(errorMessage);
+			toast.error(errorMessage);
+		} finally {
+			setIsGeocoding(false);
+		}
+	}, [addressForm, flattenedLocations]);
+
+	return (
+		<div className="grid gap-2">
+			<div>
+				<div className="flex items-center justify-between">
+					<p className="text-xs font-semibold tracking-wider text-muted-foreground/75 uppercase">
+						{tpl("addresses.label")}
+					</p>
+					{/* <Button
+						variant="outline"
+						size="sm"
+						effect="expandIcon"
+						iconPlacement="left"
+						type="button"
+						className="p-0"
+						icon={PlusIcon}
+						onClick={() => setIsAddAddressOpen(true)}
+					>
+						Add New Address
+					</Button> */}
+				</div>
+			</div>
+
+			{/* Display Patient Addresses and no addresses */}
+			{!patient.patientAddresses || patient.patientAddresses.length === 0 ? (
+				<div className="text-center py-4 text-gray-500 text-sm">
+					No addresses available
+				</div>
+			) : (
+				<div
+					className="space-y-2 min-w-0 overflow-x-hidden overflow-y-auto"
+					style={{ maxHeight }}
+				>
+					{patient.patientAddresses.map((patientAddress) => (
+						<div
+							key={patientAddress.id}
+							className={cn(
+								"relative rounded-lg border text-sm",
+								patientAddress.active
+									? "border-green-200 bg-green-50"
+									: "border-gray-200 bg-gray-50",
+							)}
+						>
+							{patientAddress.active && (
+								<span className="absolute bottom-0 right-0 inline-flex items-center px-2 py-1 text-[10px] font-medium bg-green-100 text-green-800 uppercase">
+									Active
+								</span>
+							)}
+
+							<div className="flex items-start justify-between gap-2 p-2">
+								<div className="flex-1 space-y-1 min-w-0">
+									{/* Address Content */}
+									{patientAddress.address && (
+										<div className="overflow-hidden">
+											<Collapsible>
+												<div className="w-full text-left font-medium hover:bg-transparent cursor-pointer text-sm">
+													<div className="flex justify-between gap-3 min-w-0 items-start">
+														<div
+															ref={(el) => {
+																textRefs.current[patientAddress.id] = el;
+															}}
+															className="line-clamp-2 break-words text-pretty min-w-0 flex-1"
+														>
+															{patientAddress.address.address}
+														</div>
+
+														<div className="flex flex-col gap-1 mb-1">
+															<div className="flex justify-end">
+																<DropdownMenu>
+																	<DropdownMenuTrigger asChild>
+																		<Button
+																			type="button"
+																			variant="ghost"
+																			className="p-0.5 h-auto"
+																			onClick={(e) => {
+																				e.stopPropagation();
+																			}}
+																		>
+																			<EllipsisVerticalIcon />
+																		</Button>
+																	</DropdownMenuTrigger>
+																	<DropdownMenuContent
+																		align="end"
+																		side="bottom"
+																	>
+																		<DropdownMenuItem
+																			onSelect={(e) => {
+																				e.preventDefault();
+																				e.stopPropagation();
+
+																				setSelectedAddress(patientAddress);
+																				setIsEditDrawerOpen(true);
+																			}}
+																		>
+																			<PencilIcon />
+																			Edit
+																		</DropdownMenuItem>
+																		{!patientAddress.active && (
+																			<DropdownMenuItem
+																				onSelect={(e) => {
+																					e.preventDefault();
+																					e.stopPropagation();
+
+																					handleSetActiveAddress(
+																						patientAddress,
+																					);
+																				}}
+																			>
+																				<CheckIcon />
+																				Set as Active
+																			</DropdownMenuItem>
+																		)}
+
+																		{patientAddress.active && (
+																			<DropdownMenuItem
+																				disabled
+																				className="opacity-50 cursor-not-allowed"
+																			>
+																				<CheckIcon />
+																				Is Active
+																			</DropdownMenuItem>
+																		)}
+																	</DropdownMenuContent>
+																</DropdownMenu>
+															</div>
+
+															<CollapsibleTrigger asChild>
+																{showMoreStates[patientAddress.id] && (
+																	<span className="text-blue-600 text-[10px] shrink-0 uppercase">
+																		Show more
+																	</span>
+																)}
+															</CollapsibleTrigger>
+														</div>
+													</div>
+												</div>
+
+												<CollapsibleContent>
+													<p className="font-medium whitespace-pre-wrap break-words overflow-wrap-anywhere mt-2">
+														{patientAddress.address.address}
+													</p>
+												</CollapsibleContent>
+											</Collapsible>
+
+											{/* Location Info */}
+											{patientAddress.address.location && (
+												<div className="text-muted-foreground text-xs mt-1">
+													<span className="break-words">
+														{[
+															patientAddress.address.location.city,
+															patientAddress.address.location.state,
+															patientAddress.address.location.country,
+														]
+															.filter(Boolean)
+															.join(", ")}
+													</span>
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+							</div>
+						</div>
+					))}
+				</div>
+			)}
+
+			{/* Add New Address Section */}
+			<AddAddressSection
+				patient={patient}
+				onSuccess={() => {
+					// Refresh the patient data to show the new address
+					router.reload({ only: ["selectedPatient"] });
+				}}
+			/>
+
+			{/* Nested Drawer for Address Edit */}
+			<DrawerPrimitive.NestedRoot
+				open={isEditDrawerOpen}
+				onOpenChange={setIsEditDrawerOpen}
+				setBackgroundColorOnScale
+			>
+				<DrawerContent
+					onInteractOutside={(event) => {
+						event.preventDefault();
+					}}
+				>
+					<DrawerHeader className="w-full md:max-w-5xl mx-auto">
+						<DrawerTitle>Edit Address</DrawerTitle>
+						<DrawerDescription>
+							Edit the address details for this patient.
+						</DrawerDescription>
+					</DrawerHeader>
+					<div className="overflow-y-auto overflow-x-hidden max-h-[90dvh]">
+						<div className="p-4 w-full md:max-w-5xl mx-auto">
+							<Form {...addressForm}>
+								<div className="space-y-4">
+									<div className="grid md:grid-cols-2 gap-6">
+										{/* Left Column */}
+										<div className="space-y-4">
+											<FormField
+												control={addressForm.control}
+												name="locationId"
+												render={({ field }) => (
+													<FormItem>
+														<FormLabel>Region</FormLabel>
+														<Popover
+															modal
+															open={locationPopoverOpen}
+															onOpenChange={setLocationPopoverOpen}
+														>
+															<PopoverTrigger asChild>
+																<FormControl>
+																	<Button
+																		variant="outline"
+																		className={cn(
+																			"w-full justify-between bg-input shadow-inner",
+																			!field.value && "text-muted-foreground",
+																		)}
+																	>
+																		{field.value
+																			? flattenedLocations.find(
+																					(location) =>
+																						location.id === field.value,
+																				)?.displayText || "Select region"
+																			: "Select region"}
+																	</Button>
+																</FormControl>
+															</PopoverTrigger>
+															<PopoverContent
+																className="w-[var(--radix-popover-trigger-width)] p-0"
+																align="start"
+															>
+																<Command>
+																	<CommandInput placeholder="Search region by city..." />
+																	<CommandList>
+																		<CommandEmpty>
+																			No region found.
+																		</CommandEmpty>
+
+																		{Object.entries(groupedLocations).map(
+																			([country, states]) => (
+																				<div key={country}>
+																					<div className="px-2 py-1.5 text-sm font-bold text-muted-foreground">
+																						{country}
+																					</div>
+																					{Object.entries(states).map(
+																						([state, locations]) => (
+																							<CommandGroup
+																								key={state}
+																								heading={`└ ${state}`}
+																							>
+																								{locations.map((location) => (
+																									<CommandItem
+																										key={location.id}
+																										value={location.city}
+																										onSelect={() => {
+																											handleFieldChangeWithWarning(
+																												"locationId",
+																												location.id,
+																											);
+																											setLocationPopoverOpen(
+																												false,
+																											);
+																										}}
+																									>
+																										<span>{location.city}</span>
+
+																										<CheckIcon
+																											className={cn(
+																												"ml-auto",
+																												location.id ===
+																													field.value
+																													? "opacity-100"
+																													: "opacity-0",
+																											)}
+																										/>
+																									</CommandItem>
+																								))}
+																							</CommandGroup>
+																						),
+																					)}
+																				</div>
+																			),
+																		)}
+																	</CommandList>
+																</Command>
+															</PopoverContent>
+														</Popover>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+
+											<FormField
+												control={addressForm.control}
+												name="postalCode"
+												render={({ field }) => (
+													<FormItem>
+														<FormLabel>
+															Postal Code{" "}
+															<span className="text-sm italic font-light">
+																- (optional)
+															</span>
+														</FormLabel>
+														<FormControl>
+															<Input
+																{...field}
+																onChange={(e) =>
+																	handleFieldChangeWithWarning(
+																		"postalCode",
+																		e.target.value,
+																	)
+																}
+																className="shadow-inner bg-input w-fit field-sizing-content"
+																placeholder="Enter postal code"
+															/>
+														</FormControl>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+
+											<FormField
+												control={addressForm.control}
+												name="address"
+												render={({ field }) => (
+													<FormItem>
+														<FormLabel>Address</FormLabel>
+														<FormControl>
+															<Textarea
+																{...field}
+																onChange={(e) =>
+																	handleFieldChangeWithWarning(
+																		"address",
+																		e.target.value,
+																	)
+																}
+																className="shadow-inner bg-input field-sizing-content min-h-32 resize-none py-1.75"
+																placeholder="Enter complete address"
+															/>
+														</FormControl>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+
+											<FormField
+												control={addressForm.control}
+												name="notes"
+												render={({ field }) => (
+													<FormItem>
+														<FormLabel>
+															Notes{" "}
+															<span className="text-sm italic font-light">
+																- (optional)
+															</span>
+														</FormLabel>
+														<FormControl>
+															<Textarea
+																{...field}
+																className="shadow-inner bg-input field-sizing-content min-h-0 resize-none py-1.75"
+																placeholder="Additional notes about this address"
+															/>
+														</FormControl>
+														<FormMessage />
+													</FormItem>
+												)}
+											/>
+										</div>
+
+										{/* Right Column */}
+										<div className="space-y-4">
+											<div className="space-y-4">
+												<div className="space-y-2">
+													<div>
+														<span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+															Coordinate
+														</span>
+													</div>
+
+													<div className="flex items-center gap-2">
+														<div className="flex items-center space-x-2 min-w-0">
+															<Select
+																value={latLngInputMethod}
+																onValueChange={(value) =>
+																	setLatLngInputMethod(
+																		value as "manual" | "automatic",
+																	)
+																}
+															>
+																<SelectTrigger className="w-[140px] shadow-inner bg-input">
+																	<SelectValue />
+																</SelectTrigger>
+																<SelectContent>
+																	<SelectItem value="manual">Manual</SelectItem>
+																	<SelectItem value="automatic">
+																		Automatic
+																	</SelectItem>
+																</SelectContent>
+															</Select>
+														</div>
+
+														<FormField
+															control={addressForm.control}
+															name="coordinate"
+															render={({ field }) => (
+																<FormItem className="flex-1 min-w-0">
+																	<FormControl>
+																		<Input
+																			{...field}
+																			value={field.value || ""}
+																			onChange={(e) =>
+																				field.onChange(e.target.value.trim())
+																			}
+																			className="shadow-inner bg-input"
+																			placeholder="Coordinates (e.g., -6.1944,106.8229)"
+																			readOnly={
+																				latLngInputMethod === "automatic"
+																			}
+																			{...(latLngInputMethod ===
+																				"automatic" && {
+																				tabIndex: -1,
+																			})}
+																		/>
+																	</FormControl>
+																	<FormMessage />
+																</FormItem>
+															)}
+														/>
+													</div>
+												</div>
+
+												{latLngInputMethod === "automatic" && (
+													<div className="flex gap-2">
+														<Button
+															type="button"
+															variant="primary-outline"
+															onClick={handleGeocoding}
+															disabled={
+																isGeocoding || !addressForm.getValues("address")
+															}
+															className="w-full"
+														>
+															{isGeocoding && (
+																<LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+															)}
+															{isGeocoding
+																? "Geocoding..."
+																: "Get Coordinates from Address"}
+														</Button>
+
+														{addressForm.getValues("coordinate") && (
+															<>
+																<Button
+																	type="button"
+																	variant="destructive-outline"
+																	disabled={isGeocoding}
+																	onClick={handleResetCoordinates}
+																	className="flex-shrink-0"
+																>
+																	Reset
+																</Button>
+
+																<Button
+																	type="button"
+																	variant="outline"
+																	disabled={isGeocoding}
+																	onClick={handleViewOnGoogleMaps}
+																	className="flex-shrink-0"
+																>
+																	View on Maps
+																</Button>
+															</>
+														)}
+													</div>
+												)}
+
+												{/* Here Map */}
+												<div className="mt-4">
+													{/* Geocoding Error Alert */}
+													{geocodingError && (
+														<Alert className="mb-4 border-red-200 bg-red-50">
+															<AlertDescription className="text-red-800">
+																{geocodingError}
+															</AlertDescription>
+														</Alert>
+													)}
+
+													<HereMap ref={hereMapRef} {...hereMapProps} />
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<DrawerFooter className="gap-4 lg:flex-row lg:gap-2 lg:justify-end px-0">
+										<Button
+											size="lg"
+											type="button"
+											disabled={isAddressFormLoading || isGeocoding}
+											onClick={async (e) => {
+												e.stopPropagation();
+												// Manually trigger form validation and submission
+												const isValid = await addressForm.trigger();
+												if (isValid) {
+													const data = addressForm.getValues();
+													handleAddressSubmit(data);
+												}
+											}}
+										>
+											{isAddressFormLoading && (
+												<LoaderIcon className="h-4 w-4 animate-spin" />
+											)}
+											Save Changes
+										</Button>
+
+										<DrawerClose asChild>
+											<Button
+												size="lg"
+												variant="outline"
+												className="shadow-none bg-card"
+												type="button"
+												disabled={isAddressFormLoading || isGeocoding}
+											>
+												{td("modal.close")}
+											</Button>
+										</DrawerClose>
+									</DrawerFooter>
+								</div>
+							</Form>
+						</div>
+					</div>
+				</DrawerContent>
+			</DrawerPrimitive.NestedRoot>
 		</div>
 	);
 });

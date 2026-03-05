@@ -76,7 +76,24 @@ module AdminPortal
       success_message = result[:updated] ? "Patient was updated successfully." : "No changes detected."
 
       Rails.logger.info "Patient details for name: #{@patient.name} updated successfully."
-      redirect_to admin_portal_patients_path(request.query_parameters.except(:edit)), notice: success_message
+
+      # Check if this is an address update (has patient_address in params)
+      if params.dig(:patient, :patient_address).present?
+        # Keep the edit parameter to keep the drawer open
+        redirect_to admin_portal_patients_path(request.query_parameters)
+      elsif params.dig(:patient, :new_patient_address).present?
+        # For new address creation, also keep the edit parameter
+        redirect_to admin_portal_patients_path(request.query_parameters)
+      elsif params.dig(:patient, :set_active_address).present?
+        # For active address updates, also keep the edit parameter
+        redirect_to admin_portal_patients_path(request.query_parameters)
+      elsif params.dig(:patient, :contact).present?
+        # For contact updates, also keep the edit parameter
+        redirect_to admin_portal_patients_path(request.query_parameters)
+      else
+        # Remove edit parameter for regular updates
+        redirect_to admin_portal_patients_path(request.query_parameters.except(:edit)), notice: success_message
+      end
     rescue => e
       Rails.logger.error "Error while updating the patient details for name: #{@patient.name}, with error (#{e.class}): #{e.message}."
 
@@ -97,7 +114,11 @@ module AdminPortal
     private
 
     def get_patient(id)
-      @patient = Patient.includes(:patient_contact, :user).find_by(id:)
+      @patient = Patient.includes(
+        :patient_contact,
+        :user,
+        patient_addresses: {address: :location}
+      ).find_by(id:)
     end
   end
 end

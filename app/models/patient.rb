@@ -29,7 +29,7 @@ class Patient < ApplicationRecord
   has_many :therapists, through: :appointments
   has_many :patient_medical_records, through: :appointments
 
-  has_many :patient_addresses, -> { order(active: :desc) }
+  has_many :patient_addresses, -> { order(active: :desc, created_at: :desc) }
   has_many :addresses, through: :patient_addresses
   has_one :active_patient_address, -> { where(active: true) }, class_name: "PatientAddress"
   has_one :active_address, through: :active_patient_address, source: :address

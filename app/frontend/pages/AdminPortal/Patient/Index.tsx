@@ -308,44 +308,47 @@ export default function Index({
 			);
 		}
 
-		if (globalProps?.auth?.currentUser?.["isSuperAdmin?"]) {
+		if (
+			globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
+			globalProps?.auth?.currentUser?.["isAdminSupervisor?"]
+		) {
 			items.push({
 				accessorKey: "actions",
 				enableSorting: false,
 				enableHiding: false,
-				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title={t("list.actions")} />
-				),
+				header: "",
 				cell: ({ row }) => {
 					return (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="icon">
-									<Ellipsis />
-								</Button>
-							</DropdownMenuTrigger>
+						<div className="flex items-center justify-end">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="icon">
+										<Ellipsis />
+									</Button>
+								</DropdownMenuTrigger>
 
-							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>{t("list.actions")}</DropdownMenuLabel>
-								<DropdownMenuSeparator />
+								<DropdownMenuContent align="end">
+									<DropdownMenuLabel>{t("list.actions")}</DropdownMenuLabel>
+									<DropdownMenuSeparator />
 
-								<DropdownMenuGroup>
-									<DropdownMenuItem
-										onSelect={() => routeTo.detail(row.original.id)}
-									>
-										<Info />
-										{t("button.detail")}
-									</DropdownMenuItem>
+									<DropdownMenuGroup>
+										<DropdownMenuItem
+											onSelect={() => routeTo.detail(row.original.id)}
+										>
+											<Info />
+											{t("button.detail")}
+										</DropdownMenuItem>
 
-									<DropdownMenuItem
-										onSelect={() => routeTo.edit(row.original.id)}
-									>
-										<SquarePen />
-										{t("button.edit")}
-									</DropdownMenuItem>
-								</DropdownMenuGroup>
-							</DropdownMenuContent>
-						</DropdownMenu>
+										<DropdownMenuItem
+											onSelect={() => routeTo.edit(row.original.id)}
+										>
+											<SquarePen />
+											{t("button.edit")}
+										</DropdownMenuItem>
+									</DropdownMenuGroup>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
 					);
 				},
 			});
@@ -357,7 +360,7 @@ export default function Index({
 		t,
 		routeTo.detail,
 		routeTo.edit,
-		globalProps?.auth?.currentUser?.["isSuperAdmin?"],
+		globalProps?.auth?.currentUser,
 	]);
 
 	return (
