@@ -2,6 +2,7 @@ module AdminPortal
   class PreparationRescheduleAppointmentService
     include ApplicationHelper
     include TherapistsHelper
+    include AdminPortal::Therapists
     include AdminPortal::Therapists::QueryHelper
 
     def initialize(appointment, params)
@@ -12,10 +13,29 @@ module AdminPortal
     # retrieves all therapists available by selected location and service
     def fetch_therapists
       return unless @appointment.location.present? && @appointment.service.present?
-      location = Location.find(@appointment.location.id)
+
+      location = Location.includes(:services).find(@appointment.location.id)
       service = Service.find(@appointment.service.id)
 
-      filtered_therapists(location:, service:, params: @params, current_appointment_id: @appointment.id, formatter: method(:formatted_therapists))
+      # Get employment type filter from params
+      employment_type = @params[:employment_type] || "ALL"
+      # Get bypass constraints flag from params
+      bypass_constraints = @params[:bypass_constraints] || false
+
+      # using the batching
+      batch_size = @params[:batch_size] || AdminPortal::Therapists::QueryConfig::DEFAULT_BATCH_SIZE
+      extend AdminPortal::Therapists::BatchQueryHelper
+      filtered_therapists_in_batches(
+        location: location,
+        service: service,
+        params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints),
+        formatter: method(:formatted_therapists),
+        batch_size: batch_size,
+        current_appointment_id: @appointment.id
+      )
+
+      # ? if wanna not batching filtered processed
+      # filtered_therapists(location:, service:, params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints), formatter: method(:formatted_therapists))
     end
 
     def fetch_options_data

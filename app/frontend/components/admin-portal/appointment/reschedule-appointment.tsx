@@ -420,6 +420,7 @@ export const RescheduleFields = memo(function Component({
 										employmentType?: "KARPIS" | "FLAT" | "ALL";
 									}) => await formHooks.onFindTherapists(options),
 								}}
+								unfeasibleTherapists={formHooks.feasibilityReport}
 								onSelectTherapist={(value) =>
 									formHooks.onSelectTherapist(value)
 								}
