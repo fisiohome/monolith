@@ -3,14 +3,19 @@ class Appointment < ApplicationRecord
 
   # * define the attrs accessors, initializer, and the alias
   attr_accessor :updater  # Temporary attribute to track who updated
+  # * BYPASS FLAGS
   attr_accessor :skip_auto_series_creation # Add a flag to control auto series creation
-  attr_accessor :skip_visit_sequence_validation # Add a flag to skip visit sequence validation during reschedule
+  attr_accessor :skip_visit_sequence_validation # Add a flag to skip visit sequence validation during reschedule (UpdateAppointmentService)
+  attr_accessor :skip_status_validation # Add a flag to skip all status validations for admin internal updates (AppointmentStatusUpdaterService)
 
   def initialize(*)
     super
   end
 
   # * define the constants
+  # Control strict validation for status updates (disabled for admin internal use)
+  ENABLE_STRICT_STATUS_VALIDATION = false
+
   PatientCondition = Struct.new(:title, :description, :title_id, :description_id)
   PATIENT_CONDITION = [
     PatientCondition.new(
@@ -210,20 +215,20 @@ class Appointment < ApplicationRecord
     validates :appointment_date_time, presence: true
   end
 
-  validate :appointment_date_time_in_the_future
-  validate :validate_paid_requires_therapist
-  validate :validate_visit_sequence
-  validate :unscheduled_appointment_requirements
-  validate :validate_appointment_sequence, unless: -> { skip_visit_sequence_validation? }
-  validate :no_duplicate_appointment_time
-  validate :no_overlapping_appointments
+  validate :appointment_date_time_in_the_future, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
+  validate :validate_paid_requires_therapist, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
+  validate :validate_visit_sequence, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
+  validate :unscheduled_appointment_requirements, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
+  validate :validate_appointment_sequence, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? && !skip_visit_sequence_validation? }
+  validate :no_duplicate_appointment_time, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
+  validate :no_overlapping_appointments, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
   # ? no need strictly check for update status
   # validate :status_must_be_valid
   # ? no need strictly check for update status
   # validate :valid_status_transition
   # ? no need strictly check for update status
   # validate :series_status_cannot_outpace_root
-  validate :therapist_daily_limit
+  validate :therapist_daily_limit, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
 
   validates_associated :address_history
 
@@ -442,6 +447,10 @@ class Appointment < ApplicationRecord
 
   def skip_visit_sequence_validation?
     skip_visit_sequence_validation == true
+  end
+
+  def skip_status_validation?
+    skip_status_validation == true
   end
 
   def unscheduled?
@@ -867,8 +876,12 @@ class Appointment < ApplicationRecord
     initial = initial_visit
 
     # First visit must be scheduled before any series visits
-    if initial.appointment_date_time.blank?
-      errors.add(:appointment_date_time, "first visit (#{initial.registration_number}) must be scheduled before scheduling any visit series")
+    if initial.nil? || initial.appointment_date_time.blank?
+      if initial.nil?
+        errors.add(:appointment_date_time, "initial visit not found for registration number #{registration_number}")
+      else
+        errors.add(:appointment_date_time, "first visit (#{initial.registration_number}) must be scheduled before scheduling any visit series")
+      end
       return true
     end
 

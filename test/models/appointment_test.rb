@@ -50,58 +50,62 @@ class AppointmentTest < ActiveSupport::TestCase
   end
 
   test "blocks a 5th appointment for a therapist with informative error, about max_daily_appointments" do
-    @patient_contacts = []
-    @patients = []
-    4.times do |i|
-      contact = PatientContact.create!(contact_name: "Patient#{i}", contact_phone: "6289172123#{i}", email: "patient#{i}@yopmail.com")
-      @patient_contacts << contact
-      @patients << Patient.create!(name: "Patient#{i}", date_of_birth: "2000-01-01", gender: "MALE", patient_contact: contact)
-    end
+    with_strict_validation_enabled do
+      @patient_contacts = []
+      @patients = []
+      4.times do |i|
+        contact = PatientContact.create!(contact_name: "Patient#{i}", contact_phone: "6289172123#{i}", email: "patient#{i}@yopmail.com")
+        @patient_contacts << contact
+        @patients << Patient.create!(name: "Patient#{i}", date_of_birth: "2000-01-01", gender: "MALE", patient_contact: contact)
+      end
 
-    4.times do |i|
-      Appointment.create!(
+      4.times do |i|
+        Appointment.create!(
+          therapist: @therapist,
+          patient: @patients[i], # again, different patients
+          service: @service,
+          package: @package,
+          location: @location,
+          appointment_date_time: @future_time.change(hour: 8 + i),
+          preferred_therapist_gender: "NO PREFERENCE"
+        )
+      end
+
+      assert_equal 4, Appointment.where(therapist: @therapist, appointment_date_time: @future_time.all_day).count
+
+      # 5th appointment, another patient
+      new_patient_contact = PatientContact.create!(contact_name: "Overflow", contact_phone: "628917212321", email: "overflow@yopmail.com")
+      new_patient = Patient.create!(name: "Overflow", date_of_birth: "2000-01-01", gender: "MALE", patient_contact: new_patient_contact)
+      appt = Appointment.new(
         therapist: @therapist,
-        patient: @patients[i], # again, different patients
+        patient: new_patient,
         service: @service,
         package: @package,
         location: @location,
-        appointment_date_time: @future_time.change(hour: 8 + i),
+        appointment_date_time: @future_time.change(hour: 14),
         preferred_therapist_gender: "NO PREFERENCE"
       )
+
+      assert_not appt.valid?
+      assert_includes appt.errors[:base].join, "already assigned 4 appointments"
+      assert_includes appt.errors[:base].join, "Please choose another day"
     end
-
-    # 5th appointment, another patient
-    new_patient_contact = PatientContact.create!(contact_name: "Overflow", contact_phone: "628917212321", email: "overflow@yopmail.com")
-    new_patient = Patient.create!(name: "Overflow", date_of_birth: "2000-01-01", gender: "MALE", patient_contact: new_patient_contact)
-    appt = Appointment.new(
-      therapist: @therapist,
-      patient: new_patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time.change(hour: 14),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
-
-    assert_equal 4, Appointment.where(therapist: @therapist, appointment_date_time: @future_time.all_day).count
-
-    assert_not appt.valid?
-    assert_includes appt.errors[:base].join, "already assigned 4 appointments"
-    assert_includes appt.errors[:base].join, "Please choose another day"
   end
 
   test "does not allow appointments in the past, about appointment_date_time_in_the_future" do
-    appt = Appointment.new(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: 1.day.ago,
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
-    assert_not appt.valid?
-    assert_includes appt.errors[:appointment_date_time], "must be in the future"
+    with_strict_validation_enabled do
+      appt = Appointment.new(
+        therapist: @therapist,
+        patient: @patient,
+        service: @service,
+        package: @package,
+        location: @location,
+        appointment_date_time: 1.day.ago,
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
+      assert_not appt.valid?
+      assert_includes appt.errors[:appointment_date_time], "must be in the future"
+    end
   end
 
   test "validates uniqueness of registration_number and visit_number combination" do
@@ -174,54 +178,58 @@ class AppointmentTest < ActiveSupport::TestCase
   end
 
   test "prevents overlapping appointments for the same patient, about no_overlapping_appointments" do
-    # Existing appointment: 10:00-11:00
-    Appointment.create!(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time.change(hour: 10),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
-    # Try overlapping: 10:30-11:30
-    appt = Appointment.new(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time.change(hour: 10, min: 30),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
-    assert_not appt.valid?
-    assert_includes appt.errors[:appointment_date_time].join, "overlaps with"
+    with_strict_validation_enabled do
+      # Existing appointment: 10:00-11:00
+      Appointment.create!(
+        therapist: @therapist,
+        patient: @patient,
+        service: @service,
+        package: @package,
+        location: @location,
+        appointment_date_time: @future_time.change(hour: 10),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
+      # Try overlapping: 10:30-11:30
+      appt = Appointment.new(
+        therapist: @therapist,
+        patient: @patient,
+        service: @service,
+        package: @package,
+        location: @location,
+        appointment_date_time: @future_time.change(hour: 10, min: 30),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
+      assert_not appt.valid?
+      assert_includes appt.errors[:appointment_date_time].join, "overlaps with"
+    end
   end
 
   test "prevents duplicate appointment time for the same patient, about no_duplicate_appointment_time" do
-    # first appointment at 9am
-    Appointment.create!(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time.change(hour: 9),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
+    with_strict_validation_enabled do
+      # first appointment at 9am
+      Appointment.create!(
+        therapist: @therapist,
+        patient: @patient,
+        service: @service,
+        package: @package,
+        location: @location,
+        appointment_date_time: @future_time.change(hour: 9),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
 
-    # second one exactly same time
-    appt = Appointment.new(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time.change(hour: 9),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
-    assert_not appt.valid?
-    assert_includes appt.errors[:appointment_date_time].join, "already has an appointment"
+      # second one exactly same time
+      appt = Appointment.new(
+        therapist: @therapist,
+        patient: @patient,
+        service: @service,
+        package: @package,
+        location: @location,
+        appointment_date_time: @future_time.change(hour: 9),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
+      assert_not appt.valid?
+      assert_includes appt.errors[:appointment_date_time].join, "already has an appointment"
+    end
   end
 
   test "allows overlapping appointments when existing appointment is cancelled, about no_overlapping_appointments" do
@@ -437,48 +445,52 @@ class AppointmentTest < ActiveSupport::TestCase
   end
 
   test "requires a therapist when marking an appointment paid, about validate_paid_requires_therapist" do
-    appt = Appointment.create!(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: @package,
-      location: @location,
-      appointment_date_time: @future_time.change(hour: 11),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
+    with_strict_validation_enabled do
+      appt = Appointment.create!(
+        therapist: @therapist,
+        patient: @patient,
+        service: @service,
+        package: @package,
+        location: @location,
+        appointment_date_time: @future_time.change(hour: 11),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
 
-    # simulate a paid-reschedule: drop therapist and flip to paid
-    appt.therapist = nil
-    appt.status = "paid"
-    appt.valid?  # trigger validations
+      # simulate a paid-reschedule: drop therapist and flip to paid
+      appt.therapist = nil
+      appt.status = "paid"
+      appt.valid?  # trigger validations
 
-    assert_includes appt.errors[:therapist_id], "must be selected when rescheduling a paid appointment"
+      assert_includes appt.errors[:therapist_id], "must be selected when rescheduling a paid appointment"
+    end
   end
 
   test "visit_number cannot exceed package's total visits, about validate_visit_sequence" do
-    small_pkg = Package.create!(
-      service: @service,
-      name: "Small Pack",
-      currency: "IDR",
-      number_of_visit: 2,
-      price_per_visit: 50_000,
-      total_price: 100_000,
-      fee_per_visit: 35_000,
-      total_fee: 70_000,
-      active: true
-    )
-    appt = Appointment.new(
-      therapist: @therapist,
-      patient: @patient,
-      service: @service,
-      package: small_pkg,
-      location: @location,
-      visit_number: 3,
-      appointment_date_time: @future_time.change(hour: 9),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
-    assert_not appt.valid?
-    assert_includes appt.errors[:visit_number], "exceeds package's total visits of 2"
+    with_strict_validation_enabled do
+      small_pkg = Package.create!(
+        service: @service,
+        name: "Small Pack",
+        currency: "IDR",
+        number_of_visit: 2,
+        price_per_visit: 50_000,
+        total_price: 100_000,
+        fee_per_visit: 35_000,
+        total_fee: 70_000,
+        active: true
+      )
+      appt = Appointment.new(
+        therapist: @therapist,
+        patient: @patient,
+        service: @service,
+        package: small_pkg,
+        location: @location,
+        visit_number: 3,
+        appointment_date_time: @future_time.change(hour: 9),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
+      assert_not appt.valid?
+      assert_includes appt.errors[:visit_number], "exceeds package's total visits of 2"
+    end
   end
 
   test "initial visit automatically spawns unscheduled series appointments, about create_series_appointments" do
@@ -766,52 +778,54 @@ class AppointmentTest < ActiveSupport::TestCase
   # end
 
   test "initial visit cannot be moved to a date later than any series visit, about validate_initial_visit_position" do
-    triple_pkg = Package.create!(
-      service: @service,
-      name: "3-Visit Bundle",
-      currency: "IDR",
-      number_of_visit: 3,
-      price_per_visit: 100_000,
-      total_price: 300_000,
-      fee_per_visit: 70_000,
-      total_fee: 210_000,
-      active: true
-    )
-    first_visit = Appointment.create!(
-      patient: @patient,
-      service: @service,
-      package: triple_pkg,
-      location: @location,
-      appointment_date_time: @future_time,
-      therapist: @therapist,
-      preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record,
-      updater: @user,
-      skip_auto_series_creation: false
-    )
+    with_strict_validation_enabled do
+      triple_pkg = Package.create!(
+        service: @service,
+        name: "3-Visit Bundle",
+        currency: "IDR",
+        number_of_visit: 3,
+        price_per_visit: 100_000,
+        total_price: 300_000,
+        fee_per_visit: 70_000,
+        total_fee: 210_000,
+        active: true
+      )
+      first_visit = Appointment.create!(
+        patient: @patient,
+        service: @service,
+        package: triple_pkg,
+        location: @location,
+        appointment_date_time: 3.days.from_now.change(hour: 10),
+        therapist: @therapist,
+        preferred_therapist_gender: "NO PREFERENCE",
+        patient_medical_record_attributes: @patient_medical_record,
+        updater: @user,
+        skip_auto_series_creation: false
+      )
 
-    # sanity check
-    assert_equal "pending_patient_approval", first_visit.status
+      # sanity check
+      assert_equal "pending_patient_approval", first_visit.status
 
-    # update the series appointment to pending patient approval as well
-    all_visits = first_visit.all_visits_in_series
-    child = all_visits.where.not(visit_number: 1).order(:visit_number).first
-    child.update!(
-      status: :pending_patient_approval,
-      therapist: @therapist,
-      appointment_date_time: 4.days.from_now.change(hour: 10),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
+      # update the series appointment to pending patient approval as well
+      all_visits = first_visit.all_visits_in_series
+      child = all_visits.where.not(visit_number: 1).order(:visit_number).first
+      child.update!(
+        status: :pending_patient_approval,
+        therapist: @therapist,
+        appointment_date_time: 4.days.from_now.change(hour: 10),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
 
-    # Try to reschedule the first visit *after* its series visit
-    first_visit.appointment_date_time = 5.days.from_now.change(hour: 11)
+      # Try to reschedule the first visit *after* its series visit
+      first_visit.appointment_date_time = 5.days.from_now.change(hour: 11)
 
-    assert_not first_visit.valid?, "validation should fail when first visit is moved beyond a series visit"
+      assert_not first_visit.valid?, "validation should fail when first visit is moved beyond a series visit"
 
-    # Error must reference the offending child appointment
-    msg = first_visit.errors[:appointment_date_time].join
-    assert_includes msg, "must occur before any another visit series (#{child.registration_number})",
-      "message should mention the child registration number"
+      # Error must reference the offending child appointment
+      msg = first_visit.errors[:appointment_date_time].join
+      assert_includes msg, "must occur before any another visit series (#{child.registration_number})",
+        "message should mention the child registration number"
+    end
   end
 
   test "formatted_discount and formatted_total_price work as expected, about formatted_discount and formatted_total_price" do
@@ -1052,46 +1066,48 @@ class AppointmentTest < ActiveSupport::TestCase
   # end
 
   test "unscheduled appointment must not have therapist or appointment_date_time, about unscheduled_appointment_requirements" do
-    triple_pkg = Package.create!(
-      service: @service,
-      name: "3-Visit Bundle",
-      currency: "IDR",
-      number_of_visit: 3,
-      price_per_visit: 100_000,
-      total_price: 300_000,
-      fee_per_visit: 70_000,
-      total_fee: 210_000,
-      active: true
-    )
-    first_visit = Appointment.create!(
-      patient: @patient,
-      service: @service,
-      package: triple_pkg,
-      location: @location,
-      appointment_date_time: @future_time,
-      therapist: @therapist,
-      preferred_therapist_gender: "NO PREFERENCE",
-      patient_medical_record_attributes: @patient_medical_record,
-      updater: @user,           # <- will be copied to histories
-      skip_auto_series_creation: false
-    )
+    with_strict_validation_enabled do
+      triple_pkg = Package.create!(
+        service: @service,
+        name: "3-Visit Bundle",
+        currency: "IDR",
+        number_of_visit: 3,
+        price_per_visit: 100_000,
+        total_price: 300_000,
+        fee_per_visit: 70_000,
+        total_fee: 210_000,
+        active: true
+      )
+      first_visit = Appointment.create!(
+        patient: @patient,
+        service: @service,
+        package: triple_pkg,
+        location: @location,
+        appointment_date_time: @future_time,
+        therapist: @therapist,
+        preferred_therapist_gender: "NO PREFERENCE",
+        patient_medical_record_attributes: @patient_medical_record,
+        updater: @user,           # <- will be copied to histories
+        skip_auto_series_creation: false
+      )
 
-    # sanity check
-    assert_equal "pending_patient_approval", first_visit.status
-    all_visits = first_visit.all_visits_in_series
-    child = all_visits.where.not(visit_number: 1).order(:visit_number).first
-    child.update!(
-      status: :pending_patient_approval,
-      therapist: @therapist,
-      appointment_date_time: 4.days.from_now.change(hour: 10),
-      preferred_therapist_gender: "NO PREFERENCE"
-    )
+      # sanity check
+      assert_equal "pending_patient_approval", first_visit.status
+      all_visits = first_visit.all_visits_in_series
+      child = all_visits.where.not(visit_number: 1).order(:visit_number).first
+      child.update!(
+        status: :pending_patient_approval,
+        therapist: @therapist,
+        appointment_date_time: 4.days.from_now.change(hour: 10),
+        preferred_therapist_gender: "NO PREFERENCE"
+      )
 
-    # Now make it invalid by assigning status :unscheduled but keeping the other fields
-    child.assign_attributes(status: :unscheduled)
-    assert_not child.valid?
-    assert_includes child.errors[:appointment_date_time], "must be blank for unscheduled appointments"
-    assert_includes child.errors[:therapist_id], "cannot be assigned to unscheduled appointments"
+      # Now make it invalid by assigning status :unscheduled but keeping the other fields
+      child.assign_attributes(status: :unscheduled)
+      assert_not child.valid?
+      assert_includes child.errors[:appointment_date_time], "must be blank for unscheduled appointments"
+      assert_includes child.errors[:therapist_id], "cannot be assigned to unscheduled appointments"
+    end
   end
 
   # ? turn off the validation now, preventing the strict status update validation because it's just used by our admin internal
@@ -1549,4 +1565,171 @@ class AppointmentTest < ActiveSupport::TestCase
   #   assert_equal 4, fourth.visit_number
   #   assert_in_delta (@future_time + 7.days).to_f, fourth.appointment_date_time.to_f, 1.second
   # end
+
+  # ---------------------------------------------------------------------------
+  # Helper Methods for Testing
+  # ---------------------------------------------------------------------------
+
+  def with_strict_validation_enabled
+    original_setting = Appointment::ENABLE_STRICT_STATUS_VALIDATION
+
+    # Remove the existing constant and redefine it to avoid warnings
+    Appointment.send(:remove_const, :ENABLE_STRICT_STATUS_VALIDATION)
+    Appointment.const_set(:ENABLE_STRICT_STATUS_VALIDATION, true)
+
+    yield
+  ensure
+    # Restore the original setting
+    Appointment.send(:remove_const, :ENABLE_STRICT_STATUS_VALIDATION)
+    Appointment.const_set(:ENABLE_STRICT_STATUS_VALIDATION, original_setting)
+  end
+
+  # ---------------------------------------------------------------------------
+  # Admin Internal Status Validation Bypass Tests
+  # ---------------------------------------------------------------------------
+
+  test "should bypass strict validations when skip_status_validation is true" do
+    appointment = Appointment.new(
+      patient: @patient,
+      therapist: @therapist,
+      service: @service,
+      package: @package,
+      location: @location,
+      registration_number: "TEST-BYPASS-001",
+      visit_number: 1,
+      appointment_date_time: 1.day.ago, # Past date (normally invalid)
+      status: "pending_patient_approval",
+      skip_status_validation: true,
+      preferred_therapist_gender: "MALE"
+    )
+
+    # Should be valid despite having past date time
+    assert appointment.valid?, "Appointment should be valid with skip_status_validation=true - Errors: #{appointment.errors.full_messages.join(", ")}"
+    assert appointment.skip_status_validation?, "skip_status_validation flag should be true"
+
+    # Only basic validations should remain, no strict validations
+    assert_not appointment.errors[:appointment_date_time].any?, "Should not have date validation errors"
+  end
+
+  test "should enforce strict validations when skip_status_validation is false" do
+    appointment = Appointment.new(
+      patient: @patient,
+      therapist: @therapist,
+      service: @service,
+      package: @package,
+      location: @location,
+      registration_number: "TEST-STRICT-001",
+      visit_number: 1,
+      appointment_date_time: 1.day.ago, # Past date (normally invalid)
+      status: "pending_patient_approval",
+      skip_status_validation: false,
+      preferred_therapist_gender: "MALE"
+    )
+
+    # Should be invalid due to past date time when strict validation is enabled
+    # But since ENABLE_STRICT_STATUS_VALIDATION is false, it should still be valid
+    # Let's test the specific case where we temporarily enable strict validation
+    with_strict_validation_enabled do
+      # Re-validate with strict validation enabled
+      appointment.valid?
+
+      # Now it should be invalid due to past date time
+      assert_not appointment.valid?, "Appointment should be invalid with strict validation enabled"
+      assert appointment.errors[:appointment_date_time].any?, "Should have date validation errors when strict validation is enabled"
+    end
+  end
+
+  test "should bypass visit sequence validation for series appointments" do
+    # Create a multi-visit package for series testing
+    multi_visit_package = Package.create!(
+      service: @service,
+      name: "Multi-Visit Package",
+      currency: "IDR",
+      number_of_visit: 5,
+      price_per_visit: 100_000,
+      total_price: 500_000,
+      fee_per_visit: 70_000,
+      total_fee: 350_000,
+      active: true
+    )
+
+    # Create initial appointment
+    initial = Appointment.create!(
+      patient: @patient,
+      therapist: @therapist,
+      service: @service,
+      package: multi_visit_package,
+      location: @location,
+      registration_number: "TEST-SERIES-001",
+      appointment_date_time: 5.days.from_now,
+      status: "scheduled",
+      visit_number: 1,
+      skip_status_validation: true,
+      preferred_therapist_gender: "MALE"
+    )
+
+    # Create series appointment with problematic sequence
+    series = Appointment.new(
+      patient: @patient,
+      therapist: @therapist,
+      service: @service,
+      package: multi_visit_package,
+      location: @location,
+      registration_number: "TEST-SERIES-001",
+      appointment_reference_id: initial.id,
+      appointment_date_time: 3.days.from_now, # Before initial visit (normally invalid)
+      status: "pending_patient_approval",
+      visit_number: 2,
+      skip_status_validation: true,
+      preferred_therapist_gender: "MALE"
+    )
+
+    assert series.valid?, "Series appointment should be valid with skip_status_validation=true - Errors: #{series.errors.full_messages.join(", ")}"
+    assert_not series.errors[:appointment_date_time].any?, "Should not have sequence validation errors"
+  end
+
+  test "skip_status_validation? helper method works correctly" do
+    appointment = Appointment.new
+
+    # Default should be false
+    assert_not appointment.skip_status_validation?, "Default skip_status_validation should be false"
+
+    # Set to true
+    appointment.skip_status_validation = true
+    assert appointment.skip_status_validation?, "skip_status_validation should be true when set"
+
+    # Set to false
+    appointment.skip_status_validation = false
+    assert_not appointment.skip_status_validation?, "skip_status_validation should be false when set to false"
+  end
+
+  test "should respect ENABLE_STRICT_STATUS_VALIDATION constant" do
+    # Test with current setting (should be false)
+    original_setting = Appointment::ENABLE_STRICT_STATUS_VALIDATION
+
+    begin
+      # Create appointment with validation issues
+      appointment = Appointment.new(
+        patient: @patient,
+        therapist: @therapist,
+        service: @service,
+        package: @package,
+        location: @location,
+        registration_number: "TEST-CONSTANT-001",
+        visit_number: 1,
+        appointment_date_time: 1.day.ago, # Past date
+        status: "pending_patient_approval",
+        preferred_therapist_gender: "MALE"
+      )
+
+      # With ENABLE_STRICT_STATUS_VALIDATION = false, should be valid
+      assert appointment.valid?, "Should be valid when ENABLE_STRICT_STATUS_VALIDATION is false"
+    ensure
+      # Restore original setting if it was changed using our helper method
+      if original_setting != Appointment::ENABLE_STRICT_STATUS_VALIDATION
+        Appointment.send(:remove_const, :ENABLE_STRICT_STATUS_VALIDATION)
+        Appointment.const_set(:ENABLE_STRICT_STATUS_VALIDATION, original_setting)
+      end
+    end
+  end
 end

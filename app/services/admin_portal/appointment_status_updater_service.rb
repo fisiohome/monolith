@@ -28,7 +28,7 @@ module AdminPortal
       end
 
       @appointment.transaction do
-        @appointment.assign_attributes(status_reason: reason, updater: @updater)
+        @appointment.assign_attributes(status_reason: reason, updater: @updater, skip_status_validation: true)
 
         if @appointment.send(method_name)
           true
