@@ -158,12 +158,14 @@ module AdminPortal
     end
 
     def extract_error_message(errors)
+      # Don't return fallback if errors is actually present but structured differently
       return "Failed to process voucher." if errors.blank?
 
       messages = errors[:fullMessages] || errors["fullMessages"] ||
         errors[:full_messages] || errors["full_messages"]
 
-      Array(messages).presence&.first || "Failed to process voucher."
+      extracted = Array(messages).presence&.first
+      extracted || "Failed to process voucher."
     end
 
     def ensure_admin!

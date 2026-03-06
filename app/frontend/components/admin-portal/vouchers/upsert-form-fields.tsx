@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
 import { Check, ChevronsUpDown, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
@@ -17,6 +17,7 @@ import {
 import {
 	Form,
 	FormControl,
+	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -90,7 +91,9 @@ const formSchema = z.object({
 				const parsed = Number(value);
 				return !Number.isNaN(parsed) && parsed >= 0;
 			},
-			{ message: "Min order amount must be zero or greater" },
+			{
+				message: "Min order amount must be zero or greater",
+			},
 		),
 	quota: z.string().refine(
 		(value) => {
@@ -182,7 +185,7 @@ export default function NewVoucherFormFields({
 			code: "",
 			name: "",
 			description: "",
-			discountType: "PERCENTAGE",
+			discountType: "FIXED",
 			discountValue: "",
 			maxDiscountAmount: "",
 			minOrderAmount: "",
@@ -213,60 +216,72 @@ export default function NewVoucherFormFields({
 		}
 	}, [globalProps?.errors, form]);
 
-	const onSubmit = (values: VoucherFormValues) => {
-		const baseRoute = globalProps.adminPortal.router.adminPortal.vouchers.index;
-		const routeURL = isEditMode ? `${baseRoute}/${voucher?.id}` : baseRoute;
-		const payload = deepTransformKeysToSnakeCase({
-			voucher: {
-				code: values.code.trim().toUpperCase(),
-				name: values.name.trim(),
-				description: values.description?.trim() || null,
-				discountType: values.discountType,
-				discountValue: Number(values.discountValue),
-				maxDiscountAmount: parseOptionalNumber(values.maxDiscountAmount),
-				minOrderAmount: parseOptionalNumber(values.minOrderAmount),
-				quota: Number(values.quota),
-				validFrom: values.validFrom
-					? new Date(values.validFrom).toISOString()
-					: null,
-				validUntil: values.validUntil
-					? new Date(values.validUntil).toISOString()
-					: null,
-				isActive: values.isActive,
-				packageIds: values.packageIds.map((id) => Number(id)),
-			},
-		});
-		const requestOptions = {
-			preserveScroll: true,
-			preserveState: true,
-			onStart: () => setIsLoading(true),
-			onSuccess: () => {
-				form.reset();
-				handleOpenChange?.(false);
-				toast({
-					description: isEditMode
-						? "Voucher updated successfully."
-						: "Voucher created successfully.",
-				});
-			},
-			onError: () => {
-				toast({
-					description: isEditMode
-						? "Failed to update voucher. Please check the form."
-						: "Failed to create voucher. Please check the form.",
-					variant: "destructive",
-				});
-			},
-			onFinish: () => setTimeout(() => setIsLoading(false), 300),
-		} as const;
+	const onSubmit = useCallback(
+		(values: VoucherFormValues) => {
+			const baseRoute =
+				globalProps.adminPortal.router.adminPortal.vouchers.index;
+			const routeURL = isEditMode ? `${baseRoute}/${voucher?.id}` : baseRoute;
+			const payload = deepTransformKeysToSnakeCase({
+				voucher: {
+					code: values.code.trim().toUpperCase(),
+					name: values.name.trim(),
+					description: values.description?.trim() || null,
+					discountType: values.discountType,
+					discountValue: Number(values.discountValue), // Use as-is (user can enter K or full rupiah)
+					maxDiscountAmount: parseOptionalNumber(values.maxDiscountAmount), // Use as-is
+					minOrderAmount: parseOptionalNumber(values.minOrderAmount), // Use as-is
+					quota: Number(values.quota),
+					validFrom: values.validFrom
+						? new Date(values.validFrom).toISOString()
+						: null,
+					validUntil: values.validUntil
+						? new Date(values.validUntil).toISOString()
+						: null,
+					isActive: values.isActive,
+					packageIds: values.packageIds.map((id) => Number(id)),
+				},
+			});
+			const requestOptions = {
+				preserveScroll: true,
+				preserveState: true,
+				only: ["adminPortal", "flash", "errors", "vouchers"],
+				onStart: () => setIsLoading(true),
+				onSuccess: () => {
+					form.reset();
+					handleOpenChange?.(false);
+					toast({
+						description: isEditMode
+							? "Voucher updated successfully."
+							: "Voucher created successfully.",
+					});
+				},
+				onError: () => {
+					toast({
+						description: isEditMode
+							? "Failed to update voucher. Please check the form."
+							: "Failed to create voucher. Please check the form.",
+						variant: "destructive",
+					});
+				},
+				onFinish: () => setTimeout(() => setIsLoading(false), 300),
+			};
 
-		if (isEditMode) {
-			router.put(routeURL, payload, requestOptions);
-			return;
-		}
+			if (isEditMode) {
+				router.put(routeURL, payload, requestOptions);
+				return;
+			}
 
-		router.post(routeURL, payload, requestOptions);
-	};
+			router.post(routeURL, payload, requestOptions);
+		},
+		[
+			form.reset,
+			globalProps.adminPortal.router.adminPortal.vouchers.index,
+			isEditMode,
+			voucher?.id,
+			handleOpenChange,
+			toast,
+		],
+	);
 
 	return (
 		<Form {...form}>
@@ -486,11 +501,20 @@ export default function NewVoucherFormFields({
 											type="number"
 											min={0}
 											disabled={isEditMode}
-											step="0.01"
-											placeholder="Enter discount value..."
+											step={
+												form.watch("discountType")?.toUpperCase() ===
+												"PERCENTAGE"
+													? "1"
+													: "1000"
+											}
+											placeholder="e.g., 50000"
 											className="bg-input appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 										/>
 									</FormControl>
+									<FormDescription>
+										Enter the discount amount in rupiah (e.g., 50000 for
+										Rp50.000)
+									</FormDescription>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -512,11 +536,15 @@ export default function NewVoucherFormFields({
 											{...field}
 											type="number"
 											min={0}
-											step="1"
-											placeholder="Enter max discount amount..."
+											step="1000"
+											placeholder="e.g., 100000"
 											className="bg-input appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 										/>
 									</FormControl>
+									<FormDescription>
+										Maximum discount amount in rupiah (e.g., 100000 for
+										Rp100.000)
+									</FormDescription>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -538,11 +566,14 @@ export default function NewVoucherFormFields({
 											{...field}
 											type="number"
 											min={0}
-											step="1"
-											placeholder="Enter min order amount..."
+											step="1000"
+											placeholder="e.g., 500000"
 											className="bg-input appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 										/>
 									</FormControl>
+									<FormDescription>
+										Minimum order amount in rupiah (e.g., 500000 for Rp500.000)
+									</FormDescription>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -686,9 +717,9 @@ function mapVoucherToFormValues(voucher: Voucher): VoucherFormValues {
 		name: voucher.name ?? "",
 		description: voucher.description ?? "",
 		discountType: voucher.discountType,
-		discountValue: String(voucher.discountValue ?? ""),
-		maxDiscountAmount: String(voucher.maxDiscountAmount ?? ""),
-		minOrderAmount: String(voucher.minOrderAmount ?? ""),
+		discountValue: String(voucher.discountValue ?? ""), // Use as-is from backend
+		maxDiscountAmount: String(voucher.maxDiscountAmount ?? ""), // Use as-is from backend
+		minOrderAmount: String(voucher.minOrderAmount ?? ""), // Use as-is from backend
 		quota: String(voucher.quota ?? ""),
 		validFrom: voucher.validFrom
 			? formatDateTimeLocal(new Date(voucher.validFrom))

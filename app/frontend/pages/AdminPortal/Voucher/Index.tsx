@@ -779,17 +779,17 @@ function VoucherDetails({
 		);
 	}
 
-	const formattedDiscountValue =
-		voucher.discountType === "PERCENTAGE"
-			? formatPercentage((voucher.discountValue ?? 0) / 100)
-			: formatCurrency(voucher.discountValue, { emptyValue: "N/A" });
 	const infoBlocks = [
 		{ label: "Code", value: voucher.code },
 		{
 			label: "Discount",
 			value: (() => {
-				const type = voucher.discountType?.replaceAll("_", " ") || "N/A";
-				const value = formattedDiscountValue;
+				const type =
+					voucher.discountType?.replaceAll("_", " ")?.toUpperCase() || "N/A";
+				const value =
+					voucher.discountType?.toUpperCase() === "PERCENTAGE"
+						? `${formatPercentage((voucher.discountValue ?? 0) / 100)}`
+						: formatCurrency(voucher.discountValue, { emptyValue: "N/A" });
 				const maxDiscount = voucher.maxDiscountAmount
 					? formatCurrency(voucher.maxDiscountAmount, { emptyValue: "" })
 					: null;

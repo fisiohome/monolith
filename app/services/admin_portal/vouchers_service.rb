@@ -73,26 +73,16 @@ module AdminPortal
       voucher = Voucher.includes(:packages).find_by(id: id)
 
       if voucher
-        Rails.logger.debug {
-          "[VouchersService] VOUCHER_FOUND: " \
-          "id=#{id} " \
-          "code='#{voucher.code}' " \
-          "is_active=#{voucher.is_active}"
-        }
         response = {
           voucher: build_voucher(voucher)
         }
         deep_transform_keys_format(response, format: @key_format)
       else
+        Rails.logger.warn "[VouchersService] VOUCHER_NOT_FOUND: id=#{id}"
         {voucher: nil}
       end
     rescue => e
-      Rails.logger.error(
-        "[VouchersService] FIND_VOUCHER_FAILED: " \
-        "id=#{id} " \
-        "error='#{e.message}' " \
-        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
-      )
+      Rails.logger.error "[VouchersService] FIND_FAILED: id=#{id}, error=#{e.message}"
       {voucher: nil}
     end
 
@@ -103,32 +93,21 @@ module AdminPortal
       voucher = Voucher.new(attributes)
 
       if voucher.save
-        Rails.logger.info(
-          "[VouchersService] VOUCHER_CREATED: " \
-          "id=#{voucher.id} " \
-          "code='#{voucher.code}' " \
-          "discount_type=#{voucher.discount_type} " \
-          "discount_value=#{voucher.discount_value}"
-        )
+        Rails.logger.info "[VouchersService] VOUCHER_CREATED: id=#{voucher.id}, code=#{voucher.code}, type=#{voucher.discount_type}, value=#{voucher.discount_value}"
         voucher = Voucher.includes(:packages).find(voucher.id)
-        response = {
+        {
           success: true,
-          voucher: build_voucher(voucher)
+          voucher: deep_transform_keys_format(build_voucher(voucher), format: @key_format)
         }
-        deep_transform_keys_format(response, format: @key_format)
       else
+        Rails.logger.warn "[VouchersService] VALIDATION_FAILED: code=#{attributes[:code]}, errors=#{voucher.errors.full_messages.join(", ")}"
         {
           success: false,
           errors: format_errors(voucher.errors)
         }
       end
     rescue => e
-      Rails.logger.error(
-        "[VouchersService] CREATE_VOUCHER_FAILED: " \
-        "attributes=#{attributes.inspect} " \
-        "error='#{e.message}' " \
-        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
-      )
+      Rails.logger.error "[VouchersService] CREATE_FAILED: #{e.message} - code=#{attributes[:code]}"
       {
         success: false,
         errors: {fullMessages: ["Unable to create voucher. Please try again."]}
@@ -143,37 +122,27 @@ module AdminPortal
       voucher = Voucher.find(id)
 
       if voucher.update(attributes)
-        Rails.logger.info(
-          "[VouchersService] VOUCHER_UPDATED: " \
-          "id=#{id} " \
-          "code='#{voucher.code}' " \
-          "changes=#{attributes.keys.join(", ")}"
-        )
+        Rails.logger.info "[VouchersService] VOUCHER_UPDATED: id=#{id}, code=#{voucher.code}, changes=#{attributes.keys.join(", ")}"
         voucher = Voucher.includes(:packages).find(voucher.id)
-        response = {
+        {
           success: true,
-          voucher: build_voucher(voucher)
+          voucher: deep_transform_keys_format(build_voucher(voucher), format: @key_format)
         }
-        deep_transform_keys_format(response, format: @key_format)
       else
+        Rails.logger.warn "[VouchersService] UPDATE_VALIDATION_FAILED: id=#{id}, code=#{voucher.code}, errors=#{voucher.errors.full_messages.join(", ")}"
         {
           success: false,
           errors: format_errors(voucher.errors)
         }
       end
     rescue ActiveRecord::RecordNotFound
+      Rails.logger.error "[VouchersService] UPDATE_NOT_FOUND: id=#{id}"
       {
         success: false,
         errors: {fullMessages: ["Voucher not found."]}
       }
     rescue => e
-      Rails.logger.error(
-        "[VouchersService] UPDATE_VOUCHER_FAILED: " \
-        "id=#{id} " \
-        "attributes=#{attributes.inspect} " \
-        "error='#{e.message}' " \
-        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
-      )
+      Rails.logger.error "[VouchersService] UPDATE_FAILED: #{e.message} - id=#{id}"
       {
         success: false,
         errors: {fullMessages: ["Unable to update voucher. Please try again."]}
@@ -185,13 +154,7 @@ module AdminPortal
     # @param save_to_db [Boolean] whether to save to database or just validate
     # @return [Hash] hash with :success boolean and :message
     def bulk_create(file, save_to_db: false)
-      Rails.logger.info(
-        "[VouchersService] BULK_CREATE_STARTED: " \
-        "file='#{file.original_filename}' " \
-        "file_size=#{file.size} " \
-        "content_type='#{file.content_type}' " \
-        "save_to_db=#{save_to_db}"
-      )
+      Rails.logger.info "[VouchersService] BULK_CREATE_STARTED: file=#{file.original_filename}, size=#{file.size}, save_to_db=#{save_to_db}"
 
       return {success: false, message: "No file provided"} if file.blank?
 
@@ -587,16 +550,42 @@ module AdminPortal
         errors: {fullMessages: ["Voucher not found."]}
       }
     rescue => e
-      Rails.logger.error(
-        "[VouchersService] DELETE_VOUCHER_FAILED: " \
-        "id=#{id} " \
-        "error='#{e.message}' " \
-        "backtrace=#{e.backtrace&.first(3)&.join(", ")}"
-      )
+      Rails.logger.error "[VouchersService] DELETE_FAILED: id=#{id}, error=#{e.message}"
       {
         success: false,
         errors: {fullMessages: ["Unable to delete voucher. Please try again."]}
       }
+    end
+
+    private
+
+    # Formats error hash with proper key casing for client response.
+    # @param errors [Hash] raw error hash
+    # @return [Hash] formatted error hash with proper key casing
+    def format_errors(errors)
+      return {fullMessages: ["Unknown error occurred"]} if errors.blank?
+
+      # Get the full messages from errors
+      full_messages = errors.respond_to?(:full_messages) ? errors.full_messages : ["Validation failed"]
+
+      # Create a simple error hash that works with the controller
+      formatted_errors = {
+        fullMessages: full_messages
+      }
+
+      # Add field-specific errors if available
+      if errors.respond_to?(:messages)
+        errors.messages.each do |field, messages|
+          formatted_errors[field] = messages
+        end
+      end
+
+      # Apply key transformation if needed
+      if @key_format == :camel
+        formatted_errors = deep_transform_keys_format(formatted_errors, format: @key_format)
+      end
+
+      formatted_errors
     end
   end
 end

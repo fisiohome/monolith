@@ -23,6 +23,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { formatBytes, useFileUpload } from "@/hooks/use-file-upload";
+import { formatCurrency } from "@/lib/utils";
 
 type BulkUploadDialogProps = {
 	isOpen: boolean;
@@ -426,7 +427,12 @@ export default function BulkUploadDialog({
 																	{row.discountType}
 																</td>
 																<td className="px-3 py-2">
-																	{row.discountValue}
+																	{
+																		row.discountType.toUpperCase() ===
+																		"PERCENTAGE"
+																			? `${row.discountValue}%`
+																			: formatCurrency(row.discountValue) // Use formatCurrency directly
+																	}
 																</td>
 																<td className="px-3 py-2">{row.quota}</td>
 																<td className="px-3 py-2">
