@@ -10,10 +10,15 @@ module AdminPortal
       # @param current_appointment_id [Integer] Current appointment ID for updates
       # @return [Array] Formatted therapist data
       def filtered_therapists_in_batches(location:, service:, params:, formatter:, current_appointment_id: nil, batch_size: 100)
+        # * Resolve location IDs - special case for Jakarta Pusat to allow all DKI Jakarta therapists
+        # * This implements the business rule: "Allow Jakarta Pusat therapists for any DKI Jakarta location"
         location_ids =
           if location.city == "KOTA ADM. JAKARTA PUSAT"
+            # When user requests Jakarta Pusat, include all DKI Jakarta locations
+            # This allows therapists from any DKI Jakarta city to serve Jakarta Pusat appointments
             Location.where(state: "DKI JAKARTA").pluck(:id)
           else
+            # For other locations, only use the specific location
             [location.id]
           end
 
@@ -35,11 +40,13 @@ module AdminPortal
           )
         end
 
-        # Check if this is a Jabodetabek location
+        # Check if this is a Jabodetabek location to apply appropriate filtering rules
+        # Jabodetabek includes: Jakarta, Bogor, Depok, Tangerang, Bekasi, Kepulauan Seribu
         jabodetabek_keywords = ["JAKARTA", "BOGOR", "DEPOK", "TANGERANG", "BEKASI", "KEPULAUAN SERIBU"]
         is_jabodetabek_location = jabodetabek_keywords.any? { |kw| location.city&.include?(kw) }
 
-        # Get Jabodetabek location IDs for filtering
+        # Get all Jabodetabek location IDs for filtering logic
+        # Used to exclude Jabodetabek therapists when serving non-Jabodetabek locations
         jabodetabek_location_ids = Location.where(
           "city LIKE ANY (ARRAY[?])",
           jabodetabek_keywords.map { |kw| "%#{kw}%" }
@@ -47,13 +54,14 @@ module AdminPortal
 
         # Filter therapists based on their availability rules and location
         base_scope = if is_jabodetabek_location
-          # For Jabodetabek: Use complex availability rules filtering
+          # FOR JABODETABEK LOCATIONS: More permissive filtering
+          # Business rule: Jabodetabek therapists can serve any Jabodetabek location
           # This SQL filter handles the following cases:
           # 1. No availability rules defined (NULL) - therapist is available everywhere
           # 2. Empty availability rules array ('[]') - therapist is available everywhere
           # 3. No location-specific rules exist in the array - therapist is available everywhere
-          # 4. Therapist's address location matches one of the target location IDs
-          # This ensures we only include therapists who can serve the requested location
+          # 4. Therapist's address location matches one of the target location IDs (including Jakarta Pusat → all DKI Jakarta)
+          # This ensures we only include therapists who can serve the requested Jabodetabek location
           base_scope.where(
             "(therapist_appointment_schedules.availability_rules IS NULL OR " \
             "therapist_appointment_schedules.availability_rules::text = '[]' OR " \
@@ -63,10 +71,12 @@ module AdminPortal
             location_ids
           )
         else
-          # For non-Jabodetabek: Exclude Jabodetabek therapists unless they have specific location rules
+          # FOR NON-JABODETABEK LOCATIONS: Stricter filtering
+          # Business rule: Jabodetabek therapists should NOT serve non-Jabodetabek locations unless explicitly allowed
           # This ensures:
           # 1. Non-Jabodetabek therapists without location rules can serve any location
-          # 2. Jabodetabek therapists are excluded UNLESS they have location rules that include this location
+          # 2. Jabodetabek therapists are excluded UNLESS they have location rules that specifically include this location
+          # 3. Therapists with address in the target location are always included
           base_scope.where(
             "(" \
             "  (addresses.location_id NOT IN (?) AND " \
