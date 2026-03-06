@@ -165,20 +165,26 @@ end
    ```ruby
    validate :appointment_date_time_in_the_future
    ```
+   **Note**: This validation is **disabled for admin internal** users via `ENABLE_STRICT_STATUS_VALIDATION = false`
 
-2. **Series Order**: Cannot schedule before previous visits
+2. **Same-Day Support**: ✅ **Fully Supported**
+   - Admin internal users can reschedule to same-day without restrictions
+   - No minimum advance booking requirements
+   - Only collision with same-series visits is checked
+
+3. **Series Order**: Cannot schedule before previous visits
    ```ruby
    def min_date
-    initial_visit = Appointment.find_by(registration_number: registration_number, appointment_reference_id: nil)
-    previous_visit = initial_visit.series_appointments
-      .where("visit_number < ?", visit_number)
-      .order(:visit_number)
-      .last
-    previous_visit&.appointment_date_time || Date.current
-  end
+     initial_visit = Appointment.find_by(registration_number: registration_number, appointment_reference_id: nil)
+     previous_visit = initial_visit.series_appointments
+       .where("visit_number < ?", visit_number)
+       .order(:visit_number)
+       .last
+     previous_visit&.appointment_date_time || Date.current
+   end
    ```
 
-3. **Business Hours**: Must be within therapist's working hours
+4. **Business Hours**: Must be within therapist's working hours
    ```ruby
    # Checked in GetTherapistAvailableService
    ```

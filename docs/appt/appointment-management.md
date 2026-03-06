@@ -6,6 +6,7 @@ The appointment system manages home healthcare visits between therapists and pat
 - **[Query Architecture](./appointment-query-architecture.md)** - Registration number-based queries and performance optimization
 - **[Visit Number Reordering](./rescheduling/visit-number-reordering-fix.md)** - True chronological ordering and anomaly handling
 - **[Appointment Rescheduling](./rescheduling/appointment-rescheduling.md)** - Complete rescheduling workflow and documentation
+- **Same-Day Appointments** - Full support for same-day booking and rescheduling
 
 ## Appointment Structure
 
@@ -637,6 +638,188 @@ Planned improvements:
 3. **Smart Scheduling**: AI-powered appointment optimization
 4. **Patient Preferences**: Remember patient scheduling preferences
 5. **Telehealth Integration**: Mixed in-person/remote appointments
+
+---
+
+## Same-Day Appointments
+
+The appointment system provides **full support for same-day appointments** with no minimum time restrictions for admin internal users, enabling flexible scheduling and emergency bookings.
+
+### Overview
+
+Same-day appointments are fully supported for both creation and rescheduling operations, with special validation bypasses for admin internal users to ensure maximum operational flexibility.
+
+### Same-Day Creation Support
+
+**Service**: `CreateAppointmentService` (`app/services/admin_portal/create_appointment_service.rb`)
+
+**Features**:
+- ✅ **No time restrictions**: Can create appointments for any time today
+- ✅ **Time zone handling**: Proper timezone conversion for `appointment_date_time`
+- ✅ **No advance booking requirements**: No minimum booking time validation
+- ✅ **Admin bypass**: Internal admins can book without strict validation constraints
+
+**Implementation**:
+```ruby
+# Line 177: Time zone conversion
+appointment_date_time_formatted = appointment_params[:appointment_date_time]&.in_time_zone(Time.zone.name)
+
+# No minimum advance booking validation
+# Admin internal bypass via ENABLE_STRICT_STATUS_VALIDATION = false
+```
+
+### Same-Day Reschedule Support
+
+**Service**: `UpdateAppointmentService` (`app/services/admin_portal/update_appointment_service.rb`)
+
+**Features**:
+- ✅ **Same-day rescheduling**: Can move appointments to today's date
+- ✅ **Collision prevention**: Only validates against same-series visit conflicts
+- ✅ **No time constraints**: No minimum advance booking requirements
+- ✅ **Dynamic reordering**: Automatic visit number reordering when dates change
+
+**Implementation**:
+```ruby
+# Lines 21-31: Collision checking before updates
+collision_result = check_series_time_collision(new_datetime)
+if collision_result[:collision]
+  return { success: false, error: collision_result[:message] }
+end
+
+# Line 59: Skip visit sequence validation during reschedule
+@appointment.skip_visit_sequence_validation = true if @appointment_params[:appointment_date_time].present?
+```
+
+### Validation Framework
+
+#### Admin Internal Bypass System
+
+**Model**: `Appointment` (`app/models/appointment.rb`)
+
+The system uses a dual-layer validation bypass:
+
+```ruby
+# Line 17: Global strict validation control
+ENABLE_STRICT_STATUS_VALIDATION = false
+
+# Line 218: Conditional future time validation
+validate :appointment_date_time_in_the_future, 
+  if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
+```
+
+**Effects**:
+- **Admin flexibility**: Internal admins can book same-day without restrictions
+- **Configurable**: Can be re-enabled via `ENABLE_STRICT_STATUS_VALIDATION = true`
+- **Per-operation control**: Individual operations can enforce strict validation if needed
+
+#### Availability Service Special Handling
+
+**Service**: `AvailabilityService` (`app/services/admin_portal/therapists/availability_service.rb`)
+
+**Same-Day Exception Logic**:
+```ruby
+# Lines 268-271: Same-day appointment exception
+def basic_time_checks(appointment_date_time_in_tz, current_date_time_in_tz)
+  is_appointment_today = ->(date_time) { date_time.to_date == Date.current }
+  
+  # Skip time validation for same-day appointments with all-day availability
+  return true if is_appointment_today.call(appointment_date_time_in_tz) && @is_all_of_day
+  
+  # Normal validation for future dates
+  if appointment_date_time_in_tz <= current_date_time_in_tz
+    return add_reason_and_return(false, "Not available for past dates")
+  end
+end
+```
+
+### Business Rules Summary
+
+| Feature | Support Level | Details |
+|---------|----------------|---------|
+| **Same-Day Creation** | ✅ Full Support | No minimum advance booking time, admin internal bypass |
+| **Same-Day Rescheduling** | ✅ Full Support | Can move appointments to today, only collision checks |
+| **Therapist Availability** | ✅ Flexible | "All of day" availability bypasses time checks |
+| **Time Zone Handling** | ✅ Supported | All appointments in proper timezone context |
+| **Validation Bypass** | ✅ Configurable | Admin internal users have bypass capabilities |
+
+### Reschedule Constraints for Same-Day
+
+When rescheduling to same-day:
+
+**Date Constraints**:
+- **Minimum date**: Based on previous visits in series (`min_datetime`)
+- **No maximum date**: Can reschedule to any future date
+- **Same-day allowed**: No restrictions prevent booking for current day
+
+**Validation Rules**:
+- **Series collision**: Prevents overlap with same-series visits
+- **Therapist availability**: Real-time availability checking
+- **Business hours**: Therapist working hours enforced
+
+### Implementation Files Reference
+
+| File | Purpose | Key Lines |
+|------|---------|-----------|
+| `app/services/admin_portal/create_appointment_service.rb` | Appointment creation | 177 (timezone), 188 (creation) |
+| `app/services/admin_portal/update_appointment_service.rb` | Appointment reschedule | 21-31 (collision), 59 (bypass) |
+| `app/models/appointment.rb` | Model validations | 17 (strict flag), 218 (conditional), 730 (future check) |
+| `app/services/admin_portal/therapists/availability_service.rb` | Availability logic | 268-271 (same-day exception) |
+
+### Configuration Options
+
+**Strict Validation Control**:
+```ruby
+# In app/models/appointment.rb
+ENABLE_STRICT_STATUS_VALIDATION = false  # Currently disabled for admin flexibility
+```
+
+**To Enable Strict Validation**:
+1. Set `ENABLE_STRICT_STATUS_VALIDATION = true`
+2. This will enforce `appointment_date_time_in_the_future` validation
+3. Admins can still bypass per-operation using `skip_status_validation: true`
+
+### Use Case Examples
+
+**Emergency Same-Day Booking**:
+```ruby
+# Admin can create appointment for today at any time
+appointment = Appointment.create!(
+  patient: patient,
+  service: service,
+  appointment_date_time: Time.current + 2.hours,  # 2 hours from now
+  therapist: therapist
+)
+# Success: No validation errors due to admin bypass
+```
+
+**Same-Day Reschedule**:
+```ruby
+# Move appointment to later today
+appointment.update(
+  appointment_date_time: Time.current + 6.hours,
+  therapist: new_therapist
+)
+# Success: Only collision with same-series visits checked
+```
+
+### Troubleshooting Same-Day Issues
+
+**Common Scenarios**:
+
+1. **Validation Still Failing**:
+   - Check `ENABLE_STRICT_STATUS_VALIDATION` setting
+   - Verify `skip_status_validation` flag is properly set
+   - Ensure user has admin internal role
+
+2. **Therapist Not Available**:
+   - Check therapist's `availability_rules`
+   - Verify "all of day" availability for same-day
+   - Review working hours and schedule constraints
+
+3. **Time Zone Issues**:
+   - Ensure proper timezone conversion in services
+   - Check `Time.zone.name` configuration
+   - Verify frontend/backend timezone alignment
 
 ---
 
