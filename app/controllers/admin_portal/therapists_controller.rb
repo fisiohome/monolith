@@ -209,7 +209,8 @@ module AdminPortal
     def day_schedules
       page_params = params.fetch(:page, 1)
       limit_params = is_mobile? ? 1 : 5 # limit the therapist data for mobile device
-      date_params = params.fetch(:date, Time.zone.today)
+      # Ensure we use the beginning of the day in the correct timezone
+      date_params = params.fetch(:date, Time.zone.today).to_date
       search_params = params[:search]
       city_params = params[:city]
       employment_type = params[:employment_type]

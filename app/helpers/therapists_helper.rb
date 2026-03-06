@@ -96,8 +96,12 @@ module TherapistsHelper
           if options[:appointment_date].present?
             begin
               # Include only appointments that match the target date (ignoring time)
-              target_date = Date.parse(options[:appointment_date].to_s)
-              appointment.appointment_date_time.to_date == target_date
+              # Use timezone-aware comparison to ensure appointments from 00:00 of the target date are included
+              target_date = options[:appointment_date].to_date
+              # Convert appointment time to the same timezone and get the date
+              appointment_date = appointment.appointment_date_time.in_time_zone(Time.zone).to_date
+
+              appointment_date == target_date
             rescue ArgumentError, TypeError
               # If the date is invalid or nil, exclude the appointment
               false
