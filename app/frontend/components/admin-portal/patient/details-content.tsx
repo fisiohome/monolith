@@ -128,7 +128,12 @@ const DetailsContent = memo(function Component({
 
 						<DrawerFooter>
 							<DrawerClose asChild>
-								<Button variant="outline" className="shadow-none bg-card">
+								<Button
+									type="button"
+									variant="outline"
+									size="lg"
+									className="shadow-none bg-card"
+								>
 									{td("modal.close")}
 								</Button>
 							</DrawerClose>

@@ -1,4 +1,20 @@
-# # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+john_doe_contact:
+  contact_name: John Doe Contact
+  contact_phone: "+628123456789"
+  email: john.doe@example.com
+  miitel_link: "https://miitel.com/johndoe"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+jane_doe_contact:
+  contact_name: Jane Doe Contact
+  contact_phone: "+628987654321"
+  email: jane.doe@example.com
+  miitel_link: "https://miitel.com/janedoe"
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
 # one:
 #   contact_name: MyString

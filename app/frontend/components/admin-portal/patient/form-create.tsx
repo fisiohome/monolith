@@ -65,18 +65,27 @@ type AddressFormSchema = z.infer<typeof ADDRESS_FORM_SCHEMA>;
 export interface AddAddressSectionProps {
 	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
 	onSuccess?: () => void;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 const AddAddressSection = memo(function Component({
 	patient,
 	onSuccess,
+	open,
+	onOpenChange,
 }: AddAddressSectionProps) {
 	const { t: td } = useTranslation("translation", { keyPrefix: "components" });
 	const { props: globalProps, url: pageURL } =
 		usePage<PatientIndexGlobalPageProps>();
 
 	// ===== STATE MANAGEMENT =====
-	const [isOpen, setIsOpen] = useState(false);
+	const [internalIsOpen, setInternalIsOpen] = useState(false);
+	const isControlled = open !== undefined;
+	const isOpen = isControlled ? open : internalIsOpen;
+	const setIsOpen = isControlled
+		? onOpenChange || (() => {})
+		: setInternalIsOpen;
 	const [isAddressFormLoading, setIsAddressFormLoading] = useState(false);
 	const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
 	const hereMapRef = useRef<any>(null);

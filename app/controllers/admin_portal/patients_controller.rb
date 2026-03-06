@@ -84,6 +84,9 @@ module AdminPortal
       elsif params.dig(:patient, :new_patient_address).present?
         # For new address creation, also keep the edit parameter
         redirect_to admin_portal_patients_path(request.query_parameters)
+      elsif params.dig(:patient, :delete_patient_address).present?
+        # For address deletion, also keep the edit parameter
+        redirect_to admin_portal_patients_path(request.query_parameters)
       elsif params.dig(:patient, :set_active_address).present?
         # For active address updates, also keep the edit parameter
         redirect_to admin_portal_patients_path(request.query_parameters)

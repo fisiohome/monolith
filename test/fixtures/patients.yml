@@ -1,21 +1,19 @@
-# # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-# one:
-#   full_name: MyString
-#   date_of_birth: 2025-02-21
-#   age: 1
-#   gender: MyString
-#   illness_onset_date: 2025-02-21
-#   complaint_description: MyText
-#   condition: MyText
-#   medical_history: MyText
+john_doe:
+  name: John Doe
+  patient_number: "FH-P-0000001"
+  date_of_birth: 1990-01-01
+  gender: MALE
+  patient_contact: john_doe_contact
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-# two:
-#   full_name: MyString
-#   date_of_birth: 2025-02-21
-#   age: 1
-#   gender: MyString
-#   illness_onset_date: 2025-02-21
-#   complaint_description: MyText
-#   condition: MyText
-#   medical_history: MyText
+jane_doe:
+  name: Jane Doe
+  patient_number: "FH-P-0000002"
+  date_of_birth: 1992-05-15
+  gender: FEMALE
+  patient_contact: jane_doe_contact
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

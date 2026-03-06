@@ -1,7 +1,22 @@
-# # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-# one:
-#   patients: one
+john_doe_jakarta:
+  patient: john_doe
+  address: jakarta_selatan_address
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
 
-# two:
-#   patients: two
+john_doe_bandung:
+  patient: john_doe
+  address: bandung_address
+  active: false
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>
+
+jane_doe_jakarta:
+  patient: jane_doe
+  address: jakarta_selatan_address
+  active: true
+  created_at: <%= Time.zone.now %>
+  updated_at: <%= Time.zone.now %>

@@ -66,6 +66,80 @@ class Patient < ApplicationRecord
     location&.attributes&.slice("country", "state", "city")
   end
 
+  # Address management helper methods
+  def has_multiple_addresses?
+    patient_addresses.count > 1
+  end
+
+  def can_delete_address?(patient_address)
+    return false if patient_address.blank?
+    return false if patient_address.active? && patient_addresses.where(active: true).count == 1
+    return false if address_used_in_appointments?(patient_address.address)
+    true
+  end
+
+  def address_used_in_appointments?(address)
+    return false if address.blank?
+
+    # Very flexible matching - primarily use address text matching
+    # Only block deletion if there's a strong match on address text for ACTIVE appointments only
+    appointments = Appointment.joins(:address_history)
+      .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"]) # Exclude inactive/cancelled/completed appointments
+      .where(
+        "appointment_address_histories.address_line ILIKE ?",
+        "%#{sanitize_sql_like(address.address)}%"
+      )
+
+    # Only use coordinates as additional confirmation if they exist and are very precise
+    if address.latitude.present? && address.longitude.present?
+      # Use a more generous distance threshold (0.01 degrees ~ 1km) for coordinate matching
+      appointments = appointments.where(
+        "ABS(appointment_address_histories.latitude - ?) < 0.01 AND ABS(appointment_address_histories.longitude - ?) < 0.01",
+        address.latitude,
+        address.longitude
+      )
+    end
+
+    appointments.exists?
+  end
+
+  def set_active_address(patient_address)
+    return false if patient_address.blank?
+    return false unless patient_addresses.include?(patient_address)
+
+    transaction do
+      # Deactivate all other addresses
+      patient_addresses.where.not(id: patient_address.id).update_all(active: false)
+      # Activate the selected address
+      patient_address.update!(active: true)
+    end
+
+    true
+  rescue => e
+    Rails.logger.error "Error setting active address: #{e.message}"
+    false
+  end
+
+  def remove_address(patient_address)
+    return false unless can_delete_address?(patient_address)
+
+    transaction do
+      # Delete the patient address link
+      patient_address.destroy!
+
+      # Delete the address record if it's not used by anyone else
+      address = patient_address.address
+      if address.patient_addresses.count == 0
+        address.destroy!
+      end
+    end
+
+    true
+  rescue => e
+    Rails.logger.error "Error removing address: #{e.message}"
+    false
+  end
+
   private
 
   def assign_patient_number

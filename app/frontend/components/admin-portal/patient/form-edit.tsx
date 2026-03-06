@@ -4,17 +4,19 @@ import { format } from "date-fns";
 import {
 	AlertCircle,
 	CalendarIcon,
+	CheckCircleIcon,
 	CheckIcon,
 	EllipsisVerticalIcon,
 	IdCard,
 	LoaderIcon,
 	PencilIcon,
+	PlusIcon,
 	SquarePen,
+	Trash2,
 	X,
 } from "lucide-react";
 import {
 	Fragment,
-	type MutableRefObject,
 	memo,
 	Suspense,
 	useCallback,
@@ -32,14 +34,19 @@ import { z } from "zod";
 import HereMap, { type HereMapProps } from "@/components/shared/here-map";
 import { LoadingBasic } from "@/components/shared/loading";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar, type CalendarProps } from "@/components/ui/calendar";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
 	Command,
 	CommandEmpty,
@@ -73,6 +80,13 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+	Item,
+	ItemActions,
+	ItemContent,
+	ItemDescription,
+	ItemTitle,
+} from "@/components/ui/item";
 import { PhoneInput } from "@/components/ui/phone-input";
 import {
 	Popover,
@@ -280,10 +294,13 @@ const FormEdit = memo(function Component({
 								<Suspense fallback={<LoadingBasic columnBased={true} />}>
 									<div
 										className={
-											"grid items-start grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 min-w-0 overflow-hidden"
+											"grid items-start grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 p-4 min-w-0 overflow-hidden"
 										}
 									>
-										<div className="grid gap-4" ref={leftColumnRef}>
+										<div
+											className="grid gap-4 md:col-span-5"
+											ref={leftColumnRef}
+										>
 											<ContactSection />
 
 											<Separator className="mt-4" />
@@ -293,10 +310,9 @@ const FormEdit = memo(function Component({
 
 										<Separator className="mt-4 md:hidden" />
 
-										<AddressSection
-											patient={patient}
-											leftColumnRef={leftColumnRef}
-										/>
+										<div className="md:col-span-7">
+											<AddressSection patient={patient} />
+										</div>
 
 										{/* for showing the alert error if there's any server validation error */}
 										{!!errorsServerValidation?.length && (
@@ -722,103 +738,106 @@ const ProfileSection = memo(function Component() {
 					)}
 				/>
 
-				<div className="flex flex-wrap gap-3">
-					<FormField
-						control={form.control}
-						name="profile.dateOfBirth"
-						render={({ field }) => (
-							<FormItem className="flex-1">
-								<FormLabel>{tpp("fields.dob.label")}</FormLabel>
-								<Popover modal>
-									<PopoverTrigger asChild>
-										<FormControl>
-											<Button
-												type="button"
-												variant={"outline"}
-												className={cn(
-													"relative w-full flex justify-between font-normal shadow-inner bg-input",
-													!field.value && "text-muted-foreground",
-												)}
-											>
-												<p>
-													{field.value
-														? `${format(field.value, "PPP")}`
-														: tpp("fields.dob.placeholder")}
-												</p>
+				<div className="flex flex-col gap-3">
+					<div className="flex gap-3 items-center">
+						<FormField
+							control={form.control}
+							name="profile.dateOfBirth"
+							render={({ field }) => (
+								<FormItem className="flex-1">
+									<FormLabel>{tpp("fields.dob.label")}</FormLabel>
+									<Popover modal>
+										<PopoverTrigger asChild>
+											<FormControl>
+												<Button
+													type="button"
+													variant={"outline"}
+													className={cn(
+														"relative w-full flex justify-between font-normal shadow-inner bg-input",
+														!field.value && "text-muted-foreground",
+													)}
+												>
+													<p>
+														{field.value
+															? `${format(field.value, "PPP")}`
+															: tpp("fields.dob.placeholder")}
+													</p>
 
-												{field.value ? (
-													// biome-ignore lint/a11y/noStaticElementInteractions: -
-													<div
-														className="cursor-pointer"
-														onClick={(event) => {
-															event.preventDefault();
-															event.stopPropagation();
+													{field.value ? (
+														// biome-ignore lint/a11y/noStaticElementInteractions: -
+														<div
+															className="cursor-pointer"
+															onClick={(event) => {
+																event.preventDefault();
+																event.stopPropagation();
 
-															form.setValue(
-																"profile.dateOfBirth",
-																null as unknown as Date,
-															);
-															doUpdateAge(null);
-														}}
-														onKeyDown={(e) => {
-															e.preventDefault();
-															e.stopPropagation();
-														}}
-													>
-														<X className="opacity-50" />
-													</div>
-												) : (
-													<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
-												)}
-											</Button>
-										</FormControl>
-									</PopoverTrigger>
-									<PopoverContent
-										className="w-auto p-0"
-										align="start"
-										side="bottom"
-									>
-										<Calendar
-											{...dateOfBirthCalendarProps}
-											initialFocus
-											mode="single"
-											captionLayout="dropdown"
-											selected={new Date(field.value)}
-											onSelect={(date) => {
-												field.onChange(date);
-												doUpdateAge(date);
-											}}
-											defaultMonth={field.value}
+																form.setValue(
+																	"profile.dateOfBirth",
+																	null as unknown as Date,
+																);
+																doUpdateAge(null);
+															}}
+															onKeyDown={(e) => {
+																e.preventDefault();
+																e.stopPropagation();
+															}}
+														>
+															<X className="opacity-50" />
+														</div>
+													) : (
+														<CalendarIcon className="w-4 h-4 ml-auto opacity-75" />
+													)}
+												</Button>
+											</FormControl>
+										</PopoverTrigger>
+										<PopoverContent
+											className="w-auto p-0"
+											align="start"
+											side="bottom"
+										>
+											<Calendar
+												{...dateOfBirthCalendarProps}
+												initialFocus
+												mode="single"
+												captionLayout="dropdown"
+												selected={new Date(field.value)}
+												onSelect={(date) => {
+													field.onChange(date);
+													doUpdateAge(date);
+												}}
+												defaultMonth={field.value}
+											/>
+										</PopoverContent>
+									</Popover>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="profile.age"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>{tpp("fields.age.label")}</FormLabel>
+									<FormControl>
+										<Input
+											{...field}
+											readOnly
+											type="number"
+											min={0}
+											value={field?.value || ""}
+											placeholder={tpp("fields.age.placeholder")}
+											className="shadow-inner w-fit field-sizing-content bg-input"
 										/>
-									</PopoverContent>
-								</Popover>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
+									</FormControl>
 
-					<FormField
-						control={form.control}
-						name="profile.age"
-						render={({ field }) => (
-							<FormItem>
-								<FormLabel>{tpp("fields.age.label")}</FormLabel>
-								<FormControl>
-									<Input
-										{...field}
-										readOnly
-										type="number"
-										min={0}
-										value={field?.value || ""}
-										placeholder={tpp("fields.age.placeholder")}
-										className="shadow-inner w-fit field-sizing-content bg-input"
-									/>
-								</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					</div>
 
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
 					<FormDescription className="flex-none -mt-1">
 						{tpp("fields.age.description")}
 					</FormDescription>
@@ -880,10 +899,8 @@ const ProfileSection = memo(function Component() {
 
 const AddressSection = memo(function Component({
 	patient,
-	leftColumnRef,
 }: {
 	patient: NonNullable<PatientIndexGlobalPageProps["selectedPatient"]>;
-	leftColumnRef: MutableRefObject<HTMLDivElement | null>;
 }) {
 	const { t: tpl } = useTranslation("patients", { keyPrefix: "list" });
 	const { t: td } = useTranslation("translation", { keyPrefix: "components" });
@@ -891,13 +908,8 @@ const AddressSection = memo(function Component({
 		usePage<PatientIndexGlobalPageProps>();
 
 	// ===== STATE MANAGEMENT =====
-	const textRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-	const [showMoreStates, setShowMoreStates] = useState<{
-		[key: string]: boolean;
-	}>({});
-	const [maxHeight, setMaxHeight] = useState<string>("auto");
 	const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-	// const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+	const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
 	const [selectedAddress, setSelectedAddress] = useState<{
 		active: boolean;
 		address: PatientActiveAddress;
@@ -914,6 +926,11 @@ const AddressSection = memo(function Component({
 	>("manual");
 	const [isGeocoding, setIsGeocoding] = useState(false);
 	const [geocodingError, setGeocodingError] = useState<string | null>(null);
+	const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+	const [addressToDelete, setAddressToDelete] = useState<{
+		id: number;
+		address: string;
+	} | null>(null);
 
 	// ===== FORM CONFIGURATION =====
 	const addressForm = useForm<AddressFormSchema>({
@@ -1038,44 +1055,6 @@ const AddressSection = memo(function Component({
 			});
 		}
 	}, [selectedAddress, addressForm]);
-
-	// Effect to detect text overflow for "Show More" functionality, Checks if each address text exceeds 2 lines and updates showMoreStates accordingly
-	useEffect(() => {
-		const newStates: { [key: string]: boolean } = {};
-		patient.patientAddresses?.forEach((patientAddress) => {
-			const element = textRefs.current[patientAddress.id];
-			if (element) {
-				// Check if text is overflowing (has more than 2 lines)
-				const lineHeight =
-					parseFloat(getComputedStyle(element).lineHeight) || 20;
-				const maxHeight = lineHeight * 2;
-				newStates[patientAddress.id] = element.scrollHeight > maxHeight;
-			}
-		});
-		setShowMoreStates(newStates);
-	}, [patient.patientAddresses]);
-
-	// Effect to sync the right column (address section) height with the left column, Uses ResizeObserver to dynamically update height when left column resizes
-	useEffect(() => {
-		const updateMaxHeight = () => {
-			if (leftColumnRef.current) {
-				const height = leftColumnRef.current.offsetHeight;
-				setMaxHeight(`${height}px`);
-			}
-		};
-
-		// Initial height calculation
-		updateMaxHeight();
-
-		// Set up observer to handle dynamic resizing
-		const resizeObserver = new ResizeObserver(updateMaxHeight);
-		if (leftColumnRef.current) {
-			resizeObserver.observe(leftColumnRef.current);
-		}
-
-		// Cleanup observer on unmount
-		return () => resizeObserver.disconnect();
-	}, [leftColumnRef.current]);
 
 	// ===== API HANDLERS =====
 	const handleSetActiveAddress = async (patientAddress: any) => {
@@ -1248,6 +1227,77 @@ const AddressSection = memo(function Component({
 		}
 	}, [addressForm]);
 
+	// ===== DELETE ADDRESS HANDLER =====
+	const handleDeleteAddress = async (patientAddress: any) => {
+		if (!patientAddress) return;
+
+		// Set up confirmation dialog
+		setAddressToDelete({
+			id: patientAddress.id,
+			address: patientAddress.address?.address || "Unknown address",
+		});
+		setDeleteConfirmOpen(true);
+	};
+
+	const confirmDeleteAddress = async () => {
+		if (!addressToDelete) return;
+
+		setIsAddressFormLoading(true);
+		try {
+			console.log("Deleting patient address:", {
+				patientAddressId: addressToDelete.id,
+			});
+
+			// Generate the submit URL
+			const baseURL =
+				globalProps.adminPortal.router.adminPortal.patientManagement.index;
+			const submitURL = `${baseURL}/${patient.id}`;
+			const { queryParams } = populateQueryParams(pageURL);
+			const { fullUrl } = populateQueryParams(submitURL, queryParams);
+
+			// Define the payload for deleting address
+			const payload = deepTransformKeysToSnakeCase({
+				patient: {
+					profile: {
+						id: patient.id,
+						name: patient.name,
+						dateOfBirth: patient.dateOfBirth,
+						gender: patient.gender,
+					},
+					deletePatientAddress: {
+						patientAddressId: addressToDelete.id,
+					},
+				},
+			});
+
+			// Make the API call using Inertia.js
+			router.put(fullUrl, payload, {
+				preserveScroll: true,
+				preserveState: true,
+				replace: false,
+				only: ["adminPortal", "flash", "errors", "patients", "selectedPatient"],
+				onSuccess: () => {
+					toast.success("Address deleted successfully");
+					setDeleteConfirmOpen(false);
+					setAddressToDelete(null);
+				},
+				onError: (errors: any) => {
+					console.error("Failed to delete address:", errors);
+					toast.error("Failed to delete address");
+				},
+				onFinish: () => {
+					setIsAddressFormLoading(false);
+				},
+			});
+
+			console.log("Address deletion submitted...");
+		} catch (error) {
+			console.error("Failed to delete address:", error);
+			toast.error("Failed to delete address");
+			setIsAddressFormLoading(false);
+		}
+	};
+
 	// ===== GEOCODING =====
 	const handleGeocoding = useCallback(async () => {
 		const address = addressForm.getValues("address");
@@ -1259,9 +1309,7 @@ const AddressSection = memo(function Component({
 		if (!address || address.trim() === "") {
 			console.error("Address is required for geocoding");
 			// Show error toast
-			if (typeof window !== "undefined" && (window as any).toast) {
-				(window as any).toast.error("Please enter an address before geocoding");
-			}
+			toast.error("Please enter an address before geocoding");
 			setGeocodingError("Please enter an address before geocoding");
 			return;
 		}
@@ -1269,9 +1317,7 @@ const AddressSection = memo(function Component({
 		if (!locationId) {
 			console.error("Location is required for geocoding");
 			// Show error toast
-			if (typeof window !== "undefined" && (window as any).toast) {
-				(window as any).toast.error("Please select a region before geocoding");
-			}
+			toast.error("Please select a region before geocoding");
 			setGeocodingError("Please select a region before geocoding");
 			return;
 		}
@@ -1394,161 +1440,116 @@ const AddressSection = memo(function Component({
 					<p className="text-xs font-semibold tracking-wider text-muted-foreground/75 uppercase">
 						{tpl("addresses.label")}
 					</p>
-					{/* <Button
-						variant="outline"
+					<Button
+						variant="ghost-primary"
 						size="sm"
-						effect="expandIcon"
-						iconPlacement="left"
 						type="button"
-						className="p-0"
-						icon={PlusIcon}
 						onClick={() => setIsAddAddressOpen(true)}
 					>
-						Add New Address
-					</Button> */}
+						<PlusIcon className="w-4 h-4" />
+						Add
+					</Button>
 				</div>
 			</div>
 
-			{/* Display Patient Addresses and no addresses */}
+			{/* Display Patient Addresses */}
 			{!patient.patientAddresses || patient.patientAddresses.length === 0 ? (
 				<div className="text-center py-4 text-muted-foreground text-sm">
 					No addresses available
 				</div>
 			) : (
-				<div
-					className="space-y-2 min-w-0 overflow-x-hidden overflow-y-auto"
-					style={{ maxHeight }}
-				>
+				<div className="max-h-[35dvh] overflow-y-auto">
 					{patient.patientAddresses.map((patientAddress) => (
-						<div
-							key={patientAddress.id}
-							className={cn(
-								"relative rounded-lg border text-sm",
-								patientAddress.active
-									? "border-primary/20 bg-primary/5"
-									: "border-muted/20 bg-muted/50",
-							)}
-						>
-							{patientAddress.active && (
-								<span className="absolute bottom-0 right-0 inline-flex items-center px-2 py-1 text-[10px] font-medium bg-primary/10 text-primary uppercase">
-									Active
-								</span>
-							)}
-
-							<div className="flex items-start justify-between gap-2 p-2">
-								<div className="flex-1 space-y-1 min-w-0">
-									{/* Address Content */}
-									{patientAddress.address && (
-										<div className="overflow-hidden">
-											<Collapsible>
-												<div className="w-full text-left font-medium hover:bg-transparent cursor-pointer text-sm">
-													<div className="flex justify-between gap-3 min-w-0 items-start">
-														<div
-															ref={(el) => {
-																textRefs.current[patientAddress.id] = el;
-															}}
-															className="line-clamp-2 break-words text-pretty min-w-0 flex-1"
-														>
-															{patientAddress.address.address}
-														</div>
-
-														<div className="flex flex-col gap-1 mb-1">
-															<div className="flex justify-end">
-																<DropdownMenu>
-																	<DropdownMenuTrigger asChild>
-																		<Button
-																			type="button"
-																			variant="ghost"
-																			className="p-0.5 h-auto"
-																			onClick={(e) => {
-																				e.stopPropagation();
-																			}}
-																		>
-																			<EllipsisVerticalIcon />
-																		</Button>
-																	</DropdownMenuTrigger>
-																	<DropdownMenuContent
-																		align="end"
-																		side="bottom"
-																	>
-																		<DropdownMenuItem
-																			onSelect={(e) => {
-																				e.preventDefault();
-																				e.stopPropagation();
-
-																				setSelectedAddress(patientAddress);
-																				setIsEditDrawerOpen(true);
-																			}}
-																		>
-																			<PencilIcon />
-																			Edit
-																		</DropdownMenuItem>
-																		{!patientAddress.active && (
-																			<DropdownMenuItem
-																				onSelect={(e) => {
-																					e.preventDefault();
-																					e.stopPropagation();
-
-																					handleSetActiveAddress(
-																						patientAddress,
-																					);
-																				}}
-																			>
-																				<CheckIcon />
-																				Set as Active
-																			</DropdownMenuItem>
-																		)}
-
-																		{patientAddress.active && (
-																			<DropdownMenuItem
-																				disabled
-																				className="opacity-50 cursor-not-allowed"
-																			>
-																				<CheckIcon />
-																				Is Active
-																			</DropdownMenuItem>
-																		)}
-																	</DropdownMenuContent>
-																</DropdownMenu>
-															</div>
-
-															<CollapsibleTrigger asChild>
-																{showMoreStates[patientAddress.id] && (
-																	<span className="text-primary text-[10px] shrink-0 uppercase">
-																		Show more
-																	</span>
-																)}
-															</CollapsibleTrigger>
-														</div>
-													</div>
-												</div>
-
-												<CollapsibleContent>
-													<p className="font-medium whitespace-pre-wrap break-words overflow-wrap-anywhere mt-2">
-														{patientAddress.address.address}
-													</p>
-												</CollapsibleContent>
-											</Collapsible>
-
-											{/* Location Info */}
-											{patientAddress.address.location && (
-												<div className="text-muted-foreground text-xs mt-1">
-													<span className="break-words">
-														{[
-															patientAddress.address.location.city,
-															patientAddress.address.location.state,
-															patientAddress.address.location.country,
-														]
-															.filter(Boolean)
-															.join(", ")}
-													</span>
-												</div>
-											)}
-										</div>
+						<Item key={patientAddress.id} variant="outline">
+							<ItemContent>
+								<ItemTitle>
+									<p className="line-clamp-2 truncate font-medium text-pretty break-all">
+										{patientAddress.address?.address}
+									</p>
+									{patientAddress.address?.postalCode && (
+										<p className="text-muted-foreground text-xs">
+											{patientAddress.address.postalCode}
+										</p>
 									)}
-								</div>
-							</div>
-						</div>
+								</ItemTitle>
+								{patientAddress.address?.location && (
+									<ItemDescription className="text-pretty">
+										{[
+											patientAddress.address.location.city,
+											patientAddress.address.location.state,
+											patientAddress.address.location.country,
+										]
+											.filter(Boolean)
+											.join(", ")}
+									</ItemDescription>
+								)}
+							</ItemContent>
+							<ItemActions>
+								{patientAddress.active ? (
+									<CheckCircleIcon className="text-primary shrink-0" />
+								) : null}
+
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="h-8 w-8 p-0 shrink-0"
+										>
+											<EllipsisVerticalIcon className="h-4 w-4" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end" side="bottom">
+										<DropdownMenuItem
+											onSelect={(e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												setSelectedAddress(patientAddress);
+												setIsEditDrawerOpen(true);
+											}}
+										>
+											<PencilIcon className="mr-2 h-4 w-4" />
+											Edit
+										</DropdownMenuItem>
+										{!patientAddress.active && (
+											<DropdownMenuItem
+												onSelect={(e) => {
+													e.preventDefault();
+													e.stopPropagation();
+													handleSetActiveAddress(patientAddress);
+												}}
+											>
+												<CheckIcon className="mr-2 h-4 w-4" />
+												Set as Active
+											</DropdownMenuItem>
+										)}
+										{!patientAddress.active && (
+											<DropdownMenuItem
+												onSelect={(e) => {
+													e.preventDefault();
+													e.stopPropagation();
+													handleDeleteAddress(patientAddress);
+												}}
+												className="text-destructive focus:text-destructive"
+											>
+												<Trash2 className="mr-2 h-4 w-4" />
+												Delete
+											</DropdownMenuItem>
+										)}
+										{patientAddress.active && (
+											<DropdownMenuItem
+												disabled
+												className="opacity-50 cursor-not-allowed"
+											>
+												<CheckIcon className="mr-2 h-4 w-4" />
+												Is Active
+											</DropdownMenuItem>
+										)}
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</ItemActions>
+						</Item>
 					))}
 				</div>
 			)}
@@ -1556,6 +1557,8 @@ const AddressSection = memo(function Component({
 			{/* Add New Address Section */}
 			<AddAddressSection
 				patient={patient}
+				open={isAddAddressOpen}
+				onOpenChange={setIsAddAddressOpen}
 				onSuccess={() => {
 					// Refresh the patient data to show the new address
 					router.reload({ only: ["selectedPatient"] });
@@ -1920,6 +1923,37 @@ const AddressSection = memo(function Component({
 					</div>
 				</DrawerContent>
 			</DrawerPrimitive.NestedRoot>
+
+			{/* Delete Address Confirmation Dialog */}
+			<AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Address</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this address? This action cannot
+							be undone.
+							<br />
+							<br />
+							<strong>Address:</strong> {addressToDelete?.address}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={isAddressFormLoading}>
+							Cancel
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={confirmDeleteAddress}
+							disabled={isAddressFormLoading}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							{isAddressFormLoading && (
+								<LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+							)}
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 });

@@ -14,6 +14,7 @@ module AdminPortal
         update_profile
         update_patient_address
         create_new_patient_address
+        delete_patient_address
         update_active_address if @params[:set_active_address].present?
 
         Rails.logger.info "[UpdatePatientService] Update completed. Updated: #{@updated}"
@@ -162,6 +163,44 @@ module AdminPortal
       end
     end
 
+    def delete_patient_address
+      delete_pa = @params[:delete_patient_address]
+      Rails.logger.info "[UpdatePatientService] Deleting patient address"
+      Rails.logger.info "[UpdatePatientService] Delete patient address params: #{delete_pa.inspect}"
+      return unless delete_pa
+
+      # Find the patient address to delete
+      patient_address = @patient.patient_addresses.find_by(id: delete_pa[:patient_address_id])
+      Rails.logger.info "[UpdatePatientService] Found patient address for deletion: #{patient_address&.inspect}"
+      return unless patient_address
+
+      # Prevent deletion of active address
+      if patient_address.active?
+        error_message = "Cannot delete active address. Please set another address as active first."
+        Rails.logger.error "[UpdatePatientService] #{error_message}"
+        raise ActiveRecord::RecordInvalid, patient_address, error_message
+      end
+
+      # Get the associated address for deletion
+      address = patient_address.address
+      Rails.logger.info "[UpdatePatientService] Found associated address for deletion: #{address.inspect}"
+
+      # Delete the patient address link first
+      patient_address.destroy!
+      Rails.logger.info "[UpdatePatientService] Patient address link deleted successfully"
+
+      # Delete the address record if it's not associated with other patients
+      if address.patient_addresses.count == 0
+        address.destroy!
+        Rails.logger.info "[UpdatePatientService] Address record deleted successfully"
+      else
+        Rails.logger.info "[UpdatePatientService] Address record kept as it's associated with other patients"
+      end
+
+      @updated = true
+      Rails.logger.info "[UpdatePatientService] Patient address deleted successfully"
+    end
+
     def update_active_address
       saa = @params[:set_active_address]
       Rails.logger.info "[UpdatePatientService] Updating active address"
@@ -191,13 +230,29 @@ module AdminPortal
 
     def permitted_params(params)
       Rails.logger.info "[UpdatePatientService] Processing permitted params"
-      permitted = params.require(:patient).permit(
-        contact: %i[id contact_name contact_phone email miitel_link],
-        profile: %i[id name date_of_birth gender],
-        patient_address: %i[id address postal_code latitude longitude location_id notes],
-        new_patient_address: %i[address postal_code latitude longitude location_id notes],
-        set_active_address: %i[patient_address_id active]
-      )
+      # Handle both ActionController::Parameters and Hash
+      patient_params = if params.respond_to?(:require)
+        params.require(:patient)
+      else
+        params[:patient]
+      end
+
+      # For Hash in tests, we need to manually filter the keys
+      permitted = if patient_params.respond_to?(:permit)
+        patient_params.permit(
+          contact: %i[id contact_name contact_phone email miitel_link],
+          profile: %i[id name date_of_birth gender],
+          patient_address: %i[id address postal_code latitude longitude location_id notes],
+          new_patient_address: %i[address postal_code latitude longitude location_id notes],
+          delete_patient_address: %i[patient_address_id],
+          set_active_address: %i[patient_address_id active]
+        )
+      else
+        # For Hash, manually filter keys
+        allowed_keys = %w[contact profile patient_address new_patient_address delete_patient_address set_active_address]
+        patient_params.select { |key, _| allowed_keys.include?(key.to_s) }
+      end
+
       Rails.logger.info "[UpdatePatientService] Permitted params: #{permitted.inspect}"
       permitted
     end
