@@ -7,9 +7,17 @@ module AdminPortal
     # - Time zone conversions for accurate scheduling
     # - Weekly schedule vs adjusted availability (one-time overrides)
     # - Overlapping appointment detection with buffer times
-    # - Daily appointment limits and advance booking windows
+    # - Daily appointment limits and advance booking windows (bypassable for admin)
     # - Location-based scheduling considerations
+    #
+    # Admin Usage Configuration:
+    # - Set BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true to disable advance booking limits
+    # - This allows internal admin to book appointments beyond the standard 60-day window
+    # - Useful for special cases, bulk scheduling, or administrative overrides
     class AvailabilityService
+      # Configuration constants for different usage contexts
+      BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true # Bypass advance booking limit for internal admin usage
+
       attr_reader :reasons, :previous_appointment_location, :next_appointment_location
 
       # Initialize the service with therapist and appointment details
@@ -287,10 +295,16 @@ module AdminPortal
       # Check maximum advance booking window
       # Prevents booking too far in advance to avoid overbooking and schedule changes
       # This helps maintain schedule flexibility for therapists
+      #
+      # NOTE: This check can be bypassed for internal admin usage by setting
+      # BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true
       # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
       # @param current_date_time_in_tz [DateTime] Current time in therapist's timezone
       # @return [Boolean] true if within advance booking window
       def advance_booking_check(appointment_date_time_in_tz, current_date_time_in_tz)
+        # Bypass advance booking check for internal admin usage
+        return true if BYPASS_ADVANCE_BOOKING_FOR_ADMIN
+
         max_advance_date = current_date_time_in_tz + @schedule.max_advance_booking_in_days.days
         if appointment_date_time_in_tz > max_advance_date
           message = "Exceeds max advance booking (#{@schedule.max_advance_booking_in_days} days)"

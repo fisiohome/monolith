@@ -82,17 +82,100 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
   end
 
   # Test: Not available when appointment exceeds max advance booking days
-  # Business rule: Cannot book too far in advance (prevents overbooking)
-  test "should not be available when exceeds max advance booking" do
-    # Create a time that's beyond the allowed advance booking period
-    future_time = (@schedule.max_advance_booking_in_days + 1).days.from_now
-    service = AdminPortal::Therapists::AvailabilityService.new(
-      therapist: @therapist,
-      appointment_date_time_server_time: future_time
-    )
+  # ---------------------------------------------------------------------------
+  # Advance Booking Tests
+  # These tests verify advance booking restrictions and admin bypass functionality
+  # ---------------------------------------------------------------------------
 
-    refute service.available?
-    assert_includes service.reasons, "Exceeds max advance booking (#{@schedule.max_advance_booking_in_days} days)"
+  # Test: Admin bypass should allow booking beyond advance booking limit
+  test "should be available when exceeds max advance booking with admin bypass enabled" do
+    # Create a time that's beyond the allowed advance booking period
+    # Use a Monday to match the test setup availability
+    future_time = (@schedule.max_advance_booking_in_days + 1).days.from_now
+    # Adjust to Monday if needed to match test setup
+    while future_time.strftime("%A") != "Monday"
+      future_time += 1.day
+    end
+    future_time = future_time.change(hour: 10, min: 0)
+
+    # Temporarily enable bypass for this test using send
+    AdminPortal::Therapists::AvailabilityService.send(:remove_const, :BYPASS_ADVANCE_BOOKING_FOR_ADMIN) if AdminPortal::Therapists::AvailabilityService.const_defined?(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN)
+    AdminPortal::Therapists::AvailabilityService.const_set(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN, true)
+
+    begin
+      service = AdminPortal::Therapists::AvailabilityService.new(
+        therapist: @therapist,
+        appointment_date_time_server_time: future_time
+      )
+
+      assert service.available?
+      assert_empty service.reasons
+    ensure
+      # Restore original constant
+      AdminPortal::Therapists::AvailabilityService.send(:remove_const, :BYPASS_ADVANCE_BOOKING_FOR_ADMIN)
+      AdminPortal::Therapists::AvailabilityService.const_set(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN, true)
+    end
+  end
+
+  # Test: Standard behavior when bypass is disabled
+  test "should not be available when exceeds max advance booking with admin bypass disabled" do
+    # Create a time that's beyond the allowed advance booking period
+    # Use a Monday to match the test setup availability
+    future_time = (@schedule.max_advance_booking_in_days + 1).days.from_now
+    # Adjust to Monday if needed to match test setup
+    while future_time.strftime("%A") != "Monday"
+      future_time += 1.day
+    end
+    future_time = future_time.change(hour: 10, min: 0)
+
+    # Temporarily disable bypass for this test using send
+    AdminPortal::Therapists::AvailabilityService.send(:remove_const, :BYPASS_ADVANCE_BOOKING_FOR_ADMIN) if AdminPortal::Therapists::AvailabilityService.const_defined?(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN)
+    AdminPortal::Therapists::AvailabilityService.const_set(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN, false)
+
+    begin
+      service = AdminPortal::Therapists::AvailabilityService.new(
+        therapist: @therapist,
+        appointment_date_time_server_time: future_time
+      )
+
+      refute service.available?
+      assert_includes service.reasons, "Exceeds max advance booking (#{@schedule.max_advance_booking_in_days} days)"
+    ensure
+      # Restore original constant
+      AdminPortal::Therapists::AvailabilityService.send(:remove_const, :BYPASS_ADVANCE_BOOKING_FOR_ADMIN)
+      AdminPortal::Therapists::AvailabilityService.const_set(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN, true)
+    end
+  end
+
+  # Business rule: Cannot book too far in advance (prevents overbooking) - DEPRECATED
+  # This test is kept for historical reference but advance booking is now bypassed by default for admin usage
+  test "should not be available when exceeds max advance booking - legacy test" do
+    # Create a time that's beyond the allowed advance booking period
+    # Use a Monday to match the test setup availability
+    future_time = (@schedule.max_advance_booking_in_days + 1).days.from_now
+    # Adjust to Monday if needed to match test setup
+    while future_time.strftime("%A") != "Monday"
+      future_time += 1.day
+    end
+    future_time = future_time.change(hour: 10, min: 0)
+
+    # Temporarily disable bypass to test original behavior using send
+    AdminPortal::Therapists::AvailabilityService.send(:remove_const, :BYPASS_ADVANCE_BOOKING_FOR_ADMIN) if AdminPortal::Therapists::AvailabilityService.const_defined?(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN)
+    AdminPortal::Therapists::AvailabilityService.const_set(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN, false)
+
+    begin
+      service = AdminPortal::Therapists::AvailabilityService.new(
+        therapist: @therapist,
+        appointment_date_time_server_time: future_time
+      )
+
+      refute service.available?
+      assert_includes service.reasons, "Exceeds max advance booking (#{@schedule.max_advance_booking_in_days} days)"
+    ensure
+      # Restore original constant
+      AdminPortal::Therapists::AvailabilityService.send(:remove_const, :BYPASS_ADVANCE_BOOKING_FOR_ADMIN)
+      AdminPortal::Therapists::AvailabilityService.const_set(:BYPASS_ADVANCE_BOOKING_FOR_ADMIN, true)
+    end
   end
 
   # ---------------------------------------------------------------------------
