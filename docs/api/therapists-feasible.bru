@@ -1,0 +1,101 @@
+meta {
+  name: "Get Feasible Therapists"
+  type: http
+  seq: 1
+}
+
+get {
+  url: "http://localhost:3000/api/v1/therapists/feasible"
+  body: none
+  headers: {
+    Content-Type: "application/json",
+    Accept: "application/json"
+  }
+  params: query(
+    // Add your query parameters here
+    // Example:
+    location_id: "1",
+    service_id: "1",
+    date: "2024-01-15",
+    time: "14:30",
+    employment_type: "ALL",
+    bypass_constraints: false,
+    batch_size: 100
+  )
+}
+
+tests {
+  test("Should return 200 OK", function() {
+    expect(response.status).to.equal(200);
+  });
+
+  test("Should return JSON response", function() {
+    expect(response.headers.contentType).to.include("application/json");
+  });
+
+  test("Should return therapists array", function() {
+    const data = response.body;
+    expect(data).to.be.an('array');
+  });
+}
+
+docs {
+  description: "Get list of feasible therapists for appointment booking"
+  
+  parameters {
+    // Query parameters (add as needed based on your service requirements)
+    location_id: "Location ID for filtering therapists (required)"
+    service_id: "Service ID for filtering by specialization (required)"
+    date: "Date for availability checking (YYYY-MM-DD format)"
+    time: "Preferred time slot (24-hour HH:MM format, e.g., 14:30)"
+    employment_type: "Employment type filter (FULL_TIME, PART_TIME, FREELANCE, ALL - default: ALL)"
+    bypass_constraints: "Bypass therapist constraints (true/false - default: false)"
+    batch_size: "Number of therapists per batch (default: 100)"
+  }
+  
+  responses {
+    200: {
+      description: "Successfully retrieved feasible therapists"
+      example: [
+        {
+          id: 1,
+          name: "John Doe",
+          email: "john@example.com",
+          phone_number: "+628123456789",
+          service: {
+            id: 1,
+            name: "Physical Therapy",
+            code: "PT"
+          },
+          address: {
+            city: "Jakarta",
+            state: "DKI Jakarta",
+            country: "Indonesia"
+          },
+          availability: true
+        }
+      ]
+    }
+    
+    406: {
+      description: "Request format not acceptable"
+      example: {
+        error: "API only accepts JSON requests"
+      }
+    }
+    
+    500: {
+      description: "Internal server error"
+      example: {
+        error: "Internal server error occurred"
+      }
+    }
+  }
+  
+  notes: [
+    "This endpoint is public and does not require authentication",
+    "Only accepts JSON requests",
+    "Returns therapists based on the parameters provided to AdminPortal::PreparationNewAppointmentService",
+    "Add query parameters as needed based on your service requirements"
+  ]
+}

@@ -1,0 +1,140 @@
+meta {
+  name: "Get Locations"
+  type: http
+  seq: 1
+}
+
+get {
+  url: "{{baseUrl}}/api/v1/locations"
+  body: none
+  headers: {
+    Content-Type: "application/json",
+    Accept: "application/json"
+  }
+  params: query(
+    // Filter parameters
+    country: "Indonesia",
+    state: "DKI Jakarta",
+    city: "Jakarta",
+    
+    // Pagination parameters
+    page: "1",
+    limit: "10",
+    
+    // Optional features
+    include_indonesian_areas: "true"
+  )
+}
+
+tests {
+  test("Should return 200 OK", function() {
+    expect(response.status).to.equal(200);
+  });
+
+  test("Should return JSON response", function() {
+    expect(response.headers.contentType).to.include("application/json");
+  });
+
+  test("Should return locations data", function() {
+    const data = response.body;
+    expect(data).to.have.property('data');
+    expect(data.data).to.be.an('array');
+  });
+
+  test("Should include pagination if provided", function() {
+    const data = response.body;
+    if (data.meta) {
+      expect(data).to.have.property('meta');
+      expect(data.meta).to.have.property('count');
+      expect(data.meta).to.have.property('pages');
+    }
+  });
+
+  
+  test("Should include Indonesian areas if requested", function() {
+    const data = response.body;
+    if (data.indonesianAreas) {
+      expect(data).to.have.property('indonesianAreas');
+      expect(data.indonesianAreas).to.have.property('provinces');
+      expect(data.indonesianAreas).to.have.property('cities');
+    }
+  });
+}
+
+docs {
+  description: "Get list of locations with optional filtering, pagination, and additional features"
+  
+  parameters {
+    country: "Filter by country name (case-insensitive)"
+    state: "Filter by state/province name (case-insensitive)"
+    city: "Filter by city name (case-insensitive)"
+    page: "Page number for pagination (default: 1)"
+    limit: "Number of items per page (default: 10)"
+    include_indonesian_areas: "Include Indonesian provinces and cities data (true/false)"
+  }
+  
+  responses {
+    200: {
+      description: "Successfully retrieved locations"
+      example: {
+        data: [
+          {
+            id: 1,
+            country: "Indonesia",
+            state: "DKI Jakarta",
+            city: "Jakarta",
+            postalCode: "12345",
+            latitude: -6.2088,
+            longitude: 106.8456,
+            active: true,
+            createdAt: "2024-01-01T00:00:00Z",
+            updatedAt: "2024-01-01T00:00:00Z"
+          }
+        ],
+        meta: {
+          count: 1,
+          pages: 1,
+          page: 1,
+          limit: 10
+        },
+        indonesianAreas: {
+          provinces: [
+            {
+              id: 11,
+              name: "DKI Jakarta"
+            }
+          ],
+          cities: [
+            {
+              id: 1101,
+              name: "Jakarta Pusat",
+              provinceId: 11
+            }
+          ]
+        }
+      }
+    }
+    
+    406: {
+      description: "Request format not acceptable"
+      example: {
+        error: "API only accepts JSON requests"
+      }
+    }
+    
+    500: {
+      description: "Internal server error"
+      example: {
+        error: "Internal server error occurred"
+      }
+    }
+  }
+  
+  notes: [
+    "This endpoint is public and does not require authentication",
+    "Only accepts JSON requests",
+    "Supports multiple filtering options for country, state, and city",
+    "Pagination is optional - returns all locations if no pagination params provided",
+    "Set include_indonesian_areas=true to get provinces and cities reference data"
+  ]
+}

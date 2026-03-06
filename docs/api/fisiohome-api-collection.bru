@@ -1,0 +1,37 @@
+meta {
+  name: "Fisiohome API Collection"
+  type: collection
+  seq: 1
+}
+
+docs {
+  description: "Complete API collection for Fisiohome application"
+  
+  overview: [
+    "This collection contains all API endpoints for the Fisiohome healthcare platform.",
+    "Endpoints are organized by functionality: therapists, appointments, admin operations, etc.",
+    "Most endpoints require authentication unless explicitly marked as public."
+  ]
+  
+  authentication: [
+    "Most endpoints use Devise token authentication",
+    "Include authentication token in headers: Authorization: Bearer <token>",
+    "Public endpoints: /api/v1/therapists/feasible"
+  ]
+  
+  base_url: {
+    development: "http://localhost:3000",
+    staging: "https://admin-staging.fisiohome.id",
+    production: "https://admin.fisiohome.id"
+  }
+}
+
+# Include therapist endpoints
+!include therapists-feasible.bru
+
+# You can add more endpoint files here:
+# !include appointments.bru
+# !include patients.bru
+# !include admins.bru
+# !include locations.bru
+# !include services.bru

@@ -1,0 +1,130 @@
+meta {
+  name: "Get Services"
+  type: http
+  seq: 1
+}
+
+get {
+  url: "{{baseUrl}}/api/v1/services"
+  body: none
+  headers: {
+    Content-Type: "application/json",
+    Accept: "application/json"
+  }
+  params: query(
+    // Optional filters
+    status: "active",
+    query: "Physical",
+    location_id: "1",
+    location_city: "Jakarta",
+    page: "1",
+    per_page: "10",
+    include_locations: "true",
+    include_packages: "true",
+    include_total_package_prices: "true"
+  )
+}
+
+tests {
+  test("Should return 200 OK", function() {
+    expect(response.status).to.equal(200);
+  });
+
+  test("Should return JSON response", function() {
+    expect(response.headers.contentType).to.include("application/json");
+  });
+
+  test("Should return services data", function() {
+    const data = response.body;
+    expect(data).to.have.property('data');
+    expect(data.data).to.be.an('array');
+  });
+
+  test("Should include pagination if provided", function() {
+    const data = response.body;
+    if (data.meta) {
+      expect(data).to.have.property('meta');
+      expect(data.meta).to.have.property('count');
+      expect(data.meta).to.have.property('pages');
+    }
+  });
+}
+
+docs {
+  description: "Get list of services with optional filtering and pagination"
+  
+  parameters {
+    status: "Filter by status (active/inactive)"
+    query: "Search query on service name (case-insensitive)"
+    location_id: "Filter by associated location ID"
+    location_city: "Filter by associated location city (case-insensitive)"
+    page: "Page number for pagination"
+    per_page: "Number of items per page (default: 10)"
+    include_locations: "Include location details (true/false)"
+    include_packages: "Include package details (true/false)"
+    include_total_package_prices: "Include total package prices (true/false)"
+  }
+  
+  responses {
+    200: {
+      description: "Successfully retrieved services"
+      example: {
+        data: [
+          {
+            id: 1,
+            code: "PT",
+            name: "Physical Therapy",
+            description: "Physical therapy services",
+            active: true,
+            locations: [
+              {
+                id: 1,
+                country: "Indonesia",
+                countryCode: "ID",
+                state: "DKI Jakarta",
+                city: "Jakarta"
+              }
+            ],
+            packages: [
+              {
+                id: 1,
+                name: "Standard Package",
+                numberOfVisit: 5,
+                active: true
+              }
+            ],
+            totalPackagePrices: 2500000
+          }
+        ],
+        meta: {
+          count: 1,
+          pages: 1,
+          page: 1,
+          perPage: 10
+        }
+      }
+    }
+    
+    406: {
+      description: "Request format not acceptable"
+      example: {
+        error: "API only accepts JSON requests"
+      }
+    }
+    
+    500: {
+      description: "Internal server error"
+      example: {
+        error: "Internal server error occurred"
+      }
+    }
+  }
+  
+  notes: [
+    "This endpoint is public and does not require authentication",
+    "Only accepts JSON requests",
+    "Supports multiple filtering options",
+    "Pagination is optional - returns all services if no pagination params provided",
+    "Use include_* parameters to control response data size"
+  ]
+}

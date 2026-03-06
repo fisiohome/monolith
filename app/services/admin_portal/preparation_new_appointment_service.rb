@@ -61,7 +61,7 @@ module AdminPortal
       bypass_constraints = @params[:bypass_constraints] || false
 
       # using the batching
-      batch_size = @params[:batch_size] || AdminPortal::Therapists::QueryConfig::DEFAULT_BATCH_SIZE
+      batch_size = @params[:batch_size].to_i || AdminPortal::Therapists::QueryConfig::DEFAULT_BATCH_SIZE
       extend AdminPortal::Therapists::BatchQueryHelper
       filtered_therapists_in_batches(
         location: location,

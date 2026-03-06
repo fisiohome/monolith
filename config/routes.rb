@@ -155,6 +155,18 @@ Rails.application.routes.draw do
 
     unauthenticated do
       root to: "users/sessions#new"
+
+      namespace :api do
+        namespace :v1 do
+          resources :therapists, only: [] do
+            collection do
+              get "feasible", to: "therapists#feasible"
+            end
+          end
+          resources :services, only: [:index]
+          resources :locations, only: [:index]
+        end
+      end
     end
   end
 end

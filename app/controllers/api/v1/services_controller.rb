@@ -3,6 +3,13 @@ module Api
     class ServicesController < ApplicationController
       include ServicesHelper
 
+      # Skip authentication for API endpoints
+      skip_before_action :authenticate_user!, only: [:index]
+      skip_before_action :verify_authenticity_token, if: -> { request.format.json? }
+
+      # Only respond to JSON
+      before_action :ensure_json_request, only: [:index]
+
       # GET /api/v1/services
       def index
         # Start with all services
@@ -75,6 +82,12 @@ module Api
             include_packages:,
             include_total_package_prices:
           }))
+        end
+      end
+
+      def ensure_json_request
+        unless request.headers["Accept"]&.include?("application/json") || request.format.json?
+          render json: {error: "API only accepts JSON requests"}, status: :not_acceptable
         end
       end
     end
