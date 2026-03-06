@@ -127,6 +127,41 @@ def reorder_series_visits
 end
 ```
 
+### 4. Take-Out Visit Handling
+
+**Special Case**: When an appointment's schedule is removed (appointment_date_time set to nil), the system uses different logic to avoid unnecessary reordering:
+
+**Example Scenario**:
+```
+Before: Visit 2 (Mar 6), Visit 3 (Mar 9), Visit 4 (Mar 12), Visit 5 (unscheduled)
+Take out: Visit 3 (set appointment_date_time = nil)
+After:  Visit 2 (Mar 6), Visit 4 (Mar 12) becomes Visit 3, Visit 3 (unscheduled) becomes Visit 4, Visit 5 (unscheduled) becomes Visit 5
+```
+
+**Key Differences from Regular Rescheduling**:
+- **Regular reschedule**: Full chronological reordering of ALL visits
+- **Take-out**: Only scheduled visits are reordered, taken-out visit goes after them
+
+**Implementation Details**:
+```ruby
+def handle_visit_number_changes
+  # Detect take-out scenario (value to nil)
+  if original_datetime.present? && new_datetime.nil?
+    move_taken_visit_to_end
+  else
+    reorder_series_visit_numbers  # Regular rescheduling
+  end
+end
+
+def move_taken_visit_to_end
+  # Uses transaction with temporary numbers to avoid constraint violations
+  # 1. Move all visits to temporary negative numbers
+  # 2. Reorder scheduled visits chronologically (1, 2, 3...)
+  # 3. Place taken-out visit after scheduled visits
+  # 4. Shift unscheduled visits to make room
+end
+```
+
 ## Status Handling During Reschedule
 
 ### Paid Appointments
@@ -457,44 +492,26 @@ RSpec.describe Appointment, "#reschedule" do
   it "maintains status correctly" do
     # Test status preservation
   end
-end
-```
-
-### Integration Tests
-
-```ruby
-RSpec.describe "Appointment Rescheduling", type: :request do
-  it "successfully reschedules with valid data" do
-    patch "/admin-portal/appointments/#{appointment.id}/reschedule",
-      params: { appointment: reschedule_params }
+  
+  it "handles take-out scenario without reordering others" do
+    # Create 5-visit series
+    visits = create_visit_series(5)
     
-    expect(response).to be_successful
-    expect(appointment.reload.appointment_date_time).to eq(new_time)
+    # Take out Visit 3 (set appointment_date_time = nil)
+    visits[2].update!(appointment_date_time: nil)
+    
+    # Reload all visits
+    visits.each(&:reload)
+    
+    # Expect: Visit 3 moves to end, others keep numbers
+    expect(visits[0].visit_number).to eq(1) # unchanged
+    expect(visits[1].visit_number).to eq(2) # unchanged
+    expect(visits[3].visit_number).to eq(3) # was Visit 4
+    expect(visits[4].visit_number).to eq(4) # was Visit 5
+    expect(visits[2].visit_number).to eq(5) # was Visit 3, now at end
+    expect(visits[2].appointment_date_time).to be_nil
   end
 end
-```
-
-### Frontend Tests
-
-```typescript
-describe("AppointmentRescheduleForm", () => {
-  it("validates time conflicts", async () => {
-    // Mock API response
-    mockApi.validateReschedule.mockResolvedValue({
-      overlap: true,
-      conflictingAppointment: { ... }
-    });
-    
-    // Test error display
-    render(<RescheduleForm appointment={appointment} />);
-    
-    await act(async () => {
-      fireEvent.change(dateInput, { target: { value: "2024-03-03" } });
-    });
-    
-    expect(screen.getByText(/time conflicts/i)).toBeInTheDocument();
-  });
-});
 ```
 
 ## Best Practices

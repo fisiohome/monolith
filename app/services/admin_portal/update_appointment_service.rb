@@ -34,9 +34,9 @@ module AdminPortal
         # Step 2: Apply the updates
         apply_updates
 
-        # Step 3: Reorder visit numbers if datetime changed and update was successful
-        if @updated && @appointment_params[:appointment_date_time].present?
-          reorder_series_visit_numbers
+        # Step 3: Handle visit number changes based on appointment_date_time modification
+        if @updated
+          handle_visit_number_changes
         end
 
         {success: true, data: @appointment.reload, changed: @updated}
@@ -58,6 +58,14 @@ module AdminPortal
       # Skip visit sequence validation during reschedule since we handle reordering afterward
       @appointment.skip_visit_sequence_validation = true if @appointment_params[:appointment_date_time].present?
 
+      # Skip appointment_date_time presence validation when taking out (setting to nil)
+      @appointment.skip_status_validation = true if @appointment_params[:appointment_date_time].nil?
+
+      # For take-out scenarios, set status first to satisfy validations
+      if @appointment_params[:appointment_date_time].nil? && @original_status != "paid"
+        @appointment.assign_attributes(status: "unscheduled")
+      end
+
       # Appointment Date/Time
       date_time_param = @appointment_params[:appointment_date_time]
       attrs[:appointment_date_time] = date_time_param&.in_time_zone(Time.zone.name)
@@ -77,7 +85,7 @@ module AdminPortal
       # status should stay as-is once the appointment is paid
       attrs[:status] = determine_new_status unless @original_status == "paid"
 
-      # Assign everything (but don’t touch the DB yet)
+      # Assign everything (but don't touch the DB yet)
       @appointment.assign_attributes(attrs)
 
       # Only persist if something actually changed
@@ -165,6 +173,81 @@ module AdminPortal
       # Exclude current appointment and filter only scheduled visits
       all_visits.reject { |v| v.id == @appointment.id }
         .select { |v| v.appointment_date_time.present? }
+    end
+
+    # ========================================
+    # VISIT NUMBER CHANGE HANDLING
+    # ========================================
+    # Determines what type of visit number change is needed based on
+    # how appointment_date_time was modified.
+    #
+    # Cases:
+    # 1. appointment_date_time changed from one value to another → Reorder all visits chronologically
+    # 2. appointment_date_time changed from value to nil (take out) → Move taken visit to end
+    # 3. appointment_date_time changed from nil to value → Reorder all visits chronologically
+    def handle_visit_number_changes
+      original_datetime = @appointment.appointment_date_time_before_last_save
+      new_datetime = @appointment_params[:appointment_date_time]&.in_time_zone(Time.zone.name)
+
+      # Case 1 & 3: Regular rescheduling (value to value, or nil to value)
+      if new_datetime.present?
+        reorder_series_visit_numbers
+      # Case 2: Take out scenario (value to nil)
+      elsif original_datetime.present? && new_datetime.nil?
+        move_taken_visit_to_end
+      end
+    end
+
+    # ========================================
+    # MOVE TAKEN VISIT TO END
+    # ========================================
+    # Handles the "take out" scenario where an appointment's schedule is removed.
+    # This method reorders only the scheduled visits chronologically, then places
+    # the taken-out visit after them, shifting existing unscheduled visits if needed.
+    #
+    # Example:
+    #   Before: Visit 2 (Mar 6), Visit 3 (Mar 9), Visit 4 (Mar 12), Visit 5 (unscheduled)
+    #   After:  Visit 2 (Mar 6), Visit 4 (Mar 12) becomes Visit 3, Visit 3 (unscheduled) becomes Visit 4, Visit 5 (unscheduled) becomes Visit 5
+    def move_taken_visit_to_end
+      root = @appointment.reference_appointment || @appointment
+
+      # Get all visits in the series
+      all_visits = ([root] + root.series_appointments.to_a)
+
+      # Separate scheduled and unscheduled visits (excluding the current appointment)
+      scheduled_visits = all_visits
+        .reject { |v| v.id == @appointment.id }
+        .select { |v| v.appointment_date_time.present? }
+        .sort_by(&:appointment_date_time)
+
+      unscheduled_visits = all_visits
+        .reject { |v| v.id == @appointment.id }
+        .select { |v| v.appointment_date_time.blank? }
+        .sort_by(&:visit_number)
+
+      # Use transaction and temporary numbers to avoid constraint violations
+      ActiveRecord::Base.transaction do
+        # Step 1: Move all visits to temporary negative numbers to free up all positive numbers
+        all_temp_visits = scheduled_visits + unscheduled_visits + [@appointment]
+        all_temp_visits.each_with_index do |visit, index|
+          visit.update_column(:visit_number, -(index + 1))
+        end
+
+        # Step 2: Assign final numbers to scheduled visits (starting from 1)
+        scheduled_visits.each_with_index do |visit, index|
+          visit.update_column(:visit_number, index + 1)
+        end
+
+        # Step 3: Assign final number to taken-out visit (after scheduled visits)
+        taken_out_number = scheduled_visits.length + 1
+        @appointment.update_column(:visit_number, taken_out_number)
+
+        # Step 4: Assign final numbers to unscheduled visits (after taken-out visit)
+        unscheduled_visits.each_with_index do |visit, index|
+          final_number = taken_out_number + index + 1
+          visit.update_column(:visit_number, final_number)
+        end
+      end
     end
 
     # ========================================

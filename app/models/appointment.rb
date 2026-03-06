@@ -6,7 +6,7 @@ class Appointment < ApplicationRecord
   # * BYPASS FLAGS
   attr_accessor :skip_auto_series_creation # Add a flag to control auto series creation
   attr_accessor :skip_visit_sequence_validation # Add a flag to skip visit sequence validation during reschedule (UpdateAppointmentService)
-  attr_accessor :skip_status_validation # Add a flag to skip all status validations for admin internal updates (AppointmentStatusUpdaterService)
+  attr_accessor :skip_status_validation # Add a flag to skip all status validations for admin internal updates (AppointmentStatusUpdaterService, UpdateAppointmentService)
 
   def initialize(*)
     super
@@ -211,7 +211,7 @@ class Appointment < ApplicationRecord
   #   validate :validate_series_requirements
   # end
 
-  with_options unless: -> { unscheduled? || status_on_hold? || status_cancelled? } do
+  with_options unless: -> { unscheduled? || status_on_hold? || status_cancelled? || skip_status_validation? } do
     validates :appointment_date_time, presence: true
   end
 

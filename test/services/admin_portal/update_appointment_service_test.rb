@@ -400,6 +400,149 @@ class AdminPortal::UpdateAppointmentServiceTest < ActiveSupport::TestCase
   end
 
   # ---------------------------------------------------------------------------
+  # Take-Out Visit Handling Tests
+  # ---------------------------------------------------------------------------
+
+  test "should move taken-out visit to end without reordering others" do
+    # Setup: Create a complete 5-visit series with all scheduled
+    @visit_3.update_column(:appointment_date_time, 7.days.from_now.change(hour: 10, min: 0))
+    @visit_4.update_column(:appointment_date_time, 9.days.from_now.change(hour: 10, min: 0))
+    @visit_5.update_column(:appointment_date_time, 11.days.from_now.change(hour: 10, min: 0))
+
+    # Verify initial state
+    assert_equal 1, @initial_appointment.visit_number
+    assert_equal 2, @visit_2.visit_number
+    assert_equal 3, @visit_3.visit_number
+    assert_equal 4, @visit_4.visit_number
+    assert_equal 5, @visit_5.visit_number
+
+    # Take out Visit 3 (set appointment_date_time = nil)
+    params = build_params(appointment_date_time: nil)
+    result = AdminPortal::UpdateAppointmentService.new(@visit_3, params, @current_user).call
+
+    assert result[:success], "Expected success but got: #{result[:error].inspect}"
+
+    # Reload all visits to get updated state
+    @initial_appointment.reload
+    @visit_2.reload
+    @visit_3.reload
+    @visit_4.reload
+    @visit_5.reload
+
+    # Expected: Scheduled visits are reordered, taken-out visit goes after them
+    assert_equal 1, @initial_appointment.visit_number, "Visit 1 should remain unchanged"
+    assert_equal 2, @visit_2.visit_number, "Visit 2 should remain unchanged"
+    assert_equal 3, @visit_4.visit_number, "Visit 4 should become Visit 3 (reordered)"
+    assert_equal 4, @visit_5.visit_number, "Visit 5 should become Visit 4 (reordered)"
+    assert_equal 5, @visit_3.visit_number, "Taken-out Visit 3 should become Visit 5 (after scheduled visits)"
+    assert_nil @visit_3.appointment_date_time, "Visit 3 should have no appointment date"
+  end
+
+  test "should handle take-out scenario with mixed scheduled and unscheduled visits" do
+    # Setup: Mixed state - some scheduled, some unscheduled
+    @visit_3.update_column(:appointment_date_time, 7.days.from_now.change(hour: 10, min: 0))
+    # @visit_4 and @visit_5 remain unscheduled from setup
+
+    # Take out Visit 3 (scheduled to unscheduled)
+    params = build_params(appointment_date_time: nil)
+    result = AdminPortal::UpdateAppointmentService.new(@visit_3, params, @current_user).call
+
+    assert result[:success], "Expected success but got: #{result[:error].inspect}"
+
+    # Reload all visits
+    @initial_appointment.reload
+    @visit_2.reload
+    @visit_3.reload
+    @visit_4.reload
+    @visit_5.reload
+
+    # Expected: Visit 3 goes after scheduled visits, unscheduled visits shift down
+    assert_equal 1, @initial_appointment.visit_number, "Visit 1 should remain unchanged"
+    assert_equal 2, @visit_2.visit_number, "Visit 2 should remain unchanged"
+    assert_equal 3, @visit_3.visit_number, "Taken-out visit should be at position 3 (after scheduled visits)"
+    assert_equal 4, @visit_4.visit_number, "Unscheduled Visit 4 should shift to position 4"
+    assert_equal 5, @visit_5.visit_number, "Unscheduled Visit 5 should shift to position 5"
+    assert_nil @visit_3.appointment_date_time, "Visit 3 should be unscheduled"
+  end
+
+  test "should not trigger take-out logic when appointment_date_time changes from nil to value" do
+    # Start with unscheduled visit
+    unscheduled_visit = @visit_4
+    assert_nil unscheduled_visit.appointment_date_time
+
+    # Schedule the visit (nil to value)
+    new_datetime = 10.days.from_now.change(hour: 10, min: 0)
+    params = build_params(appointment_date_time: new_datetime, therapist_id: @therapist.id)
+    result = AdminPortal::UpdateAppointmentService.new(unscheduled_visit, params, @current_user).call
+
+    assert result[:success], "Expected success but got: #{result[:error].inspect}"
+
+    # This should trigger regular reordering, not take-out logic
+    unscheduled_visit.reload
+    assert_equal new_datetime.to_i, unscheduled_visit.appointment_date_time.to_i
+    assert_equal @therapist.id, unscheduled_visit.therapist_id
+  end
+
+  test "should not trigger take-out logic when appointment_date_time changes from value to another value" do
+    # Start with scheduled visit
+    scheduled_visit = @visit_2
+    original_datetime = scheduled_visit.appointment_date_time
+
+    # Change to different time (value to value) - use a time that doesn't collide
+    new_datetime = original_datetime + 4.days  # Use 4 days to avoid collision with visit 3
+    params = build_params(appointment_date_time: new_datetime)
+    result = AdminPortal::UpdateAppointmentService.new(scheduled_visit, params, @current_user).call
+
+    assert result[:success], "Expected success but got: #{result[:error].inspect}"
+
+    # This should trigger regular reordering, not take-out logic
+    scheduled_visit.reload
+    assert_equal new_datetime.to_i, scheduled_visit.appointment_date_time.to_i
+  end
+
+  test "should handle multiple take-outs in sequence" do
+    # Setup: All visits scheduled
+    @visit_3.update_column(:appointment_date_time, 7.days.from_now.change(hour: 10, min: 0))
+    @visit_4.update_column(:appointment_date_time, 9.days.from_now.change(hour: 10, min: 0))
+    @visit_5.update_column(:appointment_date_time, 11.days.from_now.change(hour: 10, min: 0))
+
+    # Take out Visit 3 first
+    params = build_params(appointment_date_time: nil)
+    result = AdminPortal::UpdateAppointmentService.new(@visit_3, params, @current_user).call
+    assert result[:success]
+
+    # Then take out Visit 5 (which is now Visit 4 after first take-out)
+    @visit_5.reload
+    result = AdminPortal::UpdateAppointmentService.new(@visit_5, params, @current_user).call
+    assert result[:success]
+
+    # Verify final state
+    @initial_appointment.reload
+    @visit_2.reload
+    @visit_3.reload
+    @visit_4.reload
+    @visit_5.reload
+
+    # Expected: Visit 2 and Visit 4 remain scheduled, taken-out visits at the end
+    assert_equal 1, @initial_appointment.visit_number
+    assert_equal 2, @visit_2.visit_number
+    assert_equal 3, @visit_4.visit_number  # Visit 4 becomes Visit 3
+    assert_equal 5, @visit_3.visit_number  # First taken-out visit
+    assert_equal 4, @visit_5.visit_number  # Second taken-out visit
+  end
+
+  test "should preserve collision checking for take-out scenarios" do
+    # Take out should still check collisions if a new time is being set
+    # But setting to nil should not check collisions
+    params = build_params(appointment_date_time: nil)
+    result = AdminPortal::UpdateAppointmentService.new(@visit_3, params, @current_user).call
+
+    # Should succeed even with potential collisions since we're removing the schedule
+    assert result[:success], "Take-out should succeed regardless of collisions"
+    assert_nil @visit_3.reload.appointment_date_time
+  end
+
+  # ---------------------------------------------------------------------------
   # Slot Duration Calculation Tests
   # ---------------------------------------------------------------------------
 
