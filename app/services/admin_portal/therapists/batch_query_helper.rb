@@ -85,6 +85,10 @@ module AdminPortal
         total_count = base_scope.count
         results = []
 
+        # Log initial batch processing info
+        Rails.logger.info "[BatchQueryHelper] Starting batch processing - total_count: #{total_count}, batch_size: #{batch_size}"
+        Rails.logger.info "[BatchQueryHelper] Location: #{location.city}, Service: #{service.name}"
+
         # Process in batches to reduce memory usage
         batch_offset = 0
 
@@ -132,6 +136,10 @@ module AdminPortal
 
           batch_offset += batch_size
         end
+
+        # Log final results
+        Rails.logger.info "[BatchQueryHelper] Completed batch processing - final results count: #{results.length}"
+        Rails.logger.info "[BatchQueryHelper] Processed #{total_count} total therapists in #{(batch_offset.to_f / batch_size).ceil} batches"
 
         results
       end

@@ -23,7 +23,16 @@ module AdminPortal
       bypass_constraints = @params[:bypass_constraints] || false
 
       # using the batching
-      batch_size = @params[:batch_size].to_i || AdminPortal::Therapists::QueryConfig::DEFAULT_BATCH_SIZE
+      batch_size_param = @params[:batch_size]
+      batch_size = if batch_size_param.present?
+        batch_size_param.to_i
+      else
+        AdminPortal::Therapists::QueryConfig::DEFAULT_BATCH_SIZE
+      end
+      # Log batch_size parameter for debugging
+      Rails.logger.info "[TherapistSearch-Reschedule] batch_size_param: #{batch_size_param.inspect}, final batch_size: #{batch_size}"
+      Rails.logger.info "[TherapistSearch-Reschedule] appointment_id: #{@appointment.id}, location_id: #{@appointment.location&.id}, service_id: #{@appointment.service&.id}"
+      Rails.logger.info "[TherapistSearch-Reschedule] employment_type: #{employment_type}, bypass_constraints: #{bypass_constraints}"
       extend AdminPortal::Therapists::BatchQueryHelper
       filtered_therapists_in_batches(
         location: location,
