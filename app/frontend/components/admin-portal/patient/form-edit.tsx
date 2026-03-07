@@ -9,6 +9,7 @@ import {
 	EllipsisVerticalIcon,
 	IdCard,
 	LoaderIcon,
+	MapPin,
 	PencilIcon,
 	PlusIcon,
 	SquarePen,
@@ -1056,6 +1057,43 @@ const AddressSection = memo(function Component({
 		}
 	}, [selectedAddress, addressForm]);
 
+	// Add marker to map when coordinates are available
+	useEffect(() => {
+		if (coordinate && hereMapRef.current?.marker?.onAdd) {
+			const [lat, lng] = coordinate.split(",").map((s) => parseFloat(s.trim()));
+			if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+				// Get current form values to avoid stale closures
+				const currentAddress = addressForm.getValues("address");
+				const currentLocationId = addressForm.getValues("locationId");
+
+				const location = flattenedLocations.find(
+					(loc) => loc.id === currentLocationId,
+				);
+				const fullAddress = location
+					? `${currentAddress}, ${location.city}, ${location.state}, ${location.country}`
+					: currentAddress;
+
+				// Add marker at the coordinate position
+				hereMapRef.current.marker.onAdd(
+					[
+						{
+							position: { lat, lng },
+							address: fullAddress,
+						},
+					],
+					{ changeMapView: true },
+				);
+
+				// Cleanup function to remove marker when coordinates change
+				return () => {
+					if (hereMapRef.current?.marker?.onRemove) {
+						hereMapRef.current.marker.onRemove();
+					}
+				};
+			}
+		}
+	}, [coordinate, addressForm, flattenedLocations]);
+
 	// ===== API HANDLERS =====
 	const handleSetActiveAddress = async (patientAddress: any) => {
 		if (!patientAddress) return;
@@ -1226,6 +1264,20 @@ const AddressSection = memo(function Component({
 			}
 		}
 	}, [addressForm]);
+
+	// Handle view on Google Maps for patient address
+	const handleViewAddressOnGoogleMaps = useCallback((patientAddress: any) => {
+		if (
+			patientAddress?.address?.latitude !== null &&
+			patientAddress?.address?.longitude !== null
+		) {
+			const { latitude, longitude } = patientAddress.address;
+			window.open(
+				`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
+				"_blank",
+			);
+		}
+	}, []);
 
 	// ===== DELETE ADDRESS HANDLER =====
 	const handleDeleteAddress = async (patientAddress: any) => {
@@ -1509,10 +1561,24 @@ const AddressSection = memo(function Component({
 												setIsEditDrawerOpen(true);
 											}}
 										>
-											<PencilIcon className="mr-2 h-4 w-4" />
+											<PencilIcon className="h-4 w-4" />
 											Edit
 										</DropdownMenuItem>
-										{!patientAddress.active && (
+										<DropdownMenuItem
+											onSelect={(e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												handleViewAddressOnGoogleMaps(patientAddress);
+											}}
+											disabled={
+												patientAddress?.address?.latitude === null ||
+												patientAddress?.address?.longitude === null
+											}
+										>
+											<MapPin className="h-4 w-4" />
+											View on Google Maps
+										</DropdownMenuItem>
+										{!patientAddress.active ? (
 											<DropdownMenuItem
 												onSelect={(e) => {
 													e.preventDefault();
@@ -1520,8 +1586,16 @@ const AddressSection = memo(function Component({
 													handleSetActiveAddress(patientAddress);
 												}}
 											>
-												<CheckIcon className="mr-2 h-4 w-4" />
+												<CheckIcon className="h-4 w-4" />
 												Set as Active
+											</DropdownMenuItem>
+										) : (
+											<DropdownMenuItem
+												disabled
+												className="opacity-50 cursor-not-allowed"
+											>
+												<CheckIcon className="h-4 w-4" />
+												Is Active
 											</DropdownMenuItem>
 										)}
 										{!patientAddress.active && (
@@ -1533,17 +1607,8 @@ const AddressSection = memo(function Component({
 												}}
 												className="text-destructive focus:text-destructive"
 											>
-												<Trash2 className="mr-2 h-4 w-4" />
+												<Trash2 className="h-4 w-4" />
 												Delete
-											</DropdownMenuItem>
-										)}
-										{patientAddress.active && (
-											<DropdownMenuItem
-												disabled
-												className="opacity-50 cursor-not-allowed"
-											>
-												<CheckIcon className="mr-2 h-4 w-4" />
-												Is Active
 											</DropdownMenuItem>
 										)}
 									</DropdownMenuContent>
