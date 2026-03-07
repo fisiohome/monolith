@@ -305,63 +305,51 @@ export default function Index({
 						);
 					},
 				},
+				{
+					accessorKey: "actions",
+					enableSorting: false,
+					enableHiding: false,
+					header: "",
+					cell: ({ row }) => {
+						return (
+							<div className="flex items-center justify-end">
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button variant="ghost" size="icon">
+											<Ellipsis />
+										</Button>
+									</DropdownMenuTrigger>
+
+									<DropdownMenuContent align="end">
+										<DropdownMenuLabel>{t("list.actions")}</DropdownMenuLabel>
+										<DropdownMenuSeparator />
+
+										<DropdownMenuGroup>
+											<DropdownMenuItem
+												onSelect={() => routeTo.detail(row.original.id)}
+											>
+												<Info />
+												{t("button.detail")}
+											</DropdownMenuItem>
+
+											<DropdownMenuItem
+												onSelect={() => routeTo.edit(row.original.id)}
+											>
+												<SquarePen />
+												{t("button.edit")}
+											</DropdownMenuItem>
+										</DropdownMenuGroup>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							</div>
+						);
+					},
+				},
 			);
 		}
 
-		if (
-			globalProps?.auth?.currentUser?.["isSuperAdmin?"] ||
-			globalProps?.auth?.currentUser?.["isAdminSupervisor?"]
-		) {
-			items.push({
-				accessorKey: "actions",
-				enableSorting: false,
-				enableHiding: false,
-				header: "",
-				cell: ({ row }) => {
-					return (
-						<div className="flex items-center justify-end">
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button variant="ghost" size="icon">
-										<Ellipsis />
-									</Button>
-								</DropdownMenuTrigger>
-
-								<DropdownMenuContent align="end">
-									<DropdownMenuLabel>{t("list.actions")}</DropdownMenuLabel>
-									<DropdownMenuSeparator />
-
-									<DropdownMenuGroup>
-										<DropdownMenuItem
-											onSelect={() => routeTo.detail(row.original.id)}
-										>
-											<Info />
-											{t("button.detail")}
-										</DropdownMenuItem>
-
-										<DropdownMenuItem
-											onSelect={() => routeTo.edit(row.original.id)}
-										>
-											<SquarePen />
-											{t("button.edit")}
-										</DropdownMenuItem>
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
-					);
-				},
-			});
-		}
-
 		return items;
-	}, [
-		isMobile,
-		t,
-		routeTo.detail,
-		routeTo.edit,
-		globalProps?.auth?.currentUser,
-	]);
+	}, [isMobile, t, routeTo.detail, routeTo.edit]);
 
 	return (
 		<>
