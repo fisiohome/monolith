@@ -1,5 +1,7 @@
 module AdminPortal
   class UpdateAppointmentService
+    include SeriesLocking
+    include UniqueConstraintRetry
     # Default slot duration constants (in minutes)
     # Total slot = appointment_duration + buffer_time
     DEFAULT_APPOINTMENT_DURATION = 90
@@ -36,7 +38,11 @@ module AdminPortal
 
         # Step 3: Handle visit number changes based on appointment_date_time modification
         if @updated
-          handle_visit_number_changes
+          with_series_lock_retry(@appointment) do
+            with_visit_number_retry(@appointment) do
+              handle_visit_number_changes
+            end
+          end
         end
 
         {success: true, data: @appointment.reload, changed: @updated}
@@ -47,7 +53,16 @@ module AdminPortal
       {success: false, error: e.record.errors, type: "RecordInvalid"}
     rescue => e
       Rails.logger.error("UpdateAppointmentService failed: #{e.class} - #{e.message}")
-      {success: false, error: e.message, type: "GeneralError"}
+
+      # Handle specific retry-related errors
+      case e
+      when SeriesLocking::SeriesLockTimeoutError
+        {success: false, error: "System is busy updating appointments. Please try again in a moment.", type: "LockTimeout"}
+      when UniqueConstraintRetry::VisitNumberAssignmentError
+        {success: false, error: "Conflict detected while updating appointment. Please try again.", type: "VisitNumberConflict"}
+      else
+        {success: false, error: e.message, type: "GeneralError"}
+      end
     end
 
     private
@@ -226,26 +241,29 @@ module AdminPortal
         .sort_by(&:visit_number)
 
       # Use transaction and temporary numbers to avoid constraint violations
-      ActiveRecord::Base.transaction do
-        # Step 1: Move all visits to temporary negative numbers to free up all positive numbers
-        all_temp_visits = scheduled_visits + unscheduled_visits + [@appointment]
-        all_temp_visits.each_with_index do |visit, index|
-          visit.update_column(:visit_number, -(index + 1))
-        end
+      # Enhanced with unique constraint retry mechanism
+      with_visit_number_retry(@appointment) do
+        ActiveRecord::Base.transaction do
+          # Step 1: Move all visits to temporary negative numbers to free up all positive numbers
+          all_temp_visits = scheduled_visits + unscheduled_visits + [@appointment]
+          all_temp_visits.each_with_index do |visit, index|
+            visit.update_column(:visit_number, -(index + 1))
+          end
 
-        # Step 2: Assign final numbers to scheduled visits (starting from 1)
-        scheduled_visits.each_with_index do |visit, index|
-          visit.update_column(:visit_number, index + 1)
-        end
+          # Step 2: Assign final numbers to scheduled visits (starting from 1)
+          scheduled_visits.each_with_index do |visit, index|
+            visit.update_column(:visit_number, index + 1)
+          end
 
-        # Step 3: Assign final number to taken-out visit (after scheduled visits)
-        taken_out_number = scheduled_visits.length + 1
-        @appointment.update_column(:visit_number, taken_out_number)
+          # Step 3: Assign final number to taken-out visit (after scheduled visits)
+          taken_out_number = scheduled_visits.length + 1
+          @appointment.update_column(:visit_number, taken_out_number)
 
-        # Step 4: Assign final numbers to unscheduled visits (after taken-out visit)
-        unscheduled_visits.each_with_index do |visit, index|
-          final_number = taken_out_number + index + 1
-          visit.update_column(:visit_number, final_number)
+          # Step 4: Assign final numbers to unscheduled visits (after taken-out visit)
+          unscheduled_visits.each_with_index do |visit, index|
+            final_number = taken_out_number + index + 1
+            visit.update_column(:visit_number, final_number)
+          end
         end
       end
     end
@@ -281,26 +299,29 @@ module AdminPortal
 
       # First pass: Set temporary negative visit_numbers to avoid unique constraint violations
       # Use a large negative number to ensure no conflicts with existing data
-      all_visits_to_reorder = all_visits_chronological + unscheduled_visits
-      all_visits_to_reorder.each_with_index do |visit, index|
-        # Use very negative numbers to avoid any potential conflicts
-        temp_number = -(10000 + index + 1)
-        visit.update_column(:visit_number, temp_number)
-      end
+      # Enhanced with unique constraint retry mechanism
+      with_visit_number_retry(@appointment) do
+        all_visits_to_reorder = all_visits_chronological + unscheduled_visits
+        all_visits_to_reorder.each_with_index do |visit, index|
+          # Use very negative numbers to avoid any potential conflicts
+          temp_number = -(10000 + index + 1)
+          visit.update_column(:visit_number, temp_number)
+        end
 
-      # Second pass: Assign final visit_numbers based on chronological position
-      # True Chronological Order - ALL visits get sequential numbers based on date
-      current_number = 0
-      all_visits_chronological.each do |visit|
-        current_number += 1
-        visit.update_column(:visit_number, current_number)
-      end
+        # Second pass: Assign final visit_numbers based on chronological position
+        # True Chronological Order - ALL visits get sequential numbers based on date
+        current_number = 0
+        all_visits_chronological.each do |visit|
+          current_number += 1
+          visit.update_column(:visit_number, current_number)
+        end
 
-      # Assign remaining numbers to unscheduled visits
-      next_number = current_number + 1
-      unscheduled_visits.each do |visit|
-        visit.update_column(:visit_number, next_number)
-        next_number += 1
+        # Assign remaining numbers to unscheduled visits
+        next_number = current_number + 1
+        unscheduled_visits.each do |visit|
+          visit.update_column(:visit_number, next_number)
+          next_number += 1
+        end
       end
     end
 
