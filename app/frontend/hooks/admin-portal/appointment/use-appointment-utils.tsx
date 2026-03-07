@@ -775,6 +775,8 @@ export const useTherapistAvailability = ({
 	patientValues,
 	fetchURL,
 	formType = "create",
+	fetchMode = "inertia",
+	isolineStorageKey = SESSION_ISOLINE_KEY,
 	onChangeTherapistLoading,
 	onResetTherapistFormValue,
 }: {
@@ -785,6 +787,8 @@ export const useTherapistAvailability = ({
 	patientValues: PatientValues;
 	fetchURL: string;
 	formType?: "create" | "reschedule";
+	fetchMode?: "inertia" | "json";
+	isolineStorageKey?: string;
 	onChangeTherapistLoading: (value: boolean) => void;
 	onResetTherapistFormValue: () => void;
 }) => {
@@ -803,7 +807,7 @@ export const useTherapistAvailability = ({
 	}>(SESSION_MARKERS_KEY, null);
 	const [isolineStorage, setIsolineStorage] = useSessionStorage<
 		null | IsolineResult["isolines"]
-	>(SESSION_ISOLINE_KEY, null);
+	>(isolineStorageKey, null);
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
 	const isMapLoading = useMemo(
 		() => mapRef.current?.isLoading.value || false,
@@ -1323,7 +1327,7 @@ export const useTherapistAvailability = ({
 		[onCalculateIsoline],
 	);
 	const onFindTherapists = useCallback(
-		(options?: {
+		async (options?: {
 			bypassConstraints?: boolean;
 			employmentType?: "KARPIS" | "FLAT" | "ALL";
 		}) => {
@@ -1351,24 +1355,52 @@ export const useTherapistAvailability = ({
 				fetchURL,
 				deepTransformKeysToSnakeCase(payload),
 			);
+			const { fullUrl } = populateQueryParams(
+				fetchURL,
+				deepTransformKeysToSnakeCase(payload),
+			);
+
+			const onStart = () => {
+				onChangeTherapistLoading(true);
+				onResetTherapistOptions();
+				onResetIsoline();
+				onResetTherapistFormValue();
+			};
+
+			const onFinish = () => {
+				setTimeout(() => {
+					onChangeTherapistLoading(false);
+				}, 250);
+			};
+
+			if (fetchMode === "json") {
+				onStart();
+
+				try {
+					const response = await fetch(fullUrl);
+
+					if (!response.ok) {
+						throw new Error(`Failed to fetch therapists: ${response.status}`);
+					}
+
+					const result = (await response.json()) as TherapistOption[];
+					mappingTherapists(result, { bypassConstraints });
+				} catch (error) {
+					console.error("Error finding therapists:", error);
+				} finally {
+					onFinish();
+				}
+
+				return;
+			}
 
 			router.get(fetchURL, queryParams, {
 				preserveScroll: true,
 				preserveState: true,
 				replace: false,
 				only: ["adminPortal", "flash", "errors", "therapists"],
-				onStart: () => {
-					onChangeTherapistLoading(true);
-					onResetTherapistOptions();
-					onResetIsoline();
-					// reset the therapist form values
-					onResetTherapistFormValue();
-				},
-				onFinish: () => {
-					setTimeout(() => {
-						onChangeTherapistLoading(false);
-					}, 250);
-				},
+				onStart,
+				onFinish,
 				/**
 				 * ? This is a bug that has been fixed but is very tricky, it looks simple to solve but it takes a long way to debug it in the troubleshooting process.
 				 * ? This callback will not be called if there is a server error for example on the validation server.
@@ -1388,6 +1420,7 @@ export const useTherapistAvailability = ({
 		[
 			fetchURL,
 			formType,
+			fetchMode,
 			serviceIdValue,
 			preferredTherapistGenderValue,
 			appointmentDateTImeValue,
