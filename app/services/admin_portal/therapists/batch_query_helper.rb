@@ -2,6 +2,11 @@ module AdminPortal
   module Therapists
     module BatchQueryHelper
       # Fetch therapists in batches to improve performance
+      #
+      # IMPORTANT: There are TWO different appointment data usages:
+      # 1. AVAILABILITY CHECKING (here): All appointments on date for conflict detection
+      # 2. SUGGESTED THERAPISTS (in serialize): Only appointments from same series
+      #
       # @param location [Location] The appointment location
       # @param service [Service] The service type
       # @param params [Hash] Query parameters (date/time, gender, etc.)
@@ -27,6 +32,14 @@ module AdminPortal
           .joins(:service, active_therapist_address: {address: :location})
           .joins("LEFT JOIN therapist_appointment_schedules ON therapists.id = therapist_appointment_schedules.therapist_id")
           .where(employment_status: "ACTIVE")
+
+        # Apply gender filtering early at database level
+        if params[:preferred_therapist_gender].present? && params[:preferred_therapist_gender] != "NO PREFERENCE"
+          base_scope = base_scope.where(gender: params[:preferred_therapist_gender])
+        end
+
+        # Apply service filtering early
+        base_scope = base_scope.where(services: {id: service.id})
 
         # Apply employment type filter if specified
         base_scope = if params[:employment_type].present? && params[:employment_type] != "ALL"
@@ -107,24 +120,16 @@ module AdminPortal
           therapist_ids = base_scope.limit(batch_size).offset(batch_offset).pluck(:id)
           break if therapist_ids.empty?
 
-          # Load full therapist records for this batch
+          # Load full therapist records for this batch with minimal includes
+          # (schedules will be preloaded separately for availability checking)
           batch_therapists = Therapist
             .includes(
-              :therapist_appointment_schedule,
-              active_address: :location,
-              therapist_appointment_schedule: [
-                :therapist_weekly_availabilities,
-                :therapist_adjusted_availabilities
-              ]
+              active_address: :location
             )
             .where(id: therapist_ids)
             .to_a
 
-          # Apply gender filtering to batch
-          selected_preferred_therapist_gender = params[:preferred_therapist_gender]
-          if selected_preferred_therapist_gender.present? && selected_preferred_therapist_gender != "NO PREFERENCE"
-            batch_therapists = batch_therapists.select { |t| t.gender == selected_preferred_therapist_gender }
-          end
+          # Gender filtering already applied at database level, no need to filter here
 
           # Apply availability filtering if date/time specified
           batch_results = if params[:appointment_date_time].present?
@@ -173,15 +178,31 @@ module AdminPortal
             selected_appointment_date_time
           end
 
-        # Preload appointments for all therapists in this batch
+        # Preload appointments for all therapists in this batch with optimized query
+        # Note: This is for AVAILABILITY CHECKING, not for suggested therapists
+        # We need all appointments on this date to check for conflicts
         appointment_date = appointment_date_time.to_date
+        therapist_ids = therapists.map(&:id)
+
+        # Single query to get all relevant appointments with location data
+        # Only include essential fields for availability checking
         all_appointments = Appointment
-          .where(therapist_id: therapists.map(&:id))
+          .where(therapist_id: therapist_ids)
           .where(appointment_date_time: appointment_date.all_day)
           .where.not(status: ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"])
           .where.not(id: current_appointment_id)
+          .select(:id, :therapist_id, :appointment_date_time, :status, :location_id, :registration_number, :visit_number) # Include visit_number for progress calculation
           .includes(:location)
           .group_by(&:therapist_id)
+
+        # Preload therapist schedules to avoid N+1 queries
+        therapist_schedules = TherapistAppointmentSchedule
+          .where(therapist_id: therapist_ids)
+          .includes(
+            :therapist_weekly_availabilities,
+            :therapist_adjusted_availabilities
+          )
+          .index_by(&:therapist_id)
 
         # Memoization cache for this batch
         availability_cache = {}
@@ -194,8 +215,12 @@ module AdminPortal
             # Get preloaded appointments for this therapist
             therapist_appointments = all_appointments[therapist.id] || []
 
-            # Create a singleton method to access preloaded appointments
+            # Get preloaded schedule for this therapist
+            therapist_schedule = therapist_schedules[therapist.id]
+
+            # Create singleton methods to access preloaded data
             therapist.define_singleton_method(:preloaded_appointments) { therapist_appointments }
+            therapist.define_singleton_method(:therapist_appointment_schedule) { therapist_schedule }
 
             therapist.availability_details(
               appointment_date_time_server_time: appointment_date_time,

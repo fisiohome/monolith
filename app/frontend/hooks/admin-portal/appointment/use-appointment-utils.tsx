@@ -25,7 +25,7 @@ import { calculateAge, populateQueryParams } from "@/lib/utils";
 import { boolSchema } from "@/lib/validation";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import type { Location } from "@/types/admin-portal/location";
-import type { Therapist } from "@/types/admin-portal/therapist";
+import type { TherapistFeasible } from "@/types/admin-portal/therapist";
 import type { Coordinate, IsolineResult } from "@/types/here-maps";
 
 // Helper function to calculate distance between two coordinates (Haversine formula)
@@ -224,23 +224,7 @@ export type LocationOption = Pick<
 	"id" | "city" | "country" | "countryCode" | "state"
 >;
 
-export type TherapistOption = Pick<
-	Therapist,
-	| "id"
-	| "name"
-	| "batch"
-	| "gender"
-	| "phoneNumber"
-	| "registrationNumber"
-	| "modalities"
-	| "specializations"
-	| "employmentStatus"
-	| "employmentType"
-	| "availability"
-	| "availabilityDetails"
-	| "activeAddress"
-	| "appointments"
->;
+export type TherapistOption = TherapistFeasible;
 
 // * hook about patient region form value
 export const usePatientRegion = () => {

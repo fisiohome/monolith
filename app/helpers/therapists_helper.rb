@@ -27,9 +27,21 @@ module TherapistsHelper
 
       # serialize just active address
       if options.fetch(:include_active_address, true)
-        therapist_serialize["active_address"] = therapist&.active_address&.attributes&.merge(
-          location: therapist.active_address.location.attributes
-        )
+        # Use optimized address options if provided, otherwise default
+        addr_options = options[:active_address_options] || {}
+
+        therapist_serialize["active_address"] = if addr_options[:only].present?
+          # Optimized serialization with only essential fields
+          therapist&.active_address&.as_json(
+            only: addr_options[:only],
+            include: addr_options[:include] || {}
+          )
+        else
+          # Default full serialization (backward compatibility)
+          therapist&.active_address&.attributes&.merge(
+            location: therapist.active_address.location.attributes
+          )
+        end
       end
 
       # serialize the therapist addresses
@@ -44,45 +56,88 @@ module TherapistsHelper
 
       # serialize the therapist availability
       if options[:include_availability]
-        therapist_serialize["availability"] = therapist&.therapist_appointment_schedule&.as_json(only: %i[
-          id time_zone appointment_duration_in_minutes
-          max_advance_booking_in_days min_booking_before_in_hours
-          buffer_time_in_minutes start_date_window end_date_window
-        ])&.merge(
-          is_available_now: therapist.therapist_appointment_schedule.available_now,
-          availability_rules: therapist.therapist_appointment_schedule.availability_rules,
-          weekly_availabilities: therapist.therapist_appointment_schedule.therapist_weekly_availabilities.map do |wa|
-            {
-              id: wa.id,
-              day_of_week: wa.day_of_week,
-              start_time: wa.start_time&.strftime("%H:%M"),
-              end_time: wa.end_time&.strftime("%H:%M")
-            }
-          end,
-          adjusted_availabilities: therapist.therapist_appointment_schedule.therapist_adjusted_availabilities.map do |aa|
-            {
-              id: aa.id,
-              specific_date: aa.specific_date,
-              start_time: aa.start_time&.strftime("%H:%M"),
-              end_time: aa.end_time&.strftime("%H:%M"),
-              reason: aa.reason,
-              is_unavailable: aa.unavailable?
-            }
-          end
-        )
+        # Use optimized availability options if provided, otherwise default
+        avail_options = options[:availability_options] || {}
+
+        therapist_serialize["availability"] = if avail_options[:only].present?
+          # Optimized serialization with only essential fields
+          therapist&.therapist_appointment_schedule&.as_json(
+            only: avail_options[:only]
+          )
+        else
+          # Default full serialization (backward compatibility)
+          therapist&.therapist_appointment_schedule&.as_json(only: %i[
+            id time_zone appointment_duration_in_minutes
+            max_advance_booking_in_days min_booking_before_in_hours
+            buffer_time_in_minutes start_date_window end_date_window
+          ])&.merge(
+            is_available_now: therapist.therapist_appointment_schedule.available_now,
+            availability_rules: therapist.therapist_appointment_schedule.availability_rules,
+            weekly_availabilities: therapist.therapist_appointment_schedule.therapist_weekly_availabilities.map do |wa|
+              {
+                id: wa.id,
+                day_of_week: wa.day_of_week,
+                start_time: wa.start_time&.strftime("%H:%M"),
+                end_time: wa.end_time&.strftime("%H:%M")
+              }
+            end,
+            adjusted_availabilities: therapist.therapist_appointment_schedule.therapist_adjusted_availabilities.map do |aa|
+              {
+                id: aa.id,
+                specific_date: aa.specific_date,
+                start_time: aa.start_time&.strftime("%H:%M"),
+                end_time: aa.end_time&.strftime("%H:%M"),
+                reason: aa.reason,
+                is_unavailable: aa.unavailable?
+              }
+            end
+          )
+        end
       end
 
       # serialize the therapist appointments
       if options[:include_appointments]
-        therapist_serialize["appointments"] = therapist.appointments.map do |appointment|
-          appointment.attributes.merge(
-            start_time: appointment.start_time,
-            end_time: appointment.end_time,
-            service: appointment.service,
-            package: appointment.package,
-            location: appointment.location,
-            patient: serialize_patient(appointment.patient)
-          )
+        # Use optimized appointment options if provided, otherwise default
+        appt_options = options[:appointment_options] || {}
+
+        # Get appointments to serialize
+        appointments_to_serialize = if appt_options[:filter_reference_id].present?
+          # Filter appointments to only include those from the same series
+          reference_id = appt_options[:filter_reference_id]
+
+          # Get the reference appointment and its series
+          reference_appointment = Appointment.find_by(id: reference_id)
+          if reference_appointment&.registration_number.present?
+            # Include appointments from the same series (same registration number)
+            therapist.appointments.where(registration_number: reference_appointment.registration_number)
+          else
+            # If no registration number, include only the reference appointment itself
+            therapist.appointments.where(id: reference_id)
+          end
+        else
+          # Include all appointments (backward compatibility)
+          therapist.appointments
+        end
+
+        therapist_serialize["appointments"] = appointments_to_serialize.map do |appointment|
+          if appt_options[:only].present?
+            # Optimized serialization with only necessary fields
+            appointment.as_json(
+              only: appt_options[:only],
+              include: appt_options[:include] || {},
+              methods: appt_options[:methods] || []
+            )
+          else
+            # Default full serialization (backward compatibility)
+            appointment.attributes.merge(
+              start_time: appointment.start_time,
+              end_time: appointment.end_time,
+              service: appointment.service,
+              package: appointment.package,
+              location: appointment.location,
+              patient: serialize_patient(appointment.patient)
+            )
+          end
         end
       end
 

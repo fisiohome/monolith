@@ -81,21 +81,66 @@ module AdminPortal
     end
 
     def formatted_therapists(therapist, availability_details = nil)
-      deep_transform_keys_to_camel_case(
-        serialize_therapist(
-          therapist,
-          {
-            only: %i[id name registration_number employment_status employment_type gender],
-            include_user: false,
-            include_service: false,
-            include_bank_details: false,
-            include_addresses: false,
-            include_active_address: true,
-            include_availability: true,
-            include_appointments: true
+      # Custom optimized serialization for reschedule appointments
+      # Include series-based appointments for suggested therapists and visit progress
+
+      # Pre-construct active address for maximum performance
+      active_address = if therapist.active_address
+        {
+          address: therapist.active_address.address,
+          latitude: therapist.active_address.latitude,
+          longitude: therapist.active_address.longitude,
+          location: {
+            id: therapist.active_address.location.id,
+            city: therapist.active_address.location.city,
+            state: therapist.active_address.location.state,
+            country: therapist.active_address.location.country,
+            countryCode: therapist.active_address.location.country_code
           }
-        ).merge(availability_details:)
-      )
+        }
+      end
+
+      # Pre-construct availability for maximum performance
+      availability = if therapist.therapist_appointment_schedule
+        {
+          availabilityRules: therapist.therapist_appointment_schedule.availability_rules
+        }
+      end
+
+      # Get appointments from the same series (if current appointment exists)
+      appointments = if @appointment&.id.present?
+        if @appointment&.registration_number.present?
+          # Include appointments from the same series (same registration number)
+          therapist.appointments.where(registration_number: @appointment.registration_number)
+        else
+          # If no registration number, include only the current appointment
+          therapist.appointments.where(id: @appointment.id)
+        end
+      else
+        [] # No appointments if no reference
+      end
+
+      therapist_data = {
+        id: therapist.id,
+        name: therapist.name,
+        registrationNumber: therapist.registration_number,
+        employmentStatus: therapist.employment_status,
+        employmentType: therapist.employment_type,
+        gender: therapist.gender,
+        activeAddress: active_address,
+        availability: availability,
+        appointments: appointments.map do |appointment|
+          {
+            id: appointment.id,
+            registrationNumber: appointment.registration_number,
+            visitNumber: appointment.visit_number,
+            visitProgress: appointment.visit_progress,
+            totalPackageVisits: appointment.total_package_visits
+          }
+        end
+      }
+
+      deep_transform_keys_to_camel_case(therapist_data.merge(availability_details:))
     end
 
     # Collects all other visits (excluding current appointment) that have scheduled dates/times

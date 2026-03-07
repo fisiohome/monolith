@@ -63,3 +63,25 @@ export interface Therapist {
 	appointments?: Appointment[];
 	activeAppointments?: Appointment[];
 }
+export interface TherapistFeasible {
+	id: string;
+	name: string;
+	registrationNumber: string;
+	employmentStatus: TherapistEmploymentStatus[number];
+	employmentType: TherapistEmploymentType[number];
+	gender: TherapistGender[number];
+	activeAddress?: Pick<
+		TherapistAddress,
+		"address" | "latitude" | "longitude" | "location"
+	>;
+	availability?: Pick<Availability, "availabilityRules">;
+	availabilityDetails?: AvailabilityDetail;
+	appointments?: Pick<
+		Appointment,
+		| "id"
+		| "registrationNumber"
+		| "visitNumber"
+		| "visitProgress"
+		| "totalPackageVisits"
+	>[];
+}

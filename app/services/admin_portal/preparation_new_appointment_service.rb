@@ -180,21 +180,41 @@ module AdminPortal
     end
 
     def formatted_therapists(therapist, availability_details = nil)
-      deep_transform_keys_to_camel_case(
-        serialize_therapist(
-          therapist,
-          {
-            only: %i[id name registration_number employment_status employment_type gender],
-            include_user: false,
-            include_service: false,
-            include_bank_details: false,
-            include_addresses: false,
-            include_active_address: true,
-            include_availability: true,
-            include_appointments: true
+      active_address = if therapist.active_address
+        {
+          address: therapist.active_address.address,
+          latitude: therapist.active_address.latitude,
+          longitude: therapist.active_address.longitude,
+          location: {
+            id: therapist.active_address.location.id,
+            city: therapist.active_address.location.city,
+            state: therapist.active_address.location.state,
+            country: therapist.active_address.location.country,
+            countryCode: therapist.active_address.location.country_code
           }
-        ).merge(availability_details:)
-      )
+        }
+      end
+
+      availability = if therapist.therapist_appointment_schedule
+        {
+          availabilityRules: therapist.therapist_appointment_schedule.availability_rules
+        }
+      end
+
+      # Custom optimized serialization for new appointments
+      # Only include essential fields for therapist search
+      therapist_data = {
+        id: therapist.id,
+        name: therapist.name,
+        registrationNumber: therapist.registration_number,
+        employmentStatus: therapist.employment_status,
+        employmentType: therapist.employment_type,
+        gender: therapist.gender,
+        activeAddress: active_address,
+        availability:
+      }
+
+      deep_transform_keys_to_camel_case(therapist_data.merge(availability_details:))
     end
   end
 end
