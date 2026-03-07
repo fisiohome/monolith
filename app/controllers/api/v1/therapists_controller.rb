@@ -6,7 +6,7 @@ module Api
       skip_before_action :verify_authenticity_token, if: -> { request.format.json? }
 
       # Only respond to JSON
-      before_action :ensure_json_request, only: [:feasible]
+      # before_action :ensure_json_request, only: [:feasible]
 
       # GET /api/v1/therapists/feasible
       def feasible
