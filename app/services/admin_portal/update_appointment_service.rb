@@ -73,6 +73,9 @@ module AdminPortal
       # Skip visit sequence validation during reschedule since we handle reordering afterward
       @appointment.skip_visit_sequence_validation = true if @appointment_params[:appointment_date_time].present?
 
+      # Skip visit number validation for admin internal rescheduling of anomaly data
+      @appointment.skip_visit_number_validation = true
+
       # Skip appointment_date_time presence validation when taking out (setting to nil)
       @appointment.skip_status_validation = true if @appointment_params[:appointment_date_time].nil?
 

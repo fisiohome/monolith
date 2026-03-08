@@ -7,6 +7,7 @@ class Appointment < ApplicationRecord
   attr_accessor :skip_auto_series_creation # Add a flag to control auto series creation
   attr_accessor :skip_visit_sequence_validation # Add a flag to skip visit sequence validation during reschedule (UpdateAppointmentService)
   attr_accessor :skip_status_validation # Add a flag to skip all status validations for admin internal updates (AppointmentStatusUpdaterService, UpdateAppointmentService)
+  attr_accessor :skip_visit_number_validation # Add a flag to skip visit number validation for admin internal rescheduling of anomaly data (UpdateAppointmentService)
 
   def initialize(*)
     super
@@ -194,7 +195,7 @@ class Appointment < ApplicationRecord
     only_integer: true,
     greater_than: 0,
     less_than_or_equal_to: ->(appt) { appt.package&.number_of_visit || 1 }
-  }
+  }, unless: :skip_visit_number_validation?
   validates :preferred_therapist_gender, presence: true, inclusion: {in: PREFERRED_THERAPIST_GENDER}
   validates :referral_source, inclusion: {in: REFERRAL_SOURCES}, allow_blank: true
   validates :other_referral_source, presence: true, if: -> { referral_source == "Other" }
@@ -725,6 +726,10 @@ class Appointment < ApplicationRecord
     updater&.admin&.is_admin_supervisor?
   end
 
+  def skip_visit_number_validation?
+    @skip_visit_number_validation == true
+  end
+
   # * define the validation methods
   # Validation: Ensure appointment time is in the future
   def appointment_date_time_in_the_future
@@ -824,6 +829,7 @@ class Appointment < ApplicationRecord
 
   def validate_visit_sequence
     return unless package && visit_number > total_package_visits
+    return if skip_visit_number_validation?
 
     errors.add(:visit_number, "exceeds package's total visits of #{total_package_visits}")
   end
