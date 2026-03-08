@@ -949,7 +949,6 @@ function AddressForm({
 			!address?.address ||
 			!address?.city ||
 			!address?.country ||
-			!address?.postalCode ||
 			!address?.state ||
 			!!address?.lat ||
 			!!address?.lng
@@ -977,7 +976,7 @@ function AddressForm({
 
 				// Set error message for the form
 				const errorMessage =
-					"The address cannot be found. Ensure the province, city, postal code, and address line are entered correctly.";
+					"The address cannot be found. Ensure the province, city, and address line are entered correctly.";
 				form.setError(`addresses.${fieldIndex}.address`, {
 					message: errorMessage,
 					type: "custom",
@@ -1300,7 +1299,10 @@ function AddressForm({
 				name={`addresses.${fieldIndex}.postalCode`}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Postal Code</FormLabel>
+						<FormLabel>
+							Postal Code{" "}
+							<span className="text-sm italic font-light">- (optional)</span>
+						</FormLabel>
 						<FormControl>
 							<Input
 								{...field}
@@ -1448,7 +1450,7 @@ function AddressForm({
 					country: address.country,
 					state: address.state,
 					city: address.city,
-					postalCode: address.postalCode,
+					postalCode: address?.postalCode || "",
 					address: address.address,
 				}}
 				options={{ disabledEvent: true }}
@@ -1631,7 +1633,7 @@ function PersonalInformationForm({
 							countryCode: "ID",
 							state: "",
 							city: "",
-							postalCode: "",
+							postalCode: undefined,
 							address: "",
 							active: false,
 							lat: 0,

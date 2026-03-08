@@ -164,7 +164,7 @@ export const getFormSchema = (mode: FormMode) => {
 						.min(1, { message: "Country code is required" }),
 					state: z.string().min(1, { message: "State is required" }),
 					city: z.string().min(1, { message: "City is required" }),
-					postalCode: z.string().min(1, { message: "Postal code is required" }),
+					postalCode: z.string().optional(),
 					address: z.string().min(1, { message: "Address is required" }),
 					active: z.boolean().default(false),
 					lat: z.coerce

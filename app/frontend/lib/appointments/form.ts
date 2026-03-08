@@ -58,9 +58,7 @@ export const DEFAULT_VALUES_PATIENT_CONTACT = {
 
 // * contact information schema
 export const CONTACT_INFORMATION_SCHEMA = z.object({
-	contactName: z
-		.string()
-		.min(1, "Contact name is required"),
+	contactName: z.string().min(1, "Contact name is required"),
 	contactPhone: z
 		.string()
 		.min(1, { message: "Contact phone number is required" }),
@@ -73,9 +71,7 @@ export type ContactInformationSchema = z.infer<
 
 // * patient details schema
 export const PATIENT_DETAILS_SCHEMA = z.object({
-	fullName: z
-		.string()
-		.min(1, "Patient full name is required"),
+	fullName: z.string().min(1, "Patient full name is required"),
 	dateOfBirth: z.coerce
 		.date()
 		// Ensure the date is in the past
