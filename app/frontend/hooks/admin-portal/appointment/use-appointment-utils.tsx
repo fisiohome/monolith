@@ -1055,12 +1055,8 @@ export const useTherapistAvailability = ({
 			patientCoords: Coordinate,
 			patientAddress: string,
 		) => {
-			// In bypass mode, we want to show ALL therapists (both available and unavailable)
-			// The unavailable therapists are passed separately but should be included in bypass mode
-			const allTherapists = [...therapists, ...unavailableTherapists];
-
 			const therapistList = {
-				feasible: allTherapists,
+				feasible: therapists,
 				notFeasible: [] as TherapistOption[],
 			};
 			const allNotFeasibleReports = createUnavailableTherapistReports(
@@ -1069,17 +1065,11 @@ export const useTherapistAvailability = ({
 
 			// Update state
 			setFeasibilityReport(allNotFeasibleReports);
-			setTherapistsOptions((prev) => ({
-				...prev,
-				...therapistList,
-				// Ensure all therapists are in the available list when bypassing
-				available: allTherapists,
-				unavailable: [],
-			}));
+			setTherapistsOptions((prev) => ({ ...prev, ...therapistList }));
 			setIsTherapistFound(true);
 
 			// Add markers to map
-			addMarkersToMap(patientCoords, patientAddress, allTherapists, {
+			addMarkersToMap(patientCoords, patientAddress, therapists, {
 				isSecondary: true,
 				useRouting: true,
 			});
@@ -1316,13 +1306,10 @@ export const useTherapistAvailability = ({
 			therapists: TherapistOption[] | undefined,
 			options?: { bypassConstraints?: boolean },
 		) => {
-			// When bypass constraints is enabled, include all therapists regardless of availability
-			const therapistsAvailable = options?.bypassConstraints
-				? therapists || []
-				: therapists?.filter((t) => t.availabilityDetails?.available) || [];
-			const therapistsUnavailable = options?.bypassConstraints
-				? []
-				: therapists?.filter((t) => !t.availabilityDetails?.available) || [];
+			const therapistsAvailable =
+				therapists?.filter((t) => t.availabilityDetails?.available) || [];
+			const therapistsUnavailable =
+				therapists?.filter((t) => !t.availabilityDetails?.available) || [];
 
 			setTherapistsOptions((prev) => ({
 				...prev,
