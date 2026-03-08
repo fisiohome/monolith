@@ -99,16 +99,6 @@ class Therapist < ApplicationRecord
 
   # Get detailed availability info
   def availability_details(appointment_date_time_server_time:, current_appointment_id: nil, is_all_of_day: false)
-    cache_key_data = {
-      therapist_id: id,
-      appointment_time: appointment_date_time_server_time,
-      is_all_day: is_all_of_day,
-      current_appointment_id: current_appointment_id
-    }
-
-    cached = AdminPortal::Therapists::AvailabilityCache.get_cached_availability(**cache_key_data)
-    return cached if cached
-
     service = AdminPortal::Therapists::AvailabilityService.new(
       therapist: self,
       appointment_date_time_server_time: appointment_date_time_server_time,
@@ -116,7 +106,7 @@ class Therapist < ApplicationRecord
       is_all_of_day: is_all_of_day
     )
 
-    result = {
+    {
       available: service.available?,
       reasons: service.reasons,
       locations: {
@@ -125,14 +115,6 @@ class Therapist < ApplicationRecord
       },
       available_slots: service.available_time_slots_for_date
     }
-
-    # Cache the result
-    AdminPortal::Therapists::AvailabilityCache.cache_availability(
-      **cache_key_data,
-      availability_data: result
-    )
-
-    result
   end
 
   # * Telegram field management - override getters and setters for fallback logic

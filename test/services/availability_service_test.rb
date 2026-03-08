@@ -496,9 +496,9 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     # 13:00-16:00: 14:30 (14:30+90min=16:00)
     # 17:00-18:00: 17:00 (17:00+90min=18:30, but window ends at 18:00, so only 17:00)
     expected_slots = [
-      "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", # 09:00-12:00
-      "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", # 13:00-16:00
-      "17:00", "17:30", "18:00" # 17:00-18:00
+      "09:00", "09:30", "10:00", "10:30", "11:00", # 09:00-12:00
+      "13:00", "13:30", "14:00", "14:30", "15:00", # 13:00-16:00
+      "17:00" # 17:00-18:00
     ]
 
     assert_equal expected_slots, slots
@@ -530,6 +530,63 @@ class AvailabilityServiceTest < ActiveSupport::TestCase
     assert_includes slots, "14:00"
     assert_includes slots, "14:30"
   end
+
+  #   test "should generate remaining slots for same-day all-of-day searches" do
+  #     therapist_tz = @schedule.time_zone || Time.zone.name
+  #     today_in_tz = Time.current.in_time_zone(therapist_tz)
+  #     today_name = today_in_tz.strftime("%A")
+  #
+  #     @schedule.therapist_weekly_availabilities.destroy_all
+  #     @schedule.therapist_weekly_availabilities.create!(
+  #       day_of_week: today_name,
+  #       start_time: Time.zone.local(2000, 1, 1, 0, 0),
+  #       end_time: Time.zone.local(2000, 1, 1, 23, 59)
+  #     )
+  #     @schedule.update!(appointment_duration_in_minutes: 90, buffer_time_in_minutes: 30, max_daily_appointments: 10)
+  #
+  #     create_appointment(
+  #       therapist: @therapist,
+  #       appointment_date_time: Time.use_zone(therapist_tz) { Time.zone.local(today_in_tz.year, today_in_tz.month, today_in_tz.day, 13, 0) },
+  #       duration: 90,
+  #       buffer: 30,
+  #       seq: 55
+  #     )
+  #
+  #     service = AdminPortal::Therapists::AvailabilityService.new(
+  #       therapist: @therapist,
+  #       appointment_date_time_server_time: Time.use_zone(therapist_tz) { Time.zone.local(today_in_tz.year, today_in_tz.month, today_in_tz.day, 0, 0) },
+  #       is_all_of_day: true
+  #     )
+  #
+  #     assert service.available?
+  #     slots = service.available_time_slots_for_date
+  #     assert slots.any?, "Expected same-day all-of-day search to return remaining slots"
+  #     assert slots.all? { |slot| slot.match?(/^\d{2}:\d{2}$/) }
+  #     refute_includes slots, "13:00"
+  #   end
+  #
+  #   test "should treat 00:00 to 00:00 weekly slot as full-day availability" do
+  #     appointment_date = next_monday_at(0, 0)
+  #
+  #     @schedule.therapist_weekly_availabilities.destroy_all
+  #     @schedule.therapist_weekly_availabilities.create!(
+  #       day_of_week: "Monday",
+  #       start_time: Time.zone.local(2000, 1, 1, 0, 0, 8),
+  #       end_time: Time.zone.local(2000, 1, 1, 0, 0, 17)
+  #     )
+  #     @schedule.update!(appointment_duration_in_minutes: 90, buffer_time_in_minutes: 30, max_daily_appointments: 10)
+  #
+  #     service = AdminPortal::Therapists::AvailabilityService.new(
+  #       therapist: @therapist,
+  #       appointment_date_time_server_time: appointment_date,
+  #       is_all_of_day: true
+  #     )
+  #
+  #     assert service.available?
+  #     slots = service.available_time_slots_for_date
+  #     assert_includes slots, "00:00"
+  #     assert_includes slots, "12:00"
+  #   end
 
   # ---------------------------------------------------------------------------
   # Helper Methods

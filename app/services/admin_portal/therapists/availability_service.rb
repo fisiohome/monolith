@@ -184,7 +184,6 @@ module AdminPortal
       # @return [Array<Hash>] Array of availability ranges with start/end times
       def get_availability_ranges_for_date
         date = @appointment_date_time_server_time.to_date
-        therapist_time_zone = @schedule.time_zone.presence || Time.zone.name
 
         # Check for adjusted availability first (one-time overrides)
         # These take precedence over weekly schedules
@@ -196,13 +195,7 @@ module AdminPortal
 
           # Otherwise, return ranges from partial adjustments (e.g., half-day)
           return adjustments.map do |adj|
-            # Create time objects in therapist's timezone for the specific date
-            start_time = Time.use_zone(therapist_time_zone) do
-              Time.zone.local(date.year, date.month, date.day, adj.start_time.hour, adj.start_time.min)
-            end
-            end_time = Time.use_zone(therapist_time_zone) do
-              Time.zone.local(date.year, date.month, date.day, adj.end_time.hour, adj.end_time.min)
-            end
+            start_time, end_time = build_availability_range(date, adj.start_time, adj.end_time)
             {start: start_time, end: end_time}
           end
         end
@@ -212,14 +205,7 @@ module AdminPortal
         weekly_slots = @schedule.therapist_weekly_availabilities.where(day_of_week: day_of_week)
 
         weekly_slots.map do |slot|
-          # Create new time objects with the target date but the slot's time components
-          # Use the therapist's time zone directly to avoid double conversion
-          start_time = Time.use_zone(therapist_time_zone) do
-            Time.zone.local(date.year, date.month, date.day, slot.start_time.hour, slot.start_time.min, slot.start_time.sec)
-          end
-          end_time = Time.use_zone(therapist_time_zone) do
-            Time.zone.local(date.year, date.month, date.day, slot.end_time.hour, slot.end_time.min, slot.end_time.sec)
-          end
+          start_time, end_time = build_availability_range(date, slot.start_time, slot.end_time)
 
           {start: start_time, end: end_time}
         end
@@ -399,8 +385,11 @@ module AdminPortal
           return add_reason_and_return(false, message)
         end
 
-        slot_start = build_time_object(appointment_date_time_in_tz, adjusted.start_time)
-        slot_end = build_time_object(appointment_date_time_in_tz, adjusted.end_time)
+        slot_start, slot_end = build_availability_range(
+          appointment_date_time_in_tz.to_date,
+          adjusted.start_time,
+          adjusted.end_time
+        )
 
         if time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
           true
@@ -428,8 +417,11 @@ module AdminPortal
 
         # Check if the requested time fits within any of the weekly slots
         is_available = weekly_slots.any? do |slot|
-          slot_start = build_time_object(appointment_date_time_in_tz, slot.start_time)
-          slot_end = build_time_object(appointment_date_time_in_tz, slot.end_time)
+          slot_start, slot_end = build_availability_range(
+            appointment_date_time_in_tz.to_date,
+            slot.start_time,
+            slot.end_time
+          )
 
           fits = time_fits?(appointment_date_time_in_tz, slot_start, slot_end)
           fits
@@ -455,6 +447,24 @@ module AdminPortal
         Time.use_zone(therapist_time_zone) do
           Time.zone.local(base_time.year, base_time.month, base_time.day, time_part.hour, time_part.min, time_part.sec)
         end
+      end
+
+      def build_availability_range(date, start_time, end_time)
+        normalized_start_time, normalized_end_time = normalize_hardcoded_full_day_range(start_time, end_time)
+        slot_start = build_time_object(date, normalized_start_time)
+        slot_end = build_time_object(date, normalized_end_time)
+        slot_end += 1.day if slot_end < slot_start
+
+        [slot_start, slot_end]
+      end
+
+      def normalize_hardcoded_full_day_range(start_time, end_time)
+        return [start_time, end_time] unless start_time&.strftime("%H:%M:%S") == "00:00:00" && end_time&.strftime("%H:%M:%S") == "12:00:00"
+
+        [
+          start_time.change(hour: 17, min: 0, sec: 0),
+          end_time.change(hour: 16, min: 59, sec: 0)
+        ]
       end
 
       # Verify time fits within a slot
