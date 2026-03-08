@@ -40,7 +40,7 @@ export const TimeSlotButton = memo(function TimeSlotButton({
 	onSelect?: () => void;
 	buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
-	const { locale, tzDate, timeFormatDateFns } = useDateContext();
+	const { locale, tzDate } = useDateContext();
 
 	// Optimization: Memoize the formatted time string to avoid recalculation on every render.
 	const displayTime = useMemo(() => {
@@ -48,11 +48,15 @@ export const TimeSlotButton = memo(function TimeSlotButton({
 			locale,
 			in: tzDate,
 		});
-		return format(slotDate, timeFormatDateFns, {
+
+		// Use locale-based time format: AM/PM for English, 24-hour for Indonesian
+		const timeFormat = locale.code === "id" ? "HH:mm" : "hh:mm a";
+
+		return format(slotDate, timeFormat, {
 			locale,
 			in: tzDate,
 		});
-	}, [time, locale, tzDate, timeFormatDateFns]);
+	}, [time, locale, tzDate]);
 
 	return (
 		<Button
