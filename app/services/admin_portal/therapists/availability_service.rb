@@ -12,11 +12,21 @@ module AdminPortal
     #
     # Admin Usage Configuration:
     # - Set BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true to disable advance booking limits
-    # - This allows internal admin to book appointments beyond the standard 60-day window
-    # - Useful for special cases, bulk scheduling, or administrative overrides
+    # - Set BYPASS_DAILY_LIMIT_FOR_ADMIN = true to disable daily appointment limits
+    # - Set BYPASS_DATE_WINDOW_FOR_ADMIN = true to disable custom date window constraints
+    # - Set BYPASS_OVERLAP_CHECK_FOR_ADMIN = true to disable overlap checks (use with caution)
+    # - Set BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN = true to disable past date validation
+    # - Set BYPASS_AVAILABILITY_CHECK_FOR_ADMIN = true to disable schedule availability check (use with caution)
+    # These allow internal admin to book appointments beyond standard restrictions
+    # Useful for special cases, bulk scheduling, or administrative overrides
     class AvailabilityService
       # Configuration constants for different usage contexts
       BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true # Bypass advance booking limit for internal admin usage
+      BYPASS_DAILY_LIMIT_FOR_ADMIN = true # Bypass daily appointment limit for internal admin usage
+      BYPASS_OVERLAP_CHECK_FOR_ADMIN = true # Bypass overlap check (use with caution)
+      BYPASS_DATE_WINDOW_FOR_ADMIN = true # Bypass custom date window constraints
+      BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN = true # Bypass basic time checks (past date validation)
+      BYPASS_AVAILABILITY_CHECK_FOR_ADMIN = true # Bypass schedule availability check (use with caution)
 
       attr_reader :reasons, :previous_appointment_location, :next_appointment_location
 
@@ -251,6 +261,9 @@ module AdminPortal
       # @param current_date_time_in_tz [DateTime] Current time in therapist's timezone
       # @return [Boolean] true if basic time checks pass
       def basic_time_checks(appointment_date_time_in_tz, current_date_time_in_tz)
+        # Bypass basic time checks for internal admin usage
+        return true if BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN
+
         is_appointment_today = ->(date_time) { date_time.to_date == Date.current }
 
         # skip this for checking all of day therapist avaiability and if the appointment date is today date
@@ -306,6 +319,9 @@ module AdminPortal
       # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
       # @return [Boolean] true if within date window
       def date_window_check(appointment_date_time_in_tz)
+        # Bypass date window check for internal admin usage
+        return true if BYPASS_DATE_WINDOW_FOR_ADMIN
+
         date = appointment_date_time_in_tz.to_date
 
         if @schedule.start_date_window && date < @schedule.start_date_window
@@ -329,6 +345,9 @@ module AdminPortal
       # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
       # @return [Boolean] true if available according to schedule
       def availability_check(appointment_date_time_in_tz)
+        # Bypass availability check for internal admin usage (use with caution)
+        return true if BYPASS_AVAILABILITY_CHECK_FOR_ADMIN
+
         adjusted = @schedule.therapist_adjusted_availabilities.find_by(
           specific_date: appointment_date_time_in_tz.to_date
         )
@@ -495,6 +514,9 @@ module AdminPortal
       # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
       # @return [Boolean] true if under daily appointment limit
       def max_daily_appointments_check(appointment_date_time_in_tz)
+        # Bypass daily limit check for internal admin usage
+        return true if BYPASS_DAILY_LIMIT_FOR_ADMIN
+
         date = appointment_date_time_in_tz.to_date
         count = @therapist.appointments
           .where(appointment_date_time: date.all_day)
@@ -519,6 +541,9 @@ module AdminPortal
       # @return [Boolean] true if no overlapping appointments found
       def no_overlapping_appointments_check
         return true unless @schedule
+
+        # Bypass overlap check for internal admin usage (use with caution)
+        return true if BYPASS_OVERLAP_CHECK_FOR_ADMIN
 
         duration = @schedule.appointment_duration_in_minutes
         buffer = @schedule.buffer_time_in_minutes
