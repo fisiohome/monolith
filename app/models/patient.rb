@@ -48,7 +48,7 @@ class Patient < ApplicationRecord
   validates :date_of_birth, presence: true
   validate :date_of_birth_in_the_past
 
-  validates :name, presence: true, length: {minimum: 3}
+  validates :name, presence: true
 
   # Ensure the combination of name, date_of_birth, and gender is unique
   validates :name, uniqueness: {
