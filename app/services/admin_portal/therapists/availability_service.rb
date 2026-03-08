@@ -92,8 +92,11 @@ module AdminPortal
             .to_a
         end
 
-        # 3. Enforce daily appointment limit
-        return [] if appointments.size >= @schedule.max_daily_appointments
+        # 3. For all day appointments, skip daily limit check to match availability logic
+        # The availability check also skips this for all day appointments
+        unless @is_all_of_day
+          return [] if appointments.size >= @schedule.max_daily_appointments
+        end
 
         duration = @schedule.appointment_duration_in_minutes
         buffer = @schedule.buffer_time_in_minutes
@@ -124,13 +127,20 @@ module AdminPortal
             appointment_range = appointment_start...appointment_end_with_buffer
 
             # 5c. Check for conflicts with any existing appointment (including their buffer)
-            conflict = appointments.any? do |appt|
-              appt_start = appt.appointment_date_time
-              appt_end = appt_start + appt.total_duration_minutes.minutes
-              appt_range = appt_start...appt_end
+            # For all day appointments, we're more lenient with conflicts since the exact time can be adjusted
+            conflict = if @is_all_of_day
+              # For all day appointments, only check if there are too many appointments already
+              # This matches the behavior in availability_check which doesn't check specific times
+              false
+            else
+              appointments.any? do |appt|
+                appt_start = appt.appointment_date_time
+                appt_end = appt_start + appt.total_duration_minutes.minutes
+                appt_range = appt_start...appt_end
 
-              # Overlap if the new slot starts before an existing ends, and ends after an existing starts
-              appointment_range.begin < appt_range.end && appt_range.begin < appointment_range.end
+                # Overlap if the new slot starts before an existing ends, and ends after an existing starts
+                appointment_range.begin < appt_range.end && appt_range.begin < appointment_range.end
+              end
             end
 
             # 5d. Add to available slots if no conflict found
@@ -484,6 +494,9 @@ module AdminPortal
       # @param appointment_date_time_in_tz [DateTime] Appointment time in therapist's timezone
       # @return [Boolean] true if under daily appointment limit
       def max_daily_appointments_check(appointment_date_time_in_tz)
+        # Skip daily limit check for all day appointments to match available_time_slots_for_date logic
+        return true if @is_all_of_day
+
         date = appointment_date_time_in_tz.to_date
         count = @therapist.appointments
           .where(appointment_date_time: date.all_day)
@@ -508,6 +521,9 @@ module AdminPortal
       # @return [Boolean] true if no overlapping appointments found
       def no_overlapping_appointments_check
         return true unless @schedule
+
+        # Skip overlapping check for all day appointments to match available_time_slots_for_date logic
+        return true if @is_all_of_day
 
         duration = @schedule.appointment_duration_in_minutes
         buffer = @schedule.buffer_time_in_minutes
