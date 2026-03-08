@@ -23,7 +23,7 @@ module AdminPortal
       # Configuration constants for different usage contexts
       BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true # Bypass advance booking limit for internal admin usage
       BYPASS_DAILY_LIMIT_FOR_ADMIN = true # Bypass daily appointment limit for internal admin usage
-      BYPASS_OVERLAP_CHECK_FOR_ADMIN = true # Bypass overlap check (use with caution)
+      BYPASS_OVERLAP_CHECK_FOR_ADMIN = false # Bypass overlap check (use with caution)
       BYPASS_DATE_WINDOW_FOR_ADMIN = true # Bypass custom date window constraints
       BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN = true # Bypass basic time checks (past date validation)
       BYPASS_AVAILABILITY_CHECK_FOR_ADMIN = true # Bypass schedule availability check (use with caution)
@@ -65,7 +65,15 @@ module AdminPortal
         # Always fetch adjacent appointment addresses to ensure consistent state
         # This helps with location-based scheduling decisions and travel time considerations
         fetch_adjacent_appointment_addresses
-        perform_checks(appointment_date_time_in_tz, current_date_time_in_tz)
+
+        # Use bypass-aware checks if any bypass is enabled
+        if BYPASS_DAILY_LIMIT_FOR_ADMIN || BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN ||
+            BYPASS_OVERLAP_CHECK_FOR_ADMIN || BYPASS_DATE_WINDOW_FOR_ADMIN ||
+            BYPASS_AVAILABILITY_CHECK_FOR_ADMIN || BYPASS_ADVANCE_BOOKING_FOR_ADMIN
+          perform_checks_with_bypass(appointment_date_time_in_tz, current_date_time_in_tz)
+        else
+          perform_checks(appointment_date_time_in_tz, current_date_time_in_tz)
+        end
       end
 
       # Returns all available time slots for a specific date, considering therapist's schedule, existing appointments, and business rules.
@@ -103,7 +111,7 @@ module AdminPortal
         end
 
         # 3. Enforce daily appointment limit
-        return [] if appointments.size >= @schedule.max_daily_appointments
+        return [] if !BYPASS_DAILY_LIMIT_FOR_ADMIN && appointments.size >= @schedule.max_daily_appointments
 
         duration = @schedule.appointment_duration_in_minutes
         buffer = @schedule.buffer_time_in_minutes
@@ -111,7 +119,7 @@ module AdminPortal
 
         # 4. Determine if we should filter out past slots (for today, unless in test env)
         current_date = Time.current.to_date
-        filter_past_slots = (date == current_date) && !Rails.env.test?
+        filter_past_slots = !BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN && ((date == current_date) && !Rails.env.test?)
 
         # 5. Iterate through each availability slot for the day
         slots.each do |slot|
@@ -134,13 +142,17 @@ module AdminPortal
             appointment_range = appointment_start...appointment_end_with_buffer
 
             # 5c. Check for conflicts with any existing appointment (including their buffer)
-            conflict = appointments.any? do |appt|
-              appt_start = appt.appointment_date_time
-              appt_end = appt_start + appt.total_duration_minutes.minutes
-              appt_range = appt_start...appt_end
+            conflict = if BYPASS_OVERLAP_CHECK_FOR_ADMIN
+              false
+            else
+              appointments.any? do |appt|
+                appt_start = appt.appointment_date_time
+                appt_end = appt_start + appt.total_duration_minutes.minutes
+                appt_range = appt_start...appt_end
 
-              # Overlap if the new slot starts before an existing ends, and ends after an existing starts
-              appointment_range.begin < appt_range.end && appt_range.begin < appointment_range.end
+                # Overlap if the new slot starts before an existing ends, and ends after an existing starts
+                appointment_range.begin < appt_range.end && appt_range.begin < appointment_range.end
+              end
             end
 
             # 5d. Add to available slots if no conflict found
@@ -193,6 +205,17 @@ module AdminPortal
       # @param date [Date] The date to get availability for
       # @return [Array<Hash>] Array of availability ranges with start/end times
       def get_availability_ranges_for_date
+        # Bypass availability check for admin internal - return full day availability
+        if BYPASS_AVAILABILITY_CHECK_FOR_ADMIN
+          date = @appointment_date_time_server_time.to_date
+
+          # Return full day availability (00:00 - 23:59)
+          full_day_start = Time.zone.local(date.year, date.month, date.day, 0, 0, 0)
+          full_day_end = Time.zone.local(date.year, date.month, date.day, 23, 59, 59)
+
+          return [{start: full_day_start, end: full_day_end}]
+        end
+
         date = @appointment_date_time_server_time.to_date
 
         # Check for adjusted availability first (one-time overrides)
@@ -243,6 +266,29 @@ module AdminPortal
           -> { no_overlapping_appointments_check },
           -> { max_daily_appointments_check(appointment_date_time_in_tz) }
         ]
+
+        checks.each do |check|
+          result = check.call
+          return false if result == false
+        end
+
+        true
+      end
+
+      # Modified availability check that respects bypass for daily limits
+      # This allows therapists to be shown as available even if they reached daily limit
+      # when BYPASS_DAILY_LIMIT_FOR_ADMIN is true
+      def perform_checks_with_bypass(appointment_date_time_in_tz, current_date_time_in_tz)
+        checks = [
+          -> { basic_time_checks(appointment_date_time_in_tz, current_date_time_in_tz) },
+          -> { advance_booking_check(appointment_date_time_in_tz, current_date_time_in_tz) },
+          -> { date_window_check(appointment_date_time_in_tz.to_date) },
+          -> { availability_check(appointment_date_time_in_tz) },
+          -> { no_overlapping_appointments_check }
+        ]
+
+        # Only add daily limit check if not bypassed
+        checks << -> { max_daily_appointments_check(appointment_date_time_in_tz) } unless BYPASS_DAILY_LIMIT_FOR_ADMIN
 
         checks.each do |check|
           result = check.call

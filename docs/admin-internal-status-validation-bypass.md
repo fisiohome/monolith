@@ -64,19 +64,52 @@ Semua validasi availability berikut di-skip untuk admin internal:
 |----------|---------|---------|
 | `advance_booking_check` | Mencegah booking >60 hari ke depan | ✅ **Bypassed** |
 | `max_daily_appointments_check` | Batasi maks 4 appointment/hari | ✅ **Bypassed** |
-| `no_overlapping_appointments_check` | Cegah double-booking | ✅ **Bypassed** |
+| `no_overlapping_appointments_check` | Cegah double-booking | ⚠️ **Aktif** (dipertahankan) |
 | `date_window_check` | Batasi sesuai window availability terapis | ✅ **Bypassed** |
 | `basic_time_checks` | Cegah booking di masa lalu | ✅ **Bypassed** |
 | `availability_check` | Cek jadwal weekly/adjusted terapis | ✅ **Bypassed** |
 
-#### 3. Hasil Akhir
+#### 3. Hasil Akhir dengan Konfigurasi Saat Ini
 Dengan konfigurasi ini, admin internal dapat:
 - ✅ Booking kapan saja - tanpa batasan waktu
 - ✅ Booking sebanyak apapun - tanpa batas jumlah per hari  
-- ✅ Booking di tanggal yang sama - bahkan dengan waktu yang tumpang tindih
+- ✅ Booking di tanggal yang sama - **TANPA** waktu yang tumpang tindih
 - ✅ Booking di masa lalu - tanggal sudah lewat pun bisa
 - ✅ Booking diluar jadwal - terapis tidak available pun bisa
 - ✅ Booking di luar window - di luar periode availability terapis
+
+#### 4. Behavior Time Slot dengan Overlap Check
+**Konfigurasi Saat Ini**: `BYPASS_OVERLAP_CHECK_FOR_ADMIN = false`
+
+**Therapist dengan appointment existing:**
+- 10:00 - 11:00 (Patient A)
+- 13:00 - 14:00 (Patient B) 
+- 15:00 - 16:00 (Patient C)
+- 16:30 - 17:30 (Patient D)
+
+**Available slots yang ditampilkan:**
+```ruby
+["00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30",
+ "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30",
+ "08:00", "08:30", "09:00", "09:30", "11:00", "11:30", "12:00", "12:30",  # ← 10:00-11:00 DILEWATI
+ "14:00", "14:30", "15:30", "16:00", "17:00", "17:30", "18:00", "18:30",  # ← 13:00-14:00 & 15:00-16:00 DILEWATI
+ "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30",  # ← 16:30-17:30 DILEWATI
+ "23:00", "23:30"]
+```
+
+**Key Points:**
+- ✅ **Therapist tetap available** meskipun sudah 4 appointment (daily limit dibypass)
+- ✅ **Time slot yang bentrok DILEWATI** (overlap check aktif)
+- ✅ **Full day availability** (availability check dibypass)
+- ✅ **Tidak ada double-booking** (overlap check mencegah)
+
+#### 5. Perbandingan Konfigurasi
+
+| Konfigurasi | Daily Limit | Overlap Check | Hasil |
+|-------------|-------------|---------------|-------|
+| **Current Setup** | ❌ Dibypass | ✅ Aktif | Unlimited appointments, no double-booking |
+| **Full Bypass** | ❌ Dibypass | ❌ Dibypass | Unlimited appointments, double-booking allowed |
+| **No Bypass** | ✅ Aktif | ✅ Aktif | Max 4 appointments, no double-booking |
 
 ---
 
@@ -161,6 +194,23 @@ BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN = false     # Aktifkan cegah masa lalu
 BYPASS_AVAILABILITY_CHECK_FOR_ADMIN = false    # Aktifkan jadwal check
 ```
 
+**Konfigurasi Saat Ini (Recommended):**
+```ruby
+BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true       # Bypass batas 60 hari
+BYPASS_DAILY_LIMIT_FOR_ADMIN = true           # Bypass batas 4 appointment/hari
+BYPASS_OVERLAP_CHECK_FOR_ADMIN = false         # Tetap aktif cegah double-booking
+BYPASS_DATE_WINDOW_FOR_ADMIN = true           # Bypass window validation
+BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN = true     # Bypass validasi masa lalu
+BYPASS_AVAILABILITY_CHECK_FOR_ADMIN = true    # Bypass jadwal check
+```
+
+**Hasil Konfigurasi Saat Ini:**
+- ✅ Unlimited appointments per hari
+- ✅ No time restrictions (past/future dates)
+- ✅ No schedule constraints
+- ✅ **No double-booking** (overlap check aktif)
+- ✅ Full day availability slots
+
 ---
 
 ## Security Considerations
@@ -170,9 +220,9 @@ BYPASS_AVAILABILITY_CHECK_FOR_ADMIN = false    # Aktifkan jadwal check
 - **Audit Trail** - Semua perubahan status tetap terlog dengan user attribution
 
 ### Therapist Scheduling Bypass
-- **High Risk** - Bypass overlap check bisa menyebabkan double-booking
-- **Data Integrity** - Bypass availability check bisa menyebabkan schedule conflicts
-- **Recommendation** - Gunakan dengan hati-hati dan monitoring yang baik
+- **Medium Risk** - Daily limit dan availability check dibypass, tapi overlap check tetap aktif
+- **Data Integrity** - Overlap check mencegah double-booking, menjaga integritas schedule
+- **Recommendation** - Konfigurasi saat ini memberikan fleksibilitas dengan keamanan yang memadai
 
 ---
 
@@ -187,10 +237,11 @@ Implementation ini telah berhasil:
 - ✅ **Flexible Control** - Bisa di-enable/disable melalui konstanta
 
 ### Therapist Scheduling Bypass  
-- ✅ **Complete Bypass** - Semua availability validation dimatikan
-- ✅ **Maximum Flexibility** - Admin internal bisa booking appointment tanpa batasan
+- ✅ **Smart Bypass** - 5 dari 6 validation dibypass, overlap check tetap aktif untuk mencegah double-booking
+- ✅ **Maximum Flexibility** - Admin internal bisa booking appointment tanpa batasan jumlah, waktu, atau schedule
+- ✅ **Data Integrity** - Overlap check memastikan tidak ada double-booking
 - ✅ **Configurable** - Setiap validation bisa di-control individually
-- ✅ **Full Coverage** - Semua aspek scheduling (time, limit, overlap, availability) ter-bypass
+- ✅ **Full Coverage** - Semua aspek scheduling ter-bypass kecuali overlap protection
 
 ### Combined Benefits
 - ✅ **Admin Empowerment** - Admin internal memiliki kontrol penuh atas appointment system
