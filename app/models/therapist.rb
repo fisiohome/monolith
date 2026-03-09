@@ -120,23 +120,23 @@ class Therapist < ApplicationRecord
   # * Telegram field management - override getters and setters for fallback logic
   def telegram_id
     # Return telegram_id if present, otherwise fallback to telegram_username
-    self[:telegram_id].presence || self[:telegram_username].presence
+    self[:telegram_id].presence || (has_attribute?(:telegram_username) ? self[:telegram_username].presence : nil)
   end
 
   def telegram_id=(value)
     # Set telegram_id and sync telegram_username to match
     self[:telegram_id] = value
-    self[:telegram_username] = value
+    self[:telegram_username] = value if has_attribute?(:telegram_username)
   end
 
   def telegram_username
     # Return telegram_username if present, otherwise fallback to telegram_id
-    self[:telegram_username].presence || self[:telegram_id].presence
+    (has_attribute?(:telegram_username) ? self[:telegram_username].presence : nil) || self[:telegram_id].presence
   end
 
   def telegram_username=(value)
     # Set telegram_username and sync telegram_id to match
-    self[:telegram_username] = value
+    self[:telegram_username] = value if has_attribute?(:telegram_username)
     self[:telegram_id] = value
   end
   # * END Telegram field management
@@ -205,6 +205,6 @@ class Therapist < ApplicationRecord
   def normalize_telegram_id
     # Convert empty telegram_id to nil to avoid unique constraint violations
     self[:telegram_id] = nil if self[:telegram_id].blank?
-    self[:telegram_username] = nil if self[:telegram_username].blank?
+    self[:telegram_username] = nil if has_attribute?(:telegram_username) && self[:telegram_username].blank?
   end
 end
