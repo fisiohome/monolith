@@ -756,12 +756,12 @@ module AdminPortal
 
               # Link or create TherapistAddress (one active per therapist)
               therapist_address = TherapistAddress.find_or_initialize_by(therapist:, address:)
-              therapist_address.active = true if therapist_address.new_record?
+              therapist_address.active = true
               therapist_address.save! if therapist_address.changed?
 
               # Link or create TherapistBankDetail (one active per therapist)
               therapist_bank_detail = TherapistBankDetail.find_or_initialize_by(therapist:, bank_detail:)
-              therapist_bank_detail.active = true if therapist_bank_detail.new_record?
+              therapist_bank_detail.active = true
               therapist_bank_detail.save! if therapist_bank_detail.changed?
 
               # Track successful operations
