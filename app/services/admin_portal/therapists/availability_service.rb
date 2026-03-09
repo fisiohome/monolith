@@ -23,7 +23,7 @@ module AdminPortal
       # Configuration constants for different usage contexts
       BYPASS_ADVANCE_BOOKING_FOR_ADMIN = true # Bypass advance booking limit for internal admin usage
       BYPASS_DAILY_LIMIT_FOR_ADMIN = true # Bypass daily appointment limit for internal admin usage
-      BYPASS_OVERLAP_CHECK_FOR_ADMIN = false # Bypass overlap check (use with caution)
+      BYPASS_OVERLAP_CHECK_FOR_ADMIN = true # Bypass overlap check (use with caution)
       BYPASS_DATE_WINDOW_FOR_ADMIN = true # Bypass custom date window constraints
       BYPASS_BASIC_TIME_CHECKS_FOR_ADMIN = true # Bypass basic time checks (past date validation)
       BYPASS_AVAILABILITY_CHECK_FOR_ADMIN = true # Bypass schedule availability check (use with caution)
