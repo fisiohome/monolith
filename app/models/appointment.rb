@@ -193,7 +193,7 @@ class Appointment < ApplicationRecord
   validates :visit_number, numericality: {
     only_integer: true,
     greater_than: 0,
-    less_than_or_equal_to: ->(appt) { appt.package&.number_of_visit || 1 }
+    less_than_or_equal_to: ->(appt) { appt.total_package_visits || 1 }
   }, unless: :skip_visit_number_validation?
   validates :preferred_therapist_gender, presence: true, inclusion: {in: PREFERRED_THERAPIST_GENDER}
   validates :referral_source, inclusion: {in: REFERRAL_SOURCES}, allow_blank: true
