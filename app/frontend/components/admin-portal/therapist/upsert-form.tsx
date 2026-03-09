@@ -1728,7 +1728,7 @@ export default function FormTherapist({
 						active,
 						address,
 						id,
-						postalCode,
+						postalCode: postalCode || undefined,
 						country,
 						countryCode,
 						state,
