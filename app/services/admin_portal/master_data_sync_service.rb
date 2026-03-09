@@ -1026,6 +1026,10 @@ module AdminPortal
                       next if start.blank? || end_time.blank?
                       next if start.casecmp("OFF").zero? || end_time.casecmp("OFF").zero?
 
+                      # Normalize time format - replace dots with colons
+                      start = start.tr(".", ":")
+                      end_time = end_time.tr(".", ":")
+
                       {
                         start_time: start.in_time_zone(Time.zone),
                         end_time: end_time.in_time_zone(Time.zone)
