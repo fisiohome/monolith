@@ -1321,25 +1321,28 @@ export const useTherapistAvailability = ({
 					bypassConstraints: options?.bypassConstraints,
 				});
 			} else {
-				setIsTherapistFound(true);
+				setFeasibilityReport(
+					createUnavailableTherapistReports(therapistsUnavailable),
+				);
 			}
 		},
-		[onCalculateIsoline],
+		[onCalculateIsoline, createUnavailableTherapistReports],
 	);
+
 	const onFindTherapists = useCallback(
 		async (options?: {
 			bypassConstraints?: boolean;
 			employmentType?: "KARPIS" | "FLAT" | "ALL";
 		}) => {
-			const { bypassConstraints = false, employmentType = "ALL" } =
-				options ?? {};
+			const bypassConstraints = options?.bypassConstraints ?? false;
+			const employmentType = options?.employmentType ?? "ALL";
 
 			const basePayload = {
 				preferredTherapistGender: preferredTherapistGenderValue,
 				appointmentDateTime: appointmentDateTImeValue,
 				isAllOfDay: isAllOfDayValue,
-				bypassConstraints: bypassConstraints,
-				employmentType: employmentType,
+				bypassConstraints,
+				employmentType,
 			};
 
 			const payload =
@@ -1434,8 +1437,34 @@ export const useTherapistAvailability = ({
 		],
 	);
 
+	const resetDependencyKey = useMemo(
+		() =>
+			JSON.stringify({
+				serviceIdValue: serviceIdValue ?? null,
+				preferredTherapistGenderValue: preferredTherapistGenderValue ?? null,
+				appointmentDateTimeValue:
+					appointmentDateTImeValue instanceof Date
+						? appointmentDateTImeValue.getTime()
+						: (appointmentDateTImeValue ?? null),
+				isAllOfDayValue,
+			}),
+		[
+			serviceIdValue,
+			preferredTherapistGenderValue,
+			appointmentDateTImeValue,
+			isAllOfDayValue,
+		],
+	);
+	const previousResetDependencyKeyRef = useRef<string | null>(null);
+
 	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
 	useEffect(() => {
+		if (previousResetDependencyKeyRef.current === resetDependencyKey) {
+			return;
+		}
+
+		previousResetDependencyKeyRef.current = resetDependencyKey;
+
 		if (
 			(serviceIdValue ||
 				appointmentDateTImeValue ||
@@ -1449,6 +1478,7 @@ export const useTherapistAvailability = ({
 
 		return () => {};
 	}, [
+		resetDependencyKey,
 		serviceIdValue,
 		appointmentDateTImeValue,
 		preferredTherapistGenderValue,
