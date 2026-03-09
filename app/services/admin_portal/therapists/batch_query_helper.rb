@@ -38,7 +38,18 @@ module AdminPortal
           base_scope = base_scope.where(gender: params[:preferred_therapist_gender])
         end
 
-        # Apply service filtering early
+        # Apply service filtering with SPECIAL_TIER logic using shared resolver
+        original_service = service
+        service = AdminPortal::SpecialTierServiceResolver.resolve_service_for_location(
+          location: location,
+          original_service: service
+        )
+
+        # Log if service was changed due to SPECIAL_TIER logic
+        if service.id != original_service.id
+          Rails.logger.info "[BatchQueryHelper] SPECIAL_TIER: Using service '#{service.name}' instead of '#{original_service.name}' for location '#{location.city}'"
+        end
+
         base_scope = base_scope.where(services: {id: service.id})
 
         # Apply employment type filter if specified

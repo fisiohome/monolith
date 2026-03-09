@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # * PLEASE NOTE:
 # * if sync data on admin portal data master spreadsheet
 #  * must set general access spreadsheet file to "Anyone with the link" with permission "Editor".
@@ -542,8 +544,12 @@ module AdminPortal
     end
 
     def therapists(employment_type_filter: "KARPIS")
-      # Use different URLs based on employment type
-      csv = if employment_type_filter == "KARPIS"
+      # Use different URLs based on environment
+      csv = if Rails.env.development?
+        # In development, use MASTER_DATA_URL with THERAPIST_GID
+        fetch_and_parse_csv_from_url(MASTER_DATA_URL, gid: THERAPIST_GID)
+      elsif employment_type_filter == "KARPIS"
+        # In other environments, use specific URLs based on employment type
         fetch_and_parse_csv_from_url(MASTER_DATA_THERAPISTS_KARPIS)
       elsif employment_type_filter == "FLAT"
         fetch_and_parse_csv_from_url(MASTER_DATA_THERAPISTS_FLAT)
@@ -610,42 +616,27 @@ module AdminPortal
             next
           end
 
-          # Determine service based on location's service relationships
+          # Determine service based on location's service relationships using shared logic
           brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
-          service = nil
 
-          # Extract base brand name (remove _SPECIAL_TIER suffix if present)
-          base_brand = brand.gsub("_SPECIAL_TIER", "")
-          # Further extract just the brand name (FISIOHOME, WICARAKU) by splitting on underscore
-          base_brand = base_brand.split("_").first
+          # Use shared resolver to determine the appropriate service name
+          service_name = AdminPortal::SpecialTierServiceResolver.resolve_service_name_for_location(
+            location: location,
+            original_service_name: brand,
+            location_services_cache: location_services
+          )
 
-          if ["FISIOHOME", "WICARAKU"].include?(base_brand)
-            # Check if location has special tier service
-            special_tier_service_name = "#{base_brand}_SPECIAL_TIER"
-            location_service_names = location_services[location.id] || Set.new
+          # Get the actual service from our services hash
+          service = services[service_name]
 
-            if location_service_names.include?(special_tier_service_name)
-              # Use special tier service if location has it, regardless of CSV brand value
-              service = services[special_tier_service_name]
-              unless service
-                results[:skipped] << {name:, email:, reason: "Special tier service '#{special_tier_service_name}' not found for location '#{city}'"}
-                next
-              end
+          unless service
+            base_brand = AdminPortal::SpecialTierServiceResolver.extract_base_brand(brand)
+            results[:skipped] << if AdminPortal::SpecialTierServiceResolver.special_tier_brand?(brand) && service_name.include?("_SPECIAL_TIER")
+              {name:, email:, reason: "Special tier service '#{service_name}' not found for location '#{city}'"}
             else
-              # Location doesn't have special tier, use basic service
-              service = services[base_brand]
-              unless service
-                results[:skipped] << {name:, email:, reason: "Basic service for brand '#{base_brand}' not found for location '#{city}'"}
-                next
-              end
+              {name:, email:, reason: "Service for brand '#{base_brand}' not found"}
             end
-          else
-            # For other brands, use their basic service
-            service = services[base_brand]
-            unless service
-              results[:skipped] << {name:, email:, reason: "Service for brand '#{base_brand}' not found"}
-              next
-            end
+            next
           end
 
           # define the coordinates
@@ -1837,8 +1828,9 @@ module AdminPortal
       raise
     end
 
-    def fetch_and_parse_csv_from_url(url)
-      data = URI.open(url).read # rubocop:disable Security/Open
+    def fetch_and_parse_csv_from_url(url, gid: nil)
+      final_url = gid ? "#{url}&gid=#{gid}" : url
+      data = URI.open(final_url).read # rubocop:disable Security/Open
       CSV.parse(data, headers: true)
     rescue OpenURI::HTTPError, CSV::MalformedCSVError => e
       Rails.logger.error "Failed to fetch or parse CSV from URL: #{e.class} - #{e.message}"
