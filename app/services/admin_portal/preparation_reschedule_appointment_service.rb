@@ -3,7 +3,6 @@ module AdminPortal
     include ApplicationHelper
     include TherapistsHelper
     include AdminPortal::Therapists
-    include AdminPortal::Therapists::QueryHelper
 
     def initialize(appointment, params)
       @appointment = appointment
