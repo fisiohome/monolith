@@ -335,15 +335,38 @@ end
    - No minimum advance booking requirements
    - Only collision with same-series visits is checked
 
-3. **Series Order**: Cannot schedule before previous visits
+3. **Series Order**: Can be controlled via constant for flexible or strict ordering
+   
+   **What is Date Restriction?**
+   Date restriction controls whether users can schedule visits out of chronological order. This affects UI behavior when selecting appointment dates.
+
+   **Configuration Constant:**
    ```ruby
-   def min_date
-     initial_visit = Appointment.find_by(registration_number: registration_number, appointment_reference_id: nil)
-     previous_visit = initial_visit.series_appointments
-       .where("visit_number < ?", visit_number)
-       .order(:visit_number)
-       .last
-     previous_visit&.appointment_date_time || Date.current
+   # In app/models/appointment.rb
+   ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION = false  # Default: flexible mode
+   ```
+
+   **Two Modes:**
+
+   **Flexible Mode (default: `false`)**
+   - Users can select any date from today onwards
+   - Visit 3 can be scheduled before visit 2
+   - Backend automatically reorders visit numbers chronologically
+   - Implementation: `min_date = Time.current.beginning_of_day`
+
+   **Strict Mode (`true`)**
+   - Users can only select dates after previous visits
+   - Visit 3 cannot be scheduled before visit 2
+   - Maintains chronological visit order in UI
+   - Implementation: `min_date = @appointment&.min_datetime`
+
+   **Service Implementation:**
+   ```ruby
+   # In PreparationRescheduleAppointmentService#fetch_options_data
+   if Appointment::ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION
+     min_date = @appointment&.min_datetime  # Strict: use previous visit date
+   else
+     min_date = Time.current.beginning_of_day  # Flexible: today onwards
    end
    ```
 

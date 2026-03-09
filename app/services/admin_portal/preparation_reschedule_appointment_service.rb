@@ -49,9 +49,14 @@ module AdminPortal
     def fetch_options_data
       preferred_therapist_gender = Appointment::PREFERRED_THERAPIST_GENDER
 
-      # For dynamic ordering: only set min date (no max date constraint)
-      # Users can reschedule to any future date, but dates with existing visits will be disabled
-      min_date = @appointment&.min_datetime
+      # For rescheduling date restrictions: can be controlled via constant
+      # When ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION is true: use min_datetime (strict)
+      # When false: only restrict to today or future dates (flexible, backend handles reordering)
+      min_date = if Appointment::ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION
+        @appointment&.min_datetime
+      else
+        Time.current.beginning_of_day
+      end
 
       # Collect all other visits' scheduled dates/times to disable them
       # This prevents scheduling on dates/times where visit N+ already exists
@@ -65,7 +70,7 @@ module AdminPortal
           preferred_therapist_gender:,
           appt_date_time: {
             min: min_date,
-            max: nil, # No max constraint for dynamic ordering
+            max: nil, # No max constraint (behavior depends on ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION)
             message:,
             disabled_visits: # Array of {date, time, visitNumber} for dates/times with scheduled visits
           }

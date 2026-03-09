@@ -17,6 +17,9 @@ class Appointment < ApplicationRecord
   # Control strict validation for status updates (disabled for admin internal use)
   ENABLE_STRICT_STATUS_VALIDATION = false
 
+  # Control rescheduling date restrictions (disabled for flexible visit reordering)
+  ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION = false
+
   PatientCondition = Struct.new(:title, :description, :title_id, :description_id)
   PATIENT_CONDITION = [
     PatientCondition.new(
