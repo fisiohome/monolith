@@ -101,7 +101,7 @@ const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
 			max = null,
 			disabledVisits = [],
 			isAllOfDay = false,
-			autoScroll = true,
+			autoScroll = false,
 			allowPastTimes = false,
 			onChangeValue,
 			callbackOnChange,

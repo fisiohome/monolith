@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { type ComponentProps, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import HereMap from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -36,6 +35,10 @@ import {
 import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
 import DateTimePicker from "./form/date-time";
+
+// import { TherapistSearchField } from "./form/therapist-search-field";
+
+import HereMap from "@/components/shared/here-map";
 import TherapistSelection from "./form/therapist-selection";
 
 // Helper component to display visit list
@@ -394,13 +397,13 @@ export const RescheduleFields = memo(function Component({
 				/>
 			</div>
 
+			{/* Original TherapistSelection and HereMap components - commented out */}
 			<FormField
 				control={formHooks.form.control}
 				name="therapist.name"
 				render={({ field }) => (
 					<FormItem className="col-span-full">
 						{/* <FormLabel>{tasf("therapist.label")}</FormLabel> */}
-
 						<FormControl>
 							<TherapistSelection
 								items={formHooks.therapistsOptions.feasible}
@@ -445,6 +448,9 @@ export const RescheduleFields = memo(function Component({
 				options={{ disabledEvent: false }}
 				className="col-span-full"
 			/>
+
+			{/* New simplified therapist search */}
+			{/* <TherapistSearchField formHooks={formHooks} /> */}
 
 			<FormField
 				control={formHooks.form.control}
