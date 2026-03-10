@@ -45,7 +45,7 @@ const AppointmentListItemDetails = memo(function Component({
 	seeDetailVisitSeries,
 }: AppointmentListItemDetailsProps) {
 	const { t } = useTranslation("appointments");
-	const { locale, tzDate, timeFormatDateFns } = useDateContext();
+	const { locale, tzDate } = useDateContext();
 	const startTimeLabel = useMemo(() => {
 		if (!schedule.appointmentDateTime)
 			return {
@@ -54,10 +54,14 @@ const AppointmentListItemDetails = memo(function Component({
 				period: "--",
 			};
 		// Format it to 12-hour time with an AM/PM indicator.
-		const timePeriod = format(schedule.appointmentDateTime, timeFormatDateFns, {
-			locale,
-			in: tzDate,
-		});
+		const timePeriod = format(
+			schedule.appointmentDateTime,
+			locale.code === "id" ? "HH:mm" : "hh:mm a",
+			{
+				locale,
+				in: tzDate,
+			},
+		);
 		// Split the time with period based on the space
 		const startTime = timePeriod.split(" ");
 		const time = startTime[0];
@@ -70,7 +74,7 @@ const AppointmentListItemDetails = memo(function Component({
 		});
 
 		return { time, period, distance };
-	}, [locale, tzDate, timeFormatDateFns, schedule]);
+	}, [locale, tzDate, schedule]);
 	const distanceBadgeVariant = useMemo(
 		() => getBadgeVariantStatus(schedule.status),
 		[schedule.status],
@@ -96,10 +100,14 @@ const AppointmentListItemDetails = memo(function Component({
 					<div className="font-semibold uppercase">
 						<span>
 							{schedule.appointmentDateTime
-								? format(schedule.appointmentDateTime, timeFormatDateFns, {
-										locale,
-										in: tzDate,
-									})
+								? format(
+										schedule.appointmentDateTime,
+										locale.code === "id" ? "HH:mm" : "hh:mm a",
+										{
+											locale,
+											in: tzDate,
+										},
+									)
 								: "N/A"}
 						</span>
 						<Badge

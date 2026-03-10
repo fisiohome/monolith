@@ -83,6 +83,12 @@ Rails.application.routes.draw do
           end
         end
 
+        resources :therapist_diagnosis, only: [:index], path: "therapist-diagnosis" do
+          collection do
+            post "analyze" => "therapist_diagnosis#analyze"
+          end
+        end
+
         resources :admins, path: "admin-management", except: [:show, :edit] do
           collection do
             get "generate-reset-password-url" => "admins#generate_reset_password_url"
