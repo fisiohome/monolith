@@ -458,7 +458,8 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 		[pageURL, globalProps.adminPortal.router.adminPortal.appointment.index],
 	);
 
-	const canShowActions = appointment.status !== "cancelled";
+	// * bypass this because it's for our admin internal uses
+	const canShowActions = true || appointment.status !== "cancelled";
 
 	return (
 		<DropdownMenu>

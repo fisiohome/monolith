@@ -9,17 +9,20 @@ import type { Appointment } from "@/types/admin-portal/appointment";
 import type { ScheduleListProps } from "../appointment-list";
 
 // * helper function
+// * bypass this because it's for our admin internal uses
 export const getPermission = {
 	updateStatus: (appt: Appointment) =>
-		appt.status !== "completed" &&
-		appt.status !== "unscheduled" &&
-		appt.status !== "on_hold",
-	cancel: (appt: Appointment) => appt.status !== "completed",
+		true ||
+		(appt.status !== "completed" &&
+			appt.status !== "unscheduled" &&
+			appt.status !== "on_hold"),
+	cancel: (appt: Appointment) => true || appt.status !== "completed",
 	createSeries: (appt: Appointment) =>
-		appt.totalPackageVisits > 1 &&
-		appt.visitNumber !== appt.totalPackageVisits &&
-		appt.nextVisitProgress,
-	reschedule: (appt: Appointment) => appt.status !== "completed",
+		true ||
+		(appt.totalPackageVisits > 1 &&
+			appt.visitNumber !== appt.totalPackageVisits &&
+			appt.nextVisitProgress),
+	reschedule: (appt: Appointment) => true || appt.status !== "completed",
 };
 
 // * core component
