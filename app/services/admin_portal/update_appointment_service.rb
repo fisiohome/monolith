@@ -32,21 +32,30 @@ module AdminPortal
         end
       end
 
-      ActiveRecord::Base.transaction do
-        # Step 2: Apply the updates
-        apply_updates
+      # Step 2 & 3: Acquire series lock ONCE, then wrap retry logic outside transaction
+      # This maintains the lock across all retry attempts and ensures each retry gets a fresh transaction
+      result = nil
 
-        # Step 3: Handle visit number changes based on appointment_date_time modification
-        if @updated
-          with_series_lock_retry(@appointment) do
-            with_visit_number_retry(@appointment) do
+      with_series_lock(@appointment) do
+        result = with_visit_number_retry(@appointment, max_retries: 5, base_delay: 0.2) do
+          ActiveRecord::Base.transaction do
+            # Reload appointment to ensure fresh data after any previous rollback
+            @appointment.reload if @appointment.persisted?
+
+            # Apply the updates
+            apply_updates
+
+            # Handle visit number changes based on appointment_date_time modification
+            if @updated
               handle_visit_number_changes
             end
+
+            {success: true, data: @appointment.reload, changed: @updated}
           end
         end
-
-        {success: true, data: @appointment.reload, changed: @updated}
       end
+
+      result
     rescue ActionController::ParameterMissing => e
       {success: false, error: "Missing parameter: #{e.param}", type: "ParameterMissing"}
     rescue ActiveRecord::RecordInvalid => e
@@ -228,9 +237,10 @@ module AdminPortal
     #   After:  Visit 2 (Mar 6), Visit 4 (Mar 12) becomes Visit 3, Visit 3 (unscheduled) becomes Visit 4, Visit 5 (unscheduled) becomes Visit 5
     def move_taken_visit_to_end
       root = @appointment.reference_appointment || @appointment
+      registration_number = root.registration_number
 
-      # Get all visits in the series
-      all_visits = ([root] + root.series_appointments.to_a)
+      # Get all visits in the series - query fresh from database to avoid stale data
+      all_visits = Appointment.where(registration_number: registration_number).to_a
 
       # Separate scheduled and unscheduled visits (excluding the current appointment)
       scheduled_visits = all_visits
@@ -243,31 +253,27 @@ module AdminPortal
         .select { |v| v.appointment_date_time.blank? }
         .sort_by(&:visit_number)
 
-      # Use transaction and temporary numbers to avoid constraint violations
-      # Enhanced with unique constraint retry mechanism
-      with_visit_number_retry(@appointment) do
-        ActiveRecord::Base.transaction do
-          # Step 1: Move all visits to temporary negative numbers to free up all positive numbers
-          all_temp_visits = scheduled_visits + unscheduled_visits + [@appointment]
-          all_temp_visits.each_with_index do |visit, index|
-            visit.update_column(:visit_number, -(index + 1))
-          end
+      # Use temporary numbers to avoid constraint violations
+      # Note: Retry logic is handled at the outer call level
+      # Step 1: Move all visits to temporary negative numbers to free up all positive numbers
+      all_temp_visits = scheduled_visits + unscheduled_visits + [@appointment]
+      all_temp_visits.each_with_index do |visit, index|
+        visit.update_column(:visit_number, -(index + 1))
+      end
 
-          # Step 2: Assign final numbers to scheduled visits (starting from 1)
-          scheduled_visits.each_with_index do |visit, index|
-            visit.update_column(:visit_number, index + 1)
-          end
+      # Step 2: Assign final numbers to scheduled visits (starting from 1)
+      scheduled_visits.each_with_index do |visit, index|
+        visit.update_column(:visit_number, index + 1)
+      end
 
-          # Step 3: Assign final number to taken-out visit (after scheduled visits)
-          taken_out_number = scheduled_visits.length + 1
-          @appointment.update_column(:visit_number, taken_out_number)
+      # Step 3: Assign final number to taken-out visit (after scheduled visits)
+      taken_out_number = scheduled_visits.length + 1
+      @appointment.update_column(:visit_number, taken_out_number)
 
-          # Step 4: Assign final numbers to unscheduled visits (after taken-out visit)
-          unscheduled_visits.each_with_index do |visit, index|
-            final_number = taken_out_number + index + 1
-            visit.update_column(:visit_number, final_number)
-          end
-        end
+      # Step 4: Assign final numbers to unscheduled visits (after taken-out visit)
+      unscheduled_visits.each_with_index do |visit, index|
+        final_number = taken_out_number + index + 1
+        visit.update_column(:visit_number, final_number)
       end
     end
 
@@ -282,10 +288,13 @@ module AdminPortal
     #   After:  Visit 4 & 5 become Visit 3 & 4, original Visit 3 becomes Visit 5
     def reorder_series_visit_numbers
       root = @appointment.reference_appointment || @appointment
+      registration_number = root.registration_number
 
-      # Get all visits with scheduled datetime
-      scheduled_visits = ([root] + root.series_appointments.to_a)
-        .select { |v| v.appointment_date_time.present? }
+      # Get all visits with scheduled datetime - query fresh from database to avoid stale data
+      scheduled_visits = Appointment
+        .where(registration_number: registration_number)
+        .where.not(appointment_date_time: nil)
+        .to_a
 
       return if scheduled_visits.empty?
 
@@ -293,8 +302,9 @@ module AdminPortal
       # True Chronological Order is prioritized over completed visit preservation
       all_visits_chronological = scheduled_visits.sort_by(&:appointment_date_time)
 
-      # Handle unscheduled visits
-      unscheduled_visits = root.series_appointments
+      # Handle unscheduled visits - query fresh from database
+      unscheduled_visits = Appointment
+        .where(registration_number: registration_number)
         .where(appointment_date_time: nil)
         .where.not(id: scheduled_visits.map(&:id))
         .order(:visit_number)
@@ -302,29 +312,27 @@ module AdminPortal
 
       # First pass: Set temporary negative visit_numbers to avoid unique constraint violations
       # Use a large negative number to ensure no conflicts with existing data
-      # Enhanced with unique constraint retry mechanism
-      with_visit_number_retry(@appointment) do
-        all_visits_to_reorder = all_visits_chronological + unscheduled_visits
-        all_visits_to_reorder.each_with_index do |visit, index|
-          # Use very negative numbers to avoid any potential conflicts
-          temp_number = -(10000 + index + 1)
-          visit.update_column(:visit_number, temp_number)
-        end
+      # Note: Retry logic is handled at the outer call level
+      all_visits_to_reorder = all_visits_chronological + unscheduled_visits
+      all_visits_to_reorder.each_with_index do |visit, index|
+        # Use very negative numbers to avoid any potential conflicts
+        temp_number = -(10000 + index + 1)
+        visit.update_column(:visit_number, temp_number)
+      end
 
-        # Second pass: Assign final visit_numbers based on chronological position
-        # True Chronological Order - ALL visits get sequential numbers based on date
-        current_number = 0
-        all_visits_chronological.each do |visit|
-          current_number += 1
-          visit.update_column(:visit_number, current_number)
-        end
+      # Second pass: Assign final visit_numbers based on chronological position
+      # True Chronological Order - ALL visits get sequential numbers based on date
+      current_number = 0
+      all_visits_chronological.each do |visit|
+        current_number += 1
+        visit.update_column(:visit_number, current_number)
+      end
 
-        # Assign remaining numbers to unscheduled visits
-        next_number = current_number + 1
-        unscheduled_visits.each do |visit|
-          visit.update_column(:visit_number, next_number)
-          next_number += 1
-        end
+      # Assign remaining numbers to unscheduled visits
+      next_number = current_number + 1
+      unscheduled_visits.each do |visit|
+        visit.update_column(:visit_number, next_number)
+        next_number += 1
       end
     end
 

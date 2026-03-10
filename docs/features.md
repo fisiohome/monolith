@@ -722,6 +722,7 @@ For detailed information on specific features, please refer to:
 - **[Admin Internal Validation Bypass](./admin-internal-status-validation-bypass.md)** - Complete guide to bypassing strict validation rules for admin internal use (status updates and therapist scheduling)
 - **[Appointment Management](./appt/appointment-management.md)** - Complete guide to appointment lifecycle, status workflows, and series management
 - **[Appointment Rescheduling](./appt/rescheduling/appointment-rescheduling.md)** - Detailed rescheduling process, validations, and visit reordering
+- **[Rescheduling Concurrency Fix](./appt/rescheduling/rescheduling-concurrency-fix.md)** - High-concurrency rescheduling with proper transaction handling and recent fixes (March 2026)
 - **[Appointment Overlap Validation](./appt/appointment-overlap-validation.md)** - Technical details on overlap prevention and validation rules
 - **[Appointment Query Architecture](./appt/appointment-query-architecture.md)** - Registration number-based queries and performance optimization
 

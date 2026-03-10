@@ -6,6 +6,7 @@ The appointment system manages home healthcare visits between therapists and pat
 - **[Query Architecture](./appointment-query-architecture.md)** - Registration number-based queries and performance optimization
 - **[Visit Number Reordering](./rescheduling/visit-number-reordering-fix.md)** - True chronological ordering and anomaly handling
 - **[Appointment Rescheduling](./rescheduling/appointment-rescheduling.md)** - Complete rescheduling workflow and documentation
+- **[Rescheduling Concurrency Fix](./rescheduling/rescheduling-concurrency-fix.md)** - High-concurrency rescheduling with proper transaction handling (Updated March 2026)
 - **Same-Day Appointments** - Full support for same-day booking and rescheduling
 - **Cancellation Logic** - Flexible cancellation for any visit regardless of series status
 

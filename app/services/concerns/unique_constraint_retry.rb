@@ -57,8 +57,13 @@ module UniqueConstraintRetry
           # Check for concurrent operations on the same series
           check_concurrent_operations(appointment)
 
-          # Exponential backoff
-          delay = base_delay * (2**(attempts - 1))
+          # Reload appointment and its associations to get fresh data after rollback
+          appointment.reload
+          appointment.reference_appointment&.reload
+          Rails.logger.debug "[VisitNumberRetry] Reloaded fresh data from database"
+
+          # Exponential backoff with jitter
+          delay = base_delay * (2**(attempts - 1)) + Random.rand * 0.05
           sleep(delay)
           retry
         else
@@ -68,10 +73,15 @@ module UniqueConstraintRetry
       else
         raise e
       end
-    rescue PG::DeadlockDetected => e
+    rescue ActiveRecord::Deadlocked => e
       if attempts < max_retries
         Rails.logger.warn "[VisitNumberRetry] Deadlock detected, retry #{attempts}/#{max_retries}: #{e.message}"
-        sleep(base_delay * attempts)
+
+        # Reload data after deadlock rollback
+        appointment.reload
+        appointment.reference_appointment&.reload
+
+        sleep(base_delay * attempts + Random.rand * 0.05)
         retry
       else
         Rails.logger.error "[VisitNumberRetry] Max retries exceeded due to deadlocks"

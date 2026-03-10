@@ -240,14 +240,122 @@ GROUP BY registration_number
 HAVING COUNT(*) > 1;
 ```
 
+## Recent Issues and Fixes (March 2026)
+
+### Issue 1: PG::InFailedSqlTransaction Error
+
+**Problem**: 
+```
+PG::InFailedSqlTransaction: ERROR: current transaction is aborted, commands ignored until end of transaction block
+```
+
+**Root Cause**: Nested transactions with retry logic caused PostgreSQL to abort transactions when errors occurred, making subsequent commands fail.
+
+**Solution Applied**:
+1. **Restructured Transaction Order**: Moved retry logic OUTSIDE the main transaction
+2. **Single Lock Acquisition**: Series lock acquired ONCE and maintained across all retries
+3. **Fresh Transaction Per Retry**: Each retry attempt gets a clean transaction
+
+**Before (BROKEN)**:
+```ruby
+ActiveRecord::Base.transaction do
+  with_series_lock_retry(@appointment) do
+    with_visit_number_retry(@appointment) do
+      # If retry happens, transaction is already failed
+    end
+  end
+end
+```
+
+**After (FIXED)**:
+```ruby
+with_series_lock(@appointment) do  # Lock acquired ONCE
+  with_visit_number_retry(@appointment) do  # Retry with same lock
+    ActiveRecord::Base.transaction do  # Fresh transaction per retry
+      # Operations
+    end
+  end
+end
+```
+
+### Issue 2: PG::DeadlockDetected Not Found
+
+**Problem**:
+```
+NameError - uninitialized constant PG::DeadlockDetected
+```
+
+**Root Cause**: Code referenced PostgreSQL-specific exception class that wasn't available in namespace.
+
+**Solution Applied**:
+- Changed `PG::DeadlockDetected` → `ActiveRecord::Deadlocked` for database-agnostic handling
+
+**File**: `app/services/concerns/unique_constraint_retry.rb:71`
+
+### Issue 3: Stale Data After Transaction Rollback
+
+**Problem**: After transaction rollback, in-memory objects still had stale data, causing repeated constraint violations.
+
+**Solution Applied**:
+
+1. **Data Reload on Retry**:
+```ruby
+# Reload appointment and associations after rollback
+appointment.reload
+appointment.reference_appointment&.reload
+```
+
+2. **Direct Database Queries**: Replaced cached association queries with fresh database queries
+```ruby
+# Before: root.series_appointments.to_a (cached)
+# After: Appointment.where(registration_number: registration_number).to_a (fresh)
+```
+
+3. **Enhanced Retry Logic**:
+   - Increased retry attempts: 3 → 5
+   - Added jitter to exponential backoff
+   - Better concurrency monitoring
+
+### Issue 4: "Conflict detected while updating appointment"
+
+**Problem**: Users still getting conflict errors despite retry mechanism.
+
+**Root Cause**: Lock release/reacquire cycles between retries and stale cached data.
+
+**Solution Applied**:
+- **Lock Persistence**: Series lock held throughout all retry attempts
+- **Fresh Data Access**: All queries use direct database access instead of associations
+- **Increased Retry Limits**: More attempts for high-concurrency scenarios
+
+### Updated Configuration
+
+**Current Retry Settings**:
+```ruby
+with_series_lock(@appointment) do
+  with_visit_number_retry(@appointment, max_retries: 5, base_delay: 0.2) do
+    ActiveRecord::Base.transaction do
+      appointment.reload  # Fresh data
+      # Operations
+    end
+  end
+end
+```
+
+**Enhanced Backoff Strategy**:
+- Exponential backoff: 0.2s, 0.4s, 0.8s, 1.6s, 3.2s
+- Added jitter: + Random.rand * 0.05s to prevent thundering herd
+- Data reload after each rollback
+
 ## Conclusion
 
 This long-term solution provides:
 
 ✅ **Zero Constraint Violations**: Comprehensive retry mechanism handles all race conditions
 ✅ **High Concurrency Support**: Database-level locking prevents conflicts
+✅ **Transaction Safety**: Proper transaction/retry ordering prevents aborted transaction errors
+✅ **Fresh Data Handling**: Data reload and direct queries prevent stale data issues
 ✅ **Graceful Degradation**: User-friendly error messages for edge cases
 ✅ **Production Ready**: Comprehensive testing and monitoring
 ✅ **Maintainable Code**: Modular concerns with clear separation of concerns
 
-The implementation transforms the rescheduling system from a race-condition-prone operation to a robust, concurrent-safe process that scales with user load while maintaining data integrity.
+The implementation transforms the rescheduling system from a race-condition-prone operation to a robust, concurrent-safe process that scales with user load while maintaining data integrity. Recent fixes ensure proper transaction handling and data consistency even under high concurrency scenarios.
