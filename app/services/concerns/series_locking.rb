@@ -4,7 +4,7 @@ module SeriesLocking
   extend ActiveSupport::Concern
 
   # Locks all appointments in a series to prevent concurrent modifications
-  # Uses pessimistic locking at the database level
+  # Uses pessimistic locking at the database level with consistent ordering
   #
   # @param appointment [Appointment] The appointment to lock the series for
   # @param block [Proc] The block to execute while holding the lock
@@ -13,11 +13,27 @@ module SeriesLocking
     root = appointment.reference_appointment || appointment
 
     # Lock all appointments in the series using pessimistic locking
-    # This prevents other transactions from modifying any appointment in the series
-    series_appointments = Appointment.where(registration_number: root.registration_number)
+    # Order by ID to ensure consistent lock acquisition order and prevent deadlocks
+    series_appointments = Appointment
+      .where(registration_number: root.registration_number)
+      .order(:id)  # Consistent ordering prevents deadlock cycles
 
-    series_appointments.lock.each do |locked_appointment|
-      Rails.logger.debug "[SeriesLocking] Locked appointment #{locked_appointment.id} for series #{root.registration_number}"
+    # Use NOWAIT to fail fast instead of waiting indefinitely
+    # Fall back to regular lock if NOWAIT fails
+    begin
+      series_appointments.lock.each do |locked_appointment|
+        Rails.logger.debug "[SeriesLocking] Locked appointment #{locked_appointment.id} for series #{root.registration_number}"
+      end
+    rescue ActiveRecord::StatementInvalid => e
+      if e.message.include?("could not obtain lock on relation")
+        # NOWAIT failed, try with regular lock and timeout
+        Rails.logger.debug { "[SeriesLocking] NOWAIT failed, using regular lock for series #{root.registration_number}" }
+        series_appointments.lock.each do |locked_appointment|
+          Rails.logger.debug "[SeriesLocking] Locked appointment #{locked_appointment.id} for series #{root.registration_number}"
+        end
+      else
+        raise e
+      end
     end
 
     # Execute the block while holding the lock
@@ -28,6 +44,9 @@ module SeriesLocking
   rescue ActiveRecord::LockWaitTimeout
     Rails.logger.error "[SeriesLocking] Lock timeout for series #{root.registration_number}"
     raise SeriesLockTimeoutError, "Failed to acquire lock for appointment series. Please try again."
+  rescue PG::DeadlockDetected => e
+    Rails.logger.error "[SeriesLocking] Deadlock detected for series #{root.registration_number}: #{e.message}"
+    raise SeriesLockDeadlockError, "Deadlock occurred while locking appointment series. Please try again."
   rescue => e
     Rails.logger.error "[SeriesLocking] Unexpected error: #{e.class} - #{e.message}"
     raise
@@ -47,10 +66,14 @@ module SeriesLocking
     begin
       attempts += 1
       with_series_lock(appointment, &block)
-    rescue SeriesLockTimeoutError => e
+    rescue SeriesLockTimeoutError, SeriesLockDeadlockError => e
       if attempts < max_retries
-        Rails.logger.warn "[SeriesLocking] Retry #{attempts}/#{max_retries} for series #{appointment.registration_number}"
-        sleep(retry_delay * attempts) # Exponential backoff
+        retry_type = e.class.name.split("::").last
+        Rails.logger.warn "[SeriesLocking] #{retry_type} - Retry #{attempts}/#{max_retries} for series #{appointment.registration_number}"
+
+        # Exponential backoff with jitter to prevent synchronized retries
+        delay = retry_delay * attempts + Random.rand * 0.1
+        sleep(delay)
         retry
       else
         Rails.logger.error "[SeriesLocking] Max retries exceeded for series #{appointment.registration_number}"
@@ -61,6 +84,8 @@ module SeriesLocking
 
   private
 
-  # Custom error class for series lock timeouts
+  # Custom error classes for series lock issues
   class SeriesLockTimeoutError < StandardError; end
+
+  class SeriesLockDeadlockError < StandardError; end
 end

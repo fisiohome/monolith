@@ -58,6 +58,8 @@ module AdminPortal
       case e
       when SeriesLocking::SeriesLockTimeoutError
         {success: false, error: "System is busy updating appointments. Please try again in a moment.", type: "LockTimeout"}
+      when SeriesLocking::SeriesLockDeadlockError
+        {success: false, error: "System detected a conflict while updating appointments. Please try again.", type: "DeadlockError"}
       when UniqueConstraintRetry::VisitNumberAssignmentError
         {success: false, error: "Conflict detected while updating appointment. Please try again.", type: "VisitNumberConflict"}
       else
