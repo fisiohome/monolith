@@ -10,6 +10,16 @@ module AdminPortal
     include AdminPortal::Therapists
     include AdminsHelper
 
+    # Configuration constants for therapist search behavior
+    #
+    # USE_ADMIN_THERAPIST_SEARCH:
+    # - true: Use filtered_therapists_for_admin (all active therapists with active users)
+    # - false: Use filtered_therapists_in_batches (standard search with coordinate/location filtering)
+    #
+    # Usage: Set this constant to control search behavior without code changes
+    # Admin method automatically bypasses coordinate and location filtering
+    USE_ADMIN_THERAPIST_SEARCH = true
+
     attr_reader :params
 
     def initialize(params)
@@ -67,17 +77,36 @@ module AdminPortal
       else
         AdminPortal::Therapists::QueryConfig::DEFAULT_BATCH_SIZE
       end
+
       extend AdminPortal::Therapists::BatchQueryHelper
       Rails.logger.info "[TherapistSearch] batch_size_param: #{batch_size_param.inspect}, final batch_size: #{batch_size}"
       Rails.logger.info "[TherapistSearch] location_id: #{selected_location_id}, service_id: #{selected_service_id}"
       Rails.logger.info "[TherapistSearch] employment_type: #{employment_type}, bypass_constraints: #{bypass_constraints}"
-      filtered_therapists_in_batches(
-        location: location,
-        service: service,
-        params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints),
-        formatter: method(:formatted_therapists),
-        batch_size: batch_size
-      )
+      Rails.logger.info "[TherapistSearch] Admin mode: #{USE_ADMIN_THERAPIST_SEARCH}"
+
+      # Choose search method based on configuration
+      if USE_ADMIN_THERAPIST_SEARCH
+        Rails.logger.info "[TherapistSearch] Using ADMIN therapist search method"
+        filtered_therapists_for_admin(
+          location: location,
+          service: service,
+          params: @params.merge(
+            employment_type: employment_type,
+            bypass_constraints: bypass_constraints
+          ),
+          formatter: method(:formatted_therapists),
+          batch_size: batch_size
+        )
+      else
+        Rails.logger.info "[TherapistSearch] Using STANDARD therapist search method"
+        filtered_therapists_in_batches(
+          location: location,
+          service: service,
+          params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints),
+          formatter: method(:formatted_therapists),
+          batch_size: batch_size
+        )
+      end
 
       # ? if wanna not batching filtered processed
       # filtered_therapists(location:, service:, params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints), formatter: method(:formatted_therapists))

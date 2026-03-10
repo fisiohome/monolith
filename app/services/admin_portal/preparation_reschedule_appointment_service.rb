@@ -4,6 +4,16 @@ module AdminPortal
     include TherapistsHelper
     include AdminPortal::Therapists
 
+    # Configuration constants for therapist search behavior
+    #
+    # USE_ADMIN_THERAPIST_SEARCH:
+    # - true: Use filtered_therapists_for_admin (all active therapists with active users)
+    # - false: Use filtered_therapists_in_batches (standard search with coordinate/location filtering)
+    #
+    # Usage: Set this constant to control search behavior without code changes
+    # Admin method automatically bypasses coordinate and location filtering
+    USE_ADMIN_THERAPIST_SEARCH = true
+
     def initialize(appointment, params)
       @appointment = appointment
       @params = params
@@ -21,6 +31,14 @@ module AdminPortal
       # Get bypass constraints flag from params
       bypass_constraints = @params[:bypass_constraints] || false
 
+      # Prepare rescheduling parameters for coordinate filter bypass
+      appointment_lat = @appointment.address_history&.latitude || 0
+      appointment_lng = @appointment.address_history&.longitude || 0
+
+      # Log appointment coordinates for debugging
+      Rails.logger.info "[TherapistSearch-Reschedule] Appointment coordinates: lat=#{appointment_lat}, lng=#{appointment_lng}"
+      Rails.logger.info "[TherapistSearch-Reschedule] Admin mode: #{USE_ADMIN_THERAPIST_SEARCH}"
+
       # using the batching
       batch_size_param = @params[:batch_size]
       batch_size = if batch_size_param.present?
@@ -32,19 +50,47 @@ module AdminPortal
       Rails.logger.info "[TherapistSearch-Reschedule] batch_size_param: #{batch_size_param.inspect}, final batch_size: #{batch_size}"
       Rails.logger.info "[TherapistSearch-Reschedule] appointment_id: #{@appointment.id}, location_id: #{@appointment.location&.id}, service_id: #{@appointment.service&.id}"
       Rails.logger.info "[TherapistSearch-Reschedule] employment_type: #{employment_type}, bypass_constraints: #{bypass_constraints}"
-      extend AdminPortal::Therapists::BatchQueryHelper
-      filtered_therapists_in_batches(
-        location: location,
-        service: service,
-        params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints),
-        formatter: method(:formatted_therapists),
-        batch_size: batch_size,
-        current_appointment_id: @appointment.id
-      )
 
-      # ? if wanna not batching filtered processed
-      # filtered_therapists(location:, service:, params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints), formatter: method(:formatted_therapists))
+      extend AdminPortal::Therapists::BatchQueryHelper
+
+      # Choose search method based on configuration
+      if USE_ADMIN_THERAPIST_SEARCH
+        Rails.logger.info "[TherapistSearch-Reschedule] Using ADMIN therapist search method"
+        filtered_therapists_for_admin(
+          location: location,
+          service: service,
+          params: @params.merge(
+            employment_type: employment_type,
+            bypass_constraints: bypass_constraints,
+            is_rescheduling: true,
+            appointment_lat: appointment_lat,
+            appointment_lng: appointment_lng
+          ),
+          formatter: method(:formatted_therapists),
+          batch_size: batch_size,
+          current_appointment_id: @appointment.id
+        )
+      else
+        Rails.logger.info "[TherapistSearch-Reschedule] Using STANDARD therapist search method"
+        filtered_therapists_in_batches(
+          location: location,
+          service: service,
+          params: @params.merge(
+            employment_type: employment_type,
+            bypass_constraints: bypass_constraints,
+            is_rescheduling: true,
+            appointment_lat: appointment_lat,
+            appointment_lng: appointment_lng
+          ),
+          formatter: method(:formatted_therapists),
+          batch_size: batch_size,
+          current_appointment_id: @appointment.id
+        )
+      end
     end
+
+    # ? if wanna not batching filtered processed
+    # filtered_therapists(location:, service:, params: @params.merge(employment_type: employment_type, bypass_constraints: bypass_constraints), formatter: method(:formatted_therapists))
 
     def fetch_options_data
       preferred_therapist_gender = Appointment::PREFERRED_THERAPIST_GENDER

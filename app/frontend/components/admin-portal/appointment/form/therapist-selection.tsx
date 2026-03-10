@@ -37,7 +37,6 @@ import { Input } from "@/components/ui/extended/input";
 import { Spinner } from "@/components/ui/kibo-ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import type {
 	FeasibilityReportItem,
 	TherapistOption,
@@ -595,7 +594,7 @@ const TherapistSelection = memo(
 		});
 		const isMobile = useIsMobile();
 		const [search, setSearch] = useState("");
-		const [isBypassConstraints, setIsBypassConstraints] = useState(false);
+		const [isBypassConstraints, _setIsBypassConstraints] = useState(true);
 		const [employmentType, setEmploymentType] = useState<
 			"KARPIS" | "FLAT" | "ALL"
 		>("ALL");
@@ -784,6 +783,18 @@ const TherapistSelection = memo(
 					<div className="flex items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
 						<div>
 							<p className="text-sm font-semibold">
+								Admin Mode - Automatic Bypass
+							</p>
+							<p className="text-xs text-muted-foreground">
+								This form automatically bypasses distance and duration
+								constraints to show all available therapists.
+							</p>
+						</div>
+					</div>
+
+					{/* <div className="flex items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
+						<div>
+							<p className="text-sm font-semibold">
 								Bypass distance & duration rules
 							</p>
 							<p className="text-xs text-muted-foreground">
@@ -796,7 +807,7 @@ const TherapistSelection = memo(
 							onCheckedChange={setIsBypassConstraints}
 							aria-label="Bypass distance and duration rules"
 						/>
-					</div>
+					</div> */}
 				</div>
 
 				{isLoading ? (
