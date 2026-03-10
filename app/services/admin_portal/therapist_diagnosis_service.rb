@@ -12,7 +12,7 @@ module AdminPortal
   # - SELECT therapists.* WITH INCLUDES (user, therapist_appointment_schedule, service, therapist_services)
   # - WHERE employment_status = 'ACTIVE' AND users.suspend_at IS NULL OR users.suspend_at > NOW()
   # - EXCLUDE selected therapist IDs from alternative list
-  # - FILTER by service_id if specified (single query)
+  # - FILTER by service_id if specified (single query with SPECIAL_TIER logic)
   #
   # This service performs:
   # - Fetching and filtering therapists based on criteria
@@ -23,6 +23,7 @@ module AdminPortal
   class TherapistDiagnosisService
     include ActiveModel::Model
     include ActiveModel::Attributes
+    include AdminPortal::Therapists::BatchQueryHelper
 
     attr_reader :appointment_id, :current_appointment
 
@@ -99,8 +100,26 @@ module AdminPortal
         .where(employment_status: "ACTIVE")
         .where.not(users: {suspend_at: ..Time.current})
 
-      # Apply service filter if specified
-      therapists = therapists.where(service_id: current_appointment.service_id) if current_appointment.service_id.present?
+      # Apply service filtering with SPECIAL_TIER logic if enabled
+      if ENABLE_SERVICE_FILTERING && current_appointment.service_id.present?
+        # Get appointment location to resolve service properly
+        location = current_appointment.address_history&.location
+        if location
+          # Use SpecialTierServiceResolver to determine the correct service
+          resolved_service = AdminPortal::SpecialTierServiceResolver.resolve_service_for_location(
+            location: location,
+            original_service: current_appointment.service
+          )
+
+          therapists = therapists.where(service_id: resolved_service.id)
+        else
+          # Fallback to original service if no location available
+          therapists = therapists.where(service_id: current_appointment.service_id)
+        end
+      elsif current_appointment.service_id.present?
+        # Service filtering disabled - use original service
+        therapists = therapists.where(service_id: current_appointment.service_id)
+      end
 
       therapists
     end
@@ -172,10 +191,29 @@ module AdminPortal
       # Check 4: Service compatibility
       # Therapists have a single primary service (not multiple services)
       if current_appointment.service_id.present?
-        service_match = therapist.service_id == current_appointment.service_id
+        # Use the same service resolution logic as fetch_all_therapists
+        if ENABLE_SERVICE_FILTERING
+          location = current_appointment.address_history&.location
+          if location
+            resolved_service = AdminPortal::SpecialTierServiceResolver.resolve_service_for_location(
+              location: location,
+              original_service: current_appointment.service
+            )
+            service_match = therapist.service_id == resolved_service.id
+            required_service_name = resolved_service.name
+          else
+            # Fallback if no location available
+            service_match = therapist.service_id == current_appointment.service_id
+            required_service_name = current_appointment.service&.name
+          end
+        else
+          # Service filtering disabled - use original service
+          service_match = therapist.service_id == current_appointment.service_id
+          required_service_name = current_appointment.service&.name
+        end
 
         unless service_match
-          reasons << "Does not provide required service: #{therapist.service&.name || "Unknown"}"
+          reasons << "Does not provide required service: #{required_service_name || "Unknown"}"
           priority = [priority, 4].min
         end
       end
