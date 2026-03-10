@@ -831,6 +831,65 @@ RSpec.describe Appointment, "#reschedule" do
 end
 ```
 
+## Total Package Visits Integrity
+
+**Important**: `total_package_visits` never changes during reschedule operations.
+
+### What Changes vs What Stays Fixed
+
+**Fixed Values (Never Change)**:
+- `total_package_visits`: Determined from package at creation time
+- Package reference and service information
+- Patient assignment
+
+**Changed Values (During Reschedule)**:
+- `visit_number`: Only the sequence order changes
+- `appointment_date_time`: When rescheduled
+- `therapist_id`: When therapist assignment changes
+
+### Why Total Visits Cannot Decrease
+
+The `total_package_visits` value is derived from historical package data:
+
+```ruby
+def total_package_visits
+  package_history&.number_of_visit || package.number_of_visit
+end```
+
+This value is **static** and set at appointment creation. Rescheduling operations only modify `visit_number` sequencing:
+
+- **Regular Reschedule**: Reorders visit numbers chronologically (1, 2, 3...N)
+- **Take-Out Scenario**: Moves unscheduled visit to end but keeps total count
+- **No Deletion Logic**: No code removes visits from the series
+
+### Example: 12-Visit Series
+
+**Before Reschedule**:
+```
+Visit 1, Visit 2, Visit 3, Visit 4, Visit 5, Visit 6, Visit 7, Visit 8, Visit 9, Visit 10, Visit 11, Visit 12
+total_package_visits = 12
+```
+
+**After Take-Out Visit 3**:
+```
+Visit 1, Visit 2, Visit 4, Visit 5, Visit 6, Visit 7, Visit 8, Visit 9, Visit 10, Visit 11, Visit 12, Visit 3(unscheduled)
+total_package_visits = 12 (unchanged)
+```
+
+**After Reordering**:
+```
+Visit 1, Visit 2, Visit 4, Visit 3, Visit 5, Visit 6, Visit 7, Visit 8, Visit 9, Visit 10, Visit 11, Visit 12
+total_package_visits = 12 (unchanged)
+```
+
+### Troubleshooting Reduced Visit Counts
+
+If you observe fewer visits than expected, investigate:
+1. **Manual Deletion**: Check if appointments were deleted directly in database
+2. **Package Changes**: Verify if `package.number_of_visit` was modified
+3. **Data Inconsistency**: Check for corrupted `package_history` records
+4. **Query Issues**: Ensure queries include all appointment statuses
+
 ## Best Practices
 
 1. **Always Validate**: Check all constraints before applying changes
