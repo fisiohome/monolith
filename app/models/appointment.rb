@@ -523,9 +523,14 @@ class Appointment < ApplicationRecord
   end
 
   def cancellable?
+    # ? we bypass this condition because preventing the strict validation because it's just used by our admin internal
     # Initial visits can always be cancelled
     # Series appointments can be cancelled if initial visit is cancelled
-    initial_visit? || (series? && initial_visit&.status_cancelled?)
+    # initial_visit? || (series? && initial_visit&.status_cancelled?)
+
+    # All visits (initial and series) can be cancelled regardless of other visits' status
+    # This allows maximum flexibility for admin internal users
+    true
   end
 
   def should_create_series?

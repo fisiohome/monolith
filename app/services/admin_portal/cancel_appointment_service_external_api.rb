@@ -12,30 +12,86 @@ module AdminPortal
 
     def call
       order_id = @appointment.order&.id
-      log_info("start", appointment_id: @appointment.id, registration_number: @appointment.registration_number, order_id: order_id)
+      registration_number = @appointment.registration_number
+      visit_number = @appointment.visit_number
+      appointment_status = @appointment.status
+
+      log_info("start", {
+        appointment_id: @appointment.id,
+        registration_number: registration_number,
+        order_id: order_id,
+        visit_number: visit_number,
+        current_status: appointment_status,
+        cancellation_reason: @cancellation_reason
+      })
+
+      # Log series information if this is a series appointment
+      if @appointment.series?
+        all_visits = Appointment.where(registration_number: registration_number)
+          .order(:visit_number)
+          .select(:id, :visit_number, :status, :appointment_date_time)
+
+        log_info("series_info", {
+          registration_number: registration_number,
+          total_visits: all_visits.count,
+          visits_status: all_visits.map { |v| {visit_number: v.visit_number, status: v.status} }
+        })
+      end
 
       validate_cancellation_reason
       response = call_cancel_api
       result = handle_api_response(response)
 
       if result[:success]
-        log_info("success", appointment_id: @appointment.id, registration_number: @appointment.registration_number, order_id: order_id)
+        log_info("success", {
+          appointment_id: @appointment.id,
+          registration_number: registration_number,
+          order_id: order_id,
+          visit_number: visit_number
+        })
       else
-        log_error("failed", appointment_id: @appointment.id, error: result[:error])
+        log_error("failed", {
+          appointment_id: @appointment.id,
+          registration_number: registration_number,
+          order_id: order_id,
+          visit_number: visit_number,
+          current_status: appointment_status,
+          error: result[:error],
+          error_type: result[:type]
+        })
       end
 
       result
     rescue ActionController::ParameterMissing => e
-      log_error("param_missing", message: e.message)
+      log_error("param_missing", {
+        appointment_id: @appointment&.id,
+        registration_number: @appointment&.registration_number,
+        message: e.message
+      })
       {success: false, error: "Invalid parameters: #{e.message}", type: "ParameterMissing"}
     rescue FisiohomeApi::Client::AuthenticationError => e
-      log_error("auth_failed", message: e.message)
+      log_error("auth_failed", {
+        appointment_id: @appointment&.id,
+        registration_number: @appointment&.registration_number,
+        message: e.message
+      })
       {success: false, error: "Authentication failed: #{e.message}", type: "AuthenticationError"}
     rescue Faraday::Error => e
-      log_error("api_error", type: e.class.name, message: e.message)
+      log_error("api_error", {
+        appointment_id: @appointment&.id,
+        registration_number: @appointment&.registration_number,
+        type: e.class.name,
+        message: e.message
+      })
       {success: false, error: "API request failed: #{e.message}", type: "ApiError"}
     rescue => e
-      log_error("unexpected", type: e.class.name, message: e.message, backtrace: e.backtrace.first(5))
+      log_error("unexpected", {
+        appointment_id: @appointment&.id,
+        registration_number: @appointment&.registration_number,
+        type: e.class.name,
+        message: e.message,
+        backtrace: e.backtrace.first(5)
+      })
       {success: false, error: e.message, type: "GeneralError"}
     end
 
@@ -62,8 +118,24 @@ module AdminPortal
         reason: @cancellation_reason
       }
 
-      log_debug("api_request", endpoint: endpoint, order_id: @appointment.order.id)
-      FisiohomeApi::Client.post(endpoint, body: payload)
+      log_debug("api_request", {
+        endpoint: endpoint,
+        order_id: @appointment.order.id,
+        appointment_id: @appointment.id,
+        registration_number: @appointment.registration_number,
+        visit_number: @appointment.visit_number,
+        payload_size: payload.to_json.length
+      })
+
+      response = FisiohomeApi::Client.post(endpoint, body: payload)
+
+      log_debug("api_response", {
+        status: response.status,
+        response_size: response.body&.to_s&.length || 0,
+        success: response.success?
+      })
+
+      response
     end
 
     def handle_api_response(response)
@@ -118,9 +190,42 @@ module AdminPortal
 
     def parse_api_error(response)
       body = response.body
-      return body["error"] || body["message"] || body.to_s if body.is_a?(Hash)
 
-      body.to_s
+      log_debug("parse_api_error", {
+        status: response.status,
+        body_type: body.class.name,
+        body_present: !body.nil?,
+        body_size: body&.to_s&.length || 0
+      })
+
+      # Try to extract detailed error information
+      if body.is_a?(Hash)
+        error_detail = {
+          main_error: body["error"] || body["message"],
+          status: body["status"],
+          order_status: body.dig("order", "status"),
+          validation_errors: body["errors"] || body["validation_errors"],
+          full_body: body.except("errors", "validation_errors", "error", "message")
+        }
+
+        log_error("api_error_detail", error_detail)
+
+        # Return the most relevant error message
+        return body["error"] if body["error"].present?
+        return body["message"] if body["message"].present?
+
+        # If no explicit error, construct one from available info
+        if body["status"] == "cancelled"
+          return "Order cannot be cancelled (status: cancelled)"
+        end
+
+        return body.to_s
+      end
+
+      # Handle string responses
+      error_message = body.to_s
+      log_error("api_error_string", {message: error_message, length: error_message.length})
+      error_message
     end
 
     # Logging helpers for consistent structured logs

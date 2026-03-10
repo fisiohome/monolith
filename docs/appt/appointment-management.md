@@ -7,6 +7,7 @@ The appointment system manages home healthcare visits between therapists and pat
 - **[Visit Number Reordering](./rescheduling/visit-number-reordering-fix.md)** - True chronological ordering and anomaly handling
 - **[Appointment Rescheduling](./rescheduling/appointment-rescheduling.md)** - Complete rescheduling workflow and documentation
 - **Same-Day Appointments** - Full support for same-day booking and rescheduling
+- **Cancellation Logic** - Flexible cancellation for any visit regardless of series status
 
 ## Appointment Structure
 
@@ -471,8 +472,32 @@ end
 ```
 
 - Cancelling initial visit cancels entire series
-- Individual series appointments can be cancelled independently
+- **Individual series appointments can be cancelled independently** - All visits (initial or series) can be cancelled regardless of other visits' status
 - Refund logic handled separately
+
+#### Cancellation Bug Fix
+**Problem**: Error "order cannot be cancelled(status: cancelled)" when visit 1 wasn't cancelled but other visits were cancelled.
+
+**Solution**: Modified `cancellable?` method to allow any visit cancellation:
+
+```ruby
+# Before (restrictive)
+def cancellable?
+  initial_visit? || (series? && initial_visit&.status_cancelled?)
+end
+
+# After (flexible for admin internal)
+def cancellable?
+  # All visits (initial and series) can be cancelled regardless of other visits' status
+  true
+end
+```
+
+**Enhanced Logging**: Added comprehensive logging in `CancelAppointmentServiceExternalApi`:
+- Visit number, current status, cancellation reason
+- Series information with all visits status
+- API request/response details
+- Detailed error parsing for production debugging
 
 ## API Endpoints
 

@@ -950,10 +950,11 @@ class AppointmentTest < ActiveSupport::TestCase
     assert_equal [2, 3], all_visits.drop(1).map(&:visit_number)
   end
 
-  test "cancellable? returns true for initial or if parent cancelled, about cancellable?" do
-    appt = Appointment.new(visit_number: 1)
-    assert appt.initial_visit?
-    assert appt.cancellable?
+  test "cancellable? returns true for all visits regardless of other visits status" do
+    # Test initial visit
+    initial_appt = Appointment.new(visit_number: 1)
+    assert initial_appt.initial_visit?
+    assert initial_appt.cancellable?
 
     # Create a package with multiple visits
     multi_pkg = Package.create!(
@@ -968,6 +969,7 @@ class AppointmentTest < ActiveSupport::TestCase
       active: true
     )
 
+    # Create initial visit (not cancelled)
     parent = Appointment.create!(
       patient: @patient,
       service: @service,
@@ -976,9 +978,8 @@ class AppointmentTest < ActiveSupport::TestCase
       appointment_date_time: @future_time,
       preferred_therapist_gender: "NO PREFERENCE"
     )
-    parent.cancel!
 
-    # Create series appointment with same registration number
+    # Create series appointment - should be cancellable even if parent is not cancelled
     series = Appointment.create!(
       registration_number: parent.registration_number,
       visit_number: 2,
@@ -988,7 +989,25 @@ class AppointmentTest < ActiveSupport::TestCase
       location: @location,
       preferred_therapist_gender: "NO PREFERENCE"
     )
-    assert series.cancellable?
+    assert series.cancellable?, "Series appointment should be cancellable even when parent is not cancelled"
+
+    # Cancel the parent
+    parent.cancel!
+
+    # Create another series appointment - should still be cancellable
+    series2 = Appointment.create!(
+      registration_number: parent.registration_number,
+      visit_number: 3,
+      patient: @patient,
+      service: @service,
+      package: multi_pkg,
+      location: @location,
+      preferred_therapist_gender: "NO PREFERENCE"
+    )
+    assert series2.cancellable?, "Series appointment should be cancellable when parent is cancelled"
+
+    # Test that cancelled appointments are still cancellable (for idempotency)
+    assert series.cancellable?, "Cancelled series appointment should still be cancellable"
   end
 
   test "patient_approve! updates status and records history" do
