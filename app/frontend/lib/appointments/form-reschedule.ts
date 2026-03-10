@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENABLE_PAST_DATE_RESCHEDULING_BYPASS } from "@/constants/appointment-rescheduling";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import type { Appointment } from "@/types/admin-portal/appointment";
 import type { PREFERRED_THERAPIST_GENDER } from "../constants";
@@ -8,9 +9,17 @@ import { APPOINTMENT_SCHEDULING_SCHEMA } from "./form";
 const { appointmentDateTime, preferredTherapistGender, therapist } =
 	APPOINTMENT_SCHEDULING_SCHEMA.shape;
 
+// Custom appointmentDateTime schema for reschedule that allows past dates when bypass is enabled
+const RESCHEDULE_APPOINTMENT_DATE_TIME_SCHEMA =
+	ENABLE_PAST_DATE_RESCHEDULING_BYPASS
+		? z.coerce
+				.date()
+				.nullable() // Allow any date when bypass is enabled
+		: appointmentDateTime.nullable(); // Use original validation when bypass is disabled
+
 export const RESCHEDULE_APPOINTMENT_FORM_SCHEMA = z.object({
 	preferredTherapistGender,
-	appointmentDateTime: appointmentDateTime.nullable(),
+	appointmentDateTime: RESCHEDULE_APPOINTMENT_DATE_TIME_SCHEMA,
 	therapist,
 	reason: z.string().optional(),
 	formOptions: z

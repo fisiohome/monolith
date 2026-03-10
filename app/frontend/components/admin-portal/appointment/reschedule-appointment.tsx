@@ -381,6 +381,7 @@ export const RescheduleFields = memo(function Component({
 									disabledVisits={formHooks.apptDateTime.disabledVisits}
 									onChangeValue={field.onChange}
 									isAllOfDay={!!formHooks.watchAllOfDayValue}
+									allowPastTimes={!formHooks.apptDateTime.min}
 									callbackOnChange={() => {
 										// reset all therapist and isoline maps state
 										formHooks.onResetAllTherapistState();

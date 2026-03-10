@@ -49,10 +49,12 @@ module AdminPortal
     def fetch_options_data
       preferred_therapist_gender = Appointment::PREFERRED_THERAPIST_GENDER
 
-      # For rescheduling date restrictions: can be controlled via constant
+      # For rescheduling date restrictions: can be controlled via constants
       # When ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION is true: use min_datetime (strict)
-      # When false: only restrict to today or future dates (flexible, backend handles reordering)
-      min_date = if Appointment::ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION
+      # When ENABLE_PAST_DATE_RESCHEDULING_BYPASS is true: allow any date including past dates
+      min_date = if Appointment::ENABLE_PAST_DATE_RESCHEDULING_BYPASS
+        nil # Allow any date including past dates
+      elsif Appointment::ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION
         @appointment&.min_datetime
       else
         Time.current.beginning_of_day
@@ -70,7 +72,7 @@ module AdminPortal
           preferred_therapist_gender:,
           appt_date_time: {
             min: min_date,
-            max: nil, # No max constraint (behavior depends on ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION)
+            max: nil, # No max constraint (behavior depends on constants)
             message:,
             disabled_visits: # Array of {date, time, visitNumber} for dates/times with scheduled visits
           }

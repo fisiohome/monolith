@@ -7,6 +7,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useDateContext } from "@/components/providers/date-provider";
 import type { HereMaphandler } from "@/components/shared/here-map";
 import type { CalendarProps } from "@/components/ui/calendar";
+import { ENABLE_PAST_DATE_RESCHEDULING_BYPASS } from "@/constants/appointment-rescheduling";
 import type { IsolineConstraint, MarkerData } from "@/hooks/here-maps";
 import { useTherapistMarker } from "@/hooks/here-maps/use-markers";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
@@ -668,11 +669,14 @@ export const useAppointmentDateTime = ({
 		sixMonthsFromToday.setMonth(today.getMonth() + 6);
 
 		// Effective min bound (past dates disabled)
+		// When ENABLE_PAST_DATE_RESCHEDULING_BYPASS is true and min is null, allow all dates (including past)
 		const minDate = min
 			? isBefore(startOfDay(min), today)
 				? subDays(today, 1)
 				: min
-			: subDays(today, 1);
+			: ENABLE_PAST_DATE_RESCHEDULING_BYPASS
+				? null // Allow all dates including past
+				: subDays(today, 1);
 
 		// For dynamic ordering: use max if provided, otherwise allow up to 6 months
 		const maxDate = max
@@ -688,11 +692,12 @@ export const useAppointmentDateTime = ({
 			// Close the calendar popover when a day is clicked
 			onDayClick: () => setIsOpenAppointmentDate(false),
 			// Set the range of years to be displayed
-			fromYear: minDate.getFullYear(),
+			fromYear: minDate ? minDate.getFullYear() : today.getFullYear() - 10,
 			toYear: maxDate.getFullYear(),
 			// Disable dates that are in the past
 			// Note: dates with visits are NOT disabled, only their specific time slots are
-			disabled: (date) => date <= minDate || date > maxDate,
+			disabled: (date) =>
+				minDate ? date <= minDate || date > maxDate : date > maxDate,
 			modifiers:
 				bookedDates.length > 0
 					? {

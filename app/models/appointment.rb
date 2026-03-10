@@ -20,6 +20,9 @@ class Appointment < ApplicationRecord
   # Control rescheduling date restrictions (disabled for flexible visit reordering)
   ENABLE_STRICT_RESCHEDULING_DATE_RESTRICTION = false
 
+  # Control past date rescheduling bypass (enabled for admin internal flexibility)
+  ENABLE_PAST_DATE_RESCHEDULING_BYPASS = true
+
   PatientCondition = Struct.new(:title, :description, :title_id, :description_id)
   PATIENT_CONDITION = [
     PatientCondition.new(
@@ -218,7 +221,7 @@ class Appointment < ApplicationRecord
     validates :appointment_date_time, presence: true
   end
 
-  validate :appointment_date_time_in_the_future, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
+  validate :appointment_date_time_in_the_future, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? && !ENABLE_PAST_DATE_RESCHEDULING_BYPASS }
   validate :validate_paid_requires_therapist, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
   validate :validate_visit_sequence, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }
   validate :unscheduled_appointment_requirements, if: -> { ENABLE_STRICT_STATUS_VALIDATION && !skip_status_validation? }

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { ENABLE_PAST_DATE_RESCHEDULING_BYPASS } from "@/constants/appointment-rescheduling";
 import {
 	type DisabledVisit,
 	useAppointmentDateTime,
@@ -88,6 +89,7 @@ export interface DateTimePickerProps extends ComponentProps<"div"> {
 	callbackOnChange: () => void;
 	isAllOfDay?: boolean;
 	autoScroll?: boolean;
+	allowPastTimes?: boolean;
 }
 
 const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
@@ -100,6 +102,7 @@ const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
 			disabledVisits = [],
 			isAllOfDay = false,
 			autoScroll = true,
+			allowPastTimes = false,
 			onChangeValue,
 			callbackOnChange,
 		}: DateTimePickerProps,
@@ -193,13 +196,25 @@ const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
 					return true;
 				}
 
-				return checkPastTimeSlot({
-					time,
-					date: appointmentDate,
-					dateOpt: { locale, in: tzDate },
-				});
+				// Only check past times if past date rescheduling bypass is disabled
+				if (!ENABLE_PAST_DATE_RESCHEDULING_BYPASS && !allowPastTimes) {
+					return checkPastTimeSlot({
+						time,
+						date: appointmentDate,
+						dateOpt: { locale, in: tzDate },
+					});
+				}
+
+				return false;
 			},
-			[isAllOfDay, appointmentDate, locale, tzDate, disabledVisits],
+			[
+				isAllOfDay,
+				appointmentDate,
+				locale,
+				tzDate,
+				disabledVisits,
+				allowPastTimes,
+			],
 		);
 
 		// * measure calendar height whenever it renders or resizes
