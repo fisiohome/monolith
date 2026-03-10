@@ -388,6 +388,76 @@ To debug availability rule processing:
 
 ---
 
+## Therapist Search Filter Configuration
+
+The therapist search system provides configurable filtering options that can be enabled or disabled based on business requirements. This system uses constants to control which filters are applied during therapist searches.
+
+### Filter Control Constants
+
+**Location**: `app/services/admin_portal/therapists/batch_query_helper.rb`
+
+```ruby
+# Constants for bypassing specific filters
+ENABLE_SERVICE_FILTERING = false
+ENABLE_LOCATION_FILTERING = false  
+ENABLE_AVAILABILITY_RULES_FILTERING = false
+```
+
+### Available Filters
+
+#### 1. Service Filtering (`ENABLE_SERVICE_FILTERING`)
+- **When Enabled**: Filters therapists by service compatibility with SPECIAL_TIER logic
+- **When Disabled**: Shows all therapists regardless of service type
+- **Impact**: Medium - affects service matching precision
+
+#### 2. Location Filtering (`ENABLE_LOCATION_FILTERING`)
+- **When Enabled**: Applies geographic rules (Jakarta Pusat, Jabodetabek vs non-Jabodetabek)
+- **When Disabled**: Shows therapists from all locations without geographic restrictions
+- **Impact**: High - affects coverage area and business rules
+
+#### 3. Availability Rules Filtering (`ENABLE_AVAILABILITY_RULES_FILTERING`)
+- **When Enabled**: Respects therapist's JSON-based availability rules and location restrictions
+- **When Disabled**: Ignores schedule-based availability constraints
+- **Impact**: High - affects therapist scheduling preferences
+
+### Core Filters (Always Active)
+- **Employment Status**: Only `ACTIVE` therapists
+- **Gender Preference**: Based on patient preferences
+- **Employment Type**: FLAT or coordinate-based filtering
+- **Time-based Availability**: When appointment date/time is specified
+
+### Use Cases
+
+#### Development/Testing
+```ruby
+# Disable all filters for maximum therapist availability
+ENABLE_SERVICE_FILTERING = false
+ENABLE_LOCATION_FILTERING = false
+ENABLE_AVAILABILITY_RULES_FILTERING = false
+```
+
+#### Production - Full Business Rules
+```ruby
+# Enable all filters for complete business logic
+ENABLE_SERVICE_FILTERING = true
+ENABLE_LOCATION_FILTERING = true
+ENABLE_AVAILABILITY_RULES_FILTERING = true
+```
+
+#### Partial Filtering Scenarios
+- **Service Only**: Geographic flexibility with service compatibility
+- **Location Only**: Service flexibility with geographic constraints
+- **Availability Only**: Custom scheduling without geographic restrictions
+
+### Performance Impact
+- **Service Filtering**: Medium (service table joins)
+- **Location Filtering**: High (complex geographic SQL)
+- **Availability Rules**: High (JSON parsing and complex WHERE clauses)
+
+**Complete Documentation**: `/docs/therapists/therapist-search-filter-configuration.md`
+
+---
+
 ## Authentication and Authorization
 
 Authentication and authorization are implemented using **Role-Based Access Control (RBAC)**, where each user is assigned a single role that determines their permissions within the system.
@@ -647,6 +717,8 @@ To delete a flag:
 
 For detailed information on specific features, please refer to:
 
+- **[Therapist Search Filter Configuration](./therapists/therapist-search-filter-configuration.md)** - Complete guide to configurable therapist search filters and bypass options
+- **[Therapist Search Business Rules](./therapists/therapist-search-business-rules.md)** - Detailed business logic for therapist matching and geographic rules
 - **[Admin Internal Validation Bypass](./admin-internal-status-validation-bypass.md)** - Complete guide to bypassing strict validation rules for admin internal use (status updates and therapist scheduling)
 - **[Appointment Management](./appt/appointment-management.md)** - Complete guide to appointment lifecycle, status workflows, and series management
 - **[Appointment Rescheduling](./appt/rescheduling/appointment-rescheduling.md)** - Detailed rescheduling process, validations, and visit reordering

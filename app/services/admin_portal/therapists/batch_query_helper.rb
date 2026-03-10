@@ -1,6 +1,11 @@
 module AdminPortal
   module Therapists
     module BatchQueryHelper
+      # Constants for bypassing specific filters
+      ENABLE_SERVICE_FILTERING = false
+      ENABLE_LOCATION_FILTERING = false
+      ENABLE_AVAILABILITY_RULES_FILTERING = false
+
       # Fetch therapists in batches to improve performance
       #
       # IMPORTANT: There are TWO different appointment data usages:
@@ -18,13 +23,18 @@ module AdminPortal
         # * Resolve location IDs - special case for Jakarta Pusat to allow all DKI Jakarta therapists
         # * This implements the business rule: "Allow Jakarta Pusat therapists for any DKI Jakarta location"
         location_ids =
-          if location.city == "KOTA ADM. JAKARTA PUSAT"
-            # When user requests Jakarta Pusat, include all DKI Jakarta locations
-            # This allows therapists from any DKI Jakarta city to serve Jakarta Pusat appointments
-            Location.where(state: "DKI JAKARTA").pluck(:id)
+          if ENABLE_LOCATION_FILTERING
+            if location.city == "KOTA ADM. JAKARTA PUSAT"
+              # When user requests Jakarta Pusat, include all DKI Jakarta locations
+              # This allows therapists from any DKI Jakarta city to serve Jakarta Pusat appointments
+              Location.where(state: "DKI JAKARTA").pluck(:id)
+            else
+              # For other locations, only use the specific location
+              [location.id]
+            end
           else
-            # For other locations, only use the specific location
-            [location.id]
+            # Location filtering disabled - include all locations
+            nil
           end
 
         # Build base scope with necessary joins
@@ -39,18 +49,20 @@ module AdminPortal
         end
 
         # Apply service filtering with SPECIAL_TIER logic using shared resolver
-        original_service = service
-        service = AdminPortal::SpecialTierServiceResolver.resolve_service_for_location(
-          location: location,
-          original_service: service
-        )
+        if ENABLE_SERVICE_FILTERING
+          original_service = service
+          service = AdminPortal::SpecialTierServiceResolver.resolve_service_for_location(
+            location: location,
+            original_service: service
+          )
 
-        # Log if service was changed due to SPECIAL_TIER logic
-        if service.id != original_service.id
-          Rails.logger.info "[BatchQueryHelper] SPECIAL_TIER: Using service '#{service.name}' instead of '#{original_service.name}' for location '#{location.city}'"
+          # Log if service was changed due to SPECIAL_TIER logic
+          if service.id != original_service.id
+            Rails.logger.info "[BatchQueryHelper] SPECIAL_TIER: Using service '#{service.name}' instead of '#{original_service.name}' for location '#{location.city}'"
+          end
+
+          base_scope = base_scope.where(services: {id: service.id})
         end
-
-        base_scope = base_scope.where(services: {id: service.id})
 
         # Apply employment type filter if specified
         base_scope = if params[:employment_type].present? && params[:employment_type] != "ALL"
@@ -64,55 +76,58 @@ module AdminPortal
           )
         end
 
-        # Check if this is a Jabodetabek location to apply appropriate filtering rules
-        # Jabodetabek includes: Jakarta, Bogor, Depok, Tangerang, Bekasi, Kepulauan Seribu
-        jabodetabek_keywords = ["JAKARTA", "BOGOR", "DEPOK", "TANGERANG", "BEKASI", "KEPULAUAN SERIBU"]
-        is_jabodetabek_location = jabodetabek_keywords.any? { |kw| location.city&.include?(kw) }
-
-        # Get all Jabodetabek location IDs for filtering logic
-        # Used to exclude Jabodetabek therapists when serving non-Jabodetabek locations
-        jabodetabek_location_ids = Location.where(
-          "city LIKE ANY (ARRAY[?])",
-          jabodetabek_keywords.map { |kw| "%#{kw}%" }
-        ).pluck(:id)
-
         # Filter therapists based on their availability rules and location
-        base_scope = if is_jabodetabek_location
-          # FOR JABODETABEK LOCATIONS: More permissive filtering
-          # Business rule: Jabodetabek therapists can serve any Jabodetabek location
-          # This SQL filter handles the following cases:
-          # 1. No availability rules defined (NULL) - therapist is available everywhere
-          # 2. Empty availability rules array ('[]') - therapist is available everywhere
-          # 3. No location-specific rules exist in the array - therapist is available everywhere
-          # 4. Therapist's address location matches one of the target location IDs (including Jakarta Pusat → all DKI Jakarta)
-          # This ensures we only include therapists who can serve the requested Jabodetabek location
-          base_scope.where(
-            "(therapist_appointment_schedules.availability_rules IS NULL OR " \
-            "therapist_appointment_schedules.availability_rules::text = '[]' OR " \
-            "NOT EXISTS (SELECT 1 FROM json_array_elements(therapist_appointment_schedules.availability_rules) " \
-            "WHERE value->>'location' = 'true') OR " \
-            "addresses.location_id IN (?))",
-            location_ids
-          )
-        else
-          # FOR NON-JABODETABEK LOCATIONS: Stricter filtering
-          # Business rule: Jabodetabek therapists should NOT serve non-Jabodetabek locations unless explicitly allowed
-          # This ensures:
-          # 1. Non-Jabodetabek therapists without location rules can serve any location
-          # 2. Jabodetabek therapists are excluded UNLESS they have location rules that specifically include this location
-          # 3. Therapists with address in the target location are always included
-          base_scope.where(
-            "(" \
-            "  (addresses.location_id NOT IN (?) AND " \
-            "   (therapist_appointment_schedules.availability_rules IS NULL OR " \
-            "    therapist_appointment_schedules.availability_rules::text = '[]' OR " \
-            "    NOT EXISTS (SELECT 1 FROM json_array_elements(therapist_appointment_schedules.availability_rules) " \
-            "                WHERE value->>'location' = 'true'))) OR " \
-            "  addresses.location_id IN (?)" \
-            ")",
-            jabodetabek_location_ids,
-            location_ids
-          )
+        if ENABLE_AVAILABILITY_RULES_FILTERING && ENABLE_LOCATION_FILTERING
+          # Check if this is a Jabodetabek location to apply appropriate filtering rules
+          # Jabodetabek includes: Jakarta, Bogor, Depok, Tangerang, Bekasi, Kepulauan Seribu
+          jabodetabek_keywords = ["JAKARTA", "BOGOR", "DEPOK", "TANGERANG", "BEKASI", "KEPULAUAN SERIBU"]
+          is_jabodetabek_location = jabodetabek_keywords.any? { |kw| location.city&.include?(kw) }
+
+          # Get all Jabodetabek location IDs for filtering logic
+          # Used to exclude Jabodetabek therapists when serving non-Jabodetabek locations
+          jabodetabek_location_ids = Location.where(
+            "city LIKE ANY (ARRAY[?])",
+            jabodetabek_keywords.map { |kw| "%#{kw}%" }
+          ).pluck(:id)
+
+          # Filter therapists based on their availability rules and location
+          base_scope = if is_jabodetabek_location
+            # FOR JABODETABEK LOCATIONS: More permissive filtering
+            # Business rule: Jabodetabek therapists can serve any Jabodetabek location
+            # This SQL filter handles the following cases:
+            # 1. No availability rules defined (NULL) - therapist is available everywhere
+            # 2. Empty availability rules array ('[]') - therapist is available everywhere
+            # 3. No location-specific rules exist in the array - therapist is available everywhere
+            # 4. Therapist's address location matches one of the target location IDs (including Jakarta Pusat → all DKI Jakarta)
+            # This ensures we only include therapists who can serve the requested Jabodetabek location
+            base_scope.where(
+              "(therapist_appointment_schedules.availability_rules IS NULL OR " \
+              "therapist_appointment_schedules.availability_rules::text = '[]' OR " \
+              "NOT EXISTS (SELECT 1 FROM json_array_elements(therapist_appointment_schedules.availability_rules) " \
+              "WHERE value->>'location' = 'true') OR " \
+              "addresses.location_id IN (?))",
+              location_ids
+            )
+          else
+            # FOR NON-JABODETABEK LOCATIONS: Stricter filtering
+            # Business rule: Jabodetabek therapists should NOT serve non-Jabodetabek locations unless explicitly allowed
+            # This ensures:
+            # 1. Non-Jabodetabek therapists without location rules can serve any location
+            # 2. Jabodetabek therapists are excluded UNLESS they have location rules that specifically include this location
+            # 3. Therapists with address in the target location are always included
+            base_scope.where(
+              "(" \
+              "  (addresses.location_id NOT IN (?) AND " \
+              "   (therapist_appointment_schedules.availability_rules IS NULL OR " \
+              "    therapist_appointment_schedules.availability_rules::text = '[]' OR " \
+              "    NOT EXISTS (SELECT 1 FROM json_array_elements(therapist_appointment_schedules.availability_rules) " \
+              "                WHERE value->>'location' = 'true'))) OR " \
+              "  addresses.location_id IN (?)" \
+              ")",
+              jabodetabek_location_ids,
+              location_ids
+            )
+          end
         end
 
         # Get total count for progress tracking
@@ -121,7 +136,7 @@ module AdminPortal
 
         # Log initial batch processing info
         Rails.logger.info "[BatchQueryHelper] Starting batch processing - total_count: #{total_count}, batch_size: #{batch_size}"
-        Rails.logger.info "[BatchQueryHelper] Location: #{location.city}, Service: #{service.name}"
+        Rails.logger.info "[BatchQueryHelper] Location: #{location.city}, Service: #{ENABLE_SERVICE_FILTERING ? service.name : "All Services (filter disabled)"}"
 
         # Process in batches to reduce memory usage
         batch_offset = 0

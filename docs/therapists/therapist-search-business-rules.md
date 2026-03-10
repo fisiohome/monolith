@@ -235,7 +235,26 @@ current_date_time_in_tz = Time.current.in_time_zone(therapist_time_zone)
 - Convert semua waktu ke therapist's timezone untuk comparison
 - Penting untuk availability checking yang akurat
 
-## 10. Admin Bypass Rules
+## 10. Filter Configuration & Bypass
+
+### Constants for Filter Control
+**Location**: `app/services/admin_portal/therapists/batch_query_helper.rb`
+
+```ruby
+# Constants for bypassing specific filters
+ENABLE_SERVICE_FILTERING = false
+ENABLE_LOCATION_FILTERING = false  
+ENABLE_AVAILABILITY_RULES_FILTERING = false
+```
+
+**Complete Documentation**: `/docs/therapists/therapist-search-filter-configuration.md`
+
+### Filter Control Options
+- **Service Filtering**: Bisa dimatikan untuk menampilkan semua layanan
+- **Location Filtering**: Bisa dimatikan untuk mengabaikan geographic rules
+- **Availability Rules Filtering**: Bisa dimatikan untuk mengabaikan schedule restrictions
+
+### Admin Bypass Rules
 
 ### Configuration
 ```ruby
