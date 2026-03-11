@@ -29,12 +29,11 @@ module AdminPortal
       if @appointment.series?
         all_visits = Appointment.where(registration_number: registration_number)
           .order(:visit_number)
-          .select(:id, :visit_number, :status, :appointment_date_time)
 
         log_info("series_info", {
           registration_number: registration_number,
           total_visits: all_visits.count,
-          visits_status: all_visits.map { |v| {visit_number: v.visit_number, status: v.status} }
+          visits_status: all_visits.select(:visit_number, :status).map { |v| {visit_number: v.visit_number, status: v.status} }
         })
       end
 
@@ -229,12 +228,20 @@ module AdminPortal
     end
 
     # Logging helpers for consistent structured logs
-    def log_info(event, **data) = Rails.logger.info("#{LOG_TAG} #{event} #{data.to_json}")
+    def log_info(event, data = {})
+      Rails.logger.info("#{LOG_TAG} #{event} #{data.to_json}")
+    end
 
-    def log_warn(event, **data) = Rails.logger.warn("#{LOG_TAG} #{event} #{data.to_json}")
+    def log_warn(event, data = {})
+      Rails.logger.warn("#{LOG_TAG} #{event} #{data.to_json}")
+    end
 
-    def log_error(event, **data) = Rails.logger.error("#{LOG_TAG} #{event} #{data.to_json}")
+    def log_error(event, data = {})
+      Rails.logger.error("#{LOG_TAG} #{event} #{data.to_json}")
+    end
 
-    def log_debug(event, **data) = Rails.logger.debug { "#{LOG_TAG} #{event} #{data.to_json}" }
+    def log_debug(event, data = {})
+      Rails.logger.debug { "#{LOG_TAG} #{event} #{data.to_json}" }
+    end
   end
 end
