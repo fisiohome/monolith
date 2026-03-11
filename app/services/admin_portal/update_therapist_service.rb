@@ -31,6 +31,12 @@ module AdminPortal
 
     def update_therapist
       therapist_attrs = @params.except(:user, :bank_details, :addresses, :service, :specializations, :modalities)
+
+      # Check if employment status is changing to handle suspension manually
+      employment_status_changing = therapist_attrs[:employment_status] &&
+        therapist_attrs[:employment_status] != @therapist.employment_status
+
+      # Update all therapist attributes in one call to preserve callbacks
       @therapist.update!(therapist_attrs)
 
       # handle specializations and modalities explicitly
@@ -48,6 +54,11 @@ module AdminPortal
       if @params[:service].present?
         @therapist.update!(service_id: @params[:service][:id])
         Rails.logger.info("Updated therapist service: #{@params[:service][:name]}.")
+      end
+
+      # Handle suspension status manually if employment status changed and callback might not have triggered
+      if employment_status_changing
+        handle_suspension_status(therapist_attrs[:employment_status])
       end
 
       Rails.logger.info("Updated therapist profile with name: #{@therapist.name}.")
@@ -102,6 +113,21 @@ module AdminPortal
         addresses_count += 1
       end
       Rails.logger.info("Updated #{addresses_count} address(es).")
+    end
+
+    def handle_suspension_status(new_employment_status)
+      case new_employment_status
+      when "ACTIVE"
+        @therapist.user.update(suspend_at: nil, suspend_end: nil)
+        Rails.logger.info("Cleared suspension for therapist #{@therapist.name} (employment status changed to ACTIVE).")
+      when "HOLD", "INACTIVE"
+        suspend_duration = (new_employment_status == "HOLD") ? 30.days : nil
+        @therapist.user.update(
+          suspend_at: Time.current,
+          suspend_end: suspend_duration ? Time.current + suspend_duration : nil
+        )
+        Rails.logger.info("Set suspension for therapist #{@therapist.name} (employment status changed to #{new_employment_status}).")
+      end
     end
   end
 end

@@ -83,6 +83,54 @@ class TherapistTest < ActiveSupport::TestCase
     assert_not_nil @hold_therapist.user.suspend_end
   end
 
+  test "UpdateTherapistService should clear suspension when employment status changes to ACTIVE" do
+    # Set up a therapist with suspension
+    @hold_therapist.user.update!(suspend_at: 1.hour.ago, suspend_end: nil)
+    assert @hold_therapist.user.suspended?
+
+    # Update employment status to ACTIVE using the service
+    service = AdminPortal::UpdateTherapistService.new(@hold_therapist, {employment_status: "ACTIVE"})
+    service.call
+
+    # Verify suspension is cleared
+    @hold_therapist.user.reload
+    assert_nil @hold_therapist.user.suspend_at
+    assert_nil @hold_therapist.user.suspend_end
+    assert_not @hold_therapist.user.suspended?
+  end
+
+  test "UpdateTherapistService should set suspension when employment status changes to HOLD" do
+    # Start with an active therapist
+    @active_therapist.user.update!(suspend_at: nil, suspend_end: nil)
+    assert_not @active_therapist.user.suspended?
+
+    # Update employment status to HOLD using the service
+    service = AdminPortal::UpdateTherapistService.new(@active_therapist, {employment_status: "HOLD"})
+    service.call
+
+    # Verify suspension is set
+    @active_therapist.user.reload
+    assert_not_nil @active_therapist.user.suspend_at
+    assert_not_nil @active_therapist.user.suspend_end
+    assert @active_therapist.user.suspended?
+  end
+
+  test "UpdateTherapistService should set permanent suspension when employment status changes to INACTIVE" do
+    # Start with an active therapist
+    @active_therapist.user.update!(suspend_at: nil, suspend_end: nil)
+    assert_not @active_therapist.user.suspended?
+
+    # Update employment status to INACTIVE using the service
+    service = AdminPortal::UpdateTherapistService.new(@active_therapist, {employment_status: "INACTIVE"})
+    service.call
+
+    # Verify permanent suspension is set (no suspend_end)
+    @active_therapist.user.reload
+    assert_not_nil @active_therapist.user.suspend_at
+    assert_nil @active_therapist.user.suspend_end
+    assert @active_therapist.user.suspended?
+  end
+
   test "destroy_associated_user should delete user" do
     delete_therapist = therapists(:delete_therapist)
     user = delete_therapist.user
