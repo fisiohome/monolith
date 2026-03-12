@@ -164,12 +164,12 @@ function FormComponent() {
 	}, [mode, globalProps?.appointmentReference, taf]);
 	const form = useForm<AppointmentBookingSchema>({
 		resolver: zodResolver(APPOINTMENT_BOOKING_SCHEMA),
-		defaultValues: {
-			formOptions: { ...formStorage?.formOptions },
-			contactInformation: { ...formStorage?.contactInformation },
-			patientDetails: { ...formStorage?.patientDetails },
-			appointmentScheduling: { ...formStorage?.appointmentScheduling },
-			additionalSettings: { ...formStorage?.additionalSettings },
+		defaultValues: formStorage || {
+			formOptions: {},
+			contactInformation: {},
+			patientDetails: {},
+			appointmentScheduling: {},
+			additionalSettings: {},
 		},
 		mode: "onChange",
 	});

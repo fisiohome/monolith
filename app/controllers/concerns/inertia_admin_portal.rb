@@ -83,7 +83,8 @@ module InertiaAdminPortal
             }
           },
           feature_flags: {
-            telegram_broadcasts_enabled: telegram_broadcast_feature_flag_enabled?
+            telegram_broadcasts_enabled: telegram_broadcast_feature_flag_enabled?,
+            use_new_therapist_selection_enabled: use_new_therapist_selection_enabled?
           },
           current_query: request.query_parameters.presence,
           current_locale: I18n.locale,
@@ -128,6 +129,15 @@ module InertiaAdminPortal
       FeatureFlagChecker.enabled?(FeatureFlagChecker::TELEGRAM_BROADCASTS_KEY)
     rescue => e
       Rails.logger.error("[FeatureFlagChecker] Error checking TELEGRAM_BROADCASTS flag: #{e.message}")
+      false
+    end
+  end
+
+  def use_new_therapist_selection_enabled?
+    @use_new_therapist_selection_enabled ||= begin
+      FeatureFlagChecker.enabled?(FeatureFlagChecker::USE_NEW_THERAPIST_SELECTION_KEY)
+    rescue => e
+      Rails.logger.error("[FeatureFlagChecker] Error checking USE_NEW_THERAPIST_SELECTION flag: #{e.message}")
       false
     end
   end

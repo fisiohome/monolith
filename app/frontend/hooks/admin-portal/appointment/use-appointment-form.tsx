@@ -639,11 +639,24 @@ export const usePatientDetailsForm = () => {
 	};
 };
 
-export const useAppointmentSchedulingForm = () => {
+export const useAppointmentSchedulingForm = ({
+	setFormStorage,
+}: {
+	setFormStorage?: React.Dispatch<
+		React.SetStateAction<AppointmentBookingSchema | null>
+	>;
+} = {}) => {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentNewGlobalPageProps>();
 	const { tzDate } = useDateContext();
 	const form = useFormContext<AppointmentBookingSchema>();
+
+	// Draft management for service/package changes
+	const { saveDraft } = useAppointmentDraft({
+		onError: (error) => {
+			console.error("Draft save error:", error);
+		},
+	});
 	const watchPatientDetailsValue = useWatch({
 		control: form.control,
 		name: "patientDetails",
@@ -793,8 +806,73 @@ export const useAppointmentSchedulingForm = () => {
 			},
 		});
 	}, [pageURL, watchPatientDetailsValue?.location?.id]);
+
+	// * Helper function to save draft for service/package selection
+	const saveDraftOnServicePackageChange = useCallback(async () => {
+		// Only save draft if configured to use draft database
+		if (!USE_DRAFT_DATABASE) {
+			return;
+		}
+
+		const values = form.getValues();
+		const admins = values.additionalSettings?.admins || [];
+		const primaryAdmin = admins[0]; // The first admin is the primary
+
+		// Filter out admins with invalid IDs (0, undefined, null, or empty string)
+		const validAdmins = admins.filter(
+			(admin) =>
+				admin?.id && admin.id !== 0 && admin.id !== "" && admin.id !== "0",
+		);
+
+		if (validAdmins.length === 0) {
+			// Don't show error for service/package changes, just skip draft save
+			console.log(
+				"No valid admin selected, skipping draft save on service/package change",
+			);
+			return;
+		}
+
+		const validPrimaryAdmin =
+			primaryAdmin?.id &&
+			primaryAdmin.id !== 0 &&
+			primaryAdmin.id !== "" &&
+			primaryAdmin.id !== "0"
+				? primaryAdmin
+				: validAdmins[0];
+
+		try {
+			const result = await saveDraft({
+				adminPicId: validPrimaryAdmin?.id
+					? String(validPrimaryAdmin.id)
+					: undefined,
+				adminIds: validAdmins.map((a) => String(a.id)),
+				primaryAdminId: validPrimaryAdmin?.id
+					? String(validPrimaryAdmin.id)
+					: undefined,
+				currentStep: DRAFT_STEPS[1], // appointment_scheduling step
+				formData: values,
+				draftId: values.formOptions?.draftId
+					? String(values.formOptions.draftId)
+					: undefined,
+			});
+
+			if (result.success && result.draft) {
+				// Update form with draft ID for future updates
+				form.setValue("formOptions.draftId", String(result.draft.id));
+
+				// Return the updated values so caller can update formStorage if needed
+				return form.getValues();
+			}
+		} catch (error) {
+			// Don't show error for service/package changes, just log it
+			console.error("Draft save error on service/package change:", error);
+		}
+	}, [form, saveDraft]);
+
 	const onSelectService = useCallback(
-		(service: AppointmentBookingSchema["appointmentScheduling"]["service"]) => {
+		async (
+			service: AppointmentBookingSchema["appointmentScheduling"]["service"],
+		) => {
 			// reset some values
 			form.resetField("appointmentScheduling.package", {
 				defaultValue: DEFAULT_VALUES_PACKAGE,
@@ -805,8 +883,21 @@ export const useAppointmentSchedulingForm = () => {
 			form.setValue("appointmentScheduling.service", service, {
 				shouldValidate: true,
 			});
+
+			// Save draft after service selection and get updated values
+			const updatedValues = await saveDraftOnServicePackageChange();
+			if (updatedValues && setFormStorage) {
+				// Update form storage with new draft ID
+				setFormStorage(updatedValues);
+			}
 		},
-		[form.setValue, form.resetField, onResetAllTherapistState],
+		[
+			form.setValue,
+			form.resetField,
+			onResetAllTherapistState,
+			saveDraftOnServicePackageChange,
+			setFormStorage,
+		],
 	);
 	const serviceHooks = {
 		servicesOption,
@@ -828,15 +919,28 @@ export const useAppointmentSchedulingForm = () => {
 		[servicesOption, watchAppointmentSchedulingValue?.service?.id],
 	);
 	const onSelectPackage = useCallback(
-		(
+		async (
 			packageValue: AppointmentBookingSchema["appointmentScheduling"]["package"],
 		) => {
 			form.setValue("appointmentScheduling.package", packageValue, {
 				shouldValidate: true,
 			});
 			onResetTherapistFormValue();
+
+			// Save draft after package selection and get updated values
+			const updatedValues = await saveDraftOnServicePackageChange();
+			if (updatedValues && setFormStorage) {
+				// Update form storage with new draft ID
+				setFormStorage(updatedValues);
+				console.log("Package selection draft saved and form storage updated");
+			}
 		},
-		[form.setValue, onResetTherapistFormValue],
+		[
+			form.setValue,
+			onResetTherapistFormValue,
+			saveDraftOnServicePackageChange,
+			setFormStorage,
+		],
 	);
 	const packageHooks = { packagesOption, onSelectPackage };
 

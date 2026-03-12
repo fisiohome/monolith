@@ -9,6 +9,7 @@ import {
 	useFormContext,
 	useWatch,
 } from "react-hook-form";
+import { TherapistSearchField } from "@/components/admin-portal/appointment/form/therapist-search-field";
 import TherapistSelection from "@/components/admin-portal/appointment/form/therapist-selection";
 import { useFormProvider } from "@/components/admin-portal/appointment/new-appointment-form";
 import { useDateContext } from "@/components/providers/date-provider";
@@ -38,6 +39,8 @@ import { getBadgeVariantStatus } from "@/lib/appointments/utils";
 import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import DateTimePicker from "./date-time";
+
+const USE_NEW_THERAPIST_SELECTION = true;
 
 const VISIT_STATUSES = {
 	PENDING_THERAPIST_ASSIGNMENT: "pending_therapist_assignment",
@@ -326,6 +329,8 @@ const useSeriesVisitForm = (index: number) => {
 		watchSelectedTimeSlotValue,
 		watchAllOfDayValue,
 		watchAppointmentDateTimeValue,
+		watchPatientDetailsValue,
+		watchMainServiceValue,
 		onSelectTherapist,
 		onResetTherapistFormValue,
 		onFindTherapists,
@@ -608,6 +613,8 @@ const VisitForm = ({
 		watchSelectedTimeSlotValue,
 		watchAllOfDayValue,
 		watchAppointmentDateTimeValue,
+		watchPatientDetailsValue,
+		watchMainServiceValue,
 		mapRef,
 		therapistsOptions,
 		isMapLoading,
@@ -762,43 +769,62 @@ const VisitForm = ({
 					)}
 				/>
 
-				<FormField
-					control={form.control}
-					name={`${fieldPath}.therapist.name`}
-					render={({ field }) => (
-						<FormItem className="col-span-full">
-							<FormControl>
-								<TherapistSelection
-									items={therapistsOptions.feasible}
-									config={{
-										isLoading: isLoading.therapists,
-										selectedTherapistName: field.value,
-										selectedTherapist:
-											formSelections?.seriesTherapists?.[index] || undefined,
-										isAllOfDay: !!watchAllOfDayValue,
-										selectedTimeSlot: watchSelectedTimeSlotValue,
-									}}
-									find={{
-										isDisabled: !watchAppointmentDateTimeValue,
-										handler: onFindTherapists,
-									}}
-									unfeasibleTherapists={feasibilityReport}
-									onSelectTherapist={onSelectTherapist}
-									onPersist={onPersistTherapist}
-									onSelectTimeSlot={onSelectTimeSlot}
-								/>
-							</FormControl>
-						</FormItem>
-					)}
-				/>
+				{USE_NEW_THERAPIST_SELECTION ? (
+					<TherapistSearchField
+						formHooks={{
+							form,
+							watchAllOfDayValue: watchAllOfDayValue ?? false,
+							onSelectTherapist,
+							onSelectTimeSlot,
+						}}
+						mode="series"
+						locationId={watchPatientDetailsValue?.location?.id?.toString()}
+						serviceId={watchMainServiceValue?.toString()}
+						appointmentDateTime={watchAppointmentDateTimeValue}
+						fieldPath={fieldPath}
+					/>
+				) : (
+					<>
+						<FormField
+							control={form.control}
+							name={`${fieldPath}.therapist.name`}
+							render={({ field }) => (
+								<FormItem className="col-span-full">
+									<FormControl>
+										<TherapistSelection
+											items={therapistsOptions.feasible}
+											config={{
+												isLoading: isLoading.therapists,
+												selectedTherapistName: field.value,
+												selectedTherapist:
+													formSelections?.seriesTherapists?.[index] ||
+													undefined,
+												isAllOfDay: !!watchAllOfDayValue,
+												selectedTimeSlot: watchSelectedTimeSlotValue,
+											}}
+											find={{
+												isDisabled: !watchAppointmentDateTimeValue,
+												handler: onFindTherapists,
+											}}
+											unfeasibleTherapists={feasibilityReport}
+											onSelectTherapist={onSelectTherapist}
+											onPersist={onPersistTherapist}
+											onSelectTimeSlot={onSelectTimeSlot}
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
 
-				<HereMap
-					ref={mapRef}
-					coordinate={coordinate}
-					address={mapAddress}
-					options={{ disabledEvent: false }}
-					className="col-span-full"
-				/>
+						<HereMap
+							ref={mapRef}
+							coordinate={coordinate}
+							address={mapAddress}
+							options={{ disabledEvent: false }}
+							className="col-span-full"
+						/>
+					</>
+				)}
 			</div>
 
 			<div className="mt-4 flex items-center gap-2">

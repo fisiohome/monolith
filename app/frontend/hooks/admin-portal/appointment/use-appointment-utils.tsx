@@ -707,7 +707,7 @@ export const useAppointmentDateTime = ({
 			modifiersClassNames:
 				bookedDates.length > 0
 					? {
-							booked: "ring-2 ring-orange-400 ring-inset",
+							booked: "ring-1 ring-orange-400 ring-inset",
 						}
 					: undefined,
 		};

@@ -27,6 +27,7 @@ import {
 	useMemo,
 	useState,
 } from "react";
+import { useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useDateContext } from "@/components/providers/date-provider";
 import HereMap from "@/components/shared/here-map";
@@ -75,7 +76,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -111,6 +111,7 @@ import PatientContactForm from "./form/patient-contact";
 import PatientMedicalForm from "./form/patient-medical";
 import PatientRegionForm from "./form/patient-region";
 import { SeriesScheduler } from "./form/series-scheduler";
+import { TherapistSearchField } from "./form/therapist-search-field";
 import TherapistSelection from "./form/therapist-selection";
 
 export type FormMode = "new" | "series";
@@ -133,6 +134,16 @@ interface FormProviderState {
 	formSelections: FormStorageSelection;
 	setFormSelections: Dispatch<SetStateAction<FormStorageSelection>>;
 }
+
+// Helper function to get feature flag value
+const getUseNewTherapistSelection = (pageProps?: AppointmentNewGlobalPageProps['props']) => {
+	try {
+		return pageProps?.adminPortal?.featureFlags?.useNewTherapistSelectionEnabled ?? true;
+	} catch {
+		// Fallback for development or when page props are not available
+		return false;
+	}
+};
 
 const FormProviderContext = createContext<FormProviderState>({
 	mode: "new",
@@ -578,7 +589,12 @@ export function AppointmentSchedulingForm() {
 
 	const { locale, tzDate } = useDateContext();
 	const isFirstRender = useIsFirstRender();
-	const { mode, formSelections, setFormSelections } = useFormProvider();
+	const { mode, formSelections, setFormSelections, setFormStorage } =
+		useFormProvider();
+
+	// Get feature flag from page props
+	const { props } = usePage<AppointmentNewGlobalPageProps>();
+	const useNewTherapistSelection = getUseNewTherapistSelection(props);
 
 	// For scheduling-first approach, location selection will be added to the form
 	const {
@@ -587,10 +603,16 @@ export function AppointmentSchedulingForm() {
 		watchAppointmentSchedulingValue,
 		watchAllOfDayValue,
 		watchSelectedTimeSlotValue,
-		onSelectAllOfDay,
+		onSelectAllOfDay: _onSelectAllOfDay,
 		onSelectTimeSlot,
 		...restSchedulingHooks
-	} = useAppointmentSchedulingForm();
+	} = useAppointmentSchedulingForm({ setFormStorage });
+
+	// Get patient details separately to access location
+	const watchPatientDetailsValue = useWatch({
+		control: form.control,
+		name: "patientDetails",
+	});
 	const { preferredTherapistGenderOption } = restSchedulingHooks;
 	const {
 		alertService,
@@ -1107,7 +1129,8 @@ export function AppointmentSchedulingForm() {
 										<FormLabel className="flex items-center justify-between">
 											<span>{tasf("appt_date.label")}</span>
 
-											<FormField
+											{/* ? because we dont use the therapist availability logic we disabled this */}
+											{/* <FormField
 												control={form.control}
 												name="formOptions.findTherapistsAllOfDay"
 												render={({ field }) => (
@@ -1128,7 +1151,7 @@ export function AppointmentSchedulingForm() {
 														</FormControl>
 													</FormItem>
 												)}
-											/>
+											/> */}
 										</FormLabel>
 
 										<FormControl>
@@ -1149,59 +1172,81 @@ export function AppointmentSchedulingForm() {
 								)}
 							/>
 
-							<FormField
-								control={form.control}
-								name="appointmentScheduling.therapist.name"
-								render={({ field }) => (
-									<FormItem className="col-span-full">
-										{/* <FormLabel>{tasf("therapist.label")}</FormLabel> */}
+							{useNewTherapistSelection ? (
+								<TherapistSearchField
+									formHooks={{
+										form,
+										watchAllOfDayValue: watchAllOfDayValue ?? false,
+										setFormSelections,
+									}}
+									mode="new"
+									locationId={watchPatientDetailsValue?.location?.id?.toString()}
+									serviceId={watchAppointmentSchedulingValue?.service?.id?.toString()}
+									appointmentDateTime={
+										watchAppointmentSchedulingValue?.appointmentDateTime
+									}
+								/>
+							) : (
+								<>
+									<FormField
+										control={form.control}
+										name="appointmentScheduling.therapist.name"
+										render={({ field }) => (
+											<FormItem className="col-span-full">
+												<FormLabel>{tasf("therapist.label")}</FormLabel>
 
-										<FormControl>
-											<TherapistSelection
-												items={therapistsOptions.feasible}
-												config={{
-													isLoading: isLoading.therapists || isMapLoading,
-													selectedTherapistName: field.value,
-													selectedTherapist:
-														formSelections?.therapist || undefined,
-													isAllOfDay: !!watchAllOfDayValue,
-													selectedTimeSlot: watchSelectedTimeSlotValue,
-												}}
-												find={{
-													isDisabled:
-														!watchAppointmentSchedulingValue.appointmentDateTime,
-													handler: async (options?: {
-														bypassConstraints?: boolean;
-														employmentType?: "KARPIS" | "FLAT" | "ALL";
-													}) => {
-														const isError = onCheckServiceError();
-														if (isError) return;
+												<FormControl>
+													<TherapistSelection
+														items={therapistsOptions.feasible}
+														config={{
+															isLoading: isLoading.therapists || isMapLoading,
+															selectedTherapistName: field.value,
+															selectedTherapist:
+																formSelections?.therapist || undefined,
+															isAllOfDay: !!watchAllOfDayValue,
+															selectedTimeSlot: watchSelectedTimeSlotValue,
+														}}
+														find={{
+															isDisabled:
+																!watchAppointmentSchedulingValue.appointmentDateTime,
+															handler: async (options?: {
+																bypassConstraints?: boolean;
+																employmentType?: "KARPIS" | "FLAT" | "ALL";
+															}) => {
+																const isError = onCheckServiceError();
+																if (isError) return;
 
-														onFindTherapists(options);
-													},
-												}}
-												unfeasibleTherapists={feasibilityReport}
-												onSelectTherapist={(value) => onSelectTherapist(value)}
-												onPersist={(value) => {
-													setFormSelections({
-														...formSelections,
-														therapist: value,
-													});
-												}}
-												onSelectTimeSlot={(value) => onSelectTimeSlot(value)}
-											/>
-										</FormControl>
-									</FormItem>
-								)}
-							/>
+																onFindTherapists(options);
+															},
+														}}
+														unfeasibleTherapists={feasibilityReport}
+														onSelectTherapist={(value) =>
+															onSelectTherapist(value)
+														}
+														onPersist={(value) => {
+															setFormSelections({
+																...formSelections,
+																therapist: value,
+															});
+														}}
+														onSelectTimeSlot={(value) =>
+															onSelectTimeSlot(value)
+														}
+													/>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
 
-							<HereMap
-								ref={mapRef}
-								coordinate={coordinate}
-								address={{ ...mapAddress }}
-								options={{ disabledEvent: false }}
-								className="col-span-full"
-							/>
+									<HereMap
+										ref={mapRef}
+										coordinate={coordinate}
+										address={{ ...mapAddress }}
+										options={{ disabledEvent: false }}
+										className="col-span-full"
+									/>
+								</>
+							)}
 						</div>
 
 						<div className="mt-4 flex items-center gap-2">

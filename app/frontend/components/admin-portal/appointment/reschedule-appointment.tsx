@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { type ComponentProps, memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import HereMap from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,6 @@ import {
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	useFormActionButtons,
@@ -35,11 +35,10 @@ import {
 import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
 import DateTimePicker from "./form/date-time";
-
-// import { TherapistSearchField } from "./form/therapist-search-field";
-
-import HereMap from "@/components/shared/here-map";
+import { TherapistSearchField } from "./form/therapist-search-field";
 import TherapistSelection from "./form/therapist-selection";
+
+const USE_NEW_THERAPIST_SELECTION = true;
 
 // Helper component to display visit list
 const VisitListDisplay = ({ message }: { message: string }) => {
@@ -270,7 +269,7 @@ export const RescheduleFields = memo(function Component({
 						variant="destructive"
 						className="col-span-full motion-preset-rebound-down"
 					>
-						<AlertCircle className="w-4 h-4" />
+						<AlertCircle className="w-4 h-4 shrink-0" />
 						<AlertTitle>{tas("alert_therapist.title")}</AlertTitle>
 						<AlertDescription>
 							{tas("alert_therapist.description")}
@@ -341,7 +340,9 @@ export const RescheduleFields = memo(function Component({
 						<FormItem>
 							<FormLabel className="flex items-center justify-between">
 								<span>{tasf("appt_date.label")}</span>
-								<FormField
+
+								{/* ? because we dont use the therapist availability logic we disabled this */}
+								{/* <FormField
 									control={formHooks.form.control}
 									name="formOptions.findTherapistsAllOfDay"
 									render={({ field }) => (
@@ -361,13 +362,13 @@ export const RescheduleFields = memo(function Component({
 											</FormControl>
 										</FormItem>
 									)}
-								/>
+								/> */}
 							</FormLabel>
 
 							{formHooks.apptDateTime?.message && (
 								<Alert className="text-xs">
-									<Info className="size-3.5 shrink-0" />
-									<AlertTitle>Info</AlertTitle>
+									<Info className="size-4 shrink-0" />
+									<AlertTitle className="uppercase">Info</AlertTitle>
 									<AlertDescription className="text-xs text-pretty">
 										<VisitListDisplay
 											message={formHooks.apptDateTime.message}
@@ -397,60 +398,65 @@ export const RescheduleFields = memo(function Component({
 				/>
 			</div>
 
-			{/* Original TherapistSelection and HereMap components - commented out */}
-			<FormField
-				control={formHooks.form.control}
-				name="therapist.name"
-				render={({ field }) => (
-					<FormItem className="col-span-full">
-						{/* <FormLabel>{tasf("therapist.label")}</FormLabel> */}
-						<FormControl>
-							<TherapistSelection
-								items={formHooks.therapistsOptions.feasible}
-								config={{
-									isLoading:
-										formHooks.isLoading.therapists || formHooks.isMapLoading,
-									selectedTherapistName: field.value,
-									selectedTherapist:
-										formHooks.formSelections?.therapist || undefined,
-									appt: formHooks.appointment,
-									isAllOfDay: !!formHooks.watchAllOfDayValue,
-									selectedTimeSlot: formHooks.selectedTimeSlot || undefined,
-								}}
-								find={{
-									isDisabled: !formHooks.watchAppointmentDateTimeValue,
-									handler: async (options?: {
-										bypassConstraints?: boolean;
-										employmentType?: "KARPIS" | "FLAT" | "ALL";
-									}) => await formHooks.onFindTherapists(options),
-								}}
-								unfeasibleTherapists={formHooks.feasibilityReport}
-								onSelectTherapist={(value) =>
-									formHooks.onSelectTherapist(value)
-								}
-								onPersist={(value) => {
-									formHooks.setFormSelections({
-										...formHooks.formSelections,
-										therapist: value,
-									});
-								}}
-								onSelectTimeSlot={(value) => formHooks.onSelectTimeSlot(value)}
-							/>
-						</FormControl>
-					</FormItem>
-				)}
-			/>
+			{USE_NEW_THERAPIST_SELECTION ? (
+				<TherapistSearchField mode="reschedule" formHooks={formHooks} />
+			) : (
+				<>
+					<FormField
+						control={formHooks.form.control}
+						name="therapist.name"
+						render={({ field }) => (
+							<FormItem className="col-span-full">
+								{/* <FormLabel>{tasf("therapist.label")}</FormLabel> */}
+								<FormControl>
+									<TherapistSelection
+										items={formHooks.therapistsOptions.feasible}
+										config={{
+											isLoading:
+												formHooks.isLoading.therapists ||
+												formHooks.isMapLoading,
+											selectedTherapistName: field.value,
+											selectedTherapist:
+												formHooks.formSelections?.therapist || undefined,
+											appt: formHooks.appointment,
+											isAllOfDay: !!formHooks.watchAllOfDayValue,
+											selectedTimeSlot: formHooks.selectedTimeSlot || undefined,
+										}}
+										find={{
+											isDisabled: !formHooks.watchAppointmentDateTimeValue,
+											handler: async (options?: {
+												bypassConstraints?: boolean;
+												employmentType?: "KARPIS" | "FLAT" | "ALL";
+											}) => await formHooks.onFindTherapists(options),
+										}}
+										unfeasibleTherapists={formHooks.feasibilityReport}
+										onSelectTherapist={(value) =>
+											formHooks.onSelectTherapist(value)
+										}
+										onPersist={(value) => {
+											formHooks.setFormSelections({
+												...formHooks.formSelections,
+												therapist: value,
+											});
+										}}
+										onSelectTimeSlot={(value) =>
+											formHooks.onSelectTimeSlot(value)
+										}
+									/>
+								</FormControl>
+							</FormItem>
+						)}
+					/>
 
-			<HereMap
-				ref={formHooks.mapRef}
-				coordinate={formHooks.coordinate}
-				address={{ ...formHooks.mapAddress }}
-				options={{ disabledEvent: false }}
-				className="col-span-full"
-			/>
-
-			{/* New simplified therapist search */}
-			{/* <TherapistSearchField formHooks={formHooks} /> */}
+					<HereMap
+						ref={formHooks.mapRef}
+						coordinate={formHooks.coordinate}
+						address={{ ...formHooks.mapAddress }}
+						options={{ disabledEvent: false }}
+						className="col-span-full"
+					/>
+				</>
+			)}
 
 			<FormField
 				control={formHooks.form.control}

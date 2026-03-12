@@ -139,6 +139,7 @@ Rails.application.routes.draw do
           resources :therapists, only: [] do
             collection do
               get "feasible", to: "therapists#feasible"
+              get "search", to: "therapists#search"
             end
           end
           resources :services, only: [:index]
@@ -167,6 +168,7 @@ Rails.application.routes.draw do
           resources :therapists, only: [] do
             collection do
               get "feasible", to: "therapists#feasible"
+              get "search", to: "therapists#search"
             end
           end
           resources :services, only: [:index]
