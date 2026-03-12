@@ -141,6 +141,45 @@ For each sync operation, we capture:
 - **Detailed results**: Created, updated, failed, and skipped counts
 - **Error details**: Specific reasons when things go wrong
 
+## 🎯 Therapist Availability Rules
+
+During therapist sync, the system automatically configures availability rules that determine how therapists can be assigned to appointments.
+
+### Default Rules Applied
+
+All therapists receive these default availability rules:
+- **Distance**: `{"distance_in_meters" => 25_000}` (25 km maximum travel distance)
+- **Duration**: `{"duration_in_minutes" => 50}` (50 minutes maximum travel time)
+- **Location**: `{"location" => true}` (must match location constraints)
+
+### Special Rules by Employment Type
+
+#### FLAT Therapists in Jabodetabek
+- **Distance**: ✅ Applied (25 km)
+- **Duration**: ✅ Applied (50 minutes)
+- **Location**: ❌ **Ignored** (flexible location assignment)
+
+#### FLAT Therapists Outside Jabodetabek
+- **Distance**: ✅ Applied (25 km)
+- **Duration**: ✅ Applied (50 minutes)
+- **Location**: ✅ Applied (location matching required)
+
+#### KARPIS Therapists
+- **Distance**: ✅ Applied (25 km)
+- **Duration**: ✅ Applied (50 minutes)
+- **Location**: ✅ Applied (location matching required)
+- **Special Case**: If `ignoring_loc_rules = true` in data, location rule is removed
+
+### Jabodetabek Coverage
+The following cities are considered Jabodetabek:
+- Jakarta, Bogor, Depok, Tangerang, Bekasi, Kepulauan Seribu
+
+### Business Logic Summary
+- **All therapists** get distance and duration constraints for quality control
+- **FLAT Jabodetabek therapists** have location flexibility for wider service coverage
+- **Location rules** can be customized via `ignoring_loc_rules` flag in source data
+- **Rules are applied consistently** during both creation and updates of therapist schedules
+
 ### Real-World Benefits
 
 **Quick Problem Resolution**

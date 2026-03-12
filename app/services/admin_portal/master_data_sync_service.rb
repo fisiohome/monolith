@@ -922,17 +922,12 @@ module AdminPortal
                 # Start with default rules
                 rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES.dup
 
+                # FLAT Jabodetabek: remove location rule but keep distance and duration
                 if is_flat_jabodetabek
-                  rules = []
-                elsif therapist.employment_type == "FLAT"
-                  # Always remove distance and duration rules for FLAT outside Jabodetabek
-                  rules = rules.reject { |rule|
-                    rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) ||
-                      rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes)
-                  }
+                  rules = rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
                 end
 
-                # Apply ignoring_loc_rules_map for location rule
+                # Apply ignoring_loc_rules_map for location rule (only for non-FLAT Jabodetabek)
                 if !is_flat_jabodetabek && ignoring_loc_rules_map[name]
                   # Remove location rule if ignoring
                   rules = rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
@@ -951,29 +946,18 @@ module AdminPortal
                 should_ignore_location = ignoring_loc_rules_map[name]
                 current_rules = schedule_record.availability_rules || []
                 has_location_rule = current_rules.any? { |rule| rule.key?("location") || rule.key?(:location) }
-                has_distance_rule = current_rules.any? { |rule| rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) }
-                has_duration_rule = current_rules.any? { |rule| rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes) }
 
                 rules_updated = false
                 new_rules = current_rules.dup
 
-                if is_flat_jabodetabek
-                  if new_rules.present?
-                    new_rules = []
-                    rules_updated = true
-                  end
-                elsif therapist.employment_type == "FLAT"
-                  if has_distance_rule || has_duration_rule
-                    new_rules = new_rules.reject { |rule|
-                      rule.key?("distance_in_meters") || rule.key?(:distance_in_meters) ||
-                        rule.key?("duration_in_minutes") || rule.key?(:duration_in_minutes)
-                    }
-                    rules_updated = true
-                  end
+                # FLAT Jabodetabek: remove location rule but keep distance and duration
+                if is_flat_jabodetabek && has_location_rule
+                  new_rules = new_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
+                  rules_updated = true
                 end
 
-                # Apply ignoring_loc_rules_map for location rule
-                unless is_flat_jabodetabek
+                # Apply ignoring_loc_rules_map for location rule (only for non-FLAT Jabodetabek)
+                if !is_flat_jabodetabek
                   if should_ignore_location && has_location_rule
                     # Remove location rule if ignoring
                     new_rules = new_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
