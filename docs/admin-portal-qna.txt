@@ -1,0 +1,166 @@
+Admin Portal Q&A
+
+Appointment Creation
+
+Q: Kenapa layanan tidak muncul saat membuat janji temu baru?
+
+A: Layanan tidak muncul karena beberapa alasan:
+
+1. Layanan belum terhubung dengan kota pelanggan
+   - Layanan tidak memiliki jangkauan untuk kota dimana pelanggan berada
+   - Layanan hanya muncul untuk penyedia yang cover lokasi pelanggan
+
+Cara Mengatasi:
+Hubungkan penyedia layanan dengan kota
+1. Buka Manajemen Penyedia Layanan
+2. Pilih penyedia dan klik Edit
+3. Ke bagian "Pengaturan Wilayah Layanan"/"Setup Locations Availability"
+4. Tambahkan kota dimana pelanggan berada
+5. Klik Simpan
+
+---
+
+Q: Kenapa nomor telepon sudah terpakai?
+
+A: Error ini muncul karena beberapa alasan:
+
+1. Pasien contact yang ingin didaftarkan sudah terpakai
+   - Nomor telepon sudah terdaftar di sistem
+   - Data pasien yang ingin didaftarkan sudah terpakai
+   - Sistem mencegah duplikasi data agar tidak bingung
+
+2. Format penulisan salah
+   - Pastikan format nomor benar (contoh: +628123456789)
+   - Jangan pakai spasi atau tanda baca lain
+
+3. Pasien sudah ada di database
+   - Mungkin pasien sudah pernah didaftarkan dengan nomor yang sama
+   - Cek dulu apakah pasien sudah terdaftar
+
+Cara Mengatasi:
+1. Cari data pasien yang sudah ada di Manajemen Pasien
+   - Pencarian bisa berdasarkan nama atau nomor telepon
+   - Jika pasien yang dicari ada, gunakan data tersebut
+
+2. Jika data yang dicari tidak ada:
+   - Pergi ke bagian "Tambahkan Data Baru"
+   - Cari lagi apakah nomor telepon tersebut sudah digunakan atau tidak
+   - Jika sudah digunakan, gunakan data kontak tersebut
+   - Jika belum, buat data kontak baru
+   - Tambahkan data pasien yang baru
+
+3. Atau pakai nomor telepon yang berbeda untuk pasien baru
+
+---
+
+Q: Kenapa visit number berubah setelah reschedule?
+
+A: Ini adalah fitur yang membantu agar urutan kunjungan lebih teratur:
+
+1. Pengurutan otomatis berdasarkan tanggal
+   - System akan menyusun ulang nomor kunjungan sesuai tanggal baru
+   - Kunjungan pertama, kedua, ketiga diatur ulang agar berurutan
+
+2. Deteksi kesalahan urutan
+   - System akan mengecek jika ada kunjungan yang tidak berurutan
+   - Otomatis memperbaiki nomor kunjungan yang salah
+
+3. Menjaga konsistensi treatment
+   - Urutan kunjungan penting untuk melihat progress pasien
+   - Memastikan treatment dilakukan dalam urutan yang benar
+
+Contoh Lengkap:
+Sebelum diubah:
+- Kunjungan 1: 10 Januari 2024
+- Kunjungan 2: 15 Januari 2024  
+- Kunjungan 3: 8 Januari 2024  ← Tanggalnya lebih dulu!
+
+Setelah system otomatis perbaiki:
+- Kunjungan 1: 8 Januari 2024   ← Sekarang urut benar
+- Kunjungan 2: 10 Januari 2024
+- Kunjungan 3: 15 Januari 2024
+
+---
+
+Therapist & Service Issues
+
+Q: Kenapa terapis tidak muncul saat dicari?
+
+A: Beberapa penyebab yang sering terjadi:
+
+1. Terapis tidak aktif
+   - Status terapis: Nonaktif, Suspended, atau Hold
+   - Hanya terapis yang aktif saja yang muncul di hasil pencarian
+
+2. Lokasi tidak cocok
+   - Terapis tidak melayani di lokasi yang dipilih
+   - Cek area layanan terapis
+
+3. Jadwal tidak tersedia
+   - Terapis tidak ada jadwal di tanggal yang dipilih
+   - Terapis sedang cuti atau libur
+
+Cara Mengatasi:
+1. Buka Manajemen Terapis
+2. Cari nama terapis
+3. Periksa status dan ketersediaannya
+4. Update jika perlu
+
+---
+
+Q: Kenapa tidak bisa assign therapist ke appointment?
+
+A: Common issues:
+
+1. Therapist not qualified
+   - Therapist tidak memiliki required specialization
+   - Service membutuhkan certification khusus
+
+2. Availability conflict
+   - Therapist sudah ada appointment di waktu yang sama
+   - Therapist sedang cuti atau tidak available
+
+3. Workload limit
+   - Therapist sudah mencapai daily limit
+   - System mencegah overload
+
+4. Geographic constraint
+   - Therapist tidak cover area lokasi patient
+   - Distance terlalu jauh untuk home visit
+
+Solution:
+- Pilih therapist dengan specialization yang tepat
+- Check therapist availability di calendar
+- Consider therapist yang lebih dekat dengan lokasi
+
+---
+
+Q: Kenapa muncul "Informasi Lokasi Diperlukan"?
+
+A: Pesan ini muncul karena:
+
+1. Pasien belum memiliki koordinat lokasi
+   - Alamat pasien belum memiliki latitude dan longitude
+   - Sistem butuh koordinat untuk mencari terapis terdekat
+   - Menghitung jarak dan waktu tempuk ke lokasi pasien
+
+2. Koordinat belum dihitung
+   - Alamat sudah ada tapi belum di-calculate koordinatnya
+   - Sistem butuh lat/lng untuk menentukan lokasi tepat
+
+3. Alamat belum diaktifkan
+   - Alamat sudah ada tapi statusnya tidak aktif
+   - Hanya alamat yang aktif yang bisa digunakan untuk janji temu
+
+Cara Mengatasi:
+1. Buka menu Edit Pasien
+2. Tambah alamat jika pasien belum memiliki alamat
+3. Atau edit alamat yang sudah ada
+4. Pastikan status alamat = Aktif
+5. Klik "Calculate Coordinate" untuk hitung lat/lng
+6. Simpan perubahan
+
+---
+
+Last updated: March 2026
+For internal use only
