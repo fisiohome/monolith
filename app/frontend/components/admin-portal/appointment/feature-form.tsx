@@ -21,6 +21,7 @@ import {
 	FormControl,
 	FormField,
 	FormItem,
+	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
 import {
@@ -36,11 +37,19 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import i18n from "@/lib/i18n";
 import { cn, populateQueryParams } from "@/lib/utils";
 import type { AppointmentIndexGlobalPageProps } from "@/pages/AdminPortal/Appointment/Index";
+import type { OrdersGlobalPageProps } from "@/pages/AdminPortal/Appointment/Orders";
 import type {
 	Appointment,
 	AppointmentStatuses,
@@ -468,6 +477,143 @@ export function UpdateStatusForm({
 									/>
 								</FormControl>
 
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<ResponsiveDialogButton {...buttonProps} />
+				</form>
+			</Form>
+		</div>
+	);
+}
+
+// * form of the payment status update
+interface UpdatePaymentFormProps {
+	order: {
+		id: string;
+		registrationNumber: string;
+		paymentStatus: string;
+	};
+	paymentStatusOptions: NonNullable<
+		OrdersGlobalPageProps["optionsData"]
+	>["paymentStatuses"];
+	forceMode?: ResponsiveDialogMode;
+	onSuccess?: () => void;
+}
+
+export function UpdatePaymentForm({
+	order,
+	onSuccess,
+	forceMode,
+	paymentStatusOptions,
+}: UpdatePaymentFormProps) {
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	const buttonProps = useMemo<ResponsiveDialogButton>(
+		() => ({
+			isLoading,
+			forceMode,
+			submitText: "Update",
+		}),
+		[isLoading, forceMode],
+	);
+
+	const formSchema = useMemo(
+		() =>
+			z.object({
+				payment_status: z.enum(
+					paymentStatusOptions.map((option) => option.value) as [
+						string,
+						...string[],
+					],
+					{
+						required_error: "Payment status is required",
+					},
+				),
+			}),
+		[paymentStatusOptions],
+	);
+
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			payment_status: order.paymentStatus,
+		},
+	});
+
+	const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			await router.put(
+				`/admin-portal/appointments/orders/${order.id}/payment-status`,
+				{
+					form_data: values,
+				},
+				{
+					preserveState: true,
+					preserveScroll: true,
+					onSuccess: () => {
+						onSuccess?.();
+					},
+					onError: (errors) => {
+						const defaultMessage = "Failed to update payment status";
+						const errorMessage = errors.message || defaultMessage;
+						setError(errorMessage);
+						console.error(defaultMessage, errorMessage);
+					},
+				},
+			);
+		} catch (err) {
+			const defaultMessage =
+				"An unexpected error occurred while updating payment status";
+			const errorMessage = err instanceof Error ? err.message : defaultMessage;
+			setError(errorMessage);
+			console.error(defaultMessage, errorMessage);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	return (
+		<div className="p-0.5 space-y-6">
+			{error && (
+				<Alert variant="destructive">
+					<AlertCircle className="h-4 w-4" />
+					<AlertTitle>Error</AlertTitle>
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
+			)}
+
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+					<FormField
+						control={form.control}
+						name="payment_status"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Payment Status</FormLabel>
+								<Select
+									onValueChange={field.onChange}
+									defaultValue={field.value}
+								>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="Select payment status" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{paymentStatusOptions.map((option) => (
+											<SelectItem key={option.value} value={option.value}>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 								<FormMessage />
 							</FormItem>
 						)}

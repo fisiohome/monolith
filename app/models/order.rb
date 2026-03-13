@@ -1,4 +1,27 @@
 class Order < ApplicationRecord
+  # * define the constants
+  # Order Status (business workflow)
+  ORDER_STATUS = %w[
+    DRAFT
+    PENDING_PAYMENT
+    PARTIALLY_PAID
+    PAID
+    SCHEDULED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+    REFUNDED
+  ].freeze
+
+  # Payment Status (auto-updated by DB trigger)
+  PAYMENT_STATUS = %w[
+    UNPAID
+    PARTIALLY_PAID
+    PAID
+    OVERPAID
+    REFUNDED
+  ].freeze
+
   belongs_to :patient
   belongs_to :package
   belongs_to :booking_draft, optional: true
@@ -13,6 +36,6 @@ class Order < ApplicationRecord
   validates :package_base_price, presence: true, numericality: {greater_than_or_equal_to: 0}
   validates :subtotal, presence: true, numericality: {greater_than_or_equal_to: 0}
   validates :total_amount, presence: true, numericality: {greater_than_or_equal_to: 0}
-  validates :payment_status, presence: true
-  validates :status, presence: true
+  validates :payment_status, presence: true, inclusion: {in: PAYMENT_STATUS}
+  validates :status, presence: true, inclusion: {in: ORDER_STATUS}
 end

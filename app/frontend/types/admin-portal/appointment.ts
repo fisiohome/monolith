@@ -23,6 +23,11 @@ export enum AppointmentStatuses {
 	completed = "COMPLETED",
 }
 
+export enum OrderPaymentStatuses {
+	paid = "PAID",
+	unpaid = "UNPAID",
+}
+
 type ProfileTypeMap = {
 	admin: Admin;
 	therapist: Therapist;

@@ -27,6 +27,7 @@
 		"update_pic": "Update PIC(s)",
 		"on_hold": "Hold All Visit",
 		"update_status": "Update Status",
+		"update_payment": "Update Payment",
 		"detail": "Detail",
 		"filter": "Filter",
 		"clear_all_filters": "Clear All",
@@ -49,6 +50,25 @@
 			"loading": "Exporting...",
 			"clear": "Clear",
 			"generate": "Generate"
+		},
+		"order_actions": {
+			"label": "Open menu",
+			"menus": {
+				"view_details": "View details",
+				"view_on_google_maps": "View on Google Maps",
+				"copy": {
+					"label": "Copy",
+					"invoice_url": "Invoice URL",
+					"appt_reg_number": "Appt Reg. No.",
+					"invoice_number": "Invoice No.",
+					"patient_id": "Patient ID",
+					"therapist_id": "Therapist ID"
+				},
+				"download": {
+					"soap": "Download SOAP",
+					"final_soap": "Download Final SOAP"
+				}
+			}
 		}
 	},
 	"tab": {

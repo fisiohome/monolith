@@ -4,6 +4,7 @@ module AdminPortal
 
     before_action :authenticate_user!
     before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf, :download_soap_final_pdf]
+    before_action :set_order, only: [:update_payment_status]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params, current_user)
@@ -299,6 +300,27 @@ module AdminPortal
       end
     end
 
+    def update_payment_status
+      Rails.logger.info "Starting external API payment status update for order ID: #{@order.id}"
+
+      payment_status = params.dig(:form_data, :payment_status)
+
+      unless payment_status
+        Rails.logger.error "Payment status parameter is missing"
+        redirect_to determine_redirect_path, alert: "Payment status is required"
+        return
+      end
+
+      result = UpdatePaymentStatusServiceExternalApi.new(@order, current_user, payment_status).call
+
+      if result[:success]
+        redirect_to determine_redirect_path(exclude_param: "update_payment_status"), notice: result[:message] || "Payment status updated successfully."
+      else
+        Rails.logger.error "Failed to update payment status: #{result[:error]}"
+        redirect_to determine_redirect_path, alert: result[:error] || "Failed to update payment status"
+      end
+    end
+
     #     def sync_data_master
     #       sync_response = MasterDataSyncService.new(current_user).appointments
     #       redirect_path = admin_portal_appointments_path(request.query_parameters)
@@ -454,6 +476,10 @@ module AdminPortal
 
     def set_appointment
       @appointment = Appointment.includes(:therapist).find(params[:id])
+    end
+
+    def set_order
+      @order = Order.find(params[:order_id])
     end
 
     # Finds a recently created appointment with retry for DB sync delay

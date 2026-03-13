@@ -27,6 +27,7 @@
 		"update_pic": "Perbarui Penanggung Jawab (PIC)",
 		"on_hold": "Tangguhkan Semua Kunjungan",
 		"update_status": "Perbarui Status",
+		"update_payment": "Perbarui Pembayaran",
 		"detail": "Detil",
 		"filter": "Saring",
 		"clear_all_filters": "Hapus Semua",
@@ -49,6 +50,25 @@
 			"loading": "Mengekspor...",
 			"clear": "Bersihkan",
 			"generate": "Proses"
+		},
+		"order_actions": {
+			"label": "Buka menu",
+			"menus": {
+				"view_details": "Lihat detail",
+				"view_on_google_maps": "Lihat di Google Maps",
+				"copy": {
+					"label": "Salin",
+					"invoice_url": "URL Invoice",
+					"appt_reg_number": "Appt Reg. No.",
+					"invoice_number": "No. Invoice",
+					"patient_id": "ID Pasien",
+					"therapist_id": "ID Terapis"
+				},
+				"download": {
+					"soap": "Unduh SOAP",
+					"final_soap": "Unduh SOAP Final"
+				}
+			}
 		}
 	},
 	"tab": {

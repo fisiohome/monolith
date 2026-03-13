@@ -4,19 +4,19 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
 	ActivityIcon,
-	Ban,
-	Cctv,
+	BanIcon,
+	BanknoteIcon,
+	CctvIcon,
 	CheckIcon,
-	Clock3,
-	Copy,
+	Clock3Icon,
 	CopyIcon,
 	DownloadIcon,
 	ExternalLinkIcon,
 	EyeIcon,
 	MapPinIcon,
-	MoreHorizontal,
+	MoreHorizontalIcon,
 	SearchIcon,
-	X,
+	XIcon,
 } from "lucide-react";
 import { startTransition, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
 import { getPermission } from "@/components/admin-portal/appointment/details/action-buttons";
 import {
+	UpdatePaymentForm,
 	UpdatePICForm,
 	UpdateStatusForm,
 } from "@/components/admin-portal/appointment/feature-form";
@@ -72,6 +73,7 @@ import type { Admin } from "@/types/admin-portal/admin";
 import type {
 	Appointment,
 	AppointmentStatuses,
+	OrderPaymentStatuses,
 } from "@/types/admin-portal/appointment";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 import type { Metadata } from "@/types/pagy";
@@ -173,10 +175,16 @@ interface OrdersPageProps {
 			key: keyof typeof AppointmentStatuses;
 			value: AppointmentStatuses;
 		}[];
+		paymentStatuses: {
+			label: OrderPaymentStatuses;
+			value: OrderPaymentStatuses;
+		}[];
 	};
 }
 
-interface OrdersGlobalPageProps extends BaseGlobalPageProps, OrdersPageProps {
+export interface OrdersGlobalPageProps
+	extends BaseGlobalPageProps,
+		OrdersPageProps {
 	[key: string]: any;
 }
 
@@ -269,6 +277,7 @@ const OrderActionsCell = ({
 			cannotReschedule: !order.appointments?.length || markOrderDone,
 			cannotUpdateStatus: !order.appointments?.length || markOrderDone,
 			cannotCancelBooking: !order.firstAppointmentId || markOrderDone,
+			cannotUpdatePayment: !order.appointments?.length || markOrderDone,
 		};
 	}, [order.appointments?.length, order.firstAppointmentId, order.status]);
 
@@ -391,6 +400,32 @@ const OrderActionsCell = ({
 		}
 	}, [order.firstAppointmentId, pageURL]);
 
+	// for open the update payment form
+	const openUpdatePayment = useCallback(() => {
+		const { fullUrl } = populateQueryParams(pageURL, {
+			update_payment: order.id,
+			selected_order: order.id,
+		});
+		startTransition(() => {
+			router.get(
+				fullUrl,
+				{},
+				{
+					only: [
+						"adminPortal",
+						"flash",
+						"errors",
+						"selectedOrder",
+						"optionsData",
+					],
+					preserveScroll: true,
+					preserveState: true,
+					replace: false,
+				},
+			);
+		});
+	}, [order.id, pageURL]);
+
 	// for open the reschedule page
 	const openReschedulePage = useCallback(
 		(id: string) => {
@@ -456,8 +491,8 @@ const OrderActionsCell = ({
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button variant="ghost" size="icon" className="size-8">
-					<span className="sr-only">Open menu</span>
-					<MoreHorizontal className="w-4 h-4" />
+					<span className="sr-only">{tappt("button.order_actions.label")}</span>
+					<MoreHorizontalIcon className="w-4 h-4" />
 				</Button>
 			</DropdownMenuTrigger>
 
@@ -470,7 +505,7 @@ const OrderActionsCell = ({
 						}}
 					>
 						<EyeIcon className="opacity-60" aria-hidden="true" />
-						View details
+						{tappt("button.order_actions.menus.view_details")}
 					</DropdownMenuItem>
 
 					<DropdownMenuItem
@@ -481,13 +516,13 @@ const OrderActionsCell = ({
 						disabled={!order.latitude || !order.longitude}
 					>
 						<MapPinIcon className="opacity-60" aria-hidden="true" />
-						View on Google Maps
+						{tappt("button.order_actions.menus.view_on_google_maps")}
 					</DropdownMenuItem>
 
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>
-							<Copy className="opacity-60" aria-hidden="true" />
-							Copy
+							<CopyIcon className="opacity-60" aria-hidden="true" />
+							{tappt("button.order_actions.menus.copy.label")}
 						</DropdownMenuSubTrigger>
 
 						<DropdownMenuPortal>
@@ -496,31 +531,31 @@ const OrderActionsCell = ({
 									onSelect={onCopyInvoiceUrl}
 									disabled={!order.invoiceUrl}
 								>
-									Invoice URL
+									{tappt("button.order_actions.menus.copy.invoice_url")}
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onSelect={onCopyRegNumber}
 									disabled={!order.registrationNumber}
 								>
-									Appt Reg. Number
+									{tappt("button.order_actions.menus.copy.appt_reg_number")}
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onSelect={onCopyInvoiceNumber}
 									disabled={!order.invoiceNumber}
 								>
-									No. Invoice
+									{tappt("button.order_actions.menus.copy.invoice_number")}
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onSelect={onCopyPatientId}
 									disabled={!order.patientId}
 								>
-									Patient ID
+									{tappt("button.order_actions.menus.copy.patient_id")}
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onSelect={onCopyTherapistId}
 									disabled={!order.therapistId}
 								>
-									Therapist ID
+									{tappt("button.order_actions.menus.copy.therapist_id")}
 								</DropdownMenuItem>
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>
@@ -529,7 +564,7 @@ const OrderActionsCell = ({
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger disabled={!order.appointments?.length}>
 							<DownloadIcon className="opacity-60" aria-hidden="true" />
-							Download SOAP
+							{tappt("button.order_actions.menus.download.soap")}
 						</DropdownMenuSubTrigger>
 						<DropdownMenuPortal>
 							<DropdownMenuSubContent>
@@ -557,7 +592,7 @@ const OrderActionsCell = ({
 						}}
 					>
 						<DownloadIcon className="opacity-60" aria-hidden="true" />
-						Download Final SOAP
+						{tappt("button.order_actions.menus.download.final_soap")}
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 
@@ -571,13 +606,13 @@ const OrderActionsCell = ({
 						}}
 						disabled={permission.cannotUpdatePic}
 					>
-						<Cctv className="opacity-60" aria-hidden="true" />
+						<CctvIcon className="opacity-60" aria-hidden="true" />
 						{tappt("button.update_pic")}
 					</DropdownMenuItem>
 
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger disabled={permission.cannotReschedule}>
-							<Clock3 className="opacity-60" aria-hidden="true" />
+							<Clock3Icon className="opacity-60" aria-hidden="true" />
 							{tappt("button.reschedule")}
 						</DropdownMenuSubTrigger>
 						<DropdownMenuPortal>
@@ -620,6 +655,17 @@ const OrderActionsCell = ({
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>
 					</DropdownMenuSub>
+
+					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							openUpdatePayment();
+						}}
+						disabled={permission.cannotUpdatePayment}
+					>
+						<BanknoteIcon className="opacity-60" aria-hidden="true" />
+						{tappt("button.update_payment")}
+					</DropdownMenuItem>
 				</DropdownMenuGroup>
 
 				<DropdownMenuSeparator />
@@ -635,7 +681,7 @@ const OrderActionsCell = ({
 						}}
 						disabled={permission.cannotCancelBooking}
 					>
-						<Ban className="opacity-60" aria-hidden="true" />
+						<BanIcon className="opacity-60" aria-hidden="true" />
 						{tappt("button.cancel_booking")}
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
@@ -1288,6 +1334,7 @@ export default function AppointmentOrders() {
 			viewOrder: !!q?.viewOrder,
 			updatePIC: !!q?.updatePic,
 			updateStatus: !!q?.updateStatus,
+			updatePayment: !!q?.updatePayment,
 		};
 	}, [globalProps.adminPortal?.currentQuery]);
 
@@ -1390,6 +1437,35 @@ export default function AppointmentOrders() {
 		[dialogMode.updateStatus, pageURL, t],
 	);
 
+	const dialogUpdatePayment = useMemo<Omit<ResponsiveDialogProps, "children">>(
+		() => ({
+			isOpen: dialogMode.updatePayment,
+			title: "Update Payment Status",
+			description: "Update payment status for this order",
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						update_payment: undefined,
+						selected_order: undefined,
+					});
+					startTransition(() => {
+						router.get(
+							fullUrl,
+							{},
+							{
+								only: ["adminPortal", "flash", "errors", "selectedOrder"],
+								preserveScroll: true,
+								preserveState: true,
+								replace: false,
+							},
+						);
+					});
+				}
+			},
+		}),
+		[dialogMode.updatePayment, pageURL],
+	);
+
 	const openOrderDetail = useCallback(
 		(orderId: string) => {
 			const { fullUrl } = populateQueryParams(pageURL, {
@@ -1454,7 +1530,7 @@ export default function AppointmentOrders() {
 							EndIcon={
 								filters.search
 									? {
-											icon: X,
+											icon: XIcon,
 											isButton: true,
 											handleOnClick: () => {
 												handleFilterChange("search", "");
@@ -1565,6 +1641,22 @@ export default function AppointmentOrders() {
 				<ResponsiveDialog {...dialogUpdateStatus}>
 					<UpdateStatusForm
 						selectedAppointment={globalProps.selectedAppointment}
+					/>
+				</ResponsiveDialog>
+			)}
+
+			{/* Update Payment Dialog */}
+			{globalProps?.selectedOrder && dialogUpdatePayment.isOpen && (
+				<ResponsiveDialog {...dialogUpdatePayment}>
+					<UpdatePaymentForm
+						order={globalProps.selectedOrder}
+						paymentStatusOptions={
+							globalProps.optionsData?.paymentStatuses || []
+						}
+						onSuccess={() => {
+							// Refresh the page data after successful update
+							router.reload({ only: ["orders"] });
+						}}
 					/>
 				</ResponsiveDialog>
 			)}

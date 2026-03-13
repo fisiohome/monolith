@@ -7,9 +7,10 @@ module AdminPortal
 
     def initialize(params)
       @params = params
-      @selected_id = @params[:view_order]
+      @selected_id = @params[:view_order] || @params[:selected_order]
       @selected_update_pic_id = @params[:update_pic]
       @selected_update_status_id = @params[:update_status]
+      @selected_update_payment_id = @params[:update_payment]
     end
 
     def fetch_orders
@@ -48,13 +49,22 @@ module AdminPortal
     end
 
     def fetch_options_data
-      selected_id = @selected_update_pic_id || @selected_update_status_id
-      return nil if selected_id.blank?
+      selected_id = @selected_update_pic_id || @selected_update_status_id || @selected_update_payment_id
 
-      admins = Admin.all.map { |admin| deep_transform_keys_to_camel_case(serialize_admin(admin).as_json) }
-      statuses = Appointment.statuses.map { |key, value| {key:, value:} }.as_json
+      admins = []
+      statuses = []
 
-      {admins:, statuses:}
+      # Only fetch admins and statuses if there's a selected_id for other forms
+      if selected_id.present?
+        admins = Admin.all.map { |admin| deep_transform_keys_to_camel_case(serialize_admin(admin).as_json) }
+        statuses = Appointment.statuses.map { |key, value| deep_transform_keys_to_camel_case({key:, value:}) }.as_json
+      end
+
+      # Always provide payment statuses for update payment form
+      payment_statuses = Order::PAYMENT_STATUS.select { |status| %w[UNPAID PAID].include?(status) }
+        .map { |status| deep_transform_keys_to_camel_case({value: status, label: status}) }
+
+      deep_transform_keys_to_camel_case({admins:, statuses:, payment_statuses:})
     end
 
     private

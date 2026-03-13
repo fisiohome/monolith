@@ -136,9 +136,14 @@ interface FormProviderState {
 }
 
 // Helper function to get feature flag value
-const getUseNewTherapistSelection = (pageProps?: AppointmentNewGlobalPageProps['props']) => {
+const getUseNewTherapistSelection = (
+	pageProps?: AppointmentNewGlobalPageProps["props"],
+) => {
 	try {
-		return pageProps?.adminPortal?.featureFlags?.useNewTherapistSelectionEnabled ?? true;
+		return (
+			pageProps?.adminPortal?.featureFlags?.useNewTherapistSelectionEnabled ??
+			true
+		);
 	} catch {
 		// Fallback for development or when page props are not available
 		return false;
