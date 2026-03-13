@@ -1,4 +1,4 @@
-import { Deferred } from "@inertiajs/react";
+import { Deferred, usePage } from "@inertiajs/react";
 import { useIsFirstRender } from "@uidotdev/usehooks";
 import {
 	AlertCircle,
@@ -34,11 +34,25 @@ import {
 } from "@/hooks/admin-portal/appointment/use-reschedule-form";
 import { getGenderIcon } from "@/hooks/use-gender";
 import { cn } from "@/lib/utils";
+import type { AppointmentRescheduleGlobalPageProps } from "@/pages/AdminPortal/Appointment/Reschedule";
 import DateTimePicker from "./form/date-time";
 import { TherapistSearchField } from "./form/therapist-search-field";
 import TherapistSelection from "./form/therapist-selection";
 
-const USE_NEW_THERAPIST_SELECTION = true;
+// Helper function to get feature flag value
+const getUseNewTherapistSelection = (
+	pageProps?: AppointmentRescheduleGlobalPageProps["props"],
+) => {
+	try {
+		return (
+			pageProps?.adminPortal?.featureFlags?.useNewTherapistSelectionEnabled ??
+			false
+		);
+	} catch {
+		// Fallback for development or when page props are not available
+		return false;
+	}
+};
 
 // Helper component to display visit list
 const VisitListDisplay = ({ message }: { message: string }) => {
@@ -160,6 +174,10 @@ export const RescheduleFields = memo(function Component({
 	});
 	const isFirstRender = useIsFirstRender();
 	const formHooks = useRescheduleFields();
+
+	// Get feature flag from page props
+	const { props } = usePage<AppointmentRescheduleGlobalPageProps>();
+	const useNewTherapistSelection = getUseNewTherapistSelection(props);
 
 	// * side effect to add isoline calculated and stored isoline and the marker marked to the map
 	useEffect(() => {
@@ -398,7 +416,7 @@ export const RescheduleFields = memo(function Component({
 				/>
 			</div>
 
-			{USE_NEW_THERAPIST_SELECTION ? (
+			{useNewTherapistSelection ? (
 				<TherapistSearchField mode="reschedule" formHooks={formHooks} />
 			) : (
 				<>

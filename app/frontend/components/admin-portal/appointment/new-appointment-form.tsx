@@ -142,7 +142,7 @@ const getUseNewTherapistSelection = (
 	try {
 		return (
 			pageProps?.adminPortal?.featureFlags?.useNewTherapistSelectionEnabled ??
-			true
+			false
 		);
 	} catch {
 		// Fallback for development or when page props are not available
