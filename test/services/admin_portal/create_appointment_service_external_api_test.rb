@@ -855,6 +855,85 @@ class AdminPortal::CreateAppointmentServiceExternalApiTest < ActiveSupport::Test
   end
 
   # ---------------------------------------------------------------------------
+  # Phone Duplication Tests
+  # ---------------------------------------------------------------------------
+
+  test "should handle duplicate phone numbers without error" do
+    # Test the contact handling logic directly without full service call
+    # Create first contact
+    first_contact = PatientContact.create!(
+      contact_name: "First Contact",
+      contact_phone: "+628123456789",
+      email: "first@example.com"
+    )
+
+    # Create second contact with same phone number (should be allowed)
+    second_contact = PatientContact.create!(
+      contact_name: "Second Contact",
+      contact_phone: "+628123456789",  # Same phone number
+      email: "second@example.com"
+    )
+
+    # Verify both contacts exist
+    assert_not_nil first_contact, "First contact should exist"
+    assert_not_nil second_contact, "Second contact should exist"
+    assert_equal first_contact.contact_phone, second_contact.contact_phone
+    assert_not_equal first_contact.id, second_contact.id
+    assert_equal "+628123456789", first_contact.contact_phone
+    assert_equal "+628123456789", second_contact.contact_phone
+  end
+
+  test "should update existing contact when found by phone" do
+    # Create initial contact with unique phone number
+    initial_contact = PatientContact.create!(
+      contact_phone: "+628111112222",
+      contact_name: "Original Name",
+      email: "original@example.com"
+    )
+
+    # Create a new patient without a contact (using save! to bypass validation)
+    new_patient = Patient.new(
+      name: "New Patient",
+      date_of_birth: 25.years.ago.to_date,
+      gender: "MALE",
+      patient_number: "TEST-#{SecureRandom.hex(4).upcase}"
+    )
+    new_patient.save!(validate: false)
+
+    # Test the upsert logic directly by calling the service method
+    # Provide same phone and email to ensure the contact is found
+    params = build_params(
+      patient: {
+        name: new_patient.name,
+        date_of_birth: new_patient.date_of_birth,
+        gender: new_patient.gender
+      },
+      patient_contact: {
+        contact_name: "Updated Name",
+        contact_phone: "+628111112222",  # Same phone as initial_contact
+        email: "original@example.com"    # Same email to ensure contact is found
+      }
+    )
+
+    # Test the contact upsert logic directly
+    service = AdminPortal::CreateAppointmentServiceExternalApi.new(params, @current_user)
+    service.instance_variable_set(:@patient, new_patient)
+
+    # Call the upsert method directly
+    service.send(:upsert_patient_contact)
+
+    # Get the updated contact
+    updated_contact = service.instance_variable_get(:@patient_contact)
+
+    # Verify the service found and updated the existing contact
+    assert_not_nil updated_contact, "Contact should exist"
+    assert_equal "Updated Name", updated_contact.contact_name
+    assert_equal "+628111112222", updated_contact.contact_phone
+    assert_equal "original@example.com", updated_contact.email  # Email should remain unchanged
+    assert_equal initial_contact.id, updated_contact.id, "Should be the same contact record"
+  end
+
+  # ---------------------------------------------------------------------------
   # Private Helper Methods
   # ---------------------------------------------------------------------------
 

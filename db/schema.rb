@@ -413,8 +413,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.string "miitel_link"
     t.datetime "created_at", default: -> { "now()" }, null: false
     t.datetime "updated_at", default: -> { "now()" }, null: false
-    t.index ["contact_phone"], name: "index_patient_contacts_on_contact_phone", unique: true
-    t.index ["email"], name: "index_patient_contacts_on_email", unique: true
+    t.index ["contact_name"], name: "index_patient_contacts_on_contact_name"
+    t.index ["contact_phone", "created_at"], name: "index_patient_contacts_on_phone_created", order: { created_at: :desc }
+    t.index ["contact_phone"], name: "index_patient_contacts_on_contact_phone"
+    t.index ["created_at"], name: "index_patient_contacts_on_created_at"
+    t.index ["email"], name: "index_patient_contacts_on_email"
   end
 
   create_table "patient_medical_records", force: :cascade do |t|
@@ -488,6 +491,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.check_constraint "amount > 0::numeric", name: "valid_amount"
     t.check_constraint "status::text = ANY (ARRAY['PENDING'::character varying::text, 'PROCESSING'::character varying::text, 'COMPLETED'::character varying::text, 'FAILED'::character varying::text, 'EXPIRED'::character varying::text, 'REFUNDED'::character varying::text, 'CANCELLED'::character varying::text])", name: "payments_status_check"
     t.unique_constraint ["gateway_transaction_id"], name: "payments_gateway_transaction_id_key"
+  end
+
+  create_table "push_notification_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "title", limit: 255, null: false
+    t.text "body", null: false
+    t.jsonb "data"
+    t.string "target_type", limit: 20, null: false
+    t.text "target_ref"
+    t.integer "sent_count", default: 0, null: false
+    t.integer "failed_count", default: 0, null: false
+    t.uuid "sent_by"
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.index ["created_at"], name: "idx_push_notification_logs_created_at", order: :desc
+    t.index ["sent_by"], name: "idx_push_notification_logs_sent_by"
+    t.check_constraint "target_type::text = ANY (ARRAY['USER'::character varying::text, 'ROLE'::character varying::text, 'ALL'::character varying::text])", name: "push_notification_logs_target_type_check"
   end
 
   create_table "reminder_histories", comment: "Tracks appointment reminder emails sent to therapists", force: :cascade do |t|
@@ -937,6 +955,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.index ["user_id"], name: "idx_user_addresses_user_id"
   end
 
+  create_table "user_fcm_tokens", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "token", limit: 512, null: false
+    t.string "source", limit: 50, default: "MOBILE_ANDROID", null: false
+    t.boolean "is_active", default: true, null: false
+    t.datetime "last_used_at", precision: nil
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "now()" }, null: false
+    t.index ["token"], name: "idx_user_fcm_tokens_token"
+    t.index ["user_id", "is_active"], name: "idx_user_fcm_tokens_user_id_active"
+    t.check_constraint "source::text = ANY (ARRAY['WEB'::character varying::text, 'MOBILE_ANDROID'::character varying::text, 'MOBILE_IOS'::character varying::text])", name: "user_fcm_tokens_source_check"
+    t.unique_constraint ["user_id", "token"], name: "uq_user_fcm_tokens_user_token"
+  end
+
   create_table "user_roles", id: :uuid, default: -> { "gen_random_uuid()" }, comment: "Many-to-many relationship between users and roles", force: :cascade do |t|
     t.uuid "user_id", null: false, comment: "Reference to users table"
     t.string "role", limit: 50, null: false, comment: "Role name: ADMIN, STAFF, THERAPIST, CUSTOMER, or USER"
@@ -1088,6 +1120,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
   add_foreign_key "therapists", "users", name: "therapists_user_id_fkey", on_update: :cascade, on_delete: :cascade
   add_foreign_key "user_addresses", "addresses", name: "user_addresses_address_id_fkey", on_delete: :cascade
   add_foreign_key "user_addresses", "users", name: "user_addresses_user_id_fkey", on_delete: :cascade
+  add_foreign_key "user_fcm_tokens", "users", name: "fk_user_fcm_tokens_user", on_delete: :cascade
   add_foreign_key "user_roles", "users", name: "user_roles_user_id_fkey", on_update: :cascade, on_delete: :cascade
   add_foreign_key "voucher_packages", "packages", name: "fk_voucher_packages_package", on_delete: :cascade
   add_foreign_key "voucher_packages", "vouchers", name: "fk_voucher_packages_voucher", on_delete: :cascade

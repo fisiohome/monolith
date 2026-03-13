@@ -277,10 +277,14 @@ module AdminPortal
         PatientContact.find_by(contact_phone: phone)
       end
 
-      unless contact
+      # If no existing contact found, create a new one
+      if contact
+        # Update existing contact with new information if needed
+        contact.assign_attributes(cp)
+      else
         contact = PatientContact.new(cp)
-        contact.save! if contact.changed?
       end
+      contact.save! if contact.changed?
 
       if @patient.patient_contact != contact
         @patient.update!(patient_contact: contact)

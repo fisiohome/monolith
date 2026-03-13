@@ -111,10 +111,13 @@ module AdminPortal
       end
 
       # If no existing contact found, create a new one
-      unless contact
+      if contact
+        # Update existing contact with new information if needed
+        contact.assign_attributes(cp)
+      else
         contact = PatientContact.new(cp)
-        contact.save! if contact.changed?
       end
+      contact.save! if contact.changed?
 
       # Update patient association if needed
       if @patient.patient_contact != contact
