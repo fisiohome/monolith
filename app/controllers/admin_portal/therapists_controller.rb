@@ -360,7 +360,7 @@ module AdminPortal
         therapists = Therapist
           .where(id: selected_therapist_ids_param)
           .select(:id, :user_id, :service_id, :name, :employment_type, :employment_status, :gender, :registration_number)
-          .includes(therapist_appointment_schedule: :therapist_weekly_availabilities)
+          .includes(therapist_appointment_schedule: [:therapist_weekly_availabilities, :therapist_adjusted_availabilities])
           .order(Arel.sql("LOWER(therapists.name) ASC"))
 
         data = therapists.map do |therapist|
@@ -394,6 +394,7 @@ module AdminPortal
             duration_minutes = schedule.appointment_duration_in_minutes.to_i
             buffer_minutes = schedule.buffer_time_in_minutes.to_i
             weekly_by_dow = schedule.therapist_weekly_availabilities.group_by { |slot| slot.day_of_week.to_s.downcase }
+            adjusted_by_date = schedule.therapist_adjusted_availabilities.group_by(&:specific_date)
 
             appointments_by_day = appointments_raw.group_by { |a| a.appointment_date_time.to_date.to_s }
 
@@ -404,9 +405,30 @@ module AdminPortal
               date_str = date.to_s
               daily_appts = appointments_by_day[date_str] || []
 
-              key = date.strftime("%A").downcase
-              slots = weekly_by_dow[key]
-              next if slots.blank?
+              # Check for adjusted availabilities first (they override weekly schedules)
+              adjusted_slots = adjusted_by_date[date]
+
+              # If there are adjusted availabilities for this date, use them
+              if adjusted_slots.present?
+                # Check if any adjusted availability marks the day as fully unavailable
+                if adjusted_slots.any? { |slot| slot.start_time.blank? || slot.end_time.blank? }
+                  # Get the reason from the unavailable slot
+                  unavailable_slot = adjusted_slots.find { |slot| slot.start_time.blank? || slot.end_time.blank? }
+                  reason = unavailable_slot&.reason || "Unavailable"
+
+                  # Mark day as fully unavailable with reason
+                  availability_by_day[date_str] = [{is_unavailable: true, reason: reason}]
+                  next
+                end
+
+                # Use adjusted availabilities
+                slots = adjusted_slots
+              else
+                # Fallback to weekly availabilities
+                key = date.strftime("%A").downcase
+                slots = weekly_by_dow[key]
+                next if slots.blank?
+              end
 
               busy_ranges = daily_appts.map do |appt|
                 start_time = appt.appointment_date_time.in_time_zone(tz_name)

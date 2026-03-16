@@ -171,22 +171,39 @@ function DayCard({ dayKey, appointments, availabilitySlots }: DayCardProps) {
 					</div>
 				</div>
 
-				{availabilitySlots.some((s: any) => s.freeWindows?.length) && (
-					<div className="mt-1 flex flex-wrap gap-1 text-xs text-muted-foreground px-2 justify-end">
-						<span className="inline-block mr-1">Available time:</span>
+				{availabilitySlots.some((s: any) => s.freeWindows?.length) &&
+					!availabilitySlots.some((s: any) => s.isUnavailable) && (
+						<div className="mt-1 flex flex-wrap gap-1 text-xs text-muted-foreground px-2 justify-end">
+							<span className="inline-block mr-1">Available time:</span>
 
-						{availabilitySlots.flatMap(
-							(slot: any) =>
-								slot.freeWindows?.map((fw: any) => (
-									<Badge
-										key={`${dayKey}-fw-${slot.startTime}-${slot.endTime}-${fw.startTime}-${fw.endTime}`}
-										variant="outline"
-										className="text-[10px] px-1"
-									>
-										{fw.startTime} &mdash; {fw.endTime}
-									</Badge>
-								)) || [],
-						)}
+							{availabilitySlots.flatMap(
+								(slot: any) =>
+									slot.freeWindows?.map((fw: any) => (
+										<Badge
+											key={`${dayKey}-fw-${slot.startTime}-${slot.endTime}-${fw.startTime}-${fw.endTime}`}
+											variant="outline"
+											className="text-[10px] px-1"
+										>
+											{fw.startTime} &mdash; {fw.endTime}
+										</Badge>
+									)) || [],
+							)}
+						</div>
+					)}
+
+				{availabilitySlots.some((s: any) => s.isUnavailable) && (
+					<div className="mt-1 flex flex-wrap gap-1 text-xs text-muted-foreground px-2 justify-end">
+						<span className="inline-block mr-1">Unavailable:</span>
+						{availabilitySlots
+							.filter((s: any) => s.isUnavailable && s.reason)
+							.map((s: any) => (
+								<span
+									key={s.reason}
+									className="font-medium italic line-clamp-2"
+								>
+									{s.reason}
+								</span>
+							))}
 					</div>
 				)}
 			</div>
