@@ -40,7 +40,19 @@ import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import DateTimePicker from "./date-time";
 
-const USE_NEW_THERAPIST_SELECTION = true;
+const getUseNewTherapistSelection = (
+	pageProps?: AppointmentNewGlobalPageProps["props"],
+) => {
+	try {
+		return (
+			pageProps?.adminPortal?.featureFlags?.useNewTherapistSelectionEnabled ??
+			false
+		);
+	} catch {
+		// Fallback for development or when page props are not available
+		return false;
+	}
+};
 
 const VISIT_STATUSES = {
 	PENDING_THERAPIST_ASSIGNMENT: "pending_therapist_assignment",
@@ -605,6 +617,8 @@ const VisitForm = ({
 	onReset,
 }: VisitFormProps) => {
 	const form = useFormContext<AppointmentBookingSchema>();
+	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
+	const useNewTherapistSelection = getUseNewTherapistSelection(globalProps);
 
 	// Use the custom hook for this series visit
 	const {
@@ -769,7 +783,7 @@ const VisitForm = ({
 					)}
 				/>
 
-				{USE_NEW_THERAPIST_SELECTION ? (
+				{useNewTherapistSelection ? (
 					<TherapistSearchField
 						formHooks={{
 							form,
