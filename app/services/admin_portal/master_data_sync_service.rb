@@ -942,35 +942,43 @@ module AdminPortal
             begin
               schedule_updated = false
               ActiveRecord::Base.transaction do
-                # Update availability_rules based on employment type and ignoring_loc_rules flag for existing schedules
+                # Always validate and correct availability_rules for all schedules (new and existing)
                 should_ignore_location = ignoring_loc_rules_map[name]
                 current_rules = schedule_record.availability_rules || []
-                has_location_rule = current_rules.any? { |rule| rule.key?("location") || rule.key?(:location) }
 
-                rules_updated = false
-                new_rules = current_rules.dup
+                # Start with the correct base rules according to employment type and location
+                expected_rules = TherapistAppointmentSchedule::DEFAULT_AVAILABILITY_RULES.dup
 
                 # FLAT Jabodetabek: remove location rule but keep distance and duration
-                if is_flat_jabodetabek && has_location_rule
-                  new_rules = new_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
-                  rules_updated = true
+                if is_flat_jabodetabek
+                  expected_rules = expected_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
                 end
 
-                # Apply ignoring_loc_rules_map for location rule (only for non-FLAT Jabodetabek)
-                if !is_flat_jabodetabek
-                  if should_ignore_location && has_location_rule
-                    # Remove location rule if ignoring
-                    new_rules = new_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
-                    rules_updated = true
-                  elsif !should_ignore_location && !has_location_rule && new_rules.present?
-                    # Add location rule back if not ignoring and it's missing
-                    new_rules += [{"location" => true}]
-                    rules_updated = true
-                  end
+                # Apply ignoring_loc_rules_map for location rule (for all therapists except FLAT Jabodetabek)
+                if !is_flat_jabodetabek && should_ignore_location
+                  # Remove location rule if ignoring
+                  expected_rules = expected_rules.reject { |rule| rule.key?("location") || rule.key?(:location) }
                 end
 
-                if rules_updated
-                  schedule_record.availability_rules = new_rules
+                # Always ensure distance and duration rules are present and correct
+                # Start fresh with only distance and duration rules, then add location conditionally
+                final_rules = [
+                  {"distance_in_meters" => 25_000},
+                  {"duration_in_minutes" => 50}
+                ]
+
+                # Apply location rule based on expected_rules
+                has_expected_location_rule = expected_rules.any? { |rule| rule.key?("location") || rule.key?(:location) }
+
+                if has_expected_location_rule
+                  # Add location rule only if expected
+                  final_rules += [{"location" => true}]
+                end
+                # If not expected, don't add location rule at all (this handles FLAT Jabodetabek case)
+
+                # Check if rules need to be updated
+                if current_rules != final_rules
+                  schedule_record.availability_rules = final_rules
                   schedule_record.save! if schedule_record.changed?
                   schedule_updated = true
                 end

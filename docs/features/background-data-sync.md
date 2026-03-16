@@ -163,6 +163,7 @@ All therapists receive these default availability rules:
 - **Distance**: ✅ Applied (25 km)
 - **Duration**: ✅ Applied (50 minutes)
 - **Location**: ✅ Applied (location matching required)
+- **Special Case**: If `ignoring_loc_rules = true` in data, location rule is removed
 
 #### KARPIS Therapists
 - **Distance**: ✅ Applied (25 km)
