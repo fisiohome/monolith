@@ -1,4 +1,3 @@
-import { startOfDay } from "date-fns";
 import { z } from "zod";
 import type { FormMode } from "@/components/admin-portal/appointment/new-appointment-form";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
@@ -123,11 +122,7 @@ const THERAPIST_SCHEMA = z
 	.nullable();
 
 // Common appointment date time schema
-const APPOINTMENT_DATE_TIME_SCHEMA = z.coerce
-	.date()
-	.refine((date) => date >= startOfDay(new Date()), {
-		message: "Appointment date must be in the future",
-	});
+const APPOINTMENT_DATE_TIME_SCHEMA = z.coerce.date();
 
 // Base appointment fields that are shared
 const BASE_APPOINTMENT_FIELDS = {

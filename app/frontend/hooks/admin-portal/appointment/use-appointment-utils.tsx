@@ -1,7 +1,7 @@
 import H from "@here/maps-api-for-javascript";
 import { router, usePage } from "@inertiajs/react";
 import { useSessionStorage } from "@uidotdev/usehooks";
-import { format, isBefore, startOfDay, sub, subDays } from "date-fns";
+import { format, startOfDay, sub, subDays } from "date-fns";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useDateContext } from "@/components/providers/date-provider";
@@ -670,10 +670,9 @@ export const useAppointmentDateTime = ({
 
 		// Effective min bound (past dates disabled)
 		// When ENABLE_PAST_DATE_RESCHEDULING_BYPASS is true and min is null, allow all dates (including past)
+		// Otherwise, respect the provided min date or default to yesterday
 		const minDate = min
-			? isBefore(startOfDay(min), today)
-				? subDays(today, 1)
-				: min
+			? min // Use the provided min date as-is (for series scheduling)
 			: ENABLE_PAST_DATE_RESCHEDULING_BYPASS
 				? null // Allow all dates including past
 				: subDays(today, 1);

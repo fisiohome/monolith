@@ -29,7 +29,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/kibo-ui/spinner";
-import { Switch } from "@/components/ui/switch";
 import {
 	type TherapistOption,
 	useTherapistAvailability,
@@ -636,7 +635,7 @@ const VisitForm = ({
 		onFindTherapists,
 		onSelectTimeSlot,
 		onPersistTherapist,
-		onSelectAllOfDay,
+		onSelectAllOfDay: _onSelectAllOfDay,
 		onResetAllTherapistState,
 		formSelections,
 		feasibilityReport,
@@ -738,7 +737,9 @@ const VisitForm = ({
 						<FormItem className="col-span-full">
 							<FormLabel className="flex items-center justify-between">
 								<span>Date & Time</span>
-								<FormField
+
+								{/* ? because we dont use the therapist availability logic we disabled this */}
+								{/* <FormField
 									control={form.control}
 									name={`appointmentScheduling.seriesVisits.${index}.findTherapistsAllOfDay`}
 									render={({ field: allDayField }) => (
@@ -757,7 +758,7 @@ const VisitForm = ({
 											</FormControl>
 										</FormItem>
 									)}
-								/>
+								/> */}
 							</FormLabel>
 							<FormControl>
 								{isLoading.parent || isResetting ? (
