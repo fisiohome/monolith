@@ -27,24 +27,39 @@ default: &default
 
 
 development:
-  # <<: *default
-  # database: monolith_development
   primary:
     <<: *default
     database: monolith_development
     url: <%= ENV["MONOLITH_DATABASE_URL"] %>
+    # ? for dev mode but using staging db turn of this below
+    # pool: 25
+    # connect_timeout: 5
+    # read_timeout: 30
+    # write_timeout: 30
+    # prepared_statements: true
+    # # SSL settings for remote connection
+    # sslmode: prefer
   cache:
     <<: *default
     database: monolith_development_cache
     migrations_paths: db/cache_migrate
+    # ? for dev mode but using staging db turn of this below
+    # pool: 5
+    # connect_timeout: 5
   queue:
     <<: *default
     database: monolith_development_queue
     migrations_paths: db/queue_migrate
+    # ? for dev mode but using staging db turn of this below
+    # pool: 5
+    # connect_timeout: 5
   cable:
     <<: *default
     database: monolith_development_cable
     migrations_paths: db/cable_migrate
+    # ? for dev mode but using staging db turn of this below
+    # pool: 5
+    # connect_timeout: 5
 
 
   # The specified database role being used to connect to PostgreSQL.
