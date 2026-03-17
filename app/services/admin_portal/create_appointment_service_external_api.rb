@@ -9,6 +9,9 @@ module AdminPortal
     def initialize(params, user)
       @params = permitted_params(params)
       @current_user = user
+
+      # Debug logging for draft_id
+      Rails.logger.info "[BookingAPI] initialize - draft_id present: #{@draft_id.present?}, draft_id: #{@draft_id}"
     end
 
     def call
@@ -29,8 +32,15 @@ module AdminPortal
       log_info("success", patient_id: @patient&.id, appointment_id: appointment_id)
 
       # Expire the draft if present and appointment was created successfully
-      if @params[:draft_id].present? && result[:success]
-        expire_draft(@params[:draft_id], data)
+      if @draft_id.present? && result[:success]
+        log_info("draft_expiration_attempt", draft_id: @draft_id, result_success: result[:success], data_type: data.class.name)
+
+        # Small delay to ensure appointment is committed to database
+        sleep(0.1) if data.is_a?(Hash)
+
+        expire_draft(@draft_id, data)
+      else
+        log_info("draft_expiration_skipped", draft_id: @draft_id, result_success: result[:success], draft_id_present: @draft_id.present?)
       end
 
       result
@@ -320,8 +330,11 @@ module AdminPortal
     end
 
     def permitted_params(params)
-      params.require(:appointment).permit(
-        :service_id, :package_id, :location_id, :therapist_id, :admin_ids, :reference_appointment_id, :draft_id,
+      # Extract draft_id from root level if present
+      draft_id = params[:draft_id] || params.dig(:appointment, :draft_id)
+
+      appointment_params = params.require(:appointment).permit(
+        :service_id, :package_id, :location_id, :therapist_id, :admin_ids, :reference_appointment_id,
         patient_contact: %i[contact_name contact_phone email miitel_link],
         patient_address: %i[location_id latitude longitude postal_code address notes],
         patient: [:name, :date_of_birth, :gender],
@@ -332,35 +345,95 @@ module AdminPortal
           series_visits: %i[appointment_date_time therapist_id visit_number]
         ]
       ).to_h.deep_symbolize_keys
+
+      # Store draft_id separately for draft expiration logic
+      @draft_id = draft_id if draft_id.present?
+
+      Rails.logger.info "[BookingAPI] permitted_params - draft_id: #{@draft_id}"
+
+      appointment_params
     end
 
     # Logging helpers for consistent structured logs
-    def log_info(event, **data) = Rails.logger.info("#{LOG_TAG} #{event} #{data.to_json}")
+    def log_info(event, **data)
+      message = format_log_message(event, data)
+      Rails.logger.info(message)
+    end
 
-    def log_warn(event, **data) = Rails.logger.warn("#{LOG_TAG} #{event} #{data.to_json}")
+    def log_warn(event, **data)
+      message = format_log_message(event, data)
+      Rails.logger.warn(message)
+    end
 
-    def log_error(event, **data) = Rails.logger.error("#{LOG_TAG} #{event} #{data.to_json}")
+    def log_error(event, **data)
+      message = format_log_message(event, data)
+      Rails.logger.error(message)
+    end
 
-    def log_debug(event, **data) = Rails.logger.debug { "#{LOG_TAG} #{event} #{data.to_json}" }
+    def log_debug(event, **data)
+      message = format_log_message(event, data)
+      Rails.logger.debug(message)
+    end
+
+    # Format log messages for human readability
+    def format_log_message(event, data)
+      timestamp = Time.current.strftime("%Y-%m-%d %H:%M:%S")
+      user_info = @current_user ? "User:#{@current_user.id}" : "User:nil"
+
+      # Format data for readability
+      formatted_data = data.map do |key, value|
+        case value
+        when Date, Time, DateTime
+          "#{key}:#{value.strftime("%Y-%m-%d %H:%M:%S")}"
+        when String
+          if value.length > 100
+            "#{key}:#{value[0..97]}..."
+          else
+            "#{key}:#{value}"
+          end
+        when Hash
+          if value.keys.length > 5
+            "#{key}:{#{value.keys[0..2].join(",")}...}"
+          else
+            "#{key}:#{value.inspect}"
+          end
+        else
+          "#{key}:#{value.inspect}"
+        end
+      end.join(", ")
+
+      "[#{timestamp}] #{LOG_TAG} #{event} [#{user_info}] #{formatted_data}"
+    end
 
     # Expire the draft when appointment is created
     def expire_draft(draft_id, appointment)
       draft = AppointmentDraft.active_drafts.find_by(id: draft_id)
-      return unless draft
+      unless draft
+        log_warn("draft_not_found", draft_id: draft_id)
+        return
+      end
+      log_info("draft_found", draft_id: draft_id, draft_status: draft.status, current_step: draft.current_step)
 
       # Convert appointment object to model instance if needed
       appointment_model = if appointment.respond_to?(:id)
+        log_info("appointment_responds_to_id", appointment_id: appointment.id)
         appointment
       elsif appointment.is_a?(Hash)
-        Appointment.find_by(id: appointment[:id] || appointment["id"])
+        # Handle complex API response structure
+        appointment_id = appointment[:id] || appointment["id"] || appointment.dig("appointments", 0, "appointment_id")
+        log_info("appointment_hash_extraction", appointment_id: appointment_id, hash_keys: appointment.keys)
+        Appointment.find_by(id: appointment_id) if appointment_id
       end
 
       if appointment_model
+        log_info("expiring_draft", draft_id: draft_id, appointment_id: appointment_model.id)
         draft.expire_with_appointment!(appointment_model)
         log_info("draft_expired", draft_id: draft_id, appointment_id: appointment_model.id)
+      else
+        log_warn("draft_expiration_skipped", draft_id: draft_id, reason: "appointment_model_not_found", appointment_data: appointment)
       end
     rescue => e
-      log_error("draft_expiration_failed", draft_id: draft_id, error: e.message)
+      log_error("draft_expiration_failed", draft_id: draft_id, error: e.message, backtrace: e.backtrace.first(5))
     end
   end
 end

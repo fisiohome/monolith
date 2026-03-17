@@ -331,7 +331,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		patientDetails,
 		formOptions,
 	} = values;
-	const { referenceAppointmentId } = formOptions;
+	const { referenceAppointmentId, draftId } = formOptions;
 	const {
 		admins,
 		customFisiohomePartnerName,
@@ -367,6 +367,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		therapistId: String(therapist?.id || "") || null,
 		adminIds: admins?.map((admin) => String(admin.id)).join(",") || "",
 		referenceAppointmentId: String(referenceAppointmentId || "") || null,
+		draftId: String(draftId || "") || null,
 		patientContact: { ...contactInformation },
 		patientAddress: {
 			...restPatientDetails,

@@ -153,6 +153,7 @@ export interface AppointmentPayload {
 	therapistId: string | null;
 	adminIds: string;
 	referenceAppointmentId: string | null;
+	draftId?: string | null;
 	patientContact: {
 		contactName: string;
 		contactPhone: string;
