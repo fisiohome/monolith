@@ -74,7 +74,7 @@ const createDefaultSeriesVisit = (
 ) => ({
 	visitNumber,
 	appointmentDateTime: apptDate
-		? addDays(apptDate, (visitNumber - 1) * 7, { in: tzDate })
+		? addDays(apptDate, (visitNumber - 1) * 14, { in: tzDate })
 		: new Date(),
 	findTherapistsAllOfDay: !!isAllOfDay,
 	therapist,
@@ -518,6 +518,30 @@ export function SeriesScheduler() {
 			});
 		}
 	}, [fields, firstVisitApptDate, getValues, resetVisit]);
+
+	// Update series visits when first visit date changes to ensure H+14 calculation
+	useEffect(() => {
+		if (firstVisitApptDate && fields.length > 0) {
+			fields.forEach((_, index) => {
+				const fieldPath = `appointmentScheduling.seriesVisits.${index}` as const;
+				const visitNumber = index + 2;
+				
+				setValue(
+					fieldPath,
+					createDefaultSeriesVisit(
+						{
+							isAllOfDay: firstVisitData.isAllOfDay,
+							apptDate: firstVisitData.apptDate,
+							therapist: getValues(`${fieldPath}.therapist`),
+						},
+						visitNumber,
+						tzDate,
+					),
+					{ shouldDirty: true, shouldTouch: true, shouldValidate: true },
+				);
+			});
+		}
+	}, [firstVisitApptDate, fields.length, firstVisitData.isAllOfDay, firstVisitData.apptDate, fields.forEach, getValues, setValue, tzDate]);
 
 	if (firstVisitData.packageVisits <= 1) return null;
 
