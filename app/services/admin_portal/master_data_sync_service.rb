@@ -619,6 +619,12 @@ module AdminPortal
           # Determine service based on location's service relationships using shared logic
           brand = row["Brand"]&.strip&.upcase&.tr(" ", "_")
 
+          # Skip if brand is empty or nil
+          if brand.blank?
+            results[:skipped] << {name:, email:, reason: "Brand is blank"}
+            next
+          end
+
           # Use shared resolver to determine the appropriate service name
           service_name = AdminPortal::SpecialTierServiceResolver.resolve_service_name_for_location(
             location: location,
