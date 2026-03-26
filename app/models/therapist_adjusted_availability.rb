@@ -16,8 +16,8 @@ class TherapistAdjustedAvailability < ApplicationRecord
   validate :adjusted_availabilities_within_date_window
   # Fully Unavailable vs. Partial Availability priority
   validate :no_mixing_full_and_partial_for_same_date
-  #  Check that the date inputted cannot be a past date
-  validate :not_in_past, if: :specific_date
+  #  Check that the date inputted cannot be a past date (DISABLED - allow past dates for flexibility)
+  # validate :not_in_past, if: :specific_date
   # Overlapping availability periods validation
   validate :no_overlapping_times
 
@@ -28,12 +28,12 @@ class TherapistAdjustedAvailability < ApplicationRecord
 
   private
 
-  # Past date prevention
-  def not_in_past
-    if specific_date.past?
-      errors.add(:specific_date, "cannot be in the past")
-    end
-  end
+  # Past date prevention (DISABLED - allow past dates for flexibility)
+  # def not_in_past
+  #   if specific_date.past?
+  #     errors.add(:specific_date, "cannot be in the past")
+  #   end
+  # end
 
   # Adjusted Availabilities Must Not Exceed the Schedule Window
   def adjusted_availabilities_within_date_window

@@ -122,15 +122,25 @@ class TherapistAdjustedAvailabilityTest < ActiveSupport::TestCase
     assert record.valid?, record.errors.full_messages
   end
 
-  test "past date validation" do
+  test "past date validation (DISABLED - allow past dates for flexibility)" do
+    # This test is disabled because we now allow past dates for flexibility
+    # past_record = TherapistAdjustedAvailability.new(
+    #   therapist_appointment_schedule: @instant_schedule,
+    #   specific_date: Date.current - 1.day,
+    #   start_time: "10:00",
+    #   end_time: "12:00"
+    # )
+    # refute past_record.valid?
+    # assert_includes past_record.errors[:specific_date], "cannot be in the past"
+
+    # Instead, verify that past dates are now allowed
     past_record = TherapistAdjustedAvailability.new(
       therapist_appointment_schedule: @instant_schedule,
       specific_date: Date.current - 1.day,
       start_time: "10:00",
       end_time: "12:00"
     )
-    refute past_record.valid?
-    assert_includes past_record.errors[:specific_date], "cannot be in the past"
+    assert past_record.valid?, past_record.errors.full_messages
   end
 
   test "overlapping time ranges validation" do
