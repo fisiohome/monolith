@@ -52,6 +52,7 @@ Rails.application.routes.draw do
             get "export" => "appointments#export", :default => {format: :csv}
             get "orders" => "appointments#orders"
             put "orders/:order_id/payment-status" => "appointments#update_payment_status"
+            post "orders/:order_id/send-feedback-reminder" => "appointments#send_feedback_reminder"
             get ":id/soap-report" => "appointments#download_soap_pdf"
             get ":id/soap-report-final" => "appointments#download_soap_final_pdf"
           end

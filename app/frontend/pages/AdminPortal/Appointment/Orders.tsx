@@ -13,6 +13,7 @@ import {
 	DownloadIcon,
 	ExternalLinkIcon,
 	EyeIcon,
+	MailIcon,
 	MapPinIcon,
 	MoreHorizontalIcon,
 	SearchIcon,
@@ -24,6 +25,7 @@ import { toast } from "sonner";
 import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
 import { getPermission } from "@/components/admin-portal/appointment/details/action-buttons";
 import {
+	FeedbackReminderDialog,
 	UpdatePaymentForm,
 	UpdatePICForm,
 	UpdateStatusForm,
@@ -255,9 +257,11 @@ function formatDateTime(dateString: string): string {
 const OrderActionsCell = ({
 	row,
 	onOpenDetail,
+	onOpenFeedbackDialog,
 }: {
 	row: Row<OrderRow>;
 	onOpenDetail: (id: string) => void;
+	onOpenFeedbackDialog: (orderId: string, registrationNumber: string) => void;
 }) => {
 	const order = row.original;
 	const { props: globalProps, url: pageURL } = usePage<OrdersGlobalPageProps>();
@@ -272,14 +276,19 @@ const OrderActionsCell = ({
 		const markOrderDone =
 			isOrderCancelled || isOrderRefunded || isOrderCompleted;
 
+		const allAppointmentsCompleted =
+			order.appointments?.length > 0 &&
+			order.appointments.every((appt) => appt.status === "completed");
+
 		return {
 			cannotUpdatePic: !order.firstAppointmentId,
 			cannotReschedule: !order.appointments?.length || markOrderDone,
 			cannotUpdateStatus: !order.appointments?.length || markOrderDone,
 			cannotCancelBooking: !order.firstAppointmentId || markOrderDone,
 			cannotUpdatePayment: !order.appointments?.length || markOrderDone,
+			cannotSendFeedbackReminder: !allAppointmentsCompleted,
 		};
-	}, [order.appointments?.length, order.firstAppointmentId, order.status]);
+	}, [order.appointments, order.firstAppointmentId, order.status]);
 
 	const handleCopy = useCallback(async (value: string, label: string) => {
 		try {
@@ -672,6 +681,17 @@ const OrderActionsCell = ({
 
 				<DropdownMenuGroup>
 					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							onOpenFeedbackDialog(order.id, order.registrationNumber);
+						}}
+						disabled={permission.cannotSendFeedbackReminder}
+					>
+						<MailIcon className="opacity-60" aria-hidden="true" />
+						Send Feedback Reminder
+					</DropdownMenuItem>
+
+					<DropdownMenuItem
 						className="text-destructive focus:text-destructive"
 						onSelect={(e) => {
 							e.preventDefault();
@@ -693,9 +713,11 @@ const OrderActionsCell = ({
 const orderColumns = ({
 	pageURL,
 	openOrderDetail,
+	onOpenFeedbackDialog,
 }: {
 	pageURL: string;
 	openOrderDetail: (orderId: string) => void;
+	onOpenFeedbackDialog: (orderId: string, registrationNumber: string) => void;
 }): ColumnDef<OrderRow>[] => [
 	{
 		accessorKey: "registrationNumber",
@@ -817,7 +839,11 @@ const orderColumns = ({
 		header: "",
 		cell: ({ row }) => (
 			<div className="flex justify-end">
-				<OrderActionsCell row={row} onOpenDetail={openOrderDetail} />
+				<OrderActionsCell
+					row={row}
+					onOpenDetail={openOrderDetail}
+					onOpenFeedbackDialog={onOpenFeedbackDialog}
+				/>
 			</div>
 		),
 	},
@@ -1486,14 +1512,37 @@ export default function AppointmentOrders() {
 		[pageURL],
 	);
 
+	// ── Feedback Dialog ────────────────────────────────────────────────────
+	const [feedbackDialog, setFeedbackDialog] = useState<{
+		isOpen: boolean;
+		orderId: string;
+		registrationNumber: string;
+	}>({ isOpen: false, orderId: "", registrationNumber: "" });
+
+	const handleOpenFeedbackDialog = useCallback(
+		(orderId: string, registrationNumber: string) => {
+			setFeedbackDialog({ isOpen: true, orderId, registrationNumber });
+		},
+		[],
+	);
+
+	const handleCloseFeedbackDialog = useCallback(() => {
+		setFeedbackDialog({ isOpen: false, orderId: "", registrationNumber: "" });
+	}, []);
+
 	const orders = useMemo(
 		() => globalProps?.orders?.data ?? [],
 		[globalProps?.orders?.data],
 	);
 
 	const tableColumns = useMemo(
-		() => orderColumns({ pageURL, openOrderDetail }),
-		[pageURL, openOrderDetail],
+		() =>
+			orderColumns({
+				pageURL,
+				openOrderDetail,
+				onOpenFeedbackDialog: handleOpenFeedbackDialog,
+			}),
+		[pageURL, openOrderDetail, handleOpenFeedbackDialog],
 	);
 
 	return (
@@ -1659,6 +1708,16 @@ export default function AppointmentOrders() {
 						}}
 					/>
 				</ResponsiveDialog>
+			)}
+
+			{/* Feedback Reminder Dialog */}
+			{feedbackDialog.isOpen && (
+				<FeedbackReminderDialog
+					isOpen={feedbackDialog.isOpen}
+					onOpenChange={handleCloseFeedbackDialog}
+					registrationNumber={feedbackDialog.registrationNumber}
+					orderId={feedbackDialog.orderId}
+				/>
 			)}
 		</>
 	);

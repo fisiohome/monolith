@@ -1,12 +1,23 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
 import { AlertCircle, Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { z } from "zod";
 import { ResponsiveDialogButton } from "@/components/shared/responsive-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
 	Command,
@@ -623,5 +634,79 @@ export function UpdatePaymentForm({
 				</form>
 			</Form>
 		</div>
+	);
+}
+
+interface FeedbackReminderDialogProps {
+	isOpen: boolean;
+	onOpenChange: (open: boolean) => void;
+	registrationNumber: string;
+	orderId: string;
+	onSuccess?: () => void;
+}
+
+export function FeedbackReminderDialog({
+	isOpen,
+	onOpenChange,
+	registrationNumber,
+	orderId,
+	onSuccess,
+}: FeedbackReminderDialogProps) {
+	const [isSending, setIsSending] = useState(false);
+
+	const handleSendReminder = useCallback(async () => {
+		setIsSending(true);
+
+		await router.post(
+			`/admin-portal/appointments/orders/${orderId}/send-feedback-reminder`,
+			{},
+			{
+				preserveState: true,
+				preserveScroll: true,
+				onSuccess: () => {
+					toast.success("Feedback reminder email sent successfully");
+					onOpenChange(false);
+					onSuccess?.();
+				},
+				onError: (errors) => {
+					const defaultMessage = "Failed to send feedback reminder";
+					const errorMessage = errors.message || defaultMessage;
+					console.error(defaultMessage, errorMessage);
+					toast.error(errorMessage);
+				},
+				onFinish: () => {
+					setIsSending(false);
+				},
+			},
+		);
+	}, [orderId, onOpenChange, onSuccess]);
+
+	return (
+		<AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>Send Feedback Reminder?</AlertDialogTitle>
+					<AlertDialogDescription>
+						This will send a reminder email to the customer to provide feedback
+						about this order ({registrationNumber}).
+						<br />
+						<br />
+						Are you sure you want to proceed?
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={isSending}>Cancel</AlertDialogCancel>
+					<AlertDialogAction
+						onClick={(e) => {
+							e.preventDefault();
+							handleSendReminder();
+						}}
+						disabled={isSending}
+					>
+						{isSending ? "Sending..." : "Send Reminder"}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

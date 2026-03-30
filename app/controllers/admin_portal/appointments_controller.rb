@@ -4,7 +4,7 @@ module AdminPortal
 
     before_action :authenticate_user!
     before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf, :download_soap_final_pdf]
-    before_action :set_order, only: [:update_payment_status]
+    before_action :set_order, only: [:update_payment_status, :send_feedback_reminder]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params, current_user)
@@ -318,6 +318,19 @@ module AdminPortal
       else
         Rails.logger.error "Failed to update payment status: #{result[:error]}"
         redirect_to determine_redirect_path, alert: result[:error] || "Failed to update payment status"
+      end
+    end
+
+    def send_feedback_reminder
+      Rails.logger.info "Starting external API feedback reminder for order ID: #{@order.id}"
+
+      result = SendFeedbackReminderServiceExternalApi.new(@order, current_user).call
+
+      if result[:success]
+        redirect_to determine_redirect_path, notice: result[:message] || "Feedback reminder sent successfully."
+      else
+        Rails.logger.error "Failed to send feedback reminder: #{result[:error]}"
+        redirect_to determine_redirect_path, alert: result[:error] || "Failed to send feedback reminder"
       end
     end
 
