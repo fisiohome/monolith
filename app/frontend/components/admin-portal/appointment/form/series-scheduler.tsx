@@ -523,9 +523,10 @@ export function SeriesScheduler() {
 	useEffect(() => {
 		if (firstVisitApptDate && fields.length > 0) {
 			fields.forEach((_, index) => {
-				const fieldPath = `appointmentScheduling.seriesVisits.${index}` as const;
+				const fieldPath =
+					`appointmentScheduling.seriesVisits.${index}` as const;
 				const visitNumber = index + 2;
-				
+
 				setValue(
 					fieldPath,
 					createDefaultSeriesVisit(
@@ -541,7 +542,16 @@ export function SeriesScheduler() {
 				);
 			});
 		}
-	}, [firstVisitApptDate, fields.length, firstVisitData.isAllOfDay, firstVisitData.apptDate, fields.forEach, getValues, setValue, tzDate]);
+	}, [
+		firstVisitApptDate,
+		fields.length,
+		firstVisitData.isAllOfDay,
+		firstVisitData.apptDate,
+		fields.forEach,
+		getValues,
+		setValue,
+		tzDate,
+	]);
 
 	if (firstVisitData.packageVisits <= 1) return null;
 
