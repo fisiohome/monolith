@@ -481,7 +481,7 @@ export default function AppointmentIndex() {
 
 				<Separator className="bg-border" />
 
-				<ApptViewChanger activeView="appointments" showNewBadge />
+				<ApptViewChanger activeView="appointments" />
 
 				<div className="grid gap-4">
 					<div className="z-10 flex gap-2 justify-between">

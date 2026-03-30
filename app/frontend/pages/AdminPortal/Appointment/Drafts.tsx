@@ -727,7 +727,7 @@ const AppointmentDrafts = () => {
 				<Separator className="bg-border" />
 
 				<div className="space-y-2">
-					<ApptViewChanger activeView="drafts" showNewBadge />
+					<ApptViewChanger activeView="drafts" />
 
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-2 lg:grid-cols-4">
 						<div className="relative">

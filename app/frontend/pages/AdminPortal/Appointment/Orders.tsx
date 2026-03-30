@@ -603,6 +603,17 @@ const OrderActionsCell = ({
 						<DownloadIcon className="opacity-60" aria-hidden="true" />
 						{tappt("button.order_actions.menus.download.final_soap")}
 					</DropdownMenuItem>
+
+					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							onOpenFeedbackDialog(order.id, order.registrationNumber);
+						}}
+						disabled={permission.cannotSendFeedbackReminder}
+					>
+						<MailIcon className="opacity-60" aria-hidden="true" />
+						Send Feedback Reminder
+					</DropdownMenuItem>
 				</DropdownMenuGroup>
 
 				<DropdownMenuSeparator />
@@ -680,17 +691,6 @@ const OrderActionsCell = ({
 				<DropdownMenuSeparator />
 
 				<DropdownMenuGroup>
-					<DropdownMenuItem
-						onSelect={(e) => {
-							e.preventDefault();
-							onOpenFeedbackDialog(order.id, order.registrationNumber);
-						}}
-						disabled={permission.cannotSendFeedbackReminder}
-					>
-						<MailIcon className="opacity-60" aria-hidden="true" />
-						Send Feedback Reminder
-					</DropdownMenuItem>
-
 					<DropdownMenuItem
 						className="text-destructive focus:text-destructive"
 						onSelect={(e) => {
@@ -1564,7 +1564,7 @@ export default function AppointmentOrders() {
 
 				<Separator className="bg-border" />
 
-				<ApptViewChanger activeView="orders" showNewBadge />
+				<ApptViewChanger activeView="orders" />
 
 				{/* Filters */}
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-2 lg:grid-cols-4 xl:grid-cols-6">
