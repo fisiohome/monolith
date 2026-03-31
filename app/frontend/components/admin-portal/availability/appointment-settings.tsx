@@ -28,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useTimeAPI } from "@/hooks/use-time-api";
 import type { AvailabilityFormSchema } from "@/lib/availabilities";
+import { DEFAULT_MAX_DAILY_APPT_THERAPIST } from "@/lib/availabilities";
 import { cn } from "@/lib/utils";
 import type { Therapist } from "@/types/admin-portal/therapist";
 
@@ -225,9 +226,63 @@ export default function AppointmentSettingsForm({
 
 				<FormField
 					control={form.control}
+					name="maxDailyAppointments"
+					render={({ field }) => {
+						const isDefault = field.value === DEFAULT_MAX_DAILY_APPT_THERAPIST;
+
+						return (
+							<FormItem>
+								<div className="flex items-center justify-between">
+									<FormLabel>Maximum Daily Appointments</FormLabel>
+									<div className="flex items-center space-x-2">
+										<span className="text-xs text-muted-foreground">
+											Use default
+										</span>
+										<Switch
+											checked={isDefault}
+											onCheckedChange={(checked) => {
+												field.onChange(
+													checked ? DEFAULT_MAX_DAILY_APPT_THERAPIST : 0,
+												);
+											}}
+											disabled={!selectedTherapist}
+										/>
+									</div>
+								</div>
+								<FormControl>
+									<Input
+										{...field}
+										type="number"
+										placeholder="Enter maximum appointments"
+										className="[&::-webkit-inner-spin-button]:appearance-none"
+										min={0}
+										disabled={!selectedTherapist || isDefault}
+										onChange={(e) => {
+											const value = e.target.value;
+											field.onChange(value ? parseInt(value, 10) : 0);
+										}}
+										value={
+											isDefault
+												? DEFAULT_MAX_DAILY_APPT_THERAPIST
+												: field.value || 0
+										}
+									/>
+								</FormControl>
+								<FormDescription>
+									Use the toggle to apply the default value of{" "}
+									{DEFAULT_MAX_DAILY_APPT_THERAPIST} appointments per day.
+								</FormDescription>
+								<FormMessage />
+							</FormItem>
+						);
+					}}
+				/>
+
+				<FormField
+					control={form.control}
 					name="availabilityRules.0.useLocationRules"
 					render={({ field }) => (
-						<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+						<FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 col-span-full">
 							<div className="space-y-0.5">
 								<FormLabel>Location Rules</FormLabel>
 								<FormDescription>

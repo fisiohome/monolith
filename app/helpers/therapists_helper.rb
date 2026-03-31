@@ -69,7 +69,7 @@ module TherapistsHelper
           therapist&.therapist_appointment_schedule&.as_json(only: %i[
             id time_zone appointment_duration_in_minutes
             max_advance_booking_in_days min_booking_before_in_hours
-            buffer_time_in_minutes start_date_window end_date_window
+            buffer_time_in_minutes start_date_window end_date_window max_daily_appointments
           ])&.merge(
             is_available_now: therapist.therapist_appointment_schedule.available_now,
             availability_rules: therapist.therapist_appointment_schedule.availability_rules,

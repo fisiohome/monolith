@@ -40,6 +40,7 @@ module AdminPortal
         :max_advance_booking_in_days,
         :min_booking_before_in_hours,
         :buffer_time_in_minutes,
+        :max_daily_appointments,
         :available_now,
         :start_date_window,
         :end_date_window,

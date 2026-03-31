@@ -7,6 +7,7 @@ export interface Availability {
 	timeZone: string;
 	appointmentDurationInMinutes: number;
 	maxAdvanceBookingInDays: number;
+	maxDailyAppointments: number;
 	minBookingBeforeInHours: number;
 	bufferTimeInMinutes: number;
 	isAvailableNow: boolean;

@@ -3,6 +3,8 @@ import type { Therapist } from "@/types/admin-portal/therapist";
 import { DAY_NAMES, DEFAULT_TIMEZONE } from "./constants";
 import { timeSchema } from "./validation";
 
+export const DEFAULT_MAX_DAILY_APPT_THERAPIST = 4;
+
 // the start and end time form schema
 const startEndTimeSchema = z
 	.object({
@@ -84,6 +86,7 @@ export const AVAILABILITY_FORM_SCHEMA = z
 		bufferTimeInMinutes: z.number().int().nonnegative(),
 		maxAdvanceBookingInDays: z.number().int().nonnegative(),
 		minBookingBeforeInHours: z.number().int().nonnegative(),
+		maxDailyAppointments: z.number().int().nonnegative().optional(),
 		availableNow: z.boolean(),
 		startDateWindow: z.coerce.date().optional(),
 		endDateWindow: z.coerce.date().optional(),
@@ -142,6 +145,7 @@ export const getDefaultValues = ({
 		isAvailableNow = true,
 		startDateWindow,
 		endDateWindow,
+		maxDailyAppointments = DEFAULT_MAX_DAILY_APPT_THERAPIST,
 		weeklyAvailabilities = [],
 		adjustedAvailabilities = [],
 		availabilityRules = [],
@@ -198,6 +202,7 @@ export const getDefaultValues = ({
 		bufferTimeInMinutes,
 		maxAdvanceBookingInDays,
 		minBookingBeforeInHours,
+		maxDailyAppointments,
 		availableNow: Boolean(isAvailableNow),
 		startDateWindow: startDateWindow
 			? new Date(String(startDateWindow))
