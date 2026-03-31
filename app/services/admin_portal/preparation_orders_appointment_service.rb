@@ -119,7 +119,7 @@ module AdminPortal
         created_at: order.created_at&.iso8601,
         therapist_id: first_appointment&.therapist_id,
         first_appointment_id: first_appointment&.id,
-        appointments: order.appointments.map { |a|
+        appointments: order.appointments.order(:visit_number).map { |a|
           {
             id: a.id,
             visit_number: a.visit_number,
@@ -175,7 +175,7 @@ module AdminPortal
           total_price: order.package.total_price&.to_f,
           currency: order.package.currency
         } : nil,
-        appointments: order.appointments.map { |appt|
+        appointments: order.appointments.order(:visit_number).map { |appt|
           {
             id: appt.id,
             registration_number: appt.registration_number,
