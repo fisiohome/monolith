@@ -561,11 +561,23 @@ module AdminPortal
       required_therapist_headers = ["Name", "Email", "Phone Number", "Gender", "Employment Type", "City", "Address Line", "Brand"]
       validate_headers(csv, required_therapist_headers)
 
-      # Build ignoring_loc_rules map for use in therapist_schedules
-      @ignoring_loc_rules_map = csv.each_with_object({}) do |row, hash|
+      # Build maps for use in therapist_schedules (single iteration for efficiency)
+      @ignoring_loc_rules_map = {}
+      @max_daily_appointments_map = {}
+
+      csv.each do |row|
         name = row["Name"]&.strip
+        next if name.blank?
+
+        # Build ignoring_loc_rules map
         ignoring_loc_rules = normalize_boolean(row["Ignoring Location Rules"])
-        hash[name] = ignoring_loc_rules if name.present?
+        @ignoring_loc_rules_map[name] = ignoring_loc_rules
+
+        # Build max_daily_appointments map
+        max_visit_per_day = row["Max Visit Per Day"]&.strip&.to_i
+        # Use default value from model if not specified or invalid
+        max_visit_per_day = TherapistAppointmentSchedule::DEFAULT_MAX_DAILY_APPOINTMENTS if max_visit_per_day.nil? || max_visit_per_day <= 0
+        @max_daily_appointments_map[name] = max_visit_per_day
       end
 
       # Track results
@@ -849,8 +861,8 @@ module AdminPortal
       # Pre-group schedules by therapist name for faster lookup
       grouped_schedules = schedules_csv.group_by { |row| row["Therapist"]&.strip }
 
-      # Use ignoring_loc_rules_map from therapists method if available, otherwise fetch
-      ignoring_loc_rules_map = @ignoring_loc_rules_map || begin
+      # Use maps from therapists method if available, otherwise fetch (single iteration for efficiency)
+      unless @ignoring_loc_rules_map && @max_daily_appointments_map
         # Use different URLs based on employment type
         therapist_csv = if employment_type_filter == "KARPIS"
           fetch_and_parse_csv_from_url(MASTER_DATA_THERAPISTS_KARPIS)
@@ -861,12 +873,27 @@ module AdminPortal
           fetch_and_parse_csv(gid: THERAPIST_GID)
         end
 
-        therapist_csv.each_with_object({}) do |row, hash|
+        @ignoring_loc_rules_map = {}
+        @max_daily_appointments_map = {}
+
+        therapist_csv.each do |row|
           name = row["Name"]&.strip
+          next if name.blank?
+
+          # Build ignoring_loc_rules map
           ignoring_loc_rules = normalize_boolean(row["Ignoring Location Rules"])
-          hash[name] = ignoring_loc_rules if name.present?
+          @ignoring_loc_rules_map[name] = ignoring_loc_rules
+
+          # Build max_daily_appointments map
+          max_visit_per_day = row["Max Visit Per Day"]&.strip&.to_i
+          # Use default value from model if not specified or invalid
+          max_visit_per_day = TherapistAppointmentSchedule::DEFAULT_MAX_DAILY_APPOINTMENTS if max_visit_per_day.nil? || max_visit_per_day <= 0
+          @max_daily_appointments_map[name] = max_visit_per_day
         end
       end
+
+      ignoring_loc_rules_map = @ignoring_loc_rules_map
+      max_daily_appointments_map = @max_daily_appointments_map
 
       # Track results
       results = {schedule_updated: [], unchanged: [], skipped: [], failed: [], schedules_created: []}
@@ -921,7 +948,8 @@ module AdminPortal
                 buffer_time_in_minutes: 30,
                 max_advance_booking_in_days: 60,
                 min_booking_before_in_hours: 24,
-                available_now: true
+                available_now: true,
+                max_daily_appointments: max_daily_appointments_map[name] || TherapistAppointmentSchedule::DEFAULT_MAX_DAILY_APPOINTMENTS
               )
               # Set default rules if not present
               if schedule_record.availability_rules.blank? || schedule_record.availability_rules == {}
@@ -985,6 +1013,14 @@ module AdminPortal
                 # Check if rules need to be updated
                 if current_rules != final_rules
                   schedule_record.availability_rules = final_rules
+                  schedule_record.save! if schedule_record.changed?
+                  schedule_updated = true
+                end
+
+                # Update max_daily_appointments from CSV data (for existing schedules)
+                csv_max_daily = max_daily_appointments_map[name]
+                if csv_max_daily && schedule_record.max_daily_appointments != csv_max_daily
+                  schedule_record.max_daily_appointments = csv_max_daily
                   schedule_record.save! if schedule_record.changed?
                   schedule_updated = true
                 end

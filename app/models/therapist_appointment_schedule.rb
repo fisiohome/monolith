@@ -32,6 +32,9 @@ class TherapistAppointmentSchedule < ApplicationRecord
     {"location" => true}
   ].freeze
 
+  # Default maximum number of appointments a therapist can handle per day
+  DEFAULT_MAX_DAILY_APPOINTMENTS = 4
+
   # Returns the effective availability rules for this schedule.
   # If custom rules are present and valid, they are used (filtering out 0 values).
   # Otherwise, the default rules are returned.
