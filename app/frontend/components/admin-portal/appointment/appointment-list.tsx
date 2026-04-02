@@ -55,8 +55,10 @@ import type {
 import AppointmentListItemDetails from "./details";
 import AppointmentActionButtons from "./details/action-buttons";
 import AdminCard from "./details/admins";
+import EvidenceCard from "./details/evidence-card";
 import HistoryList from "./details/histories";
 import PatientCard from "./details/patient";
+import SoapCard from "./details/soap-card";
 import TherapistCard from "./details/therapist";
 
 // * appointment list component
@@ -454,6 +456,29 @@ export function ScheduleList({ schedule }: ScheduleListProps) {
 												/>
 											</div>
 										</div>
+
+										{/* SOAP and Evidence Section */}
+										{(schedule.soap || schedule.evidence) && (
+											<div className="grid grid-cols-1 gap-6 col-span-full">
+												{schedule.soap && (
+													<div className="flex flex-col gap-3">
+														<h3 className="text-xs font-light uppercase">
+															SOAP Notes
+														</h3>
+														<SoapCard soap={schedule.soap} />
+													</div>
+												)}
+
+												{schedule.evidence && (
+													<div className="flex flex-col gap-3">
+														<h3 className="text-xs font-light uppercase">
+															Digital Evidence
+														</h3>
+														<EvidenceCard evidence={schedule.evidence} />
+													</div>
+												)}
+											</div>
+										)}
 									</div>
 								</ExpandableContent>
 							</ExpandableCardContent>

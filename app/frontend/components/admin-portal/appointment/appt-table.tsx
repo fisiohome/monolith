@@ -30,8 +30,10 @@ import getColumns from "./columns";
 import AppointmentListItemDetails from "./details";
 import AppointmentActionButtons from "./details/action-buttons";
 import AdminCard from "./details/admins";
+import EvidenceCard from "./details/evidence-card";
 import HistoryList from "./details/histories";
 import PatientCard from "./details/patient";
+import SoapCard from "./details/soap-card";
 import TherapistCard from "./details/therapist";
 
 // * for the core table component
@@ -230,6 +232,7 @@ export const AppointmentDetails = memo((props: AppointmentDetailsProps) => {
 						<HistoryList histories={appointment.statusHistories} />
 					</div>
 				</div>
+
 				<div className="grid grid-cols-1 gap-6 xl:grid-cols-3 col-span-full">
 					<div className="flex flex-col gap-3">
 						<h3 className="text-xs font-light uppercase">
@@ -260,6 +263,28 @@ export const AppointmentDetails = memo((props: AppointmentDetailsProps) => {
 						/>
 					</div>
 				</div>
+
+				{/* SOAP and Evidence Section */}
+				{(appointment.soap || appointment.evidence) && (
+					<div className="grid grid-cols-1 gap-6 col-span-full">
+						{appointment.soap && (
+							<div className="flex flex-col gap-3">
+								<h3 className="text-xs font-light uppercase">SOAP Notes</h3>
+								<SoapCard soap={appointment.soap} />
+							</div>
+						)}
+
+						{appointment.evidence && (
+							<div className="flex flex-col gap-3">
+								<h3 className="text-xs font-light uppercase">
+									Digital Evidence
+								</h3>
+								<EvidenceCard evidence={appointment.evidence} />
+							</div>
+						)}
+					</div>
+				)}
+
 				<div className="col-span-full">
 					<AppointmentActionButtons schedule={appointment} isExpanded={true} />
 				</div>

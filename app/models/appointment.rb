@@ -165,6 +165,11 @@ class Appointment < ApplicationRecord
   has_one :order_detail, class_name: "OrderDetail"
   has_many :order_details, through: :order
 
+  # SOAP and Evidence associations
+  has_one :soap, class_name: "AppointmentSoap", dependent: :destroy
+  has_one :evidence, class_name: "AppointmentEvidence", dependent: :destroy
+  has_many :evidence_photos, through: :evidence
+
   # * define the delegations
   # * Note: Removed reference_appointment delegations as we now use registration number-based queries
 

@@ -50,6 +50,46 @@ export interface StatusHistory {
 	changedBy: StatusHistoryChangedBy;
 }
 
+export interface AppointmentSoap {
+	subject?: string;
+	objective?: string;
+	assessment?: string;
+	planning?: string;
+	additionalNotes?: string;
+	isFinalVisit: boolean;
+	initialPhysicalCondition?: string;
+	therapyGoalEvaluation?: string;
+	followUpTherapyPlan?: string;
+	nextPhysiotherapyGoals?: string;
+	therapyOutcomeSummary?: string;
+	notes?: string;
+	createdAt: string;
+	updatedAt: string;
+	therapistName?: string;
+}
+
+export interface AppointmentEvidencePhoto {
+	objectKey: string;
+	photoType: string;
+	fileName?: string;
+	fileSize?: number;
+	contentType?: string;
+	createdAt: string;
+}
+
+export interface AppointmentEvidence {
+	token: string;
+	nonce: string;
+	latitude?: number;
+	longitude?: number;
+	userAgent?: string;
+	ipAddress?: string;
+	notes?: string;
+	createdAt: string;
+	updatedAt: string;
+	photos: AppointmentEvidencePhoto[];
+}
+
 export interface Appointment {
 	id: string;
 	therapistId: string | null;
@@ -140,6 +180,8 @@ export interface Appointment {
 	seriesAppointments: Appointment[];
 	allVisits?: Appointment[];
 	statusHistories: StatusHistory[];
+	soap?: AppointmentSoap;
+	evidence?: AppointmentEvidence;
 	isPaid: boolean;
 	isCompleted: boolean;
 	createdAt: string;

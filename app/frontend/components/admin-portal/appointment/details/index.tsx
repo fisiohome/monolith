@@ -248,8 +248,10 @@ const AppointmentListItemDetails = memo(function Component({
 
 			<Separator />
 
-			<div className="grid gap-4">
-				<h4 className="text-xs font-light uppercase">{t("list.series")}</h4>
+			<div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+				<div className="col-span-full">
+					<h4 className="text-xs font-light uppercase">{t("list.series")}</h4>
+				</div>
 
 				{schedule?.allVisits?.map((visit: any) => (
 					<SeriesItem key={visit.id} parentAppt={schedule} appointment={visit}>

@@ -33,9 +33,9 @@ const SeriesItem = memo(function Component({
 	return (
 		<div
 			className={cn(
-				"grid gap-1 p-3 border rounded-lg border-border bg-input",
+				"grid gap-1 p-3 border rounded-lg border-border bg-input/25",
 				className,
-				appointment.registrationNumber === parentAppt.registrationNumber &&
+				appointment.visitProgress === parentAppt.visitProgress &&
 					"ring-1 ring-primary text-primary",
 			)}
 		>

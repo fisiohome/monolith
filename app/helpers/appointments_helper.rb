@@ -82,6 +82,16 @@ module AppointmentsHelper
         serialized["status_histories"] = serialize_status_history(appointment)
       end
 
+      # Serialize SOAP notes
+      if options.fetch(:include_soap, false)
+        serialized["soap"] = serialize_soap(appointment.soap)
+      end
+
+      # Serialize evidence
+      if options.fetch(:include_evidence, false)
+        serialized["evidence"] = serialize_evidence(appointment.evidence)
+      end
+
       serialized.merge!(
         voucher_discount: appointment.voucher_discount,
         formatted_discount: appointment.formatted_discount,
@@ -149,5 +159,37 @@ module AppointmentsHelper
         )
       }
     end
+  end
+
+  def serialize_soap(soap)
+    return nil unless soap
+
+    soap.as_json(
+      only: [
+        :subject, :objective, :assessment, :planning, :additional_notes,
+        :is_final_visit, :initial_physical_condition, :therapy_goal_evaluation,
+        :follow_up_therapy_plan, :next_physiotherapy_goals, :therapy_outcome_summary,
+        :notes, :created_at, :updated_at
+      ]
+    ).merge(
+      therapist_name: soap.therapist&.name
+    )
+  end
+
+  def serialize_evidence(evidence)
+    return nil unless evidence
+
+    evidence.as_json(
+      only: [
+        :token, :nonce, :latitude, :longitude, :user_agent, :ip_address,
+        :notes, :created_at, :updated_at
+      ]
+    ).merge(
+      photos: evidence.appointment_evidence_photos.active.map do |photo|
+        photo.as_json(
+          only: [:object_key, :photo_type, :file_name, :file_size, :content_type, :created_at]
+        )
+      end
+    )
   end
 end
