@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
 import { useMediaQuery, useSessionStorage } from "@uidotdev/usehooks";
 import { format, startOfDay } from "date-fns";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
 import { DEFAULT_VALUES_THERAPIST } from "@/lib/appointments/form";
 import {
@@ -225,6 +225,33 @@ export const useRescheduleFields = () => {
 	}>(SESSION_STORAGE_FORM_SELECTIONS_KEY, {
 		therapist: null,
 	});
+
+	// Track if this is the initial load to prevent re-initialization after user reset
+	const isInitialLoad = useRef(true);
+
+	// Initialize formSelections.therapist from appointment.therapist when form loads
+	// This ensures the default therapist is pre-selected but can be reset
+	useEffect(() => {
+		// Only initialize on initial load and if appointment has therapist
+		if (isInitialLoad.current && appointment?.therapist) {
+			setFormSelections({
+				therapist: {
+					id: appointment.therapist.id,
+					name: appointment.therapist.name,
+					registrationNumber: appointment.therapist.registrationNumber || "",
+					employmentStatus: appointment.therapist.employmentStatus || "ACTIVE",
+					// Include other relevant therapist properties if needed
+					...(appointment.therapist.gender && {
+						gender: appointment.therapist.gender,
+					}),
+					...(appointment.therapist.employmentType && {
+						employmentType: appointment.therapist.employmentType,
+					}),
+				},
+			});
+			isInitialLoad.current = false;
+		}
+	}, [appointment?.therapist, setFormSelections]);
 	const coordinate = useMemo(
 		() => [patientDetails.latitude, patientDetails.longitude],
 		[patientDetails.latitude, patientDetails.longitude],
@@ -277,12 +304,37 @@ export const useRescheduleFields = () => {
 		onChangeTherapistLoading,
 		onResetTherapistFormValue,
 	});
+	// Function to reset therapist to appointment default
+	const resetTherapistToDefault = useCallback(() => {
+		if (appointment?.therapist) {
+			setFormSelections({
+				therapist: {
+					id: appointment.therapist.id,
+					name: appointment.therapist.name,
+					registrationNumber: appointment.therapist.registrationNumber || "",
+					employmentStatus: appointment.therapist.employmentStatus || "ACTIVE",
+					...(appointment.therapist.gender && {
+						gender: appointment.therapist.gender,
+					}),
+					...(appointment.therapist.employmentType && {
+						employmentType: appointment.therapist.employmentType,
+					}),
+				},
+			});
+			// Also reset form value to match
+			onSelectTherapist({
+				id: appointment.therapist.id,
+				name: appointment.therapist.name,
+			});
+		}
+	}, [appointment?.therapist, setFormSelections, onSelectTherapist]);
+
 	// reset the therapist availability field value, options values from server fetch data and isoline map
 	const onResetAllTherapistState = useCallback(() => {
 		onResetTherapistFormValue();
 		onResetTherapistOptions();
 		onResetIsoline();
-		// Also reset formSelections for reschedule mode
+		// Clear formSelections completely
 		setFormSelections({ therapist: null });
 	}, [
 		onResetTherapistFormValue,
@@ -367,5 +419,6 @@ export const useRescheduleFields = () => {
 		appointment,
 		errorsServerValidation,
 		brandPackagesSource,
+		resetTherapistToDefault,
 	};
 };

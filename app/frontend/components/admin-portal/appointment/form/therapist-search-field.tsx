@@ -443,11 +443,7 @@ export const TherapistSearchField = ({
 	const selectedTherapist = useMemo(() => {
 		if (mode === "reschedule") {
 			// For reschedule mode, prioritize formSelections, fallback to appointment.therapist
-			return (
-				(formHooks as any)?.formSelections?.therapist ||
-				(formHooks as any)?.appointment?.therapist ||
-				null
-			);
+			return (formHooks as any)?.formSelections?.therapist || null;
 		}
 
 		if (mode === "new" || mode === "series") {
