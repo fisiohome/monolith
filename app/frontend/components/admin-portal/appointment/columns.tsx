@@ -310,6 +310,53 @@ const VisitNoCell = memo(({ row }: { row: Row<Appointment> }) => {
 	);
 });
 
+const CreatedAtCell = memo(({ row }: { row: Row<Appointment> }) => {
+	const { locale, tzDate } = useDateContext();
+	const createdAt = row.original.createdAt;
+
+	const date = useMemo(
+		() =>
+			createdAt
+				? format(new Date(createdAt), "PP", {
+						locale,
+						...(tzDate && { timeZone: tzDate }),
+					})
+				: "N/A",
+		[createdAt, locale, tzDate],
+	);
+
+	const time = useMemo(
+		() =>
+			createdAt
+				? format(new Date(createdAt), "p", {
+						locale,
+						...(tzDate && { timeZone: tzDate }),
+					})
+				: "N/A",
+		[createdAt, locale, tzDate],
+	);
+
+	const full = useMemo(
+		() =>
+			createdAt
+				? format(new Date(createdAt), "PPPp", {
+						locale,
+						...(tzDate && { timeZone: tzDate }),
+					})
+				: "N/A",
+		[createdAt, locale, tzDate],
+	);
+
+	if (!createdAt) return "N/A";
+
+	return (
+		<div title={full}>
+			<p className="font-semibold text-nowrap">{date}</p>
+			<p className="text-nowrap">{time}</p>
+		</div>
+	);
+});
+
 const useCopyRegistrationNumber = () => {
 	const handleCopy = useCallback(async (value: string, label: string) => {
 		try {
@@ -667,6 +714,14 @@ const getColumns = (): ColumnDef<Appointment>[] => [
 			<DataTableColumnHeader column={column} title="Location" />
 		),
 		cell: ({ row }) => <LocationCell row={row} />,
+	},
+	{
+		accessorKey: "createdAt",
+		enableHiding: false,
+		header: ({ column }) => (
+			<DataTableColumnHeader column={column} title="Created At" />
+		),
+		cell: ({ row }) => <CreatedAtCell row={row} />,
 	},
 	{
 		id: "actions",

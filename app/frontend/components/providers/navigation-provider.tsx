@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { createContext, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { humanize, populateQueryParams } from "@/lib/utils";
 import type { AdminTypes } from "@/types/admin-portal/admin";
 import type { GlobalPageProps } from "@/types/globals";
@@ -108,9 +107,10 @@ export function NavigationProvider({
 		const buildAppointmentMenu = () => {
 			const { fullUrl } = populateQueryParams(
 				adminPortal.appointment.index,
-				deepTransformKeysToSnakeCase({
-					assignedTo: "me",
-				}),
+				// default to witohut query params
+				// deepTransformKeysToSnakeCase({
+				// 	assignedTo: "me",
+				// }),
 			);
 
 			return createMenuItem(t("appointment"), fullUrl, Calendar1);
