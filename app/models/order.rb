@@ -25,6 +25,7 @@ class Order < ApplicationRecord
   belongs_to :patient
   belongs_to :package
   belongs_to :booking_draft, optional: true
+  belongs_to :user, optional: true
 
   has_many :payments, dependent: :destroy
   has_many :order_details, dependent: :destroy

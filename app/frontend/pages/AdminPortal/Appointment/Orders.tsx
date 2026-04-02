@@ -1237,6 +1237,12 @@ const ORDER_STATUS_OPTIONS = [
 	{ value: "REFUNDED", label: "Refunded" },
 ];
 
+const CREATED_BY_OPTIONS = [
+	{ value: "all", label: "All Creators" },
+	{ value: "admin", label: "Admin" },
+	{ value: "patient", label: "Patient" },
+];
+
 export default function AppointmentOrders() {
 	const { props: globalProps, url: pageURL } = usePage<OrdersGlobalPageProps>();
 
@@ -1247,6 +1253,7 @@ export default function AppointmentOrders() {
 			search: q?.search || "",
 			paymentStatus: q?.paymentStatus || "all",
 			status: q?.status || "all",
+			createdBy: q?.created_by || "all",
 		};
 	});
 
@@ -1283,6 +1290,7 @@ export default function AppointmentOrders() {
 					paymentStatus:
 						next.paymentStatus === "all" ? null : next.paymentStatus,
 					status: next.status === "all" ? null : next.status,
+					createdBy: next.createdBy === "all" ? null : next.createdBy,
 					page: null,
 				}),
 			);
@@ -1623,6 +1631,24 @@ export default function AppointmentOrders() {
 							</SelectTrigger>
 							<SelectContent>
 								{ORDER_STATUS_OPTIONS.map((opt) => (
+									<SelectItem key={opt.value} value={opt.value}>
+										{opt.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div className="col-span-full md:col-span-1">
+						<Select
+							value={filters.createdBy}
+							onValueChange={(v) => handleFilterChange("createdBy", v)}
+						>
+							<SelectTrigger className="shadow-inner bg-input">
+								<SelectValue placeholder="Created By" />
+							</SelectTrigger>
+							<SelectContent>
+								{CREATED_BY_OPTIONS.map((opt) => (
 									<SelectItem key={opt.value} value={opt.value}>
 										{opt.label}
 									</SelectItem>

@@ -96,6 +96,16 @@ module AdminPortal
         orders = orders.where(status: @params[:status])
       end
 
+      # Filter by creator type (admin or patient)
+      if @params[:created_by].present?
+        case @params[:created_by].downcase
+        when "admin"
+          orders = orders.joins(:user).where(users: {id: Admin.select(:user_id)})
+        when "patient"
+          orders = orders.joins(:user).where(users: {id: Patient.select(:user_id)})
+        end
+      end
+
       orders
     end
 
