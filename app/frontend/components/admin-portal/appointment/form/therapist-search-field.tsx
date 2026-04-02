@@ -444,8 +444,8 @@ export const TherapistSearchField = ({
 		if (mode === "reschedule") {
 			// For reschedule mode, prioritize formSelections, fallback to appointment.therapist
 			return (
-				(formHooks as any)?.appointment?.therapist ||
 				(formHooks as any)?.formSelections?.therapist ||
+				(formHooks as any)?.appointment?.therapist ||
 				null
 			);
 		}
