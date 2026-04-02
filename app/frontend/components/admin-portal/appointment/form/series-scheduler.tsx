@@ -1,6 +1,6 @@
 import { usePage } from "@inertiajs/react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { addDays, type ContextFn, format, isAfter, startOfDay } from "date-fns";
+import { type ContextFn, format, startOfDay } from "date-fns";
 import { ChevronDownIcon, RefreshCcwIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -30,12 +30,18 @@ import {
 } from "@/components/ui/form";
 import { Spinner } from "@/components/ui/kibo-ui/spinner";
 import {
+	DRAFT_STEPS,
+	useAppointmentDraft,
+} from "@/hooks/admin-portal/appointment/use-appointment-draft";
+import { USE_DRAFT_DATABASE } from "@/hooks/admin-portal/appointment/use-appointment-form";
+import {
 	type TherapistOption,
 	useTherapistAvailability,
 } from "@/hooks/admin-portal/appointment/use-appointment-utils";
 import type { AppointmentBookingSchema } from "@/lib/appointments/form";
 import { getBadgeVariantStatus } from "@/lib/appointments/utils";
 import { MAP_DEFAULT_COORDINATE } from "@/lib/here-maps";
+import { cn } from "@/lib/utils";
 import type { AppointmentNewGlobalPageProps } from "@/pages/AdminPortal/Appointment/New";
 import DateTimePicker from "./date-time";
 
@@ -62,7 +68,7 @@ const VISIT_STATUSES = {
 const createDefaultSeriesVisit = (
 	{
 		isAllOfDay,
-		apptDate,
+		apptDate: _apptDate,
 		therapist,
 	}: {
 		isAllOfDay: AppointmentBookingSchema["appointmentScheduling"]["findTherapistsAllOfDay"];
@@ -70,12 +76,10 @@ const createDefaultSeriesVisit = (
 		therapist: AppointmentBookingSchema["appointmentScheduling"]["therapist"];
 	},
 	visitNumber: number,
-	tzDate: ContextFn<Date>,
+	_tzDate: ContextFn<Date>,
 ) => ({
 	visitNumber,
-	appointmentDateTime: apptDate
-		? addDays(apptDate, (visitNumber - 1) * 14, { in: tzDate })
-		: new Date(),
+	appointmentDateTime: null,
 	findTherapistsAllOfDay: !!isAllOfDay,
 	therapist,
 });
@@ -126,11 +130,7 @@ const useSeriesVisitForm = (index: number) => {
 
 	// Therapist selection handlers
 	const onSelectTherapist = useCallback(
-		(
-			value: NonNullable<
-				AppointmentBookingSchema["appointmentScheduling"]["therapist"]
-			>,
-		) => {
+		(value: AppointmentBookingSchema["appointmentScheduling"]["therapist"]) => {
 			form.setValue(`${fieldPath}.therapist`, value, {
 				shouldValidate: true,
 			});
@@ -139,10 +139,11 @@ const useSeriesVisitForm = (index: number) => {
 	);
 
 	const onResetTherapistFormValue = useCallback(() => {
-		form.setValue(
-			`appointmentScheduling.seriesVisits.${index}.therapist`,
-			null,
-		);
+		// Use setValue instead of resetField for more reliable clearing
+		form.setValue(`appointmentScheduling.seriesVisits.${index}.therapist`, {
+			id: "",
+			name: "",
+		});
 	}, [form, index]);
 
 	const onChangeTherapistLoading = useCallback((value: boolean) => {
@@ -369,6 +370,105 @@ export function SeriesScheduler() {
 		name: "appointmentScheduling.seriesVisits",
 	});
 
+	// Auto-save draft functionality
+	const { saveDraft } = useAppointmentDraft({
+		onError: (error) => {
+			console.error("Series scheduler draft save error:", error);
+		},
+	});
+
+	// Auto-save callback for series visits date/time changes
+	const handleSeriesDateTimeChange = useCallback(async () => {
+		if (!USE_DRAFT_DATABASE) {
+			return;
+		}
+
+		try {
+			const values = getValues();
+			const admins = values.additionalSettings?.admins || [];
+			const validAdmins = admins.filter(
+				(admin: any) => admin?.id && admin.id !== "0",
+			);
+			const primaryAdmin = validAdmins?.find((admin: any) => admin.isPrimary);
+			const validPrimaryAdmin =
+				primaryAdmin?.id && primaryAdmin.id !== "0"
+					? primaryAdmin
+					: validAdmins?.[0];
+
+			if (validPrimaryAdmin) {
+				const result = await saveDraft({
+					adminPicId: String(validPrimaryAdmin.id),
+					adminIds: validAdmins?.map((a: any) => String(a.id)),
+					primaryAdminId: String(validPrimaryAdmin.id),
+					currentStep: DRAFT_STEPS[1], // appointment_scheduling step
+					formData: values,
+					draftId: values.formOptions?.draftId
+						? String(values.formOptions.draftId)
+						: undefined,
+				});
+
+				// Update form with draft ID if a new draft was created
+				if (result?.success && result?.draft?.id) {
+					const currentDraftId = getValues("formOptions.draftId");
+					if (!currentDraftId || currentDraftId !== String(result.draft.id)) {
+						setValue("formOptions.draftId", String(result.draft.id));
+					}
+				}
+			}
+		} catch (error) {
+			console.error(
+				"Failed to auto-save draft on series date/time change:",
+				error,
+			);
+		}
+	}, [getValues, setValue, saveDraft]);
+
+	// Auto-save callback for series visits therapist selection
+	const handleSeriesTherapistChange = useCallback(async () => {
+		if (!USE_DRAFT_DATABASE) {
+			return;
+		}
+
+		try {
+			const values = getValues();
+			const admins = values.additionalSettings?.admins || [];
+			const validAdmins = admins.filter(
+				(admin: any) => admin?.id && admin.id !== "0",
+			);
+			const primaryAdmin = validAdmins?.find((admin: any) => admin.isPrimary);
+			const validPrimaryAdmin =
+				primaryAdmin?.id && primaryAdmin.id !== "0"
+					? primaryAdmin
+					: validAdmins?.[0];
+
+			if (validPrimaryAdmin) {
+				const result = await saveDraft({
+					adminPicId: String(validPrimaryAdmin.id),
+					adminIds: validAdmins?.map((a: any) => String(a.id)),
+					primaryAdminId: String(validPrimaryAdmin.id),
+					currentStep: DRAFT_STEPS[1], // appointment_scheduling step
+					formData: values,
+					draftId: values.formOptions?.draftId
+						? String(values.formOptions.draftId)
+						: undefined,
+				});
+
+				// Update form with draft ID if a new draft was created
+				if (result?.success && result?.draft?.id) {
+					const currentDraftId = getValues("formOptions.draftId");
+					if (!currentDraftId || currentDraftId !== String(result.draft.id)) {
+						setValue("formOptions.draftId", String(result.draft.id));
+					}
+				}
+			}
+		} catch (error) {
+			console.error(
+				"Failed to auto-save draft on series therapist change:",
+				error,
+			);
+		}
+	}, [getValues, setValue, saveDraft]);
+
 	// accordion state
 	const [isOpenAccordion, setIsOpenAccordion] = useState<string[]>([]);
 	const onCloseAccordionItem = useCallback((id: string) => {
@@ -393,13 +493,13 @@ export function SeriesScheduler() {
 		[firstVisitIsAllOfDay, firstVisitApptDate, firstVisitPackageVisits],
 	);
 	const initializeSeriesVisits = useCallback(() => {
-		if (firstVisitData.packageVisits <= 1) {
+		if (firstVisitPackageVisits <= 1) {
 			// remove all series visits
 			remove();
 			return;
 		}
 
-		const targetCount = Math.max(0, firstVisitData.packageVisits - 1);
+		const targetCount = Math.max(0, firstVisitPackageVisits - 1);
 		const currentCount = fields.length;
 
 		if (currentCount === targetCount) return;
@@ -420,13 +520,13 @@ export function SeriesScheduler() {
 		const toAdd = Array.from({ length: targetCount - currentCount }, (_, i) => {
 			const visitNumber = currentCount + i + 2; // Start from visit 2
 			return createDefaultSeriesVisit(
-				{ ...firstVisitData, therapist: null },
+				{ isAllOfDay: false, apptDate: null, therapist: null },
 				visitNumber,
 				tzDate,
 			);
 		});
 		append(toAdd);
-	}, [fields.length, append, remove, firstVisitData, tzDate]);
+	}, [fields.length, append, remove, firstVisitPackageVisits, tzDate]);
 	useEffect(() => {
 		setIsLoading(true);
 		initializeSeriesVisits();
@@ -469,7 +569,13 @@ export function SeriesScheduler() {
 				];
 
 			return (
-				<Badge variant="outline" className={selectedConfig.className}>
+				<Badge
+					variant="outline"
+					className={cn(
+						selectedConfig.className,
+						"uppercase !text-[10px] !px-1",
+					)}
+				>
 					{selectedConfig.label}
 				</Badge>
 			);
@@ -489,8 +595,8 @@ export function SeriesScheduler() {
 				fieldPath,
 				createDefaultSeriesVisit(
 					{
-						isAllOfDay: firstVisitData.isAllOfDay,
-						apptDate: firstVisitData.apptDate,
+						isAllOfDay: false,
+						apptDate: null,
 						therapist: null,
 					},
 					visitNumber,
@@ -502,130 +608,100 @@ export function SeriesScheduler() {
 				setIsResetting(false);
 			}, 500);
 		},
-		[firstVisitData, setValue, tzDate],
+		[setValue, tzDate],
 	);
-	useEffect(() => {
-		const secondVisitApptDate = getValues(
-			"appointmentScheduling.seriesVisits.0.appointmentDateTime",
-		);
-		if (
-			firstVisitApptDate &&
-			secondVisitApptDate &&
-			isAfter(new Date(firstVisitApptDate), new Date(secondVisitApptDate))
-		) {
-			fields.forEach((_, index) => {
-				resetVisit(index);
-			});
-		}
-	}, [fields, firstVisitApptDate, getValues, resetVisit]);
-
-	// Update series visits when first visit date changes to ensure H+14 calculation
-	useEffect(() => {
-		if (firstVisitApptDate && fields.length > 0) {
-			fields.forEach((_, index) => {
-				const fieldPath =
-					`appointmentScheduling.seriesVisits.${index}` as const;
-				const visitNumber = index + 2;
-
-				setValue(
-					fieldPath,
-					createDefaultSeriesVisit(
-						{
-							isAllOfDay: firstVisitData.isAllOfDay,
-							apptDate: firstVisitData.apptDate,
-							therapist: getValues(`${fieldPath}.therapist`),
-						},
-						visitNumber,
-						tzDate,
-					),
-					{ shouldDirty: true, shouldTouch: true, shouldValidate: true },
-				);
-			});
-		}
-	}, [
-		firstVisitApptDate,
-		fields.length,
-		firstVisitData.isAllOfDay,
-		firstVisitData.apptDate,
-		fields.forEach,
-		getValues,
-		setValue,
-		tzDate,
-	]);
 
 	if (firstVisitData.packageVisits <= 1) return null;
 
-	return (
-		<Accordion
-			value={isOpenAccordion}
-			onValueChange={setIsOpenAccordion}
-			type="multiple"
-			className="w-full space-y-2 col-span-full"
-		>
-			{fields.map((field, index) => {
-				const visitNumber = getValues(
-					`appointmentScheduling.seriesVisits.${index}.visitNumber`,
-				);
-				const appointmentDateTime = getValues(
-					`appointmentScheduling.seriesVisits.${index}.appointmentDateTime`,
-				);
+	return fields.map((field, index) => {
+		const visitNumber = getValues(
+			`appointmentScheduling.seriesVisits.${index}.visitNumber`,
+		);
+		const appointmentDateTime = getValues(
+			`appointmentScheduling.seriesVisits.${index}.appointmentDateTime`,
+		);
+		const therapist = getValues(
+			`appointmentScheduling.seriesVisits.${index}.therapist`,
+		);
 
-				return (
-					<AccordionItem
-						value={field.id}
-						key={field.id}
-						className="bg-sidebar text-muted-foreground border border-border rounded-md has-focus-visible:border-ring has-focus-visible:ring-ring/50 px-4 py-1 outline-none last:border-b has-focus-visible:ring-[3px]"
-					>
-						<AccordionPrimitive.Header className="flex">
-							<AccordionPrimitive.Trigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between rounded-md py-2 text-left text-[15px] leading-6 font-semibold transition-all outline-none focus-visible:ring-[3px] [&[data-state=open]>svg]:rotate-180">
-								<div className="flex items-center gap-3">
-									<span
-										className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-primary/75 text-primary-foreground"
-										aria-hidden="true"
-									>
-										{visitNumber}
-									</span>
-									<span className="flex flex-col space-y-1">
-										<span>Visit {visitNumber}</span>
-										{appointmentDateTime ? (
-											<span className="text-sm font-normal">
-												{format(appointmentDateTime, "MMM d, yyyy h:mm a", {
+		return (
+			<Accordion
+				key={field.id}
+				value={isOpenAccordion}
+				onValueChange={setIsOpenAccordion}
+				type="multiple"
+				className="w-full space-y-2"
+			>
+				<AccordionItem
+					value={field.id}
+					className="bg-sidebar text-muted-foreground border border-border rounded-md has-focus-visible:border-ring has-focus-visible:ring-ring/50 px-4 py-1 outline-none last:border-b has-focus-visible:ring-[3px]"
+				>
+					<AccordionPrimitive.Header className="flex">
+						<AccordionPrimitive.Trigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between rounded-md py-2 text-left text-[15px] leading-6 font-semibold transition-all outline-none focus-visible:ring-[3px] [&[data-state=open]>svg]:rotate-180">
+							<div className="flex gap-3">
+								<span
+									className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-primary/75 text-primary-foreground"
+									aria-hidden="true"
+								>
+									{visitNumber}
+								</span>
+								<span className="flex flex-col">
+									<span>Visit {visitNumber}</span>
+									{appointmentDateTime ? (
+										<span className="text-sm font-normal">
+											{format(
+												appointmentDateTime,
+												locale.code === "id"
+													? "d MMMM yyyy, HH.mm"
+													: "MMMM d, yyyy, h:mm a",
+												{
 													locale,
 													in: tzDate,
-												})}
-											</span>
-										) : (
-											<span className="text-sm font-normal">Unscheduled</span>
-										)}
-									</span>
-								</div>
+												},
+											)}
+										</span>
+									) : (
+										<span className="text-sm font-normal">Unscheduled</span>
+									)}
+									{therapist?.name ? (
+										<span className="text-xs text-muted-foreground font-normal uppercase">
+											{therapist.name}
+										</span>
+									) : (
+										<span className="text-xs text-muted-foreground font-normal uppercase">
+											{locale.code === "id" ? "T/A" : "N/A"}
+										</span>
+									)}
+								</span>
+							</div>
 
-								<div className="flex items-center gap-3 uppercase">
-									{getStatusBadge(index)}
+							<div className="flex items-center gap-3 uppercase">
+								{getStatusBadge(index)}
 
-									<ChevronDownIcon
-										size={16}
-										className="pointer-events-none shrink-0 opacity-60 transition-transform duration-200"
-										aria-hidden="true"
-									/>
-								</div>
-							</AccordionPrimitive.Trigger>
-						</AccordionPrimitive.Header>
-						<AccordionContent className="text-muted-foreground pb-2">
-							<VisitForm
-								index={index}
-								field={field}
-								isLoading={isLoading}
-								isResetting={isResetting}
-								onReset={() => resetVisit(index)}
-								onClose={() => onCloseAccordionItem(field.id)}
-							/>
-						</AccordionContent>
-					</AccordionItem>
-				);
-			})}
-		</Accordion>
-	);
+								<ChevronDownIcon
+									size={16}
+									className="pointer-events-none shrink-0 opacity-60 transition-transform duration-200"
+									aria-hidden="true"
+								/>
+							</div>
+						</AccordionPrimitive.Trigger>
+					</AccordionPrimitive.Header>
+					<AccordionContent className="text-muted-foreground pb-2">
+						<VisitForm
+							index={index}
+							field={field}
+							isLoading={isLoading}
+							isResetting={isResetting}
+							onReset={() => resetVisit(index)}
+							onClose={() => onCloseAccordionItem(field.id)}
+							onDateTimeChange={handleSeriesDateTimeChange}
+							onTherapistChange={handleSeriesTherapistChange}
+						/>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
+		);
+	});
 }
 
 // * form component
@@ -640,6 +716,8 @@ interface VisitFormProps {
 	>;
 	onClose: () => void;
 	onReset: () => void;
+	onDateTimeChange: () => Promise<void>;
+	onTherapistChange: () => Promise<void>;
 }
 const VisitForm = ({
 	index,
@@ -648,6 +726,8 @@ const VisitForm = ({
 	field: _,
 	onClose,
 	onReset,
+	onDateTimeChange,
+	onTherapistChange,
 }: VisitFormProps) => {
 	const form = useFormContext<AppointmentBookingSchema>();
 	const { props: globalProps } = usePage<AppointmentNewGlobalPageProps>();
@@ -675,6 +755,18 @@ const VisitForm = ({
 		feasibilityReport,
 	} = useSeriesVisitForm(index);
 
+	// Wrapper to save draft when therapist is selected
+	const handleSelectTherapist = useCallback(
+		async (
+			value: AppointmentBookingSchema["appointmentScheduling"]["therapist"],
+		) => {
+			onSelectTherapist(value);
+			// Auto-save draft after therapist selection
+			await onTherapistChange();
+		},
+		[onSelectTherapist, onTherapistChange],
+	);
+
 	// reset the therapist selected and isoline map while reset the visit
 	useEffect(() => {
 		if (isResetting) {
@@ -682,57 +774,11 @@ const VisitForm = ({
 		}
 	}, [isResetting, onResetAllTherapistState]);
 
-	// Get all series visits to calculate min/max dates
-	const seriesFieldPath = useWatch({
-		control: form.control,
-		name: "appointmentScheduling.seriesVisits",
-	});
-	// Calculate min and max dates based on adjacent appointments
-	const firstVisitDateTime = useWatch({
-		control: form.control,
-		name: "appointmentScheduling.appointmentDateTime",
-	});
-
-	// calculate min and max dates based on adjacent appointments
+	// Disabled min and max date restrictions for series visits
+	// Users can select any date without limitations
 	const { minDate, maxDate } = useMemo(() => {
-		try {
-			if (!seriesFieldPath?.length)
-				return { minDate: undefined, maxDate: undefined };
-
-			// Find previous valid date (either from first visit or previous series visit)
-			const findPreviousDate = () => {
-				// For first visit in series, use the initial appointment date
-				if (index === 0) return firstVisitDateTime;
-
-				// Otherwise find the most recent previous visit with a date
-				for (let i = index - 1; i >= 0; i--) {
-					const prevDate = seriesFieldPath[i]?.appointmentDateTime;
-					if (prevDate) return prevDate;
-				}
-				return firstVisitDateTime;
-			};
-
-			// Find next valid date from subsequent visits
-			const findNextDate = () => {
-				for (let i = index + 1; i < seriesFieldPath.length; i++) {
-					const nextDate = seriesFieldPath[i]?.appointmentDateTime;
-					if (nextDate) return nextDate;
-				}
-				return undefined;
-			};
-
-			const prevDate = findPreviousDate();
-			const nextDate = findNextDate();
-
-			return {
-				minDate: prevDate ? new Date(prevDate) : undefined,
-				maxDate: nextDate ? new Date(nextDate) : undefined,
-			};
-		} catch (error) {
-			console.error("Error calculating min/max dates:", error);
-			return { minDate: undefined, maxDate: undefined };
-		}
-	}, [seriesFieldPath, index, firstVisitDateTime]);
+		return { minDate: undefined, maxDate: undefined };
+	}, []);
 
 	const isAllOfDay = useWatch({
 		control: form.control,
@@ -807,8 +853,11 @@ const VisitForm = ({
 										min={minDate}
 										max={maxDate}
 										onChangeValue={field.onChange}
-										callbackOnChange={() => {
-											onResetAllTherapistState();
+										callbackOnChange={async () => {
+											// Therapist reset is now handled by useEffect in useTherapistAvailability
+											// when date becomes null - no manual reset needed here
+											// Auto-save draft with updated values
+											await onDateTimeChange();
 										}}
 									/>
 								)}
@@ -823,7 +872,7 @@ const VisitForm = ({
 						formHooks={{
 							form,
 							watchAllOfDayValue: watchAllOfDayValue ?? false,
-							onSelectTherapist,
+							onSelectTherapist: handleSelectTherapist,
 							onSelectTimeSlot,
 						}}
 						mode="series"
@@ -856,7 +905,7 @@ const VisitForm = ({
 												handler: onFindTherapists,
 											}}
 											unfeasibleTherapists={feasibilityReport}
-											onSelectTherapist={onSelectTherapist}
+											onSelectTherapist={handleSelectTherapist}
 											onPersist={onPersistTherapist}
 											onSelectTimeSlot={onSelectTimeSlot}
 										/>

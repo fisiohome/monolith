@@ -122,7 +122,7 @@ const THERAPIST_SCHEMA = z
 	.nullable();
 
 // Common appointment date time schema
-const APPOINTMENT_DATE_TIME_SCHEMA = z.coerce.date();
+const APPOINTMENT_DATE_TIME_SCHEMA = z.coerce.date().nullable();
 
 // Base appointment fields that are shared
 const BASE_APPOINTMENT_FIELDS = {

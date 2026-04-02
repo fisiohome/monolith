@@ -221,14 +221,14 @@ function FormComponent() {
 	});
 
 	return (
-		<section className="flex flex-col justify-center gap-4 mx-auto md:gap-6 w-12/12 xl:w-8/12">
+		<section className="flex flex-col gap-4 mx-auto md:gap-6">
 			<FormPageHeaderGridPattern {...pageHeader} />
 
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)}>
 					<Alert className="mb-4">
-						<Info className="h-4 w-4 -mt-0.5 !text-primary" />
-						<AlertDescription className="flex items-center justify-between text-primary">
+						<Info className="h-4 w-4 !text-primary -mt-1" />
+						<AlertDescription className="text-primary">
 							<span>
 								{taf("draft.auto_save_info", {
 									defaultValue:

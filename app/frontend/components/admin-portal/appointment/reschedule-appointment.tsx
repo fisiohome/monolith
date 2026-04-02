@@ -404,9 +404,11 @@ export const RescheduleFields = memo(function Component({
 									onChangeValue={field.onChange}
 									isAllOfDay={!!formHooks.watchAllOfDayValue}
 									allowPastTimes={!formHooks.apptDateTime.min}
-									callbackOnChange={() => {
-										// reset all therapist and isoline maps state
-										formHooks.onResetAllTherapistState();
+									callbackOnChange={(newValue: Date | null) => {
+										// Only reset therapist when date/time becomes null
+										if (!newValue) {
+											formHooks.onResetAllTherapistState();
+										}
 									}}
 								/>
 							</FormControl>
@@ -417,7 +419,11 @@ export const RescheduleFields = memo(function Component({
 			</div>
 
 			{useNewTherapistSelection ? (
-				<TherapistSearchField mode="reschedule" formHooks={formHooks} />
+				<TherapistSearchField
+					mode="reschedule"
+					formHooks={formHooks}
+					appointmentDateTime={formHooks.watchAppointmentDateTimeValue}
+				/>
 			) : (
 				<>
 					<FormField

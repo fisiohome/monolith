@@ -44,7 +44,7 @@ module Api
       # Unified therapist search by name method
       # Consolidated logic from both preparation services
       def search_therapists_by_name(appointment = nil)
-        search_query = params[:search_query]
+        search_query = params[:search_query]&.strip
         employment_type = params[:employment_type] || "ALL"
 
         return [] if search_query.blank?

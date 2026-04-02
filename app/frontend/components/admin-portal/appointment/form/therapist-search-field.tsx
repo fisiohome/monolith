@@ -1,7 +1,15 @@
 import { useDebounce } from "@uidotdev/usehooks";
-import { ChevronDown, InfoIcon, LoaderIcon, Search, User } from "lucide-react";
+import {
+	ChevronDown,
+	InfoIcon,
+	LoaderIcon,
+	Search,
+	User,
+	X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +28,9 @@ interface TherapistSearchFieldProps {
 	formHooks: {
 		form: UseFormReturn<any>;
 		watchAllOfDayValue: boolean;
-		onSelectTherapist?: (value: { id: string; name: string }) => void;
+		onSelectTherapist?: (
+			value: Partial<{ id: string | number; name: string }> | null,
+		) => void;
 		// Optional properties for reschedule mode
 		appointment?: any;
 		formSelections?: any;
@@ -44,6 +54,7 @@ export const TherapistSearchField = ({
 	appointmentDateTime,
 	fieldPath,
 }: TherapistSearchFieldProps) => {
+	const { t } = useTranslation("appointments-form");
 	const [search, setSearch] = useState("");
 	const [employmentType, setEmploymentType] = useState<
 		"KARPIS" | "FLAT" | "ALL"
@@ -224,39 +235,43 @@ export const TherapistSearchField = ({
 	// Trigger search when debounced term, employment type, or all of day changes
 	useEffect(() => {
 		if (debouncedSearchTerm && debouncedSearchTerm.trim() !== "") {
-			// Validate required fields before searching
+			// Validate appointment date/time (common for all modes)
+			if (!appointmentDateTime) {
+				const message = t(
+					"appt_schedule.therapist_search.select_datetime_first",
+				);
+				console.warn(message);
+				toast.error(message, { id: "therapist-search-datetime" });
+				return;
+			}
+
+			const validDate = getValidDate(appointmentDateTime);
+			if (!validDate) {
+				const message = t("appt_schedule.therapist_search.invalid_datetime");
+				console.warn(message);
+				toast.error(message, { id: "therapist-search-invalid-date" });
+				return;
+			}
+
+			// Validate mode-specific requirements
 			if (mode === "reschedule") {
 				const appointmentId = (formHooks as any).appointment?.id;
 				if (!appointmentId) {
-					const message = "Appointment ID is required for therapist search";
+					const message = t(
+						"appt_schedule.therapist_search.appointment_id_required",
+					);
 					console.warn(message);
-					toast.error(message);
+					toast.error(message, { id: "therapist-search-appointment-id" });
 					return;
 				}
 			} else {
-				// For new appointment and series modes, validate location, service, and date/time
+				// For new appointment and series modes, validate location and service
 				if (!locationId || !serviceId) {
-					const message =
-						"Location and Service are required for therapist search";
+					const message = t(
+						"appt_schedule.therapist_search.location_service_required",
+					);
 					console.warn(message);
-					toast.error(message);
-					return;
-				}
-
-				// Require appointment date/time for search
-				if (!appointmentDateTime) {
-					const message = "Please select appointment date and time first";
-					console.warn(message);
-					toast.error(message);
-					return;
-				}
-
-				const validDate = getValidDate(appointmentDateTime);
-				if (!validDate) {
-					const message =
-						"Invalid appointment date/time. Please select a valid date and time first.";
-					console.warn(message);
-					toast.error(message);
+					toast.error(message, { id: "therapist-search-location-service" });
 					return;
 				}
 			}
@@ -275,6 +290,7 @@ export const TherapistSearchField = ({
 		mode,
 		formHooks,
 		getValidDate,
+		t,
 	]);
 
 	const handleSelectTherapist = (therapist: TherapistOption) => {
@@ -291,16 +307,38 @@ export const TherapistSearchField = ({
 				(formHooks as any).onSelectTherapist(therapist);
 			}
 			return;
-		} else if (mode === "new") {
-			// For new appointment mode, update the form field directly
-			const form = formHooks.form;
-			form.setValue("appointmentScheduling.therapist", therapist, {
-				shouldValidate: true,
-			});
+		} else if (mode === "new" && (formHooks as any)?.onSelectTherapist) {
+			// For new appointment mode, use the onSelectTherapist callback for auto-save
+			(formHooks as any).onSelectTherapist(therapist);
 			return;
 		} else if (mode === "series" && formHooks?.onSelectTherapist) {
 			// For series mode, use the onSelectTherapist callback
 			formHooks.onSelectTherapist(therapist);
+			return;
+		}
+	};
+
+	const handleUnselectTherapist = () => {
+		if (mode === "reschedule") {
+			// Clear form selection state for UI
+			if (formHooks?.setFormSelections) {
+				formHooks.setFormSelections({
+					...formHooks.formSelections,
+					therapist: null,
+				});
+			}
+			// Also clear the actual form field
+			if ((formHooks as any)?.onSelectTherapist) {
+				(formHooks as any).onSelectTherapist(null);
+			}
+			return;
+		} else if (mode === "new" && (formHooks as any)?.onSelectTherapist) {
+			// For new appointment mode, use the onSelectTherapist callback with null
+			(formHooks as any).onSelectTherapist(null);
+			return;
+		} else if (mode === "series" && formHooks?.onSelectTherapist) {
+			// For series mode, pass null to the onSelectTherapist callback
+			formHooks.onSelectTherapist(null);
 			return;
 		}
 	};
@@ -394,23 +432,25 @@ export const TherapistSearchField = ({
 		setSelectedTimeSlotLocal(timeSlot);
 	};
 
+	// Watch therapist field reactively (form.watch is already used at line 100 for gender)
+	// form.getValues() is NOT reactive to form.reset() - therapist won't show after draft load
+	const watchedTherapistValue = formHooks.form.watch(
+		mode === "series" && fieldPath
+			? (`${fieldPath}.therapist` as any)
+			: "appointmentScheduling.therapist",
+	);
+
 	const selectedTherapist = useMemo(() => {
 		if (mode === "reschedule" && formHooks?.formSelections?.therapist) {
 			return formHooks.formSelections.therapist;
 		}
 
-		if (mode === "new") {
-			const form = formHooks.form;
-			return form.getValues("appointmentScheduling.therapist");
-		}
-
-		if (mode === "series" && fieldPath) {
-			const form = formHooks.form;
-			return form.getValues(`${fieldPath}.therapist`);
+		if (mode === "new" || mode === "series") {
+			return watchedTherapistValue;
 		}
 
 		return null;
-	}, [formHooks?.formSelections?.therapist, fieldPath, formHooks.form, mode]);
+	}, [formHooks?.formSelections?.therapist, watchedTherapistValue, mode]);
 
 	return (
 		<div className="col-span-full flex flex-col gap-4">
@@ -419,7 +459,7 @@ export const TherapistSearchField = ({
 				<div className="flex flex-col md:flex-row items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
 					<div>
 						<p className="text-sm font-semibold">Employment Type Filter</p>
-						<p className="text-xs text-muted-foreground">
+						<p className="text-xs text-muted-foreground text-pretty">
 							Filter therapists by employment type (KARPIS or MITRA)
 						</p>
 					</div>
@@ -453,19 +493,20 @@ export const TherapistSearchField = ({
 			</div>
 
 			{/* Info alert for missing required fields */}
-			{(mode === "new" || mode === "series") && (!locationId || !serviceId) && (
-				<div className="rounded-md border border-blue-500/50 px-4 py-3 text-blue-600">
-					<p className="text-sm">
-						<InfoIcon
-							aria-hidden="true"
-							className="-mt-0.5 me-3 inline-flex opacity-60"
-							size={16}
-						/>
-						Please select <strong>Location</strong> and <strong>Service</strong>{" "}
-						first before searching for therapists.
-					</p>
-				</div>
-			)}
+			{(mode === "new" || mode === "series") &&
+				(!locationId || !serviceId || !appointmentDateTime) && (
+					<div className="rounded-md border border-blue-500/50 px-4 py-3 text-blue-600">
+						<p className="text-sm">
+							<InfoIcon
+								aria-hidden="true"
+								className="-mt-0.5 me-3 inline-flex opacity-60"
+							/>
+							{!locationId || !serviceId
+								? t("appt_schedule.therapist_search.location_service_required")
+								: t("appt_schedule.therapist_search.select_datetime_first")}
+						</p>
+					</div>
+				)}
 
 			{/* Selected Therapist Display - shown when no search results */}
 			{selectedTherapist?.name ? (
@@ -502,13 +543,23 @@ export const TherapistSearchField = ({
 								</p>
 							</div>
 
-							<div>
+							<div className="flex items-center gap-2">
 								<Badge
 									variant="outline"
 									className="px-1 text-xs uppercase text-primary border border-primary/50"
 								>
 									Selected
 								</Badge>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									onClick={handleUnselectTherapist}
+									className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+									title="Cancel therapist selection"
+								>
+									<X className="h-3 w-3" />
+								</Button>
 							</div>
 						</div>
 					</div>
@@ -539,8 +590,8 @@ export const TherapistSearchField = ({
 				</Input>
 				{therapists.length > 0 && (
 					<p className="mt-1 text-xs text-muted-foreground/75">
-						Showing {therapists.length} therapist(s) across{" "}
-						{groupedTherapists.length} city/cities
+						Showing {therapists.length} therapists across{" "}
+						{groupedTherapists.length} cities
 					</p>
 				)}
 			</div>
@@ -585,10 +636,13 @@ export const TherapistSearchField = ({
 											<button
 												key={therapist.id}
 												type="button"
+												disabled={!appointmentDateTime}
 												className={cn(
 													"w-full border rounded-lg bg-background border-border transition-all p-2 text-left hover:border-primary",
 													isSelected &&
 														"border-primary/25 bg-primary/5 text-primary",
+													!appointmentDateTime &&
+														"opacity-50 cursor-not-allowed hover:border-border",
 												)}
 												onClick={() => handleSelectTherapist(therapist)}
 											>

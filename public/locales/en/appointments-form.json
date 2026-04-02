@@ -78,6 +78,12 @@
 			"title": "Therapist not found",
 			"description": "There are no therapists available for the selected appointment date and time. Please choose a different date or time."
 		},
+		"therapist_search": {
+			"appointment_id_required": "Appointment ID is required for therapist search",
+			"location_service_required": "Location and Service are required for therapist search",
+			"select_datetime_first": "Please select appointment date and time first",
+			"invalid_datetime": "Invalid appointment date/time. Please select a valid date and time first."
+		},
 		"fields": {
 			"service": {
 				"label": "Service",

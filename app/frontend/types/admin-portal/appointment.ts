@@ -181,7 +181,7 @@ export interface AppointmentPayload {
 		patientMedicalHistory?: string;
 
 		// appointment scheduling
-		appointmentDateTime: Date;
+		appointmentDateTime: Date | null;
 		preferredTherapistGender: (typeof PREFERRED_THERAPIST_GENDER)[number];
 
 		//  additional settings

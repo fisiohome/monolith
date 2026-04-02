@@ -86,7 +86,7 @@ export interface DateTimePickerProps extends ComponentProps<"div"> {
 	max?: Date | null;
 	disabledVisits?: DisabledVisit[];
 	onChangeValue: (...event: any[]) => void;
-	callbackOnChange: () => void;
+	callbackOnChange?: (newValue: Date | null) => void;
 	isAllOfDay?: boolean;
 	autoScroll?: boolean;
 	allowPastTimes?: boolean;
@@ -140,8 +140,9 @@ const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
 		const handleDateSelect = useCallback(
 			(date: Date | undefined) => {
 				onSelectAppointmentDate(date);
-				onChangeValue(date || null);
-				callbackOnChange();
+				const newValue = date || null;
+				onChangeValue(newValue);
+				callbackOnChange?.(newValue);
 			},
 			[onSelectAppointmentDate, onChangeValue, callbackOnChange],
 		);
@@ -150,7 +151,7 @@ const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
 				const date = onSelectAppointmentTime(time);
 				if (date) {
 					onChangeValue(date);
-					callbackOnChange();
+					callbackOnChange?.(date);
 					setTimeGroupType(type);
 				}
 			},
@@ -265,7 +266,7 @@ const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
 					style={{ height: calendarHeight }}
 					className="w-full h-64 gap-4 py-1 md:w-auto"
 				>
-					<div className="grid grid-cols-1 gap-2 md:grid-cols-3 xl:grid-cols-5">
+					<div className="grid grid-cols-1 gap-2 md:grid-cols-3">
 						{UNIQUE_TIME_SLOTS.map((time) => (
 							<TimeSlotButton
 								key={`${time}-unique`}
@@ -279,7 +280,7 @@ const DateTimePicker = forwardRef<HTMLDivElement, DateTimePickerProps>(
 
 					<Separator className="my-4" />
 
-					<div className="grid grid-cols-1 gap-2 md:grid-cols-4 xl:grid-cols-6">
+					<div className="grid grid-cols-1 gap-2 md:grid-cols-3">
 						{basicTimeSlots.map((time) => (
 							<TimeSlotButton
 								key={time}

@@ -486,11 +486,13 @@ export const useReviewForm = () => {
 					{
 						key: "appointment-date-time-1",
 						title: "Appointment Date & Time",
-						value: format(
-							appointmentScheduling.appointmentDateTime,
-							`PPP, ${timeFormatDateFns}`,
-							{ locale, in: tzDate },
-						),
+						value: appointmentScheduling?.appointmentDateTime
+							? format(
+									appointmentScheduling.appointmentDateTime,
+									`PPP, ${timeFormatDateFns}`,
+									{ locale, in: tzDate },
+								)
+							: "N/A",
 					},
 					{
 						key: "assigned-therapist-1",
@@ -691,22 +693,69 @@ export const useAppointmentSchedulingForm = ({
 		setIsLoading((prev) => ({ ...prev, therapists: value }));
 	}, []);
 	const onSelectTherapist = useCallback(
-		(
-			value: NonNullable<
-				AppointmentBookingSchema["appointmentScheduling"]["therapist"]
-			>,
+		async (
+			value: AppointmentBookingSchema["appointmentScheduling"]["therapist"],
 		) => {
 			form.setValue("appointmentScheduling.therapist", value, {
 				shouldValidate: true,
 			});
+
+			// Auto-save draft when therapist is selected
+			if (!USE_DRAFT_DATABASE) {
+				return;
+			}
+
+			try {
+				const values = form.getValues();
+				const admins = values.additionalSettings?.admins || [];
+				const validAdmins = admins.filter(
+					(admin: any) => admin?.id && admin.id !== "0",
+				);
+				const primaryAdmin = validAdmins?.find((admin: any) => admin.isPrimary);
+				const validPrimaryAdmin =
+					primaryAdmin?.id && primaryAdmin.id !== "0"
+						? primaryAdmin
+						: validAdmins?.[0];
+
+				if (validPrimaryAdmin) {
+					const result = await saveDraft({
+						adminPicId: String(validPrimaryAdmin.id),
+						adminIds: validAdmins?.map((a: any) => String(a.id)),
+						primaryAdminId: String(validPrimaryAdmin.id),
+						currentStep: DRAFT_STEPS[1], // appointment_scheduling step
+						formData: {
+							...values,
+							appointmentScheduling: {
+								...values.appointmentScheduling,
+								therapist: value,
+							},
+						},
+						draftId: values.formOptions?.draftId
+							? String(values.formOptions.draftId)
+							: undefined,
+					});
+
+					// Update form with draft ID if a new draft was created
+					if (result?.success && result?.draft?.id) {
+						const currentDraftId = form.getValues("formOptions.draftId");
+						if (!currentDraftId || currentDraftId !== String(result.draft.id)) {
+							form.setValue("formOptions.draftId", String(result.draft.id));
+						}
+					}
+				}
+			} catch (error) {
+				console.error(
+					"Failed to auto-save draft on therapist selection:",
+					error,
+				);
+			}
 		},
-		[form.setValue],
+		[form, saveDraft],
 	);
 	const onResetTherapistFormValue = useCallback(() => {
-		form.resetField("appointmentScheduling.therapist", {
-			defaultValue: DEFAULT_VALUES_THERAPIST,
-		});
-	}, [form.resetField]);
+		// Use setValue instead of resetField for more reliable clearing
+		form.setValue("appointmentScheduling.therapist", DEFAULT_VALUES_THERAPIST);
+	}, [form]);
 	const {
 		onResetIsoline,
 		onResetTherapistOptions,
@@ -946,7 +995,9 @@ export const useAppointmentSchedulingForm = ({
 
 	// * appointment date time
 	const watchSelectedTimeSlotValue = useMemo(() => {
-		return format(watchAppointmentDateTimeValue, "HH:mm");
+		return watchAppointmentDateTimeValue
+			? format(watchAppointmentDateTimeValue, "HH:mm")
+			: undefined;
 	}, [watchAppointmentDateTimeValue]);
 	const onSelectAllOfDay = useCallback(
 		(value: boolean) => {
@@ -958,7 +1009,7 @@ export const useAppointmentSchedulingForm = ({
 			if (value) {
 				form.setValue(
 					"appointmentScheduling.appointmentDateTime",
-					startOfDay(selectedDate, { in: tzDate }),
+					selectedDate ? startOfDay(selectedDate, { in: tzDate }) : null,
 					{ shouldValidate: false },
 				);
 			} else {
@@ -975,7 +1026,7 @@ export const useAppointmentSchedulingForm = ({
 				}
 
 				// Create new date with selected date and rounded time
-				const selectedDateObj = new Date(selectedDate);
+				const selectedDateObj = new Date(selectedDate || new Date());
 				const nextHalfHour = new Date(
 					selectedDateObj.getFullYear(),
 					selectedDateObj.getMonth(),
@@ -1007,18 +1058,62 @@ export const useAppointmentSchedulingForm = ({
 		},
 		[form.getValues, form.setValue],
 	);
-	const dateTimeHooks = {
-		watchSelectedTimeSlotValue,
-		onSelectAllOfDay,
-		onSelectTimeSlot,
-	};
 
+	// Auto-save draft when date/time changes
+	const onDateTimeChange = useCallback(async () => {
+		if (!USE_DRAFT_DATABASE) {
+			return;
+		}
+
+		try {
+			const values = form.getValues();
+			const admins = values.additionalSettings?.admins || [];
+			const validAdmins = admins.filter(
+				(admin: any) => admin?.id && admin.id !== "0",
+			);
+			const primaryAdmin = validAdmins?.find((admin: any) => admin.isPrimary);
+			const validPrimaryAdmin =
+				primaryAdmin?.id && primaryAdmin.id !== "0"
+					? primaryAdmin
+					: validAdmins?.[0];
+
+			if (validPrimaryAdmin) {
+				const result = await saveDraft({
+					adminPicId: String(validPrimaryAdmin.id),
+					adminIds: validAdmins?.map((a: any) => String(a.id)),
+					primaryAdminId: String(validPrimaryAdmin.id),
+					currentStep: DRAFT_STEPS[1], // appointment_scheduling step
+					formData: values,
+					draftId: values.formOptions?.draftId
+						? String(values.formOptions.draftId)
+						: undefined,
+				});
+
+				// Update form with draft ID if a new draft was created
+				if (result?.success && result?.draft?.id) {
+					const currentDraftId = form.getValues("formOptions.draftId");
+					if (!currentDraftId || currentDraftId !== String(result.draft.id)) {
+						form.setValue("formOptions.draftId", String(result.draft.id));
+					}
+				}
+			}
+		} catch (error) {
+			console.error("Failed to auto-save draft on date/time change:", error);
+		}
+	}, [form, saveDraft]);
+
+	// Force rebuild - onDateTimeChange must be included
 	return {
 		...prefGenderHooks,
 		...therapistAvailabilityHooks,
 		...serviceHooks,
 		...packageHooks,
-		...dateTimeHooks,
+		// Date/time hooks
+		watchSelectedTimeSlotValue,
+		onSelectAllOfDay,
+		onSelectTimeSlot,
+		onDateTimeChange, // Auto-save draft on date/time change
+		// Form and watch values
 		form,
 		isLoading,
 		watchAppointmentSchedulingValue,
@@ -1031,8 +1126,8 @@ export const useAppointmentSchedulingForm = ({
  *
  * This hook ensures that:
  * - The form is reset with draft data only once when loaded
- * - Therapist fields have proper default values (they're not saved in storage)
- * - Series visits therapist fields are also properly initialized
+ * - Therapist fields are preserved from draft if they exist
+ * - Series visits therapist fields are also properly preserved
  *
  * @param {UseFormResetProps} props - The hook properties
  */
@@ -1051,33 +1146,13 @@ export const useFormReset = ({
 	/**
 	 * Effect to reset form when draft data is loaded
 	 * - Only runs once per draft load
-	 * Ensures therapist fields have default empty values
-	 * - Handles both single therapist and series visits therapist fields
+	 * - formStorage now includes therapist data (no longer filtered)
 	 */
 	useEffect(() => {
 		// Check if we have form storage, draft is loaded, and we haven't reset yet
 		if (formStorage && draftLoaded && !hasResetForDraft.current) {
-			// Prepare reset data with default therapist values
-			const resetData = {
-				...formStorage,
-				appointmentScheduling: {
-					...formStorage.appointmentScheduling,
-					// Ensure main therapist field has default values
-					therapist: formStorage.appointmentScheduling?.therapist || {
-						id: "",
-						name: "",
-					},
-					// Ensure each series visit has default therapist values
-					seriesVisits:
-						formStorage.appointmentScheduling?.seriesVisits?.map((visit) => ({
-							...visit,
-							therapist: visit.therapist || { id: "", name: "" },
-						})) || [],
-				},
-			};
-
-			// Reset the form with the prepared data
-			form.reset(resetData);
+			// Reset the form with the loaded data (therapist is now included)
+			form.reset(formStorage);
 
 			// Mark that we've reset for this draft
 			hasResetForDraft.current = true;

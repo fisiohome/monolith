@@ -1441,48 +1441,50 @@ export const useTherapistAvailability = ({
 		],
 	);
 
-	const resetDependencyKey = useMemo(
-		() =>
-			JSON.stringify({
-				serviceIdValue: serviceIdValue ?? null,
-				preferredTherapistGenderValue: preferredTherapistGenderValue ?? null,
-				appointmentDateTimeValue:
-					appointmentDateTImeValue instanceof Date
-						? appointmentDateTImeValue.getTime()
-						: (appointmentDateTImeValue ?? null),
-				isAllOfDayValue,
-			}),
-		[
-			serviceIdValue,
-			preferredTherapistGenderValue,
-			appointmentDateTImeValue,
-			isAllOfDayValue,
-		],
-	);
-	const previousResetDependencyKeyRef = useRef<string | null>(null);
+	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender changes
+	// * or when date becomes null (unscheduled)
+	const previousValuesRef = useRef<{
+		serviceId: string | number | null;
+		gender: string | null;
+		date: Date | null | undefined;
+	}>({
+		serviceId: serviceIdValue ?? null,
+		gender: preferredTherapistGenderValue ?? null,
+		date: appointmentDateTImeValue,
+	});
 
-	// * side effect for reset the therapist selected and isoline map while service, therapist preferred gender, and appointment date changes
 	useEffect(() => {
-		if (previousResetDependencyKeyRef.current === resetDependencyKey) {
-			return;
-		}
+		const prev = previousValuesRef.current;
 
-		previousResetDependencyKeyRef.current = resetDependencyKey;
+		// Check what actually changed
+		const serviceChanged = prev.serviceId !== (serviceIdValue ?? null);
+		const genderChanged =
+			prev.gender !== (preferredTherapistGenderValue ?? null);
+		const dateWasCleared =
+			prev.date !== null &&
+			prev.date !== undefined &&
+			appointmentDateTImeValue === null;
 
-		if (
-			(serviceIdValue ||
-				appointmentDateTImeValue ||
-				preferredTherapistGenderValue) &&
-			!isAllOfDayValue
-		) {
+		// Update previous values
+		previousValuesRef.current = {
+			serviceId: serviceIdValue ?? null,
+			gender: preferredTherapistGenderValue ?? null,
+			date: appointmentDateTImeValue,
+		};
+
+		// Only reset when:
+		// 1. Service changed
+		// 2. OR preferred gender changed
+		// 3. OR date was cleared (became null/unscheduled)
+		const shouldReset =
+			(serviceChanged || genderChanged || dateWasCleared) && !isAllOfDayValue;
+
+		if (shouldReset) {
 			onResetTherapistFormValue();
 			onResetTherapistOptions();
 			onResetIsoline();
 		}
-
-		return () => {};
 	}, [
-		resetDependencyKey,
 		serviceIdValue,
 		appointmentDateTImeValue,
 		preferredTherapistGenderValue,

@@ -78,6 +78,12 @@
 			"title": "Terapis tidak ditemukan",
 			"description": "Tidak ada terapis yang tersedia untuk tanggal dan waktu janji temu yang dipilih. Silakan pilih tanggal atau waktu yang berbeda."
 		},
+		"therapist_search": {
+			"appointment_id_required": "ID Janji Temu diperlukan untuk pencarian terapis",
+			"location_service_required": "Lokasi dan Layanan diperlukan untuk pencarian terapis",
+			"select_datetime_first": "Silakan pilih tanggal dan waktu janji temu terlebih dahulu",
+			"invalid_datetime": "Tanggal/waktu janji temu tidak valid. Silakan pilih tanggal dan waktu yang valid terlebih dahulu."
+		},
 		"fields": {
 			"service": {
 				"label": "Layanan Kesehatan",

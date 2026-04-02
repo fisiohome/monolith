@@ -748,7 +748,7 @@ const TherapistSelection = memo(
 					<div className="flex flex-col md:flex-row items-start justify-between gap-4 p-3 border rounded-md border-border bg-sidebar">
 						<div>
 							<p className="text-sm font-semibold">Employment Type Filter</p>
-							<p className="text-xs text-muted-foreground">
+							<p className="text-xs text-muted-foreground text-pretty">
 								Filter therapists by employment type (KARPIS or MITRA)
 							</p>
 						</div>

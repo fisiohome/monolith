@@ -187,79 +187,13 @@ export function FormProvider({ children }: FormProviderProps) {
 			}),
 		[globalProps.auth.currentUser, globalProps.appointmentReference, formMode],
 	);
-	const [formStorage, setFormStorageInternal] = useSessionStorage<
+	// Store form data in session storage - therapist data is now included
+	// since we use database drafts for persistence
+	const [formStorage, setFormStorage] = useSessionStorage<
 		FormProviderState["formStorage"]
 	>(SESSION_STORAGE_FORM_KEY, {
 		...formDefaultvalues,
 	});
-
-	// Wrapper to exclude therapist from storage
-	const setFormStorage = useCallback(
-		(value: SetStateAction<FormStorage>) => {
-			// Handle function updates
-			if (typeof value === "function") {
-				setFormStorageInternal((prev) => {
-					const newValue = value(prev);
-					if (!newValue) return newValue;
-
-					// Create a copy without therapist data
-					const { appointmentScheduling, ...rest } = newValue;
-					const {
-						therapist: _therapist,
-						seriesVisits,
-						...schedulingRest
-					} = appointmentScheduling || {};
-
-					// Also filter out therapists from series visits
-					const filteredSeriesVisits = seriesVisits?.map((visit) => {
-						const { therapist: _visitTherapist, ...visitRest } = visit;
-						return visitRest;
-					});
-
-					const filteredValue = {
-						...rest,
-						appointmentScheduling: {
-							...schedulingRest,
-							seriesVisits: filteredSeriesVisits,
-						},
-					};
-
-					return filteredValue as FormStorage;
-				});
-				return;
-			}
-
-			// Handle direct value updates
-			if (!value) {
-				setFormStorageInternal(value);
-				return;
-			}
-			// Create a copy without therapist data
-			const { appointmentScheduling, ...rest } = value;
-			const {
-				therapist: _therapist,
-				seriesVisits,
-				...schedulingRest
-			} = appointmentScheduling || {};
-
-			// Also filter out therapists from series visits
-			const filteredSeriesVisits = seriesVisits?.map((visit) => {
-				const { therapist: _visitTherapist, ...visitRest } = visit;
-				return visitRest;
-			});
-
-			const filteredValue = {
-				...rest,
-				appointmentScheduling: {
-					...schedulingRest,
-					seriesVisits: filteredSeriesVisits,
-				},
-			};
-
-			setFormStorageInternal(filteredValue as FormStorage);
-		},
-		[setFormStorageInternal],
-	);
 
 	const [formSelections, setFormSelections] = useSessionStorage<
 		FormProviderState["formSelections"]
@@ -602,6 +536,7 @@ export function AppointmentSchedulingForm() {
 	const useNewTherapistSelection = getUseNewTherapistSelection(props);
 
 	// For scheduling-first approach, location selection will be added to the form
+	const schedulingFormResult = useAppointmentSchedulingForm({ setFormStorage });
 	const {
 		form,
 		isLoading,
@@ -610,8 +545,9 @@ export function AppointmentSchedulingForm() {
 		watchSelectedTimeSlotValue,
 		onSelectAllOfDay: _onSelectAllOfDay,
 		onSelectTimeSlot,
+		onDateTimeChange,
 		...restSchedulingHooks
-	} = useAppointmentSchedulingForm({ setFormStorage });
+	} = schedulingFormResult;
 
 	// Get patient details separately to access location
 	const watchPatientDetailsValue = useWatch({
@@ -656,7 +592,7 @@ export function AppointmentSchedulingForm() {
 			? "Unscheduled"
 			: watchAppointmentSchedulingValue?.therapist?.id
 				? "Scheduled"
-				: "Pending Therapist Assignment";
+				: "Pending Therapist";
 
 		return { className, label };
 	}, [watchAppointmentSchedulingValue]);
@@ -1072,70 +1008,91 @@ export function AppointmentSchedulingForm() {
 				</>
 			)}
 
-			<Accordion
-				collapsible
-				type="single"
-				value={isOpenAccordion}
-				onValueChange={setIsOpenAccordion}
-				className="w-full col-span-full -mb-2"
-			>
-				<AccordionItem
-					value="first-visit"
-					className="bg-sidebar text-muted-foreground border border-border rounded-md has-focus-visible:border-ring has-focus-visible:ring-ring/50 px-4 py-1 outline-none last:border-b has-focus-visible:ring-[3px]"
-				>
-					<AccordionPrimitive.Header className="flex">
-						<AccordionPrimitive.Trigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between rounded-md py-2 text-left text-[15px] leading-6 font-semibold transition-all outline-none focus-visible:ring-[3px] [&[data-state=open]>svg]:rotate-180">
-							<div className="flex items-center gap-3">
-								<span
-									className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-primary/75 text-primary-foreground"
-									aria-hidden="true"
-								>
-									1
-								</span>
-								<span className="flex flex-col space-y-1">
-									<span>Visit 1</span>
-									{watchAppointmentSchedulingValue?.appointmentDateTime ? (
-										<span className="text-sm font-normal">
-											{format(
-												watchAppointmentSchedulingValue.appointmentDateTime,
-												"MMM d, yyyy h:mm a",
-												{ locale, in: tzDate },
-											)}
-										</span>
-									) : (
-										<span className="text-sm font-normal">Unscheduled</span>
-									)}
-								</span>
-							</div>
+			{watchAppointmentSchedulingValue?.service?.id &&
+				watchAppointmentSchedulingValue?.package?.id && (
+					<div className="col-span-full grid grid-cols-1 gap-4 xl:grid-cols-2">
+						<Accordion
+							collapsible
+							type="single"
+							value={isOpenAccordion}
+							onValueChange={setIsOpenAccordion}
+							className="w-full -mb-2"
+						>
+							<AccordionItem
+								value="first-visit"
+								className="bg-sidebar text-muted-foreground border border-border rounded-md has-focus-visible:border-ring has-focus-visible:ring-ring/50 px-4 py-1 outline-none last:border-b has-focus-visible:ring-[3px]"
+							>
+								<AccordionPrimitive.Header className="flex">
+									<AccordionPrimitive.Trigger className="focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between rounded-md py-2 text-left text-[15px] leading-6 font-semibold transition-all outline-none focus-visible:ring-[3px] [&[data-state=open]>svg]:rotate-180">
+										<div className="flex gap-3">
+											<span
+												className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-primary/75 text-primary-foreground"
+												aria-hidden="true"
+											>
+												1
+											</span>
+											<span className="flex flex-col">
+												<span>Visit 1</span>
 
-							<div className="flex items-center gap-3">
-								<Badge
-									variant="outline"
-									className={cn("uppercase", getStatusBadge.className)}
-								>
-									{getStatusBadge.label}
-								</Badge>
+												{watchAppointmentSchedulingValue?.appointmentDateTime ? (
+													<span className="text-sm font-normal">
+														{format(
+															watchAppointmentSchedulingValue.appointmentDateTime,
+															locale.code === "id"
+																? "d MMMM yyyy, HH.mm"
+																: "MMMM d, yyyy, h:mm a",
+															{ locale, in: tzDate },
+														)}
+													</span>
+												) : (
+													<span className="text-sm font-normal">
+														Unscheduled
+													</span>
+												)}
 
-								<ChevronDownIcon
-									size={16}
-									className="pointer-events-none shrink-0 opacity-60 transition-transform duration-200"
-									aria-hidden="true"
-								/>
-							</div>
-						</AccordionPrimitive.Trigger>
-					</AccordionPrimitive.Header>
-					<AccordionContent className="text-muted-foreground pb-2">
-						<div className="p-4 px-0 pb-0 border-t bg-muted/5 grid grid-cols-1 md:grid-cols-2 gap-4">
-							<FormField
-								control={form.control}
-								name="appointmentScheduling.appointmentDateTime"
-								render={({ field }) => (
-									<FormItem className="col-span-full">
-										<FormLabel className="flex items-center justify-between">
-											<span>{tasf("appt_date.label")}</span>
+												{watchAppointmentSchedulingValue?.therapist?.name ? (
+													<span className="text-xs text-muted-foreground font-normal uppercase">
+														{watchAppointmentSchedulingValue.therapist.name}
+													</span>
+												) : (
+													<span className="text-xs text-muted-foreground font-normal uppercase">
+														{locale.code === "id" ? "T/A" : "N/A"}
+													</span>
+												)}
+											</span>
+										</div>
 
-											{/* ? because we dont use the therapist availability logic we disabled this */}
-											{/* <FormField
+										<div className="flex items-center gap-3">
+											<Badge
+												variant="outline"
+												className={cn(
+													getStatusBadge.className,
+													"uppercase !text-[10px] !px-1",
+												)}
+											>
+												{getStatusBadge.label}
+											</Badge>
+
+											<ChevronDownIcon
+												size={16}
+												className="pointer-events-none shrink-0 opacity-60 transition-transform duration-200"
+												aria-hidden="true"
+											/>
+										</div>
+									</AccordionPrimitive.Trigger>
+								</AccordionPrimitive.Header>
+								<AccordionContent className="text-muted-foreground pb-2">
+									<div className="p-4 px-0 pb-0 border-t bg-muted/5 grid grid-cols-1 md:grid-cols-2 gap-4">
+										<FormField
+											control={form.control}
+											name="appointmentScheduling.appointmentDateTime"
+											render={({ field }) => (
+												<FormItem className="col-span-full">
+													<FormLabel className="flex items-center justify-between">
+														<span>{tasf("appt_date.label")}</span>
+
+														{/* ? because we dont use the therapist availability logic we disabled this */}
+														{/* <FormField
 												control={form.control}
 												name="formOptions.findTherapistsAllOfDay"
 												render={({ field }) => (
@@ -1157,118 +1114,128 @@ export function AppointmentSchedulingForm() {
 													</FormItem>
 												)}
 											/> */}
-										</FormLabel>
+													</FormLabel>
 
-										<FormControl>
-											<DateTimePicker
-												value={field.value}
-												onChangeValue={field.onChange}
-												isAllOfDay={!!watchAllOfDayValue}
-												autoScroll={false}
-												callbackOnChange={() => {
-													// reset all therapist and isoline maps state
-													onResetAllTherapistState();
+													<FormControl>
+														<DateTimePicker
+															value={field.value}
+															onChangeValue={field.onChange}
+															isAllOfDay={!!watchAllOfDayValue}
+															autoScroll={false}
+															callbackOnChange={async () => {
+																// Therapist reset is now handled by useEffect in useTherapistAvailability
+																// when date becomes null - no manual reset needed here
+																// auto-save draft when date/time changes
+																await onDateTimeChange();
+															}}
+														/>
+													</FormControl>
+
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+
+										{useNewTherapistSelection ? (
+											<TherapistSearchField
+												formHooks={{
+													form,
+													watchAllOfDayValue: watchAllOfDayValue ?? false,
+													onSelectTherapist,
+													setFormSelections,
 												}}
+												mode="new"
+												locationId={watchPatientDetailsValue?.location?.id?.toString()}
+												serviceId={watchAppointmentSchedulingValue?.service?.id?.toString()}
+												appointmentDateTime={
+													watchAppointmentSchedulingValue?.appointmentDateTime
+												}
 											/>
-										</FormControl>
+										) : (
+											<>
+												<FormField
+													control={form.control}
+													name="appointmentScheduling.therapist.name"
+													render={({ field }) => (
+														<FormItem className="col-span-full">
+															<FormLabel>{tasf("therapist.label")}</FormLabel>
 
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
+															<FormControl>
+																<TherapistSelection
+																	items={therapistsOptions.feasible}
+																	config={{
+																		isLoading:
+																			isLoading.therapists || isMapLoading,
+																		selectedTherapistName: field.value,
+																		selectedTherapist:
+																			formSelections?.therapist || undefined,
+																		isAllOfDay: !!watchAllOfDayValue,
+																		selectedTimeSlot:
+																			watchSelectedTimeSlotValue,
+																	}}
+																	find={{
+																		isDisabled:
+																			!watchAppointmentSchedulingValue.appointmentDateTime,
+																		handler: async (options?: {
+																			bypassConstraints?: boolean;
+																			employmentType?:
+																				| "KARPIS"
+																				| "FLAT"
+																				| "ALL";
+																		}) => {
+																			const isError = onCheckServiceError();
+																			if (isError) return;
 
-							{useNewTherapistSelection ? (
-								<TherapistSearchField
-									formHooks={{
-										form,
-										watchAllOfDayValue: watchAllOfDayValue ?? false,
-										setFormSelections,
-									}}
-									mode="new"
-									locationId={watchPatientDetailsValue?.location?.id?.toString()}
-									serviceId={watchAppointmentSchedulingValue?.service?.id?.toString()}
-									appointmentDateTime={
-										watchAppointmentSchedulingValue?.appointmentDateTime
-									}
-								/>
-							) : (
-								<>
-									<FormField
-										control={form.control}
-										name="appointmentScheduling.therapist.name"
-										render={({ field }) => (
-											<FormItem className="col-span-full">
-												<FormLabel>{tasf("therapist.label")}</FormLabel>
+																			onFindTherapists(options);
+																		},
+																	}}
+																	unfeasibleTherapists={feasibilityReport}
+																	onSelectTherapist={(value) =>
+																		onSelectTherapist(value)
+																	}
+																	onPersist={(value) => {
+																		setFormSelections({
+																			...formSelections,
+																			therapist: value,
+																		});
+																	}}
+																	onSelectTimeSlot={(value) =>
+																		onSelectTimeSlot(value)
+																	}
+																/>
+															</FormControl>
+														</FormItem>
+													)}
+												/>
 
-												<FormControl>
-													<TherapistSelection
-														items={therapistsOptions.feasible}
-														config={{
-															isLoading: isLoading.therapists || isMapLoading,
-															selectedTherapistName: field.value,
-															selectedTherapist:
-																formSelections?.therapist || undefined,
-															isAllOfDay: !!watchAllOfDayValue,
-															selectedTimeSlot: watchSelectedTimeSlotValue,
-														}}
-														find={{
-															isDisabled:
-																!watchAppointmentSchedulingValue.appointmentDateTime,
-															handler: async (options?: {
-																bypassConstraints?: boolean;
-																employmentType?: "KARPIS" | "FLAT" | "ALL";
-															}) => {
-																const isError = onCheckServiceError();
-																if (isError) return;
-
-																onFindTherapists(options);
-															},
-														}}
-														unfeasibleTherapists={feasibilityReport}
-														onSelectTherapist={(value) =>
-															onSelectTherapist(value)
-														}
-														onPersist={(value) => {
-															setFormSelections({
-																...formSelections,
-																therapist: value,
-															});
-														}}
-														onSelectTimeSlot={(value) =>
-															onSelectTimeSlot(value)
-														}
-													/>
-												</FormControl>
-											</FormItem>
+												<HereMap
+													ref={mapRef}
+													coordinate={coordinate}
+													address={{ ...mapAddress }}
+													options={{ disabledEvent: false }}
+													className="col-span-full"
+												/>
+											</>
 										)}
-									/>
+									</div>
 
-									<HereMap
-										ref={mapRef}
-										coordinate={coordinate}
-										address={{ ...mapAddress }}
-										options={{ disabledEvent: false }}
-										className="col-span-full"
-									/>
-								</>
-							)}
-						</div>
+									<div className="mt-4 flex items-center gap-2">
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={onCloseAccordionItem}
+										>
+											Close
+										</Button>
+									</div>
+								</AccordionContent>
+							</AccordionItem>
+						</Accordion>
 
-						<div className="mt-4 flex items-center gap-2">
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								onClick={onCloseAccordionItem}
-							>
-								Close
-							</Button>
-						</div>
-					</AccordionContent>
-				</AccordionItem>
-			</Accordion>
-
-			<SeriesScheduler />
+						<SeriesScheduler />
+					</div>
+				)}
 		</FormStepItemContainer>
 	);
 }

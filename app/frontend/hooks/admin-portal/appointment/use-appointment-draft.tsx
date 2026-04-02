@@ -175,6 +175,10 @@ export const useAppointmentDraft = ({
 				if (data.success) {
 					setCurrentDraft(data.draft);
 
+					// Call the success callback FIRST so originalDraftData is set before useFormReset runs
+					// This is important because setDraftLoaded triggers useFormReset which needs originalDraftData
+					onDraftLoaded?.(data.form_data);
+
 					// If loading from URL, include draftId in form data and update states
 					if (setFormStorage && draftIdFromUrl) {
 						const formDataWithDraftId = {
@@ -188,9 +192,6 @@ export const useAppointmentDraft = ({
 						setDraftLoaded?.(true);
 						setInternalDraftLoaded(true);
 					}
-
-					// Call the success callback
-					onDraftLoaded?.(data.form_data);
 
 					return {
 						success: true,

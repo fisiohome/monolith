@@ -245,12 +245,11 @@ export const useRescheduleFields = () => {
 		setIsLoading((prev) => ({ ...prev, therapists: value }));
 	}, []);
 	const onResetTherapistFormValue = useCallback(() => {
-		form.resetField("therapist", {
-			defaultValue: DEFAULT_VALUES_THERAPIST,
-		});
-	}, [form.resetField]);
+		// Use setValue instead of resetField for more reliable clearing
+		form.setValue("therapist", DEFAULT_VALUES_THERAPIST);
+	}, [form.setValue]);
 	const onSelectTherapist = useCallback(
-		(value: NonNullable<AppointmentRescheduleSchema["therapist"]>) => {
+		(value: Partial<{ id: string | number; name: string }> | null) => {
 			form.setValue("therapist", value, {
 				shouldValidate: true,
 			});
@@ -283,7 +282,14 @@ export const useRescheduleFields = () => {
 		onResetTherapistFormValue();
 		onResetTherapistOptions();
 		onResetIsoline();
-	}, [onResetTherapistFormValue, onResetTherapistOptions, onResetIsoline]);
+		// Also reset formSelections for reschedule mode
+		setFormSelections({ therapist: null });
+	}, [
+		onResetTherapistFormValue,
+		onResetTherapistOptions,
+		onResetIsoline,
+		setFormSelections,
+	]);
 	const therapistAvailabilityHooks = {
 		...therapistAndIsolineValues,
 		coordinate,
