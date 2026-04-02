@@ -441,8 +441,13 @@ export const TherapistSearchField = ({
 	);
 
 	const selectedTherapist = useMemo(() => {
-		if (mode === "reschedule" && formHooks?.formSelections?.therapist) {
-			return formHooks.formSelections.therapist;
+		if (mode === "reschedule") {
+			// For reschedule mode, prioritize formSelections, fallback to appointment.therapist
+			return (
+				(formHooks as any)?.appointment?.therapist ||
+				(formHooks as any)?.formSelections?.therapist ||
+				null
+			);
 		}
 
 		if (mode === "new" || mode === "series") {
@@ -450,7 +455,7 @@ export const TherapistSearchField = ({
 		}
 
 		return null;
-	}, [formHooks?.formSelections?.therapist, watchedTherapistValue, mode]);
+	}, [formHooks, watchedTherapistValue, mode]);
 
 	return (
 		<div className="col-span-full flex flex-col gap-4">
