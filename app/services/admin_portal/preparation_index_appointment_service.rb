@@ -125,7 +125,7 @@ module AdminPortal
 
     # helper function to get the sort by and sort order by params
     def get_sort_params
-      default_sort = "newest"
+      default_sort = (@params[:status] == "unschedule") ? "newest" : "upcoming_visit"
       mapping = SORT_MAPPINGS[@params[:sort]] || SORT_MAPPINGS[default_sort]
       sort_by = mapping[:sort_by]
       sort_order = mapping[:sort_order]
