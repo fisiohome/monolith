@@ -515,10 +515,12 @@ const AppointmentDrafts = () => {
 				{},
 				{
 					preserveScroll: true,
+					preserveState: true,
+					replace: true,
 					only: ["adminPortal", "flash", "errors", "drafts"],
 				},
 			);
-		}, 300),
+		}, 150),
 		[],
 	);
 
