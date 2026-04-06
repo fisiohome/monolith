@@ -964,7 +964,8 @@ export const useAppointmentSchedulingForm = ({
 					(service) =>
 						String(service.id) === watchAppointmentSchedulingValue?.service?.id,
 				)
-				?.flatMap((service) => service.packages),
+				?.flatMap((service) => service.packages)
+				?.filter((pkg) => pkg.active),
 		[servicesOption, watchAppointmentSchedulingValue?.service?.id],
 	);
 	const onSelectPackage = useCallback(
