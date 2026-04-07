@@ -1,6 +1,15 @@
 development: {}
-staging: {}
+staging:
+  auto_expire_drafts:
+    class: "AutoExpireDraftsJob"
+    schedule: at 1am every day
+  cleanup_expired_drafts:
+    class: "CleanupExpiredDraftsJob"
+    schedule: at 1am every day
 production:
+  auto_expire_drafts:
+    class: "AutoExpireDraftsJob"
+    schedule: at 1am every day
   cleanup_expired_drafts:
     class: "CleanupExpiredDraftsJob"
     schedule: at 1am every day

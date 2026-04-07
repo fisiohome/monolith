@@ -21,7 +21,7 @@ class AppointmentDraft < ApplicationRecord
   scope :expired_drafts, -> { where(status: :expired) }
   scope :for_admin_pic, ->(admin_id) { where(admin_pic_id: admin_id) }
   scope :created_by, ->(admin_id) { where(created_by_admin_id: admin_id) }
-  scope :cleanup_eligible, -> { expired.where("created_at < ?", 1.week.ago) }
+  scope :cleanup_eligible, -> { expired.where("expires_at < ?", 3.days.ago) }
 
   # Callbacks
   before_create :set_expires_at
@@ -125,6 +125,6 @@ class AppointmentDraft < ApplicationRecord
   private
 
   def set_expires_at
-    self.expires_at = 7.days.from_now
+    self.expires_at = 14.days.from_now
   end
 end
