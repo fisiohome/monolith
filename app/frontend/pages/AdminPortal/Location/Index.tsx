@@ -1,6 +1,6 @@
 import { Head, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, Table as TableTanstack } from "@tanstack/react-table";
-import { Ellipsis, LoaderIcon, PlusCircle, RefreshCcw, X } from "lucide-react";
+import { LoaderIcon, RefreshCcw, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import ToolbarTable from "@/components/admin-portal/location/data-table-toolbar";
@@ -17,15 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useMasterDataSync } from "@/hooks/admin-portal/use-master-data-sync";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -80,38 +71,42 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 			syncType: "locations",
 		},
 	);
-	const routeTo = {
-		newLocations: () => {
-			router.get(
-				pageURL,
-				{ new: "location" },
-				{
-					only: ["selectedLocations", "flash", "adminPortal"],
-					preserveScroll: true,
-				},
-			);
-		},
-		editLocation: (ids: number[]) => {
-			router.get(
-				pageURL,
-				{ edit: ids.join(",") },
-				{
-					only: ["selectedLocations", "flash", "adminPortal"],
-					preserveScroll: true,
-				},
-			);
-		},
-		deleteLocation: (ids: number[]) => {
-			router.get(
-				pageURL,
-				{ delete: ids.join(",") },
-				{
-					only: ["selectedLocations", "flash", "adminPortal"],
-					preserveScroll: true,
-				},
-			);
-		},
-	};
+
+	// * We don’t need location management because the location must be written with absolute precision and should refer to:
+	// * Country/State/City API: https://api.countrystatecity.in/play (uppercase values)
+	// * Indonesian API: https://api.cahyadsn.com/ for Indonesia-specific data
+	// const routeTo = {
+	// 	newLocations: () => {
+	// 		router.get(
+	// 			pageURL,
+	// 			{ new: "location" },
+	// 			{
+	// 				only: ["selectedLocations", "flash", "adminPortal"],
+	// 				preserveScroll: true,
+	// 			},
+	// 		);
+	// 	},
+	// 	editLocation: (ids: number[]) => {
+	// 		router.get(
+	// 			pageURL,
+	// 			{ edit: ids.join(",") },
+	// 			{
+	// 				only: ["selectedLocations", "flash", "adminPortal"],
+	// 				preserveScroll: true,
+	// 			},
+	// 		);
+	// 	},
+	// 	deleteLocation: (ids: number[]) => {
+	// 		router.get(
+	// 			pageURL,
+	// 			{ delete: ids.join(",") },
+	// 			{
+	// 				only: ["selectedLocations", "flash", "adminPortal"],
+	// 				preserveScroll: true,
+	// 			},
+	// 		);
+	// 	},
+	// };
 	const columns = useMemo<
 		ColumnDef<PageProps["locations"]["data"][number]>[]
 	>(() => {
@@ -173,53 +168,54 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 			});
 		}
 
-		items.push({
-			id: "actions",
-			cell: ({ row }) => {
-				if (!globalProps.auth.currentUser?.["isSuperAdmin?"]) return;
-
-				return (
-					<div className="flex items-center justify-end space-x-2">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="outline" size="icon">
-									<Ellipsis />
-								</Button>
-							</DropdownMenuTrigger>
-
-							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>{tl("button.actions")}</DropdownMenuLabel>
-								<DropdownMenuSeparator />
-
-								<DropdownMenuGroup>
-									<DropdownMenuItem
-										onSelect={() => routeTo.editLocation([row.original.id])}
-									>
-										{tl("button.edit")}
-									</DropdownMenuItem>
-								</DropdownMenuGroup>
-
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									onSelect={() => routeTo.deleteLocation([row.original.id])}
-								>
-									{tl("button.delete")}
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				);
-			},
-		});
+		// * We don’t need location management because the location must be written with absolute precision and should refer to:
+		// * Country/State/City API: https://api.countrystatecity.in/play (uppercase values)
+		// * Indonesian API: https://api.cahyadsn.com/ for Indonesia-specific data
+		// 		items.push({
+		// 			id: "actions",
+		// 			cell: ({ row }) => {
+		// 				if (
+		// 					!globalProps.auth.currentUser?.["isSuperAdmin?"] &&
+		// 					!globalProps.auth.currentUser?.["isAdminSupervisor?"]
+		// 				)
+		// 					return;
+		//
+		// 				return (
+		// 					<div className="flex items-center justify-end space-x-2">
+		// 						<DropdownMenu>
+		// 							<DropdownMenuTrigger asChild>
+		// 								<Button variant="outline" size="icon">
+		// 									<Ellipsis />
+		// 								</Button>
+		// 							</DropdownMenuTrigger>
+		//
+		// 							<DropdownMenuContent align="end">
+		// 								<DropdownMenuLabel>{tl("button.actions")}</DropdownMenuLabel>
+		// 								<DropdownMenuSeparator />
+		//
+		// 								<DropdownMenuGroup>
+		// 									<DropdownMenuItem
+		// 										onSelect={() => routeTo.editLocation([row.original.id])}
+		// 									>
+		// 										{tl("button.edit")}
+		// 									</DropdownMenuItem>
+		// 								</DropdownMenuGroup>
+		//
+		// 								<DropdownMenuSeparator />
+		// 								<DropdownMenuItem
+		// 									onSelect={() => routeTo.deleteLocation([row.original.id])}
+		// 								>
+		// 									{tl("button.delete")}
+		// 								</DropdownMenuItem>
+		// 							</DropdownMenuContent>
+		// 						</DropdownMenu>
+		// 					</div>
+		// 				);
+		// 			},
+		// 		});
 
 		return items;
-	}, [
-		globalProps.auth.currentUser,
-		isMobile,
-		routeTo.editLocation,
-		routeTo.deleteLocation,
-		tl,
-	]);
+	}, [isMobile, tl]);
 
 	// for add location
 	const formDialogMode = useMemo(() => {
@@ -362,7 +358,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 								)}
 							</Button>
 
-							<Button
+							{/* <Button
 								onClick={(event) => {
 									event.preventDefault();
 									routeTo.newLocations();
@@ -370,7 +366,7 @@ export default function Index({ locations, selectedLocations }: PageProps) {
 							>
 								<PlusCircle />
 								{tl("button.add")}
-							</Button>
+							</Button> */}
 						</div>
 					)}
 				</div>

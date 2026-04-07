@@ -464,7 +464,11 @@ export default function Index({ services, selectedService }: PageProps) {
 		{
 			id: "actions",
 			cell: ({ row }) => {
-				if (!globalProps.auth.currentUser?.["isSuperAdmin?"]) return;
+				if (
+					!globalProps.auth.currentUser?.["isSuperAdmin?"] &&
+					!globalProps?.auth?.currentUser?.["isAdminSupervisor?"]
+				)
+					return;
 
 				return (
 					<div className="flex items-center justify-end space-x-2">
