@@ -5,6 +5,7 @@ export type Package = {
 	serviceId: number;
 	name: string;
 	active: boolean;
+	isPublic: boolean;
 	currency: string;
 	numberOfVisit: number;
 	pricePerVisit: string;

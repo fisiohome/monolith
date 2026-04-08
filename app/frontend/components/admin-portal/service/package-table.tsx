@@ -32,6 +32,7 @@ export default function PackageTable({
 				<TableRow>
 					<TableHead>Package</TableHead>
 					<TableHead>Status</TableHead>
+					<TableHead>Visibility</TableHead>
 					<TableHead>Created At</TableHead>
 					<TableHead className="text-right">Discount</TableHead>
 					<TableHead className="text-right">Price/Visit</TableHead>
@@ -61,6 +62,13 @@ export default function PackageTable({
 								</DotBadgeWithLabel>
 							</TableCell>
 							<TableCell>
+								<DotBadgeWithLabel
+									variant={packageItem.isPublic ? "default" : "secondary"}
+								>
+									<span>{packageItem.isPublic ? "Public" : "Private"}</span>
+								</DotBadgeWithLabel>
+							</TableCell>
+							<TableCell>
 								{format(packageItem.createdAt, "PP", { locale, in: tzDate })}
 							</TableCell>
 							<TableCell className="text-right">
@@ -85,7 +93,7 @@ export default function PackageTable({
 
 			<TableFooter>
 				<TableRow>
-					<TableCell colSpan={3}>Total</TableCell>
+					<TableCell colSpan={4}>Total</TableCell>
 					<TableCell colSpan={3} className="text-right">
 						<div className="flex flex-col space-y-0.5">
 							{totalPrices.map((price) => (

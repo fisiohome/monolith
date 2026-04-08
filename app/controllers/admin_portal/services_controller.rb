@@ -272,7 +272,7 @@ module AdminPortal
       params.require(:service).permit(
         :name, :description, :code, :active,
         locations: [:id, :city, :active],
-        packages: [:id, :active, :name, :currency, :number_of_visit, :price_per_visit, :fee_per_visit, :discount]
+        packages: [:id, :active, :is_public, :name, :currency, :number_of_visit, :price_per_visit, :fee_per_visit, :discount]
       )
     end
   end

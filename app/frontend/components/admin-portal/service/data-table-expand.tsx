@@ -103,6 +103,23 @@ const ExpandSubTable = memo(function Component({ row }: ExpandSubTableProps) {
 						totalPrices={totalPrices}
 						className="rounded-lg shadow bg-background"
 					/>
+
+					<div className="text-xs text-muted-foreground space-y-1 mt-3">
+						<div className="flex items-center space-x-2">
+							<div className="w-2 h-2 rounded-full bg-primary"></div>
+							<span>
+								<strong>Public:</strong> Package is visible to customers on the
+								booking interface and can be selected for appointments.
+							</span>
+						</div>
+						<div className="flex items-center space-x-2">
+							<div className="w-2 h-2 rounded-full bg-secondary"></div>
+							<span>
+								<strong>Private:</strong> Package is hidden from customers and
+								only available for internal admin use or special arrangements.
+							</span>
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 

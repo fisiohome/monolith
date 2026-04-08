@@ -37,6 +37,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	MultiSelector,
 	MultiSelectorContent,
@@ -54,6 +55,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	Tooltip,
@@ -117,6 +119,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 			z.object({
 				id: z.union([z.string(), z.number()]).optional(),
 				active: z.boolean(),
+				isPublic: z.boolean(),
 				name: z.string().min(3, { message: "Package name is required" }),
 				currency: z.string().min(3, { message: "Currency is required" }),
 				numberOfVisit: z.coerce
@@ -155,6 +158,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 					({
 						id,
 						active,
+						isPublic,
 						name,
 						currency,
 						numberOfVisit,
@@ -163,7 +167,8 @@ export default function Edit({ service, locations }: EditPageProps) {
 						discount,
 					}) => ({
 						id,
-						active,
+						active: !!active,
+						isPublic: !!isPublic,
 						name,
 						currency,
 						numberOfVisit,
@@ -220,7 +225,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 	);
 
 	// form type field array for packages
-	const [accordionActive, setAccordionActive] = useState("");
+	const [accordionActive, setAccordionActive] = useState<string[]>([]);
 	const packagesForm = useFieldArray({
 		control: form.control,
 		name: "packages",
@@ -266,7 +271,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 			<Head title={formHeader.title} />
 
 			<FormPageContainer>
-				<section className="flex flex-col justify-center gap-4 mx-auto w-12/12 lg:w-8/12 xl:w-4/12">
+				<section>
 					<FormPageHeader
 						title={formHeader.title}
 						description={formHeader.description}
@@ -275,7 +280,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 					<Form {...form}>
 						<form
 							onSubmit={form.handleSubmit(onSubmit)}
-							className="grid items-start grid-cols-1 gap-4"
+							className="grid items-start grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6"
 						>
 							<div className="grid gap-4">
 								<FormField
@@ -401,7 +406,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 								/>
 							</div>
 
-							<div className="grid gap-4">
+							<div className="grid gap-4 lg:order-3 col-span-full">
 								<Separator className="mt-4" />
 
 								<div className="space-y-1.5">
@@ -416,9 +421,8 @@ export default function Edit({ service, locations }: EditPageProps) {
 
 								{packagesForm?.fields?.length ? (
 									<Accordion
-										type="single"
-										collapsible
-										className="w-full"
+										type="multiple"
+										className="w-full grid grid-cols-1 lg:grid-cols-3 lg:gap-6"
 										value={accordionActive}
 										onValueChange={(value) => {
 											setAccordionActive(value);
@@ -442,29 +446,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 
 												<AccordionContent>
 													<div className="grid w-full grid-cols-1 gap-4 p-2">
-														<div className="flex items-center justify-between pb-2 border-b w-fullcol-span-full">
-															<FormField
-																control={form.control}
-																name={`packages.${fieldIndex}.active`}
-																render={({ field }) => (
-																	<FormItem className="flex flex-row items-center space-x-2 space-y-0">
-																		<FormControl>
-																			<Checkbox
-																				checked={field.value}
-																				onCheckedChange={(checked) => {
-																					field.onChange(checked);
-																				}}
-																			/>
-																		</FormControl>
-																		<div className="space-y-1 leading-none">
-																			<FormLabel className="text-xs">
-																				Set as active package
-																			</FormLabel>
-																		</div>
-																	</FormItem>
-																)}
-															/>
-
+														<div className="flex items-center justify-end pb-2 border-b w-full col-span-full">
 															<AlertDialog>
 																<AlertDialogTrigger asChild>
 																	<Button size="xs" variant="destructive">
@@ -491,9 +473,15 @@ export default function Edit({ service, locations }: EditPageProps) {
 																			onClick={(event) => {
 																				event.preventDefault();
 																				packagesForm?.remove(fieldIndex);
-																				setAccordionActive(
-																					watchPackages.at(-2)?.name || "",
-																				);
+																				const lastPackage =
+																					watchPackages.at(-2);
+																				if (lastPackage?.name) {
+																					setAccordionActive([
+																						lastPackage.name,
+																					]);
+																				} else {
+																					setAccordionActive([]);
+																				}
 																			}}
 																		>
 																			Delete
@@ -502,6 +490,81 @@ export default function Edit({ service, locations }: EditPageProps) {
 																</AlertDialogContent>
 															</AlertDialog>
 														</div>
+
+														<FormField
+															control={form.control}
+															name={`packages.${fieldIndex}.active`}
+															render={({ field }) => {
+																const id = `package-${fieldIndex}-active`;
+																return (
+																	<FormItem>
+																		<FormControl>
+																			<div className="relative flex w-full items-start gap-2 rounded-md border border-input p-4 shadow-xs outline-none has-data-[state=checked]:border-primary/50">
+																				<Switch
+																					aria-describedby={`${id}-description`}
+																					className="data-[state=checked]:[&_span]:rtl:-translate-x-2 order-1 h-4 w-6 after:absolute after:inset-0 [&_span]:size-3 data-[state=checked]:[&_span]:translate-x-2"
+																					id={id}
+																					checked={field.value}
+																					onCheckedChange={(checked) => {
+																						field.onChange(checked);
+																					}}
+																				/>
+																				<div className="grid grow gap-2">
+																					<Label htmlFor={id}>
+																						Active Package
+																					</Label>
+																					<p
+																						className="text-muted-foreground text-xs"
+																						id={`${id}-description`}
+																					>
+																						When enabled, this package will be
+																						available for booking.
+																					</p>
+																				</div>
+																			</div>
+																		</FormControl>
+																	</FormItem>
+																);
+															}}
+														/>
+
+														<FormField
+															control={form.control}
+															name={`packages.${fieldIndex}.isPublic`}
+															render={({ field }) => {
+																const id = `package-${fieldIndex}-public`;
+																return (
+																	<FormItem>
+																		<FormControl>
+																			<div className="relative flex w-full items-start gap-2 rounded-md border border-input p-4 shadow-xs outline-none has-data-[state=checked]:border-primary/50">
+																				<Switch
+																					aria-describedby={`${id}-description`}
+																					className="data-[state=checked]:[&_span]:rtl:-translate-x-2 order-1 h-4 w-6 after:absolute after:inset-0 [&_span]:size-3 data-[state=checked]:[&_span]:translate-x-2"
+																					id={id}
+																					checked={field.value}
+																					onCheckedChange={(checked) => {
+																						field.onChange(checked);
+																					}}
+																				/>
+																				<div className="grid grow gap-2">
+																					<Label htmlFor={id}>
+																						Public Package
+																					</Label>
+																					<p
+																						className="text-muted-foreground text-xs"
+																						id={`${id}-description`}
+																					>
+																						When enabled, this package will be
+																						visible to customers on the booking
+																						interface.
+																					</p>
+																				</div>
+																			</div>
+																		</FormControl>
+																	</FormItem>
+																);
+															}}
+														/>
 
 														<FormField
 															control={form.control}
@@ -662,7 +725,6 @@ export default function Edit({ service, locations }: EditPageProps) {
 								)}
 
 								<Button
-									size="sm"
 									type="button"
 									disabled={
 										!!form.formState.errors?.packages &&
@@ -674,14 +736,16 @@ export default function Edit({ service, locations }: EditPageProps) {
 											name,
 											currency: "",
 											active: false,
+											isPublic: true,
 											numberOfVisit: 1,
 											pricePerVisit: 0,
 											feePerVisit: 0,
 											discount: 0,
 										});
 										form.trigger("packages");
-										setAccordionActive(name);
+										setAccordionActive([name]);
 									}}
+									className="w-full lg:w-fit mx-auto"
 								>
 									<Plus />
 									Add more package
@@ -689,7 +753,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 							</div>
 
 							<div className="grid gap-4">
-								<Separator className="mt-4" />
+								<Separator className="mt-4 lg:hidden" />
 
 								<div className="space-y-1.5">
 									<p className="font-semibold leading-none tracking-tighter">
@@ -750,7 +814,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 								/>
 
 								{!!locationsForm?.fields?.length && (
-									<div className="flex flex-col gap-4 p-4 border rounded-md max-h-64 lg:max-h-52">
+									<div className="flex flex-col gap-4 p-4 border rounded-md max-h-80 lg:max-h-100">
 										<div className="flex flex-col gap-4 pb-2 border-b">
 											<FormItem className="flex flex-row items-start mb-1 space-x-3 space-y-0">
 												<FormControl>
@@ -817,7 +881,7 @@ export default function Edit({ service, locations }: EditPageProps) {
 								)}
 							</div>
 
-							<div className="!mt-10 lg:!mt-6 gap-4 lg:gap-2 w-full flex flex-col md:flex-row lg:col-span-full md:justify-between">
+							<div className="!mt-10 lg:!mt-6 gap-4 lg:gap-2 w-full flex flex-col md:flex-row lg:col-span-full md:justify-between order-last">
 								<Button
 									type="button"
 									variant="outline"
