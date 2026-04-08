@@ -401,6 +401,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.decimal "total_fee", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "json_desc"
+    t.boolean "is_public", default: true
     t.index ["service_id"], name: "index_packages_on_service_id"
   end
 
@@ -815,11 +817,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_27_094500) do
     t.datetime "last_heartbeat_at", precision: nil, comment: "Last heartbeat from worker, used for stale job detection"
     t.boolean "only_create", default: false, null: false
     t.boolean "skip_status_update", default: false, null: false, comment: "If true, skip updating the status field on existing appointment records during sync"
+    t.string "mode", limit: 20, default: "default", null: false
     t.index ["created_at"], name: "idx_sync_logs_created_at", order: :desc
     t.index ["created_by"], name: "idx_sync_logs_created_by"
     t.index ["last_heartbeat_at"], name: "idx_sync_logs_processing_heartbeat", where: "((status)::text = 'PROCESSING'::text)"
     t.index ["sheet_name"], name: "idx_sync_logs_sheet_name", where: "(sheet_name IS NOT NULL)"
     t.index ["status"], name: "idx_sync_logs_status"
+    t.check_constraint "mode::text = ANY (ARRAY['default'::character varying::text, 'create_only'::character varying::text, 'update_only'::character varying::text])", name: "chk_sync_logs_mode"
     t.check_constraint "source_type::text = ANY (ARRAY['GOOGLE_SHEET'::character varying::text, 'PRIVATE_GOOGLE_SHEET'::character varying::text, 'FILE_UPLOAD'::character varying::text])", name: "chk_sync_logs_source_type"
     t.check_constraint "status::text = ANY (ARRAY['PENDING'::character varying::text, 'PROCESSING'::character varying::text, 'SUCCESS'::character varying::text, 'FAILED'::character varying::text, 'CANCELLED'::character varying::text])", name: "chk_sync_logs_status"
   end
