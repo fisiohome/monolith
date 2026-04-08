@@ -29,7 +29,6 @@ import {
 	useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
-import { PulsatingOutlineShadowButton } from "@/components/shared/button-pulsating";
 import HereMap, { type HereMaphandler } from "@/components/shared/here-map";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -875,6 +874,11 @@ function AddressForm({
 		cities: false,
 	});
 	const [deleted, setDeleted] = useState(false);
+	const [latLngInputMethod, setLatLngInputMethod] = useState<
+		"manual" | "automatic"
+	>("manual");
+	const [isGeocoding, setIsGeocoding] = useState(false);
+	const [geocodingError, setGeocodingError] = useState<string | null>(null);
 
 	// the list items for select options
 	const [selectCollections, setSelectCollections] = useState(() => {
@@ -944,83 +948,177 @@ function AddressForm({
 		() => [address.lat, address.lng],
 		[address.lat, address.lng],
 	);
-	const isCalcCoordinatesDisabled = useMemo(() => {
-		return (
-			!address?.address ||
-			!address?.city ||
-			!address?.country ||
-			!address?.state ||
-			!!address?.lat ||
-			!!address?.lng
-		);
-	}, [address]);
-	const isSeeOnGMapsDisabled = useMemo(
-		() => !address?.lat || !address?.lng,
-		[address?.lat, address?.lng],
+
+	// Helper function to parse coordinate string and update lat/lng fields
+	const updateCoordinateFields = useCallback(
+		(coordStr: string) => {
+			if (coordStr && coordStr.trim() !== "") {
+				const [lat, lng] = coordStr.split(",").map((s) => parseFloat(s.trim()));
+				if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+					form.setValue(`addresses.${fieldIndex}.lat`, lat);
+					form.setValue(`addresses.${fieldIndex}.lng`, lng);
+
+					// Update map marker when coordinates are changed manually
+					if (mapRef.current?.marker?.onAdd) {
+						const address = form.getValues(`addresses.${fieldIndex}.address`);
+						const fullAddress = address || "Custom Location";
+						mapRef.current?.marker.onAdd(
+							[
+								{
+									position: { lat, lng },
+									address: fullAddress,
+								},
+							],
+							{ changeMapView: true },
+						);
+					}
+				} else {
+					form.setValue(`addresses.${fieldIndex}.lat`, 0);
+					form.setValue(`addresses.${fieldIndex}.lng`, 0);
+
+					// Remove marker when coordinates are invalid
+					mapRef.current?.marker.onRemove();
+				}
+			} else {
+				form.setValue(`addresses.${fieldIndex}.lat`, 0);
+				form.setValue(`addresses.${fieldIndex}.lng`, 0);
+
+				// Remove marker when coordinates are cleared
+				mapRef.current?.marker.onRemove();
+			}
+		},
+		[form, fieldIndex],
 	);
+
+	// Get coordinate string from lat/lng fields
+	const getCoordinateString = useCallback(() => {
+		const lat = form.getValues(`addresses.${fieldIndex}.lat`);
+		const lng = form.getValues(`addresses.${fieldIndex}.lng`);
+		if (lat && lng && lat !== 0 && lng !== 0) {
+			return `${lat}, ${lng}`;
+		}
+		return "";
+	}, [form, fieldIndex]);
 
 	// for map state management
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
-	const calculateCoordinate = useCallback(async () => {
-		try {
-			// Fetch geocode result
-			const geocodeResult = await mapRef.current?.geocode.onCalculate();
+	// ===== COORDINATE HANDLERS =====
+	const handleResetCoordinates = useCallback(() => {
+		form.setValue(`addresses.${fieldIndex}.lat`, 0);
+		form.setValue(`addresses.${fieldIndex}.lng`, 0);
+		setGeocodingError(null);
 
-			// Validate geocode result
-			if (
-				!geocodeResult ||
-				!geocodeResult?.position?.lat ||
-				!geocodeResult?.position?.lng
-			) {
-				console.error("Address cannot be found!");
+		// remove the map markers
+		mapRef.current?.marker.onRemove();
+	}, [form, fieldIndex]);
 
-				// Set error message for the form
-				const errorMessage =
-					"The address cannot be found. Ensure the province, city, and address line are entered correctly.";
-				form.setError(`addresses.${fieldIndex}.address`, {
-					message: errorMessage,
-					type: "custom",
-				});
-				return;
-			}
+	// Handle view on Google Maps
+	const handleViewOnGoogleMaps = useCallback(() => {
+		const coordStr = getCoordinateString();
+		if (coordStr) {
+			window.open(
+				`https://www.google.com/maps/search/?api=1&query=${coordStr}`,
+				"_blank",
+			);
+		}
+	}, [getCoordinateString]);
 
-			// Update form values with latitude and longitude
-			const { lat, lng } = geocodeResult.position;
-			form.setValue(`addresses.${fieldIndex}.lat`, lat);
-			form.setValue(`addresses.${fieldIndex}.lng`, lng);
+	// Initialize map marker when form loads with coordinates
+	useEffect(() => {
+		const lat = address?.lat;
+		const lng = address?.lng;
 
-			// Add markers to the map
+		if (lat && lng && lat !== 0 && lng !== 0 && mapRef.current?.marker?.onAdd) {
+			const addressStr = address?.address || "Default Location";
 			mapRef.current?.marker.onAdd(
 				[
 					{
-						position: geocodeResult.position,
-						address: geocodeResult.address.label,
+						position: { lat, lng },
+						address: addressStr,
 					},
 				],
 				{ changeMapView: true },
 			);
-
-			// revalidate the form status
-			form.trigger("addresses");
-		} catch (error) {
-			console.error("An unexpected error occurred:", error);
-
-			// Handle unexpected errors
-			form.setError(`addresses.${fieldIndex}.address`, {
-				message:
-					"An unexpected error occurred while calculating the coordinates from the address.",
-				type: "custom",
-			});
 		}
-	}, [fieldIndex, form.setError, form.setValue, form.trigger]);
-	const onResetCoordinate = useCallback(() => {
-		// Update form values with latitude and longitude
-		form.setValue(`addresses.${fieldIndex}.lat`, 0);
-		form.setValue(`addresses.${fieldIndex}.lng`, 0);
+	}, [address?.lat, address?.lng, address?.address]);
 
-		// remove the map markers
-		mapRef.current?.marker.onRemove();
-	}, [form.setValue, fieldIndex]);
+	// ===== GEOCODING =====
+	const handleGeocoding = useCallback(async () => {
+		const address = form.getValues(`addresses.${fieldIndex}.address`);
+		const city = form.getValues(`addresses.${fieldIndex}.city`);
+		const state = form.getValues(`addresses.${fieldIndex}.state`);
+		const country = form.getValues(`addresses.${fieldIndex}.country`);
+
+		// Clear any previous errors
+		setGeocodingError(null);
+
+		if (!address || address.trim() === "") {
+			console.error("Address is required for geocoding");
+			toast.error("Please enter an address before geocoding");
+			setGeocodingError("Please enter an address before geocoding");
+			return;
+		}
+
+		if (!city || !state || !country) {
+			console.error("Location details are required for geocoding");
+			toast.error("Please select country, state, and city before geocoding");
+			setGeocodingError(
+				"Please select country, state, and city before geocoding",
+			);
+			return;
+		}
+
+		setIsGeocoding(true);
+		try {
+			const fullAddress = `${address}, ${city}, ${state}, ${country}`;
+			console.log("Geocoding address:", fullAddress);
+
+			// Use Here Maps geocoding via the map component
+			if (mapRef.current?.geocode?.onCalculate) {
+				const result = await mapRef.current.geocode.onCalculate();
+
+				if (result?.position) {
+					const { lat, lng } = result.position;
+					form.setValue(`addresses.${fieldIndex}.lat`, lat);
+					form.setValue(`addresses.${fieldIndex}.lng`, lng);
+					console.log("Geocoding successful:", { lat, lng });
+
+					// Add marker to map at the calculated position
+					if (mapRef.current?.marker?.onAdd) {
+						mapRef.current.marker.onAdd(
+							[
+								{
+									position: { lat, lng },
+									address: fullAddress,
+								},
+							],
+							{ changeMapView: true },
+						);
+					}
+
+					// Clear any errors on success
+					setGeocodingError(null);
+
+					// Show success toast
+					toast.success("Coordinates calculated successfully");
+				} else {
+					throw new Error("No results found for the address");
+				}
+			} else {
+				throw new Error("Geocoding service not available");
+			}
+		} catch (error) {
+			console.error("Geocoding error:", error);
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: "Failed to calculate coordinates";
+			toast.error(errorMessage);
+			setGeocodingError(errorMessage);
+		} finally {
+			setIsGeocoding(false);
+		}
+	}, [form, fieldIndex]);
 
 	return (
 		<div
@@ -1338,109 +1436,103 @@ function AddressForm({
 				)}
 			/>
 
-			<div className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center col-span-full">
-				<FormField
-					control={form.control}
-					name={`addresses.${fieldIndex}.lat`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Latitude</FormLabel>
+			<div className="space-y-4 col-span-full">
+				<div className="space-y-2">
+					<div>
+						<span className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+							Coordinate
+						</span>
+					</div>
+
+					<div className="flex items-center gap-2">
+						<div className="flex items-center space-x-2 min-w-0">
+							<Select
+								value={latLngInputMethod}
+								onValueChange={(value) =>
+									setLatLngInputMethod(value as "manual" | "automatic")
+								}
+							>
+								<SelectTrigger className="w-[140px]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="manual">Manual</SelectItem>
+									<SelectItem value="automatic">Automatic</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						<FormItem className="flex-1 min-w-0">
 							<FormControl>
 								<Input
-									{...field}
-									readOnly
-									type="number"
-									min={0}
-									value={field?.value || ""}
-									placeholder="Enter the latitude..."
-									className="field-sizing-content"
+									value={getCoordinateString() || ""}
+									onChange={(e) => {
+										const value = e.target.value.trim();
+										updateCoordinateFields(value);
+									}}
+									placeholder="Coordinates (e.g., -6.1944,106.8229)"
+									readOnly={latLngInputMethod === "automatic"}
+									{...(latLngInputMethod === "automatic" && {
+										tabIndex: -1,
+									})}
 								/>
 							</FormControl>
-
 							<FormMessage />
 						</FormItem>
-					)}
-				/>
-
-				<FormField
-					control={form.control}
-					name={`addresses.${fieldIndex}.lng`}
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Longitude</FormLabel>
-							<FormControl>
-								<Input
-									{...field}
-									readOnly
-									type="number"
-									min={0}
-									value={field?.value || ""}
-									placeholder="Enter the longitude..."
-									className="field-sizing-content"
-								/>
-							</FormControl>
-
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				<div className="flex flex-col gap-2">
-					<PulsatingOutlineShadowButton
-						size="sm"
-						type="button"
-						variant="outline"
-						disabled={isCalcCoordinatesDisabled}
-						onClick={async (event) => {
-							event.preventDefault();
-
-							await calculateCoordinate();
-						}}
-					>
-						Calculate Coordinate
-					</PulsatingOutlineShadowButton>
-
-					<Button
-						size="sm"
-						type="button"
-						variant="destructive-outline"
-						disabled={isSeeOnGMapsDisabled}
-						onClick={(event) => {
-							event.preventDefault();
-
-							if (
-								window.confirm(
-									"Are you absolutely sure? \nThis action is irreversible. Resetting coordinates deletes the calculated latitude and longitude, so you must recalculate them.",
-								)
-							) {
-								onResetCoordinate();
-							}
-						}}
-					>
-						Reset Coordinate
-					</Button>
-
-					<Button
-						size="sm"
-						type="button"
-						variant="outline"
-						disabled={isSeeOnGMapsDisabled}
-						onClick={(event) => {
-							event.preventDefault();
-							// const basemap: "roadmap" | "satellite" | "terrain" = "roadmap";
-							// const layer: "traffic" | "none" | "transit" | "bicycling" =
-							// 	"traffic";
-							// const zoom: number = 18;
-
-							window.open(
-								// `https://www.google.com/maps/@?api=1&map_action=map&center=${coordinates}&zoom=${zoom}&basemap=${basemap}&layer=${layer}&query=${coordinates}`,
-								`https://www.google.com/maps/search/?api=1&query=${coordinate.join(",")}`,
-							);
-						}}
-					>
-						See on Google Maps
-					</Button>
+					</div>
 				</div>
+
+				{latLngInputMethod === "automatic" && (
+					<div className="flex gap-2">
+						<Button
+							type="button"
+							variant="primary-outline"
+							onClick={handleGeocoding}
+							disabled={
+								isGeocoding ||
+								!form.getValues(`addresses.${fieldIndex}.address`)
+							}
+							className="w-full"
+						>
+							{isGeocoding && (
+								<LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+							)}
+							{isGeocoding ? "Geocoding..." : "Get Coordinates from Address"}
+						</Button>
+
+						{getCoordinateString() && (
+							<>
+								<Button
+									type="button"
+									variant="destructive-outline"
+									disabled={isGeocoding}
+									onClick={handleResetCoordinates}
+									className="flex-shrink-0"
+								>
+									Reset
+								</Button>
+
+								<Button
+									type="button"
+									variant="outline"
+									disabled={isGeocoding}
+									onClick={handleViewOnGoogleMaps}
+									className="flex-shrink-0"
+								>
+									View on Maps
+								</Button>
+							</>
+						)}
+					</div>
+				)}
+
+				{geocodingError && (
+					<Alert variant="destructive">
+						<AlertCircle className="h-4 w-4" />
+						<AlertTitle>Geocoding Error</AlertTitle>
+						<AlertDescription>{geocodingError}</AlertDescription>
+					</Alert>
+				)}
 			</div>
 
 			<HereMap
