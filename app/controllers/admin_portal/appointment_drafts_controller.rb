@@ -33,7 +33,7 @@ module AdminPortal
       )
 
       render inertia: "AdminPortal/Appointment/Drafts", props: deep_transform_keys_to_camel_case({
-        drafts: drafts.map { |draft| serialize_draft(draft) },
+        drafts: drafts.map { |draft| serialize_draft(draft, include_form_data: true) },
         admins: InertiaRails.defer {
           Admin.joins(:user).where("users.suspend_at IS NULL OR users.suspend_end < ?", Time.current).order(:name).map do |admin|
             admin.as_json(include: :user)

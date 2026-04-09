@@ -11,6 +11,7 @@ import {
 	MoreHorizontal,
 	NotepadTextDashedIcon,
 	Trash2,
+	User,
 	X,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -218,6 +219,29 @@ const columns = (
 		),
 	},
 	{
+		id: "patientName",
+		header: "Patient",
+		cell: ({ row }) => {
+			const patientName = row.original.formData?.patientDetails?.fullName;
+
+			return (
+				<span className="font-medium text-sm">
+					{patientName?.toUpperCase() || "N/A"}
+				</span>
+			);
+		},
+	},
+	{
+		id: "locationCity",
+		header: "Location",
+		cell: ({ row }) => {
+			const city = row.original.formData?.patientDetails?.location?.city;
+			return (
+				<span className="text-sm text-muted-foreground">{city || "N/A"}</span>
+			);
+		},
+	},
+	{
 		accessorKey: "currentStep",
 		header: "Last Step",
 		cell: ({ row }) => (
@@ -352,6 +376,11 @@ const DraftDetails = ({
 	handleDeleteDraft,
 }: DraftDetailsProps) => {
 	const draft = row.original;
+
+	// Patient data from formData
+	const patientData = draft.formData?.patientDetails;
+	const patientContact = draft.formData?.contactInformation;
+
 	const infoBlocks = [
 		{
 			label: "PIC's",
@@ -385,6 +414,55 @@ const DraftDetails = ({
 		},
 	];
 
+	// Add patient info blocks if patient data exists
+	if (patientData) {
+		const patientInfoBlocks = [
+			{
+				label: "Name",
+				value: patientData.fullName?.toUpperCase() || "N/A",
+				isPatient: true,
+			},
+			{
+				label: "Age",
+				value:
+					patientData.age && patientData.dateOfBirth
+						? `${patientData.age} years — ${format(new Date(patientData.dateOfBirth), "dd MMM yyyy", { locale: id })}`
+						: patientData.age
+							? `${patientData.age} years`
+							: "N/A",
+				isPatient: true,
+			},
+			{
+				label: "Gender",
+				value: patientData.gender ? patientData.gender.toUpperCase() : "N/A",
+				isPatient: true,
+			},
+			{
+				label: "Patient Contact",
+				value: patientContact?.contactName?.toUpperCase() || "N/A",
+				isPatient: true,
+			},
+			{
+				label: "Phone",
+				value: patientContact?.contactPhone || "N/A",
+				isPatient: true,
+			},
+			{
+				label: "Email",
+				value: patientContact?.email || "N/A",
+				isPatient: true,
+			},
+			{
+				label: "Location",
+				value: patientData?.location?.city || "N/A",
+				isPatient: true,
+			},
+		];
+
+		// Insert patient info blocks after the basic info blocks
+		infoBlocks.splice(5, 0, ...patientInfoBlocks);
+	}
+
 	return (
 		<div className="p-4 space-y-4 rounded-xl border bg-card text-card-foreground md:p-6 text-sm">
 			<div className="space-y-1">
@@ -393,55 +471,73 @@ const DraftDetails = ({
 				</h4>
 			</div>
 
-			<div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-				{infoBlocks.map((item) => (
-					<div
-						key={item.label}
-						className={cn(
-							"space-y-1 rounded-lg bg-background p-3",
-							item.label === "PIC's" ? "col-span-full" : "col-span-1",
-						)}
-					>
-						<p className="text-xs uppercase text-muted-foreground">
-							{item.label}
-						</p>
-						{item.label === "Last Step" ? (
-							<div>
-								<p className="font-semibold text-pretty mb-1">{item.value}</p>
+			<div className="space-y-4">
+				{/* Draft Information Section */}
+				<div className="space-y-2">
+					<div className="flex items-center gap-2">
+						<NotepadTextDashedIcon className="size-4 text-muted-foreground" />
+						<h5 className="text-sm font-semibold uppercase text-muted-foreground">
+							Draft Information
+						</h5>
+					</div>
+					<div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+						{infoBlocks
+							.filter((item) => !(item as any).isPatient)
+							.map((item) => (
+								<div
+									key={item.label}
+									className={cn(
+										"space-y-1 rounded-lg bg-background p-3",
+										item.label === "PIC's" ? "col-span-full" : "col-span-1",
+									)}
+								>
+									<p className="text-xs uppercase text-muted-foreground">
+										{item.label}
+									</p>
+									{item.label === "Last Step" ? (
+										<p className="font-semibold text-pretty mb-1">
+											{item.value}
+										</p>
+									) : typeof item.value === "string" ? (
+										<p className="font-semibold text-pretty">{item.value}</p>
+									) : (
+										item.value
+									)}
+								</div>
+							))}
+					</div>
+				</div>
 
-								{draft.currentStep === "patient_details" && (
-									<div className="flex gap-1 uppercase">
-										{draft.patientContactSource && (
-											<Badge
-												variant="outline"
-												className="text-[10px] border p-0 px-1 rounded-full font-bold bg-sidebar"
-											>
-												{draft.patientContactSource === "new"
-													? "New Contact"
-													: "Existing"}
-											</Badge>
-										)}
-
-										{draft.patientRecordSource && (
-											<Badge
-												variant="outline"
-												className="text-[10px] border p-0 px-1 rounded-full font-bold bg-sidebar"
-											>
-												{draft.patientRecordSource === "add"
-													? "New Patient"
-													: "Existing"}
-											</Badge>
+				{/* Patient Information Section */}
+				{patientData && (
+					<div className="space-y-2">
+						<div className="flex items-center gap-2">
+							<User className="size-4 text-muted-foreground" />
+							<h5 className="text-sm font-semibold uppercase text-muted-foreground">
+								Patient Information
+							</h5>
+						</div>
+						<div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+							{infoBlocks
+								.filter((item) => (item as any).isPatient)
+								.map((item) => (
+									<div
+										key={item.label}
+										className="space-y-1 rounded-lg bg-background p-3"
+									>
+										<p className="text-xs uppercase text-muted-foreground">
+											{item.label}
+										</p>
+										{typeof item.value === "string" ? (
+											<p className="font-semibold text-pretty">{item.value}</p>
+										) : (
+											item.value
 										)}
 									</div>
-								)}
-							</div>
-						) : typeof item.value === "string" ? (
-							<p className="font-semibold text-pretty">{item.value}</p>
-						) : (
-							item.value
-						)}
+								))}
+						</div>
 					</div>
-				))}
+				)}
 			</div>
 
 			<div className="flex justify-end gap-2">

@@ -1,3 +1,7 @@
+export interface FormData {
+	[key: string]: any;
+}
+
 export interface AppointmentDraft {
 	id: string;
 	createdByAdmin: {
@@ -22,7 +26,7 @@ export interface AppointmentDraft {
 		email: string | null;
 		isPrimary: boolean;
 	}>;
-	formData?: Record<string, any>;
+	formData: FormData;
 	patientRecordSource?: string;
 	patientContactSource?: string;
 }
