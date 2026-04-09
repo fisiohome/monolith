@@ -148,7 +148,7 @@ During therapist sync, the system automatically configures availability rules th
 ### Default Rules Applied
 
 All therapists receive these default availability rules:
-- **Distance**: `{"distance_in_meters" => 25_000}` (25 km maximum travel distance)
+- **Distance**: `{"distance_in_meters" => 20_000}` (20 km maximum travel distance)
 - **Duration**: `{"duration_in_minutes" => 50}` (50 minutes maximum travel time)
 - **Location**: `{"location" => true}` (must match location constraints)
 

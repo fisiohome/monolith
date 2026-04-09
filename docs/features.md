@@ -91,7 +91,7 @@ Rules are stored as JSON in the `availability_rules` column of `therapist_appoin
 
 ```json
 [
-  {"distance_in_meters": 25000},
+  {"distance_in_meters": 20000},
   {"duration_in_minutes": 50},
   {"location": true}
 ]
@@ -108,7 +108,7 @@ When a therapist has no custom rules, the system applies defaults defined in `Th
 
 ```ruby
 DEFAULT_AVAILABILITY_RULES = [
-  {"distance_in_meters" => 25_000},  # 25 km
+  {"distance_in_meters" => 20_000},  # 20 km
   {"duration_in_minutes" => 50},      # 50 minutes
   {"location" => true}                # Must match location
 ].freeze
@@ -176,7 +176,7 @@ When therapists have no custom rules, the frontend uses hardcoded defaults:
 
 ```typescript
 export const ISOLINE_CONSTRAINTS = [
-  { type: "distance", value: 1000 * 25 },  // 25 km
+  { type: "distance", value: 1000 * 20 },  // 20 km
   { type: "time", value: 60 * 50 },        // 50 minutes (in seconds)
 ];
 ```
@@ -284,7 +284,7 @@ When a therapist has `0` values in their availability rules:
 **Example Scenarios**:
 | distance_in_meters | duration_in_minutes | Feasibility Check |
 |-------------------|---------------------|------------------|
-| 25000 | 50 | Check both distance ≤ 25km AND time ≤ 50min |
+| 20000 | 50 | Check both distance ≤ 20km AND time ≤ 50min |
 | 0 | 45 | Skip distance, only check time ≤ 45min |
 | 30000 | 0 | Check distance ≤ 30km, skip time |
 | 0 | 0 | Always feasible (no distance/time limits) |

@@ -27,7 +27,7 @@ class TherapistAppointmentSchedule < ApplicationRecord
   # These represent the standard maximum distance (in meters) and duration (in minutes)
   # for therapist availability if no custom rules are provided.
   DEFAULT_AVAILABILITY_RULES = [
-    {"distance_in_meters" => 25_000},
+    {"distance_in_meters" => 20_000},
     {"duration_in_minutes" => 50},
     {"location" => true}
   ].freeze

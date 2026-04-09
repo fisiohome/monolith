@@ -997,7 +997,7 @@ module AdminPortal
                 # Always ensure distance and duration rules are present and correct
                 # Start fresh with only distance and duration rules, then add location conditionally
                 final_rules = [
-                  {"distance_in_meters" => 25_000},
+                  {"distance_in_meters" => 20_000},
                   {"duration_in_minutes" => 50}
                 ]
 

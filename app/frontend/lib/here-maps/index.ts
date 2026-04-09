@@ -13,6 +13,6 @@ export const TRAFFIC_INTERVAL = 60000 * 10; //ten-miuntes interval
 export const SESSION_ISOLINE_KEY = "find-therapist-map-isoline";
 export const SESSION_MARKERS_KEY = "find-therapist-map-markers";
 export const ISOLINE_CONSTRAINTS = [
-	{ type: "distance", value: 1000 * 25 } satisfies IsolineConstraint, // 25 km
+	{ type: "distance", value: 1000 * 20 } satisfies IsolineConstraint, // 20 km
 	{ type: "time", value: 60 * 50 } satisfies IsolineConstraint, // 50 minutes
 ];

@@ -27,6 +27,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useTimeAPI } from "@/hooks/use-time-api";
+import {
+	DEFAULT_DISTANCES_IN_METERS,
+	DEFAULT_DURATIONS_IN_MINUTES,
+} from "@/lib/appointments/constants";
 import type { AvailabilityFormSchema } from "@/lib/availabilities";
 import { DEFAULT_MAX_DAILY_APPT_THERAPIST } from "@/lib/availabilities";
 import { cn } from "@/lib/utils";
@@ -134,7 +138,8 @@ export default function AppointmentSettingsForm({
 					control={form.control}
 					name="availabilityRules.0.distanceInMeters"
 					render={({ field }) => {
-						const isDefault = field.value === 25000;
+						const isDefault = field.value === DEFAULT_DISTANCES_IN_METERS;
+
 						return (
 							<FormItem>
 								<div className="flex items-center justify-between">
@@ -146,7 +151,9 @@ export default function AppointmentSettingsForm({
 										<Switch
 											checked={isDefault}
 											onCheckedChange={(checked) => {
-												field.onChange(checked ? 25000 : 0);
+												field.onChange(
+													checked ? DEFAULT_DISTANCES_IN_METERS : 0,
+												);
 											}}
 											disabled={!selectedTherapist}
 										/>
@@ -164,11 +171,13 @@ export default function AppointmentSettingsForm({
 											const value = e.target.value;
 											field.onChange(value ? parseInt(value, 10) : 0);
 										}}
-										value={isDefault ? 25000 : field.value || 0}
+										value={
+											isDefault ? DEFAULT_DISTANCES_IN_METERS : field.value || 0
+										}
 									/>
 								</FormControl>
 								<FormDescription>
-									Use the toggle to apply the default value of 25,000 meters.
+									Use the toggle to apply the default value of 20,000 meters.
 									Set to 0 to disable this rule.
 								</FormDescription>
 								<FormMessage />
@@ -181,7 +190,7 @@ export default function AppointmentSettingsForm({
 					control={form.control}
 					name="availabilityRules.0.durationInMinutes"
 					render={({ field }) => {
-						const isDefault = field.value === 50;
+						const isDefault = field.value === DEFAULT_DURATIONS_IN_MINUTES;
 						return (
 							<FormItem>
 								<div className="flex items-center justify-between">
@@ -193,7 +202,9 @@ export default function AppointmentSettingsForm({
 										<Switch
 											checked={isDefault}
 											onCheckedChange={(checked) => {
-												field.onChange(checked ? 50 : 0);
+												field.onChange(
+													checked ? DEFAULT_DURATIONS_IN_MINUTES : 0,
+												);
 											}}
 											disabled={!selectedTherapist}
 										/>
@@ -211,7 +222,11 @@ export default function AppointmentSettingsForm({
 											const value = e.target.value;
 											field.onChange(value ? parseInt(value, 10) : 0);
 										}}
-										value={isDefault ? 50 : field.value || 0}
+										value={
+											isDefault
+												? DEFAULT_DURATIONS_IN_MINUTES
+												: field.value || 0
+										}
 									/>
 								</FormControl>
 								<FormDescription>

@@ -870,7 +870,7 @@ export default function useHereMap(
 	 * Constraint-specific optimized parameters (RECOMMENDED)
 	 * const constraints = [
 	 *   { type: "time", value: 50 * 60 },    // 50 minutes
-	 *   { type: "distance", value: 25000 },  // 25km
+	 *   { type: "distance", value: 20000 },  // 20km
 	 * ];
 	 *
 	 * Each constraint gets optimized parameters automatically:
