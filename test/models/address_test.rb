@@ -12,16 +12,16 @@ class AddressTest < ActiveSupport::TestCase
     assert @bandung_address.valid?
   end
 
-  test "address should validate presence of latitude" do
+  test "address should be valid even without latitude" do
     @jakarta_address.latitude = nil
-    assert_not @jakarta_address.valid?
-    assert_includes @jakarta_address.errors[:latitude], "can't be blank"
+    assert @jakarta_address.valid?
+    assert_empty @jakarta_address.errors[:latitude]
   end
 
-  test "address should validate presence of longitude" do
+  test "address should be valid even without longitude" do
     @jakarta_address.longitude = nil
-    assert_not @jakarta_address.valid?
-    assert_includes @jakarta_address.errors[:longitude], "can't be blank"
+    assert @jakarta_address.valid?
+    assert_empty @jakarta_address.errors[:longitude]
   end
 
   test "address should validate presence of address" do
@@ -75,8 +75,8 @@ class AddressTest < ActiveSupport::TestCase
     # Case 5: Test with nil latitude and longitude
     @jakarta_address.latitude = nil
     @jakarta_address.longitude = nil
-    assert_not @jakarta_address.valid?, "Address should not be valid without latitude and longitude"
-    assert_includes @jakarta_address.errors[:latitude], "can't be blank", "Validation should ensure latitude is present"
-    assert_includes @jakarta_address.errors[:longitude], "can't be blank", "Validation should ensure longitude is present"
+    assert @jakarta_address.valid?, "Address should be valid without latitude and longitude"
+    assert_empty @jakarta_address.errors[:latitude], "No validation errors for latitude when nil"
+    assert_empty @jakarta_address.errors[:longitude], "No validation errors for longitude when nil"
   end
 end

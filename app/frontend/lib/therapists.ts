@@ -173,14 +173,13 @@ export const getFormSchema = (mode: FormMode) => {
 					active: z.boolean().default(false),
 					lat: z.coerce
 						.number({ message: "Latitude must be numerical value" })
-						.refine((value) => value > 0 || value < 0, {
-							message: "Number must be non-zero",
-						}),
+						.optional()
+						.nullable(),
 					lng: z.coerce
 						.number({ message: "Longitude must be numerical value" })
-						.refine((value) => value > 0 || value < 0, {
-							message: "Number must be non-zero",
-						}),
+						.optional()
+						.nullable(),
+					coordinates: z.string().optional(),
 				}),
 			)
 			.nonempty("At least input one address"),

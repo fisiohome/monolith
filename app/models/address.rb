@@ -13,7 +13,7 @@ class Address < ApplicationRecord
   before_save :update_coordinates, if: -> { latitude_changed? || longitude_changed? }
 
   # * define the validation
-  validates :address, :latitude, :longitude, presence: true
+  validates :address, presence: true
   validates :address, length: {minimum: 5, maximum: 500}
   validates :postal_code, length: {maximum: 20}, allow_blank: true
   validates :notes, length: {maximum: 1000}, allow_blank: true

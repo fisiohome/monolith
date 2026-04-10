@@ -105,8 +105,8 @@ module AdminPortal
           location_id: location&.id,
           address: addr_params[:address],
           postal_code: addr_params[:postal_code],
-          latitude: addr_params[:lat],
-          longitude: addr_params[:lng]
+          latitude: addr_params[:lat]&.present? ? addr_params[:lat] : 0,
+          longitude: addr_params[:lng]&.present? ? addr_params[:lng] : 0
         )
 
         TherapistAddress.find_or_initialize_by(therapist_id: @therapist.id, address_id: address.id).update!(active: addr_params[:active] || false)

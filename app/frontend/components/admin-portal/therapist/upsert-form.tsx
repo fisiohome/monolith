@@ -944,72 +944,106 @@ function AddressForm({
 		() => watchAddresses?.[fieldIndex],
 		[watchAddresses?.[fieldIndex], fieldIndex],
 	);
-	const coordinate = useMemo(
-		() => [address.lat, address.lng],
-		[address.lat, address.lng],
-	);
+	const coordinate = useMemo(() => {
+		const coords = [address.lat, address.lng].filter(
+			(coord): coord is number => coord != null && !Number.isNaN(coord),
+		);
+		// Return empty array if no valid coordinates, HereMap will handle it
+		return coords.length === 2 ? coords : [];
+	}, [address.lat, address.lng]);
 
-	// Helper function to parse coordinate string and update lat/lng fields
-	const updateCoordinateFields = useCallback(
-		(coordStr: string) => {
-			if (coordStr && coordStr.trim() !== "") {
-				const [lat, lng] = coordStr.split(",").map((s) => parseFloat(s.trim()));
-				if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-					form.setValue(`addresses.${fieldIndex}.lat`, lat);
-					form.setValue(`addresses.${fieldIndex}.lng`, lng);
-
-					// Update map marker when coordinates are changed manually
-					if (mapRef.current?.marker?.onAdd) {
-						const address = form.getValues(`addresses.${fieldIndex}.address`);
-						const fullAddress = address || "Custom Location";
-						mapRef.current?.marker.onAdd(
-							[
-								{
-									position: { lat, lng },
-									address: fullAddress,
-								},
-							],
-							{ changeMapView: true },
-						);
-					}
-				} else {
-					form.setValue(`addresses.${fieldIndex}.lat`, 0);
-					form.setValue(`addresses.${fieldIndex}.lng`, 0);
-
-					// Remove marker when coordinates are invalid
-					mapRef.current?.marker.onRemove();
-				}
-			} else {
-				form.setValue(`addresses.${fieldIndex}.lat`, 0);
-				form.setValue(`addresses.${fieldIndex}.lng`, 0);
-
-				// Remove marker when coordinates are cleared
-				mapRef.current?.marker.onRemove();
-			}
-		},
-		[form, fieldIndex],
-	);
-
-	// Get coordinate string from lat/lng fields
+	// Get coordinate string from coordinates field
 	const getCoordinateString = useCallback(() => {
-		const lat = form.getValues(`addresses.${fieldIndex}.lat`);
-		const lng = form.getValues(`addresses.${fieldIndex}.lng`);
-		if (lat && lng && lat !== 0 && lng !== 0) {
-			return `${lat}, ${lng}`;
-		}
-		return "";
+		const coordinates = form.getValues(`addresses.${fieldIndex}.coordinates`);
+		return coordinates || "";
 	}, [form, fieldIndex]);
+
+	// Populate coordinates field from existing lat/lng data on form load
+	useEffect(() => {
+		const lat = address?.lat;
+		const lng = address?.lng;
+		const currentCoordinates = address?.coordinates;
+
+		// If we have lat/lng but no coordinates field, populate it
+		if (
+			lat != null &&
+			lng != null &&
+			!Number.isNaN(lat) &&
+			!Number.isNaN(lng) &&
+			(!currentCoordinates || currentCoordinates.trim() === "")
+		) {
+			const coordString = `${lat}, ${lng}`;
+			form.setValue(`addresses.${fieldIndex}.coordinates`, coordString, {
+				shouldValidate: false,
+			});
+		}
+	}, [address?.lat, address?.lng, address?.coordinates, fieldIndex, form]);
+
+	// Add marker to map when coordinates are available (following patient form pattern)
+	useEffect(() => {
+		const coordinates = address?.coordinates;
+
+		if (coordinates && mapRef.current?.marker?.onAdd) {
+			const [lat, lng] = coordinates
+				.split(",")
+				.map((s) => parseFloat(s.trim()));
+			if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+				// Get current form values to avoid stale closures
+				const currentAddress = form.getValues(
+					`addresses.${fieldIndex}.address`,
+				);
+				const fullAddress = currentAddress || "Custom Location";
+
+				// Add marker at the coordinate position
+				mapRef.current.marker.onAdd(
+					[
+						{
+							position: { lat, lng },
+							address: fullAddress,
+						},
+					],
+					{ changeMapView: true },
+				);
+
+				// Update lat/lng fields to match coordinates
+				form.setValue(`addresses.${fieldIndex}.lat`, lat);
+				form.setValue(`addresses.${fieldIndex}.lng`, lng);
+
+				// Cleanup function to remove marker when coordinates change
+				return () => {
+					try {
+						if (mapRef.current?.marker?.onRemove) {
+							mapRef.current.marker.onRemove();
+						}
+					} catch (error) {
+						// Ignore errors if marker is already removed
+						console.warn("Marker cleanup error:", error);
+					}
+				};
+			}
+		} else {
+			// Clear lat/lng when coordinates are empty
+			form.setValue(`addresses.${fieldIndex}.lat`, null);
+			form.setValue(`addresses.${fieldIndex}.lng`, null);
+		}
+	}, [address?.coordinates, fieldIndex, form]);
 
 	// for map state management
 	const mapRef = useRef<(H.Map & HereMaphandler) | null>(null);
 	// ===== COORDINATE HANDLERS =====
 	const handleResetCoordinates = useCallback(() => {
-		form.setValue(`addresses.${fieldIndex}.lat`, 0);
-		form.setValue(`addresses.${fieldIndex}.lng`, 0);
+		form.setValue(`addresses.${fieldIndex}.lat`, null);
+		form.setValue(`addresses.${fieldIndex}.lng`, null);
+		form.setValue(`addresses.${fieldIndex}.coordinates`, "");
 		setGeocodingError(null);
 
 		// remove the map markers
-		mapRef.current?.marker.onRemove();
+		try {
+			mapRef.current?.marker?.onRemove?.();
+		} catch (error) {
+			// Ignore errors if marker is already removed
+			console.warn("Marker reset error:", error);
+		}
 	}, [form, fieldIndex]);
 
 	// Handle view on Google Maps
@@ -1022,25 +1056,6 @@ function AddressForm({
 			);
 		}
 	}, [getCoordinateString]);
-
-	// Initialize map marker when form loads with coordinates
-	useEffect(() => {
-		const lat = address?.lat;
-		const lng = address?.lng;
-
-		if (lat && lng && lat !== 0 && lng !== 0 && mapRef.current?.marker?.onAdd) {
-			const addressStr = address?.address || "Default Location";
-			mapRef.current?.marker.onAdd(
-				[
-					{
-						position: { lat, lng },
-						address: addressStr,
-					},
-				],
-				{ changeMapView: true },
-			);
-		}
-	}, [address?.lat, address?.lng, address?.address]);
 
 	// ===== GEOCODING =====
 	const handleGeocoding = useCallback(async () => {
@@ -1071,7 +1086,6 @@ function AddressForm({
 		setIsGeocoding(true);
 		try {
 			const fullAddress = `${address}, ${city}, ${state}, ${country}`;
-			console.log("Geocoding address:", fullAddress);
 
 			// Use Here Maps geocoding via the map component
 			if (mapRef.current?.geocode?.onCalculate) {
@@ -1079,9 +1093,10 @@ function AddressForm({
 
 				if (result?.position) {
 					const { lat, lng } = result.position;
+					const coordString = `${lat}, ${lng}`;
 					form.setValue(`addresses.${fieldIndex}.lat`, lat);
 					form.setValue(`addresses.${fieldIndex}.lng`, lng);
-					console.log("Geocoding successful:", { lat, lng });
+					form.setValue(`addresses.${fieldIndex}.coordinates`, coordString);
 
 					// Add marker to map at the calculated position
 					if (mapRef.current?.marker?.onAdd) {
@@ -1462,23 +1477,27 @@ function AddressForm({
 							</Select>
 						</div>
 
-						<FormItem className="flex-1 min-w-0">
-							<FormControl>
-								<Input
-									value={getCoordinateString() || ""}
-									onChange={(e) => {
-										const value = e.target.value.trim();
-										updateCoordinateFields(value);
-									}}
-									placeholder="Coordinates (e.g., -6.1944,106.8229)"
-									readOnly={latLngInputMethod === "automatic"}
-									{...(latLngInputMethod === "automatic" && {
-										tabIndex: -1,
-									})}
-								/>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
+						<FormField
+							control={form.control}
+							name={`addresses.${fieldIndex}.coordinates`}
+							render={({ field }) => (
+								<FormItem className="flex-1 min-w-0">
+									<FormControl>
+										<Input
+											{...field}
+											value={field.value || ""}
+											onChange={(e) => field.onChange(e.target.value.trim())}
+											placeholder="Coordinates (e.g., -6.1944,106.8229)"
+											readOnly={latLngInputMethod === "automatic"}
+											{...(latLngInputMethod === "automatic" && {
+												tabIndex: -1,
+											})}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
 					</div>
 				</div>
 
@@ -1844,20 +1863,10 @@ export default function FormTherapist({
 		const bankDetailsError = getErrorMessage(formErrors?.bankDetails);
 		const addressesError = getErrorMessage(formErrors?.addresses);
 
-		// Check for coordinate errors (specific lat/lng validations)
-		const coordinateError =
-			Array.isArray(formErrors?.addresses) &&
-			formErrors.addresses.some((address) => address?.lat || address?.lng)
-				? "You need to calculate the coordinates first"
-				: undefined;
+		// Coordinates are now optional, so no coordinate error checking needed
 
 		// Collect all non-null, non-undefined errors
-		return [
-			bankDetailsError,
-			addressesError,
-			serverErrors,
-			coordinateError,
-		].filter(Boolean);
+		return [bankDetailsError, addressesError, serverErrors].filter(Boolean);
 	}, [form.formState.errors, globalProps?.errors?.fullMessages]);
 
 	/**
@@ -1892,10 +1901,6 @@ export default function FormTherapist({
 
 	const onSubmit = (values: TherapistFormSchema) => {
 		const isUpdate = mode === "update";
-		console.log(
-			`Submitting form to ${isUpdate ? "update" : "create"} the therapist...`,
-		);
-
 		const submitURL = `${globalProps.adminPortal.router.adminPortal.therapistManagement.index}${isUpdate ? `/${therapist.id}` : ""}`;
 		const submitConfig = {
 			preserveScroll: true,
@@ -1914,22 +1919,42 @@ export default function FormTherapist({
 			contractStartDate: restValues.contractStartDate || null,
 			contractEndDate: restValues.contractEndDate || null,
 		};
+
+		// Sanitize addresses coordinates to prevent sending default values
+		let finalSanitizedValues = { ...sanitizedValues };
+
+		if (sanitizedValues.addresses) {
+			const sanitizedAddresses = sanitizedValues.addresses.map((address) => {
+				// Check if coordinates are actually provided (not empty)
+				const hasValidCoordinates =
+					address.coordinates && address.coordinates.trim() !== "";
+
+				return {
+					...address,
+					// Set lat/lng to null if no coordinates provided
+					lat: hasValidCoordinates && address.lat != null ? address.lat : 0,
+					lng: hasValidCoordinates && address.lng != null ? address.lng : 0,
+				};
+			});
+
+			// Update addresses with sanitized version
+			finalSanitizedValues = {
+				...sanitizedValues,
+				addresses: sanitizedAddresses as typeof sanitizedValues.addresses,
+			};
+		}
+
 		const payload = deepTransformKeysToSnakeCase({
 			therapist: isUpdate
-				? { ...sanitizedValues }
-				: { ...sanitizedValues, user },
+				? { ...finalSanitizedValues }
+				: { ...finalSanitizedValues, user },
 		});
-		console.log(`Payload data: ${payload}`);
 
 		if (isUpdate) {
 			router.put(submitURL, payload, submitConfig);
 		} else {
 			router.post(submitURL, payload, submitConfig);
 		}
-
-		console.log(
-			`Therapist successfully ${isUpdate ? "updated" : "created"}...`,
-		);
 	};
 
 	return (
