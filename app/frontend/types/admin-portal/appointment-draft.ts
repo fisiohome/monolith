@@ -15,6 +15,7 @@ export interface AppointmentDraft {
 	expiresAt: string;
 	createdAt: string;
 	updatedAt: string;
+	statusReason?: string;
 	adminPic?: {
 		id: string;
 		name: string;

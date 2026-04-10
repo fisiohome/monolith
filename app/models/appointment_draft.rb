@@ -28,6 +28,55 @@ class AppointmentDraft < ApplicationRecord
 
   # Constants
   STEPS = %w[patient_details appointment_scheduling additional_settings review].freeze
+  STATUS_REASONS = [
+    {
+      labelEn: "Schedule approved",
+      labelId: "Sudah menyetujui jadwal",
+      value: "SCHEDULE_APPROVED"
+    },
+    {
+      labelEn: "Waiting for patient confirmation",
+      labelId: "Menunggu konfirmasi pasien",
+      value: "WAITING_FOR_PATIENT_CONFIRMATION"
+    },
+    {
+      labelEn: "Waiting for karpis confirmation",
+      labelId: "Menunggu konfirmasi karpis",
+      value: "WAITING_FOR_KARPIS_CONFIRMATION"
+    },
+    {
+      labelEn: "Waiting for partner confirmation",
+      labelId: "Menunggu konfirmasi mitra",
+      value: "WAITING_FOR_PARTNER_CONFIRMATION"
+    },
+    {
+      labelEn: "Still looking for therapist",
+      labelId: "Masih dicarikan terapis",
+      value: "STILL_LOOKING_FOR_THERAPIST"
+    },
+    {
+      labelEn: "Waiting for patient schedule",
+      labelId: "Menunggu jadwal pasien",
+      value: "WAITING_FOR_PATIENT_SCHEDULE"
+    }
+  ].freeze
+
+  # Class methods
+  def self.status_reason_options
+    STATUS_REASONS.map { |reason| [reason[:labelId], reason[:value]] }
+  end
+
+  def self.status_reason_labels
+    STATUS_REASONS.pluck(:labelId)
+  end
+
+  def self.find_status_reason_by_value(value)
+    STATUS_REASONS.find { |reason| reason[:value] == value }&.dig(:labelId)
+  end
+
+  def self.find_label_id_by_value(value)
+    STATUS_REASONS.find { |reason| reason[:value] == value }&.dig(:labelId)
+  end
 
   # Instance methods
   def expire_with_appointment!(appointment)

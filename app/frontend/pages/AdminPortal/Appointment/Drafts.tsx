@@ -10,6 +10,7 @@ import {
 	ClockIcon,
 	MoreHorizontal,
 	NotepadTextDashedIcon,
+	PencilIcon,
 	Trash2,
 	User,
 	X,
@@ -42,8 +43,17 @@ import {
 } from "@/components/ui/command";
 import { DataTable } from "@/components/ui/data-table";
 import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -55,6 +65,13 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -75,9 +92,16 @@ import type { Admin } from "@/types/admin-portal/admin";
 import type { AppointmentDraft } from "@/types/admin-portal/appointment-draft";
 import type { GlobalPageProps as BaseGlobalPageProps } from "@/types/globals";
 
+export interface StatusReason {
+	labelEn: string;
+	labelId: string;
+	value: string;
+}
+
 export interface AppointmentDraftsProps {
 	drafts: AppointmentDraft[];
 	admins: Admin[];
+	statusReasons: StatusReason[];
 }
 
 export interface AppointmentDraftsGlobalPageProps
@@ -86,10 +110,24 @@ export interface AppointmentDraftsGlobalPageProps
 	[key: string]: any;
 }
 
+// Helper function to find labelId by value
+const findLabelIdByValue = (
+	statusReasons: StatusReason[],
+	value: string,
+): string => {
+	const reason = statusReasons?.find((r) => r.value === value);
+	return reason?.labelId || value;
+};
+
 const columns = (
 	handleContinueDraft: (draftId: string) => void,
 	handleDeleteDraft: (draftId: string) => void,
+	handleUpdateStatusReason: (
+		draftId: string,
+		currentStatusReason: string | null,
+	) => void,
 	pageURL: string,
+	statusReasons: StatusReason[],
 ): ColumnDef<AppointmentDraft>[] => [
 	{
 		id: "select",
@@ -271,6 +309,19 @@ const columns = (
 		cell: ({ row }) => <PicDisplay admins={row.original.admins} />,
 	},
 	{
+		id: "statusReason",
+		header: "Status Reason",
+		cell: ({ row }) => {
+			const statusReason = row.original.statusReason;
+			const displayReason = statusReason
+				? findLabelIdByValue(statusReasons, statusReason)
+				: "N/A";
+			return (
+				<span className="text-sm text-muted-foreground">{displayReason}</span>
+			);
+		},
+	},
+	{
 		id: "actions",
 		header: "",
 		cell: ({ row }) => (
@@ -284,19 +335,35 @@ const columns = (
 					<DropdownMenuContent align="end">
 						<DropdownMenuLabel>Actions</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onClick={() => handleContinueDraft(row.original.id)}
-						>
-							<CheckIcon className="size-4" />
-							Continue
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onClick={() => handleDeleteDraft(row.original.id)}
-							className="text-destructive"
-						>
-							<Trash2 className="size-4" />
-							Delete Draft
-						</DropdownMenuItem>
+						<DropdownMenuGroup>
+							<DropdownMenuItem
+								onClick={() => handleContinueDraft(row.original.id)}
+							>
+								<CheckIcon className="size-4" />
+								Continue
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() =>
+									handleUpdateStatusReason(
+										row.original.id,
+										row.original.statusReason || null,
+									)
+								}
+							>
+								<PencilIcon className="size-4" />
+								Update Status Reason
+							</DropdownMenuItem>
+						</DropdownMenuGroup>
+						<DropdownMenuSeparator />
+						<DropdownMenuGroup>
+							<DropdownMenuItem
+								onClick={() => handleDeleteDraft(row.original.id)}
+								className="text-destructive"
+							>
+								<Trash2 className="size-4" />
+								Delete Draft
+							</DropdownMenuItem>
+						</DropdownMenuGroup>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</div>
@@ -368,12 +435,19 @@ interface DraftDetailsProps {
 	row: Row<AppointmentDraft>;
 	handleContinueDraft: (draftId: string) => void;
 	handleDeleteDraft: (draftId: string) => void;
+	handleUpdateStatusReason: (
+		draftId: string,
+		currentStatusReason: string | null,
+	) => void;
+	statusReasons: StatusReason[];
 }
 
 const DraftDetails = ({
 	row,
 	handleContinueDraft,
 	handleDeleteDraft,
+	handleUpdateStatusReason,
+	statusReasons,
 }: DraftDetailsProps) => {
 	const draft = row.original;
 
@@ -411,6 +485,12 @@ const DraftDetails = ({
 			value: format(new Date(draft.expiresAt), "dd MMM yyyy, HH:mm", {
 				locale: id,
 			}),
+		},
+		{
+			label: "Status Reason",
+			value: draft.statusReason
+				? findLabelIdByValue(statusReasons, draft.statusReason)
+				: "N/A",
 		},
 	];
 
@@ -549,6 +629,18 @@ const DraftDetails = ({
 					Continue
 				</Button>
 				<Button
+					variant="ghost"
+					onClick={() =>
+						handleUpdateStatusReason(
+							row.original.id,
+							row.original.statusReason || null,
+						)
+					}
+				>
+					<PencilIcon className="size-4" />
+					Update Status Reason
+				</Button>
+				<Button
 					variant="ghost-destructive"
 					onClick={() => handleDeleteDraft(row.original.id)}
 				>
@@ -595,12 +687,22 @@ const AppointmentDrafts = () => {
 		isOpen: false,
 		draftId: null,
 	});
+	const [statusReasonDialog, setStatusReasonDialog] = useState<{
+		isOpen: boolean;
+		draftId: string | null;
+		currentStatusReason: string | null;
+	}>({
+		isOpen: false,
+		draftId: null,
+		currentStatusReason: null,
+	});
 
 	const [filters, setFilters] = useState(() => {
 		const currentQuery = globalProps?.adminPortal?.currentQuery;
 		return {
 			draftId: currentQuery?.draftId || "",
 			adminId: currentQuery?.adminId || "me",
+			statusReason: currentQuery?.statusReason || "",
 		};
 	});
 
@@ -633,6 +735,7 @@ const AppointmentDrafts = () => {
 					// null value means reset the another param value
 					page: null,
 					limit: null,
+					expanded: null, // Remove expanded state when filtering
 				}),
 			);
 			debouncedUpdateQueryParams(fullUrl);
@@ -731,6 +834,63 @@ const AppointmentDrafts = () => {
 		setPicConfirmDialog({ isOpen: false, draftId: null });
 	}, []);
 
+	const handleUpdateStatusReason = useCallback(
+		(draftId: string, currentStatusReason: string | null) => {
+			setStatusReasonDialog({
+				isOpen: true,
+				draftId,
+				currentStatusReason,
+			});
+		},
+		[],
+	);
+
+	const handleConfirmStatusReasonUpdate = useCallback(
+		async (newStatusReason: string) => {
+			if (!statusReasonDialog.draftId) return;
+
+			try {
+				const response = await fetch(
+					`/api/v1/appointments/drafts/${statusReasonDialog.draftId}/status_reason`,
+					{
+						method: "PUT",
+						headers: {
+							"Content-Type": "application/json",
+							Accept: "application/json",
+							"X-CSRF-Token":
+								document
+									.querySelector('meta[name="csrf-token"]')
+									?.getAttribute("content") || "",
+						},
+						body: JSON.stringify({
+							status_reason: newStatusReason,
+						}),
+					},
+				);
+
+				if (!response.ok) {
+					const error = await response.json();
+					toast.error(error.error || "Failed to update status reason");
+					return;
+				}
+
+				toast.success("Status reason updated successfully");
+				setStatusReasonDialog({
+					isOpen: false,
+					draftId: null,
+					currentStatusReason: null,
+				});
+				router.reload({
+					only: ["adminPortal", "flash", "errors", "drafts"],
+				});
+			} catch (error) {
+				console.error("Update status reason error:", error);
+				toast.error("Failed to update status reason");
+			}
+		},
+		[statusReasonDialog.draftId],
+	);
+
 	const currentExpanded = useMemo<ExpandedState>(() => {
 		const { queryParams } = populateQueryParams(pageURL);
 		const expandedList = queryParams?.expanded
@@ -750,8 +910,21 @@ const AppointmentDrafts = () => {
 	}, [pageURL, globalProps?.drafts]);
 
 	const tableColumns = useMemo(
-		() => columns(handleContinueDraft, handleDeleteDraft, pageURL),
-		[handleContinueDraft, handleDeleteDraft, pageURL],
+		() =>
+			columns(
+				handleContinueDraft,
+				handleDeleteDraft,
+				handleUpdateStatusReason,
+				pageURL,
+				globalProps?.statusReasons || [],
+			),
+		[
+			handleContinueDraft,
+			handleDeleteDraft,
+			handleUpdateStatusReason,
+			pageURL,
+			globalProps?.statusReasons,
+		],
 	);
 
 	const confirmDeleteDraft = async () => {
@@ -853,6 +1026,34 @@ const AppointmentDrafts = () => {
 								</div>
 							)}
 						</div>
+
+						<Select
+							value={filters.statusReason}
+							onValueChange={(value) => {
+								handleFilterBy({
+									value: value === "all" ? "" : value,
+									type: "statusReason",
+								});
+							}}
+						>
+							<SelectTrigger className="bg-background">
+								<SelectValue placeholder="Filter by status reason">
+									{filters.statusReason
+										? globalProps?.statusReasons?.find(
+												(r) => r.value === filters.statusReason,
+											)?.labelId
+										: "All status reasons"}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">All status reasons</SelectItem>
+								{globalProps?.statusReasons?.map((reason: StatusReason) => (
+									<SelectItem key={reason.value} value={reason.value}>
+										{reason.labelId}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 
 						<Deferred
 							data={["admins"]}
@@ -1010,6 +1211,8 @@ const AppointmentDrafts = () => {
 									row={row}
 									handleContinueDraft={handleContinueDraft}
 									handleDeleteDraft={handleDeleteDraft}
+									handleUpdateStatusReason={handleUpdateStatusReason}
+									statusReasons={globalProps?.statusReasons || []}
 								/>
 							)}
 							currentExpanded={currentExpanded}
@@ -1080,6 +1283,76 @@ const AppointmentDrafts = () => {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<Dialog
+				open={statusReasonDialog.isOpen}
+				onOpenChange={(open) => {
+					if (!open) {
+						setStatusReasonDialog({
+							isOpen: false,
+							draftId: null,
+							currentStatusReason: null,
+						});
+					}
+				}}
+			>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Update Status Reason</DialogTitle>
+						<DialogDescription>
+							Select a reason for the current status of this draft.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="px-0.5 pb-4">
+						<Select
+							value={statusReasonDialog.currentStatusReason || ""}
+							onValueChange={(value) => {
+								setStatusReasonDialog((prev) => ({
+									...prev,
+									currentStatusReason: value,
+								}));
+							}}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Select a status reason" />
+							</SelectTrigger>
+							<SelectContent>
+								{globalProps?.statusReasons?.map((reason: StatusReason) => (
+									<SelectItem key={reason.value} value={reason.value}>
+										{reason.labelId}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => {
+								setStatusReasonDialog({
+									isOpen: false,
+									draftId: null,
+									currentStatusReason: null,
+								});
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={() => {
+								if (statusReasonDialog.currentStatusReason) {
+									handleConfirmStatusReasonUpdate(
+										statusReasonDialog.currentStatusReason,
+									);
+								}
+							}}
+							disabled={!statusReasonDialog.currentStatusReason}
+						>
+							Update
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 };

@@ -92,6 +92,20 @@ module Api
         render json: {success: false, error: "Failed to add PIC"}, status: :internal_server_error
       end
 
+      def draft_update_status_reason
+        service = AppointmentDraftsService.new(current_admin)
+        result = service.update_status_reason(params[:id], params[:status_reason])
+
+        if result[:success]
+          render json: {success: true, draft: serialize_draft(result[:draft])}
+        else
+          render json: {success: false, error: result[:error]}, status: :unprocessable_entity
+        end
+      rescue => e
+        Rails.logger.error("Update status reason error: #{e.message}")
+        render json: {success: false, error: "Failed to update status reason"}, status: :internal_server_error
+      end
+
       private
 
       def ensure_json_request

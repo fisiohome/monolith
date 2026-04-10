@@ -52,26 +52,31 @@ class AppointmentDraftsService
   end
 
   # List drafts accessible to the current admin
-  def list_drafts(filters = {})
-    drafts = AppointmentDraft.active_drafts
+  def list_drafts(admin_id: nil, created_by_id: nil, draft_id: nil, status_reason: nil)
+    drafts = AppointmentDraft.active_drafts.includes(:created_by_admin, :admins, :primary_admin)
 
-    # Filter by assigned admin if specified
-    if filters[:admin_id].present?
-      drafts = drafts.joins(:appointment_draft_admins)
-        .where(appointment_draft_admins: {admin_id: filters[:admin_id]})
+    # Filter by specific draft ID
+    if draft_id.present?
+      drafts = drafts.where(id: draft_id)
     end
 
-    # Filter by specific draft id if provided
-    drafts = drafts.where(id: filters[:draft_id]) if filters[:draft_id].present?
+    # Filter by admin (PIC filter)
+    if admin_id.present?
+      drafts = drafts.joins(:appointment_draft_admins)
+        .where(appointment_draft_admins: {admin_id: admin_id})
+    end
 
-    # Filter by created_by if specified
-    drafts = drafts.created_by(filters[:created_by_id]) if filters[:created_by_id].present?
+    # Filter by creator
+    if created_by_id.present?
+      drafts = drafts.where(created_by_admin_id: created_by_id)
+    end
 
-    # Order by most recently updated
-    drafts = drafts.order(updated_at: :desc)
+    # Filter by status reason
+    if status_reason.present?
+      drafts = drafts.where(status_reason: status_reason)
+    end
 
-    # Include associations for eager loading
-    drafts.includes(:admin_pic, :created_by_admin, :admins, :primary_admin)
+    drafts.order(updated_at: :desc)
   end
 
   def add_admin_to_draft(draft_id, admin)
@@ -117,6 +122,27 @@ class AppointmentDraftsService
 
     draft.destroy
     {success: true}
+  end
+
+  # Update status reason for a draft
+  def update_status_reason(draft_id, status_reason)
+    draft = AppointmentDraft.find_by(id: draft_id)
+
+    return {success: false, error: "Draft not found"} unless draft
+
+    # Only allow update by creator or PIC
+    unless can_manage_draft?(draft)
+      return {success: false, error: "Not authorized to update this draft"}
+    end
+
+    if draft.update(status_reason: status_reason)
+      {success: true, draft: draft}
+    else
+      {success: false, error: draft.errors.full_messages.join(", ")}
+    end
+  rescue => e
+    Rails.logger.error("Failed to update status reason for draft ##{draft_id}: #{e.message}")
+    {success: false, error: "Failed to update status reason"}
   end
 
   # Get drafts where current admin is PIC or assigned
