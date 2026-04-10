@@ -223,7 +223,7 @@ module AdminPortal
           message: status[:result][:message] || status[:result][:error],
           completed_at: status[:completed_at]
         }
-      elsif SolidQueue::Job.where("job_class_name = ? AND finished_at IS NULL", "MasterDataSyncJob").exists?
+      elsif SolidQueue::Job.where("class_name = ? AND finished_at IS NULL", "MasterDataSyncJob").exists?
         # Check if there are any jobs in the queue
         render json: {status: :running}
       else
