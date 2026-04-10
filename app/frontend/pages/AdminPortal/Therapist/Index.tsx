@@ -307,6 +307,48 @@ export default function Index({
 		if (!isMobile) {
 			items.push(
 				{
+					accessorKey: "location",
+					header: ({ column }) => (
+						<DataTableColumnHeader column={column} title="Location" />
+					),
+					enableSorting: true,
+					enableHiding: false,
+					cell: ({ row }) => {
+						const activeAddress = row.original.activeAddress;
+						const location = activeAddress?.location;
+
+						if (!location) {
+							return (
+								<span className="text-muted-foreground">
+									<Link
+										href={
+											globalProps.adminPortal.router.adminPortal
+												.patientManagement.index
+										}
+										className="hover:text-primary hover:underline"
+									>
+										N/A
+									</Link>
+								</span>
+							);
+						}
+
+						return (
+							<div>
+								<Link
+									href={
+										globalProps.adminPortal.router.adminPortal.patientManagement
+											.index
+									}
+									className="hover:text-primary hover:underline"
+								>
+									{[location.city, location.state, location.country].join(", ")}
+								</Link>
+							</div>
+						);
+					},
+				},
+				{
 					accessorKey: "gender",
 					header: ({ column }) => (
 						<DataTableColumnHeader column={column} title="Gender" />
@@ -556,6 +598,7 @@ export default function Index({
 		return items;
 	}, [
 		globalProps.auth,
+		globalProps.adminPortal.router.adminPortal.patientManagement.index,
 		isMobile,
 		routeTo.changePassword,
 		routeTo.edit,

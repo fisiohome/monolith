@@ -21,7 +21,7 @@ module AdminPortal
       therapist_collections = Therapist
         .joins(:user)
         .left_joins(:therapist_appointment_schedule)
-        .includes(:therapist_appointment_schedule)
+        .includes(:therapist_appointment_schedule, :active_address)
         .by_search(filter_by_search)
         .by_city(filter_by_city)
         .by_employment_type(filter_by_employment_type)
@@ -96,7 +96,7 @@ module AdminPortal
             serialize_therapist(
               therapist,
               {
-                only: %i[id name registration_number employment_status employment_type gender], include_bank_details: false, include_active_address: false, include_addresses: false
+                only: %i[id name registration_number employment_status employment_type gender], include_bank_details: false, include_active_address: true, include_addresses: false
               }
             )
           end

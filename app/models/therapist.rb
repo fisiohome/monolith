@@ -16,7 +16,7 @@ class Therapist < ApplicationRecord
 
   scope :by_city, ->(city) {
     return if city.blank?
-    left_joins(therapist_addresses: {address: :location})
+    left_joins(active_address: :location)
       .where(Location.arel_table[:city].matches("%#{city}%"))
   }
 

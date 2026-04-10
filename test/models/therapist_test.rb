@@ -324,4 +324,42 @@ class TherapistTest < ActiveSupport::TestCase
     )
     assert new_therapist.valid?, new_therapist.errors.full_messages.join(", ")
   end
+
+  # Test scopes
+  test "by_city scope should only filter by active addresses" do
+    # Create a therapist with multiple addresses
+    therapist = @therapist_one
+
+    # Create active address in Jakarta
+    jakarta_location = locations(:jakarta_selatan)
+    jakarta_address = Address.create!(
+      address: "Test Jakarta Address",
+      postal_code: "12345",
+      latitude: -6.2277,
+      longitude: 106.8414,
+      location: jakarta_location
+    )
+
+    # Create inactive address in Bandung
+    bandung_location = locations(:bandung)
+    bandung_address = Address.create!(
+      address: "Test Bandung Address",
+      postal_code: "40111",
+      latitude: -6.9147,
+      longitude: 107.6098,
+      location: bandung_location
+    )
+
+    # Link addresses to therapist
+    therapist.therapist_addresses.create!(address: jakarta_address, active: true)
+    therapist.therapist_addresses.create!(address: bandung_address, active: false)
+
+    # Test filtering by Jakarta should find the therapist (active address)
+    jakarta_therapists = Therapist.by_city("JAKARTA")
+    assert_includes jakarta_therapists, therapist, "Should find therapist with active Jakarta address"
+
+    # Test filtering by Bandung should NOT find the therapist (inactive address)
+    bandung_therapists = Therapist.by_city("BANDUNG")
+    assert_not_includes bandung_therapists, therapist, "Should not find therapist with only inactive Bandung address"
+  end
 end
