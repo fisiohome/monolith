@@ -72,7 +72,7 @@ export default function DotBadgeWithLabel({
 		>
 			<div
 				className={cn(
-					"inline-flex border rounded-full mr-2 p-0",
+					"inline-flex border rounded-full mr-2 p-0 shrink-0",
 					dotBadgeVariants({ variant }),
 					dotSize,
 					className,

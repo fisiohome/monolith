@@ -1,13 +1,6 @@
 import { Deferred, Head, router, usePage } from "@inertiajs/react";
 import { addMonths, format, isToday, isValid, parse } from "date-fns";
-import {
-	CalendarIcon,
-	Check,
-	ChevronDownIcon,
-	ChevronsUpDown,
-	MapPinIcon,
-	X,
-} from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, CopyIcon, X } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { useTranslation } from "react-i18next";
@@ -20,11 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
 	Command,
 	CommandEmpty,
@@ -45,11 +33,21 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
+import { useToast } from "@/hooks/use-toast";
 import { getDotVariantStatus } from "@/lib/appointments/utils";
 import type { GENDERS } from "@/lib/constants";
 import {
 	cn,
+	copyToClipboard,
 	debounce,
 	generateInitials,
 	populateQueryParams,
@@ -68,7 +66,13 @@ type TherapistsOption = Pick<
 	| "employmentType"
 	| "service"
 	| "user"
->;
+> & {
+	activeAddress?: {
+		city: string;
+		state: string;
+		country: string;
+	} | null;
+};
 
 type TherapistsApptSchedule = Pick<
 	Appointment,
@@ -88,6 +92,15 @@ type TherapistsApptSchedule = Pick<
 	serviceName: string;
 	totalVisit: number;
 	addressLine?: string | null;
+	location?: {
+		id: number;
+		country: string;
+		country_code: string;
+		state: string;
+		city: string;
+		created_at: string;
+		updated_at: string;
+	} | null;
 };
 
 const toStartOfDay = (date: Date) => {
@@ -127,16 +140,21 @@ export interface SchedulesPageGlobalProps
 	[key: string]: any;
 }
 
-// * DayCard component
-interface DayCardProps {
+// * TableSchedules component
+interface TableSchedulesProps {
 	dayKey: string;
 	appointments: TherapistsApptSchedule[];
 	availabilitySlots: AvailabilitySlots;
 }
 
-function DayCard({ dayKey, appointments, availabilitySlots }: DayCardProps) {
+function TableSchedules({
+	dayKey,
+	appointments,
+	availabilitySlots,
+}: TableSchedulesProps) {
 	const { t: tappt } = useTranslation("appointments");
-	const { locale, tzDate, timeFormatDateFns } = useDateContext();
+	const { locale, tzDate } = useDateContext();
+	const { toast } = useToast();
 	const isApptToday = isToday(new Date(dayKey));
 	const dateLabel =
 		dayKey === "unscheduled"
@@ -190,7 +208,15 @@ function DayCard({ dayKey, appointments, availabilitySlots }: DayCardProps) {
 											variant="outline"
 											className="text-[10px] px-1"
 										>
-											{fw.startTime} &mdash; {fw.endTime}
+											{format(
+												new Date(`${dayKey}T${fw.startTime}`),
+												locale.code === "id" ? "HH:mm" : "hh:mm a",
+											)}{" "}
+											&mdash;{" "}
+											{format(
+												new Date(`${dayKey}T${fw.endTime}`),
+												locale.code === "id" ? "HH:mm" : "hh:mm a",
+											)}
 										</Badge>
 									)) || [],
 							)}
@@ -214,110 +240,125 @@ function DayCard({ dayKey, appointments, availabilitySlots }: DayCardProps) {
 				)}
 			</div>
 
-			<div>
-				{appointments.map((appt, idx: number) => {
-					const apptTime = appt.appointmentDateTime
-						? format(new Date(appt.appointmentDateTime), timeFormatDateFns, {
-								in: tzDate,
-								locale,
-							})
-						: "N/A";
-					const genderTitle =
-						appt.patientGender === "MALE"
-							? "Bapak "
-							: appt.patientGender === "FEMALE"
-								? "Ibu "
-								: "";
-					const title = `${genderTitle}${appt.patientName || "(No patient)"}`;
-					const statusDotVariant = getDotVariantStatus(appt.status);
-					const statusLine = tappt(`statuses.${appt.status}`);
-					const regLine = appt?.registrationNumber;
-					const packageLine = appt?.packageName;
-					const visitLine = appt?.totalVisit
-						? `Visit ${appt.visitNumber}/${appt.totalVisit}`
-						: null;
-					const locationLine = appt?.addressLine || null;
+			{appointments.length === 0 ? (
+				<div className="mt-3 text-center text-sm text-muted-foreground/75 pb-2">
+					<p>No appointments scheduled.</p>
+				</div>
+			) : (
+				<div className="mt-3 rounded-md border border-border/70 overflow-hidden">
+					<Table>
+						<TableHeader>
+							<TableRow className="bg-background text-muted-foreground border border-border/60">
+								<TableHead>Time</TableHead>
+								<TableHead>Reg. No.</TableHead>
+								<TableHead>Patient</TableHead>
+								<TableHead>Visit</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead>Location</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{appointments.map((appt) => {
+								const apptTime = appt.appointmentDateTime
+									? format(
+											new Date(appt.appointmentDateTime),
+											locale.code === "id" ? "HH:mm" : "hh:mm a",
+											{
+												in: tzDate,
+												locale,
+											},
+										)
+									: "N/A";
+								const genderTitle =
+									appt.patientGender === "MALE"
+										? "Bapak "
+										: appt.patientGender === "FEMALE"
+											? "Ibu "
+											: "";
+								const title = `${genderTitle}${appt.patientName || "(No patient)"}`;
+								const statusDotVariant = getDotVariantStatus(appt.status);
+								const statusLine = tappt(`statuses.${appt.status}`);
+								const regLine = appt?.registrationNumber;
+								const packageLine = appt?.packageName;
+								const visitLine = appt?.totalVisit
+									? `Visit ${appt.visitNumber}/${appt.totalVisit}`
+									: null;
+								const locationLine = appt?.location?.city || "N/A";
 
-					return (
-						<button
-							type="button"
-							key={appt.id}
-							className={cn(
-								"text-sm p-2 space-y-1 hover:bg-primary/5 w-full text-left",
-								idx !== appointments.length - 1 && "border-b",
-							)}
-							onClick={() => {
-								if (appt.registrationNumber) {
-									window.open(
-										`/admin-portal/appointments?registration_number=${appt.registrationNumber}`,
-										"_blank",
-									);
-								}
-							}}
-						>
-							<div className="flex justify-between gap-3 w-full">
-								<p className="font-bold tracking-tight flex-1">{apptTime}</p>
-
-								<DotBadgeWithLabel
-									size="xs"
-									className="relative flex-shrink-0"
-									variant={statusDotVariant}
-								>
-									<span
-										title={statusLine}
-										className="text-[0.7rem] tracking-tight uppercase line-clamp-1"
-									>
-										{statusLine}
-									</span>
-								</DotBadgeWithLabel>
-							</div>
-
-							<p className="font-semibold tracking-tight leading-tight capitalize">
-								{title}
-							</p>
-
-							{locationLine && (
-								<Collapsible
-									className="mt-2 data-[state=open]:bg-muted rounded-md bg-background border border-border/60"
-									onClick={(e) => e.stopPropagation()}
-								>
-									<CollapsibleTrigger asChild>
-										<Button
-											variant="ghost"
-											className="group w-full h-auto p-1.5 flex items-start justify-start gap-1.5 text-xs text-muted-foreground hover:bg-transparent"
-										>
-											<MapPinIcon className="size-3.5 shrink-0" />
-											<span className="line-clamp-1 text-left flex-1 whitespace-normal">
-												Visit Address
-											</span>
-											<ChevronDownIcon className="ml-auto size-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-										</Button>
-									</CollapsibleTrigger>
-									<CollapsibleContent className="pt-0 p-2.5 text-left text-xs text-muted-foreground whitespace-pre-wrap">
-										<span className="text-pretty">{locationLine}</span>
-									</CollapsibleContent>
-								</Collapsible>
-							)}
-
-							<div className="!mt-2 text-xs flex items-center justify-between gap-3">
-								<div className="tracking-tight">
-									{visitLine && <span>{visitLine}</span>}
-									{packageLine && (
-										<>
-											<span className="mx-1">&bull;</span>
-											<span>{packageLine}</span>
-										</>
-									)}
-								</div>
-
-								{regLine && (
-									<span className="italic tracking-tighter">#{regLine}</span>
-								)}
-							</div>
-						</button>
-					);
-				})}
-			</div>
+								return (
+									<TableRow key={appt.id}>
+										<TableCell className="font-semibold tracking-tight text-nowrap">
+											{apptTime}
+										</TableCell>
+										<TableCell className="tracking-tight font-mono text-nowrap">
+											<div className="flex items-center gap-1">
+												<a
+													href={`/admin-portal/appointments?registration_number=${appt.registrationNumber}`}
+													target="_blank"
+													className="text-primary hover:underline"
+												>
+													#{regLine}
+												</a>
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-6 w-6 p-0 hover:bg-muted"
+													onClick={async (e) => {
+														e.preventDefault();
+														if (await copyToClipboard(regLine)) {
+															toast({
+																description:
+																	"Reg. no. copied to clipboard successfully",
+															});
+														}
+													}}
+												>
+													<CopyIcon className="h-3 w-3 shrink-0 opacity-75" />
+												</Button>
+											</div>
+										</TableCell>
+										<TableCell className="leading-tight uppercase">
+											<div className="flex items-center gap-1">
+												{title}
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-6 w-6 p-0 hover:bg-muted"
+													onClick={async (e) => {
+														e.preventDefault();
+														if (await copyToClipboard(appt.patientName)) {
+															toast({
+																description:
+																	"Patient name copied to clipboard successfully",
+															});
+														}
+													}}
+												>
+													<CopyIcon className="h-3 w-3 shrink-0 opacity-75" />
+												</Button>
+											</div>
+										</TableCell>
+										<TableCell>
+											{visitLine} &bull; {packageLine}
+										</TableCell>
+										<TableCell>
+											<DotBadgeWithLabel size="xs" variant={statusDotVariant}>
+												<span
+													title={statusLine}
+													className="text-[0.7rem] tracking-tight uppercase line-clamp-1"
+												>
+													{statusLine}
+												</span>
+											</DotBadgeWithLabel>
+										</TableCell>
+										<TableCell>{locationLine}</TableCell>
+									</TableRow>
+								);
+							})}
+						</TableBody>
+					</Table>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -356,7 +397,7 @@ function TherapistScheduleColumn({
 	return (
 		<div
 			key={therapist.id}
-			className="md:w-[380px] w-full md:min-w-[380px] md:max-w-[380px] flex-shrink-0 flex flex-col gap-2 snap-start"
+			className="w-full flex-shrink-0 flex flex-col gap-2 snap-start"
 		>
 			<div className="flex pb-2 items-center justify-between border-b border-border mr-2">
 				<HoverCard key={therapist.id} openDelay={10} closeDelay={100}>
@@ -412,6 +453,16 @@ function TherapistScheduleColumn({
 										{therapist.service.name.replaceAll("_", " ")}
 									</dd>
 								</dl>
+								{therapist.activeAddress && (
+									<dl className="flex items-center justify-between gap-2">
+										<dt className="text-muted-foreground text-nowrap">
+											Location
+										</dt>
+										<dd className="font-medium text-right">
+											{therapist.activeAddress.city}
+										</dd>
+									</dl>
+								)}
 							</div>
 						</div>
 					</HoverCardContent>
@@ -426,7 +477,7 @@ function TherapistScheduleColumn({
 				)}
 
 				{dayKeys.map((dayKey) => (
-					<DayCard
+					<TableSchedules
 						key={dayKey}
 						dayKey={dayKey}
 						appointments={grouped[dayKey] || []}

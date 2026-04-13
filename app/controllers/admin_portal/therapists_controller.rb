@@ -313,7 +313,7 @@ module AdminPortal
         Rails.cache.fetch("therapists_options:v#{version}", expires_in: 10.minutes) do
           therapists_scope = Therapist
             .joins(:user)
-            .includes(:user, :service)
+            .includes(:user, :service, therapist_addresses: :address)
             .with_active_addresses
             .employment_status_ACTIVE
             .where(
@@ -325,6 +325,8 @@ module AdminPortal
 
           deep_transform_keys_to_camel_case({
             data: therapists_scope.map do |therapist|
+              active_address = therapist.therapist_addresses.find { |addr| addr.active? }
+
               {
                 id: therapist.id,
                 name: therapist.name,
@@ -333,7 +335,12 @@ module AdminPortal
                 gender: therapist.gender,
                 registration_number: therapist.registration_number,
                 user: therapist.user && {id: therapist.user.id, email: therapist.user.email},
-                service: therapist.service && {id: therapist.service.id, name: therapist.service.name}
+                service: therapist.service && {id: therapist.service.id, name: therapist.service.name},
+                activeAddress: active_address&.address&.location && {
+                  city: active_address.address.location.city,
+                  state: active_address.address.location.state,
+                  country: active_address.address.location.country
+                }
               }
             end.as_json
           })
@@ -382,7 +389,8 @@ module AdminPortal
               status: a.status,
               appointment_date_time: a.appointment_date_time,
               visit_number: a.visit_number,
-              address_line: a.address_history&.address_line
+              address_line: a.address_history&.address_line,
+              location: a.address_history&.location
             }
           end
 
