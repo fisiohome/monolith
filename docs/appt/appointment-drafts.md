@@ -33,8 +33,9 @@ Admins create drafts for common appointment patterns (like "New Patient Full Ass
 ### Draft Management
 - **Auto-save**: Work is preserved automatically as admins progress through the booking steps
 - **Manual Save**: Admins can explicitly save drafts at any point in the process
-- **Draft Expiration**: Automatically cleans up drafts after 7 days to keep the workspace organized
+- **Draft Expiration**: Automatically expires drafts after 14 days to keep the workspace organized
 - **Status Tracking**: Clear visual indicators show draft progress and completion status
+- **Status-Based Actions**: Continue functionality is disabled for expired drafts to prevent errors
 
 ### Multi-Admin Collaboration
 - **PIC Assignment**: Multiple admins can be assigned as Persons in Charge for a single draft
@@ -45,8 +46,10 @@ Admins create drafts for common appointment patterns (like "New Patient Full Ass
 ### Smart Organization
 - **Draft ID Search**: Quick lookup using simple IDs (e.g., "3" or "#3")
 - **Admin Filtering**: View drafts by specific admins or filter to "Assigned to me" or "All drafts"
+- **Status Filtering**: Filter drafts by status - "Active drafts", "Expired drafts", or "All drafts"
 - **Progress Indicators**: Visual cues show which booking step each draft is currently on
 - **Time Awareness**: Clear timestamps show when drafts were last updated
+- **Status Badges**: Visual indicators distinguish active (green) from expired (red) drafts
 
 ### Intelligent Form Handling
 - **Step-by-Step Progress**: Four clear stages: Patient Details → Scheduling → Additional Settings → Review
@@ -58,9 +61,10 @@ Admins create drafts for common appointment patterns (like "New Patient Full Ass
 
 ### Drafts Dashboard
 The main interface provides an at-a-glance view of all drafts with:
-- **Search and Filter**: Intuitive controls for finding specific drafts
-- **Status Badges**: Visual indicators for draft progress and assignment
-- **Quick Actions**: One-click access to continue, delete, or assign drafts
+- **Search and Filter**: Intuitive controls for finding specific drafts by ID, admin, status reason, and draft status
+- **Status Column**: Clear visual distinction between active (green badge) and expired (red badge) drafts
+- **Smart Actions**: Continue button is disabled for expired drafts to prevent invalid operations
+- **Quick Actions**: One-click access to continue, delete, update status reason, or assign drafts
 - **Responsive Design**: Works seamlessly on desktop and tablet devices
 
 ### Draft Confirmation Dialog
@@ -131,7 +135,14 @@ The draft system integrates naturally with the existing appointment form:
 ### "I can't find my draft"
 - Check if you're filtering by "Assigned to me" - try "All drafts"
 - Use the Draft ID search if you know the draft number
-- Verify the draft hasn't expired (7-day limit)
+- Check the status filter - try "All drafts" instead of just "Active drafts"
+- Verify the draft hasn't expired (14-day limit)
+
+### "I can't continue a draft"
+- Check if the draft status is "Expired" - expired drafts cannot be continued
+- Look for the red "Expired" badge in the Status column
+- Create a new draft if the original has expired
+- Contact your admin if you need to recover data from an expired draft
 
 ### "Someone else is working on my draft"
 - Multiple PICs can collaborate on the same draft
@@ -139,9 +150,10 @@ The draft system integrates naturally with the existing appointment form:
 - Coordinate with team members to avoid conflicts
 
 ### "My draft disappeared"
-- Drafts expire after 7 days of inactivity
+- Drafts expire after 14 days of inactivity
 - Check if the draft was completed and became an appointment
 - Look in the appointment history for the completed booking
+- Try filtering by "Expired drafts" to see recently expired items
 
 ## Future Enhancements
 

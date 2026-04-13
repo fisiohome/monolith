@@ -52,8 +52,17 @@ class AppointmentDraftsService
   end
 
   # List drafts accessible to the current admin
-  def list_drafts(admin_id: nil, created_by_id: nil, draft_id: nil, status_reason: nil)
-    drafts = AppointmentDraft.active_drafts.includes(:created_by_admin, :admins, :primary_admin)
+  def list_drafts(admin_id: nil, created_by_id: nil, draft_id: nil, status_reason: nil, status: nil)
+    drafts = AppointmentDraft.includes(:created_by_admin, :admins, :primary_admin)
+
+    drafts = case status
+    when "expired"
+      drafts.expired_drafts
+    when "all"
+      drafts
+    else
+      drafts.active_drafts
+    end
 
     # Filter by specific draft ID
     if draft_id.present?

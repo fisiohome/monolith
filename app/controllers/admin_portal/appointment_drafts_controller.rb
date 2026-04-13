@@ -30,7 +30,8 @@ module AdminPortal
         admin_id: draft_id.present? ? nil : admin_filter_id,
         created_by_id: params[:created_by_id],
         draft_id: draft_id,
-        status_reason: params[:status_reason]
+        status_reason: params[:status_reason],
+        status: params[:status]
       )
 
       render inertia: "AdminPortal/Appointment/Drafts", props: deep_transform_keys_to_camel_case({

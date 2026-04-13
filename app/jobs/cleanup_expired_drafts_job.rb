@@ -21,14 +21,14 @@ class CleanupExpiredDraftsJob < ApplicationJob
   def perform
     Rails.logger.info "Starting cleanup of expired appointment drafts..."
 
-    # Find expired drafts that are older than 3 days using the cleanup_eligible scope
+    # Find expired drafts eligible for cleanup
     expired_drafts = AppointmentDraft.cleanup_eligible
 
     deleted_count = expired_drafts.count
 
     if deleted_count > 0
       expired_drafts.destroy_all
-      Rails.logger.info "Cleaned up #{deleted_count} expired appointment drafts (older than 3 days)"
+      Rails.logger.info "Cleaned up #{deleted_count} expired appointment drafts (older than 3 days, without status reason)"
     else
       Rails.logger.info "No expired appointment drafts to clean up"
     end

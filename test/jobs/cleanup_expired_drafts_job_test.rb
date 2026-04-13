@@ -5,12 +5,19 @@ class CleanupExpiredDraftsJobTest < ActiveJob::TestCase
     @admin = admins(:admin)
   end
 
-  test "should cleanup expired drafts older than 3 days" do
+  test "should cleanup expired drafts older than 3 days without status reason" do
     # Create expired drafts of different ages
-    old_draft = create(:appointment_draft,
+    old_draft_without_reason = create(:appointment_draft,
       created_at: 8.days.ago,
-      status: "expired")
-    old_draft.update!(expires_at: 4.days.ago)  # Expires more than 3 days ago
+      status: "expired",
+      status_reason: nil)
+    old_draft_without_reason.update!(expires_at: 4.days.ago)  # Expires more than 3 days ago
+
+    old_draft_with_reason = create(:appointment_draft,
+      created_at: 8.days.ago,
+      status: "expired",
+      status_reason: "WAITING_FOR_PATIENT_CONFIRMATION")
+    old_draft_with_reason.update!(expires_at: 4.days.ago)
 
     recent_expired = create(:appointment_draft,
       created_at: 3.days.ago,
@@ -29,9 +36,10 @@ class CleanupExpiredDraftsJobTest < ActiveJob::TestCase
 
     result = CleanupExpiredDraftsJob.perform_now
 
-    # Only old draft should be deleted (expired more than 3 days ago)
+    # Only old draft without status reason should be deleted
     assert_equal 1, result[:deleted_count]
-    assert_not AppointmentDraft.exists?(old_draft.id)
+    assert_not AppointmentDraft.exists?(old_draft_without_reason.id)
+    assert AppointmentDraft.exists?(old_draft_with_reason.id)
     assert AppointmentDraft.exists?(recent_expired.id)
     assert AppointmentDraft.exists?(very_recent_expired.id)
     assert AppointmentDraft.exists?(active_draft.id)
@@ -70,7 +78,7 @@ class CleanupExpiredDraftsJobTest < ActiveJob::TestCase
 
     log_content = log_output.string
     assert_includes log_content, "Starting cleanup of expired appointment drafts..."
-    assert_includes log_content, "Cleaned up 1 expired appointment drafts (older than 3 days)"
+    assert_includes log_content, "Cleaned up 1 expired appointment drafts (older than 3 days, without status reason)"
   end
 
   test "should log when no drafts to cleanup" do
@@ -99,14 +107,16 @@ class CleanupExpiredDraftsJobTest < ActiveJob::TestCase
     # Simple factory method for testing
     case factory_name
     when :appointment_draft
-      AppointmentDraft.create!(
-        current_step: attributes[:current_step] || "patient_details",
-        form_data: attributes[:form_data] || {patient: {}},
-        status: attributes[:status] || "active",
-        created_by_admin: attributes[:created_by_admin] || @admin,
-        admin_pic: attributes[:admin_pic] || @admin,
-        created_at: attributes[:created_at] || Time.current
-      )
+      defaults = {
+        current_step: "patient_details",
+        form_data: {patient: {}},
+        status: "active",
+        created_by_admin: @admin,
+        admin_pic: @admin,
+        created_at: Time.current
+      }
+
+      AppointmentDraft.create!(defaults.merge(attributes))
     end
   end
 end

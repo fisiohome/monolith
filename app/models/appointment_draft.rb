@@ -21,12 +21,17 @@ class AppointmentDraft < ApplicationRecord
   scope :expired_drafts, -> { where(status: :expired) }
   scope :for_admin_pic, ->(admin_id) { where(admin_pic_id: admin_id) }
   scope :created_by, ->(admin_id) { where(created_by_admin_id: admin_id) }
-  scope :cleanup_eligible, -> { expired.where("expires_at < ?", 3.days.ago) }
+  scope :cleanup_eligible, -> {
+    expired
+      .where("expires_at < ?", 3.days.ago)
+      .where(status_reason: [nil, ""])
+  }
 
   # Callbacks
   before_create :set_expires_at
 
   # Constants
+  EXPIRES_IN_DAYS = 14
   STEPS = %w[patient_details appointment_scheduling additional_settings review].freeze
   STATUS_REASONS = [
     {
@@ -58,6 +63,11 @@ class AppointmentDraft < ApplicationRecord
       labelEn: "Waiting for patient schedule",
       labelId: "Menunggu jadwal pasien",
       value: "WAITING_FOR_PATIENT_SCHEDULE"
+    },
+    {
+      labelEn: "Cancel",
+      labelId: "Batal",
+      value: "CANCEL"
     }
   ].freeze
 
@@ -174,6 +184,6 @@ class AppointmentDraft < ApplicationRecord
   private
 
   def set_expires_at
-    self.expires_at = 14.days.from_now
+    self.expires_at = EXPIRES_IN_DAYS.days.from_now
   end
 end

@@ -17,6 +17,7 @@ module AppointmentDraftsHelper
       expires_at: draft.expires_at,
       created_at: draft.created_at,
       updated_at: draft.updated_at,
+      status: draft.status,
       status_reason: draft.status_reason
     }
 

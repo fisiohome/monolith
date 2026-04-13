@@ -309,6 +309,21 @@ const columns = (
 		cell: ({ row }) => <PicDisplay admins={row.original.admins} />,
 	},
 	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => {
+			const status = row.original.status;
+			return (
+				<Badge
+					variant={status === "expired" ? "destructive" : "default"}
+					className="text-xs"
+				>
+					{status === "expired" ? "Expired" : "Active"}
+				</Badge>
+			);
+		},
+	},
+	{
 		id: "statusReason",
 		header: "Status Reason",
 		cell: ({ row }) => {
@@ -338,6 +353,7 @@ const columns = (
 						<DropdownMenuGroup>
 							<DropdownMenuItem
 								onClick={() => handleContinueDraft(row.original.id)}
+								disabled={row.original.status === "expired"}
 							>
 								<CheckIcon className="size-4" />
 								Continue
@@ -624,6 +640,7 @@ const DraftDetails = ({
 				<Button
 					variant="ghost-primary"
 					onClick={() => handleContinueDraft(row.original.id)}
+					disabled={draft.status === "expired"}
 				>
 					<CheckIcon className="size-4" />
 					Continue
@@ -703,6 +720,7 @@ const AppointmentDrafts = () => {
 			draftId: currentQuery?.draftId || "",
 			adminId: currentQuery?.adminId || "me",
 			statusReason: currentQuery?.statusReason || "",
+			status: currentQuery?.status || "active",
 		};
 	});
 
@@ -1052,6 +1070,31 @@ const AppointmentDrafts = () => {
 										{reason.labelId}
 									</SelectItem>
 								))}
+							</SelectContent>
+						</Select>
+
+						<Select
+							value={filters.status}
+							onValueChange={(value) =>
+								handleFilterBy({
+									value,
+									type: "status",
+								})
+							}
+						>
+							<SelectTrigger className="bg-background">
+								<SelectValue placeholder="Filter by status">
+									{filters.status === "expired"
+										? "Expired drafts"
+										: filters.status === "all"
+											? "All drafts"
+											: "Active drafts"}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="active">Active drafts</SelectItem>
+								<SelectItem value="expired">Expired drafts</SelectItem>
+								<SelectItem value="all">All drafts</SelectItem>
 							</SelectContent>
 						</Select>
 
