@@ -71,7 +71,7 @@ module AdminPortal
 
     def filtered_orders_relation
       orders = Order
-        .includes(:patient, package: :service, appointments: :address_history)
+        .includes(:patient, package: :service, appointments: [:address_history, :location])
         .order(created_at: :desc)
 
       # Search by string (registration number, invoice number, patient name, voucher code)
@@ -134,7 +134,8 @@ module AdminPortal
             id: a.id,
             visit_number: a.visit_number,
             total_package_visits: a.total_package_visits,
-            status: a.status
+            status: a.status,
+            location_city: a.location&.city
           }
         },
         latitude: first_appointment&.address_history&.latitude,

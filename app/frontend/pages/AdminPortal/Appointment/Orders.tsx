@@ -105,6 +105,7 @@ interface OrderRow {
 		visitNumber: Appointment["visitNumber"];
 		totalPackageVisits: Appointment["totalPackageVisits"];
 		status: Appointment["status"];
+		locationCity: string | null;
 	}[];
 	latitude: number | null;
 	longitude: number | null;
@@ -644,7 +645,9 @@ const OrderActionsCell = ({
 											e.preventDefault();
 											openReschedulePage(appt.id);
 										}}
-										disabled={!getPermission.reschedule(appt as Appointment)}
+										disabled={
+											!getPermission.reschedule(appt as unknown as Appointment)
+										}
 									>
 										Visit {appt.visitNumber}/{appt.totalPackageVisits}
 									</DropdownMenuItem>
@@ -667,7 +670,11 @@ const OrderActionsCell = ({
 											e.preventDefault();
 											openUpdateStatusPage(appt.id);
 										}}
-										disabled={!getPermission.updateStatus(appt as Appointment)}
+										disabled={
+											!getPermission.updateStatus(
+												appt as unknown as Appointment,
+											)
+										}
 									>
 										Visit {appt.visitNumber}/{appt.totalPackageVisits}
 									</DropdownMenuItem>
@@ -750,16 +757,28 @@ const orderColumns = ({
 	{
 		accessorKey: "patientName",
 		header: "Patient",
-		cell: ({ row }) => (
-			<div className="max-w-[200px]">
-				<span
-					title={row.original.patientName || "—"}
-					className="text-sm uppercase text-pretty"
-				>
-					{row.original.patientName || "—"}
-				</span>
-			</div>
-		),
+		cell: ({ row }) => {
+			const firstAppointment = row.original.appointments?.[0];
+			const locationCity = firstAppointment?.locationCity;
+
+			return (
+				<div className="max-w-[200px]">
+					<div className="flex flex-col">
+						<span
+							title={row.original.patientName || "—"}
+							className="text-sm uppercase text-pretty"
+						>
+							{row.original.patientName || "—"}
+						</span>
+						{locationCity && (
+							<span className="text-xs text-muted-foreground italic">
+								{locationCity}
+							</span>
+						)}
+					</div>
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "packageName",
