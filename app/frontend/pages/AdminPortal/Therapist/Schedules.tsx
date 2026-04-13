@@ -90,6 +90,12 @@ type TherapistsApptSchedule = Pick<
 	addressLine?: string | null;
 };
 
+const toStartOfDay = (date: Date) => {
+	const next = new Date(date);
+	next.setHours(0, 0, 0, 0);
+	return next;
+};
+
 type TherapistSchedule = Therapist & {
 	availabilityByDay?: Record<
 		string,
@@ -457,9 +463,9 @@ export default function SchedulesPage({
 	}, [currentQuery?.therapists]);
 
 	const parseOrFallback = (value: string | undefined, fallback: Date) => {
-		if (!value) return fallback;
+		if (!value) return toStartOfDay(fallback);
 		const parsed = parse(value, "dd-MM-yyyy", fallback, { in: tzDate, locale });
-		return isValid(parsed) ? parsed : fallback;
+		return toStartOfDay(isValid(parsed) ? parsed : fallback);
 	};
 	const [filters, setFilters] = useState<{
 		therapists: string[];
@@ -593,10 +599,13 @@ export default function SchedulesPage({
 			if (dateString === "unscheduled") return true;
 			const dateObj = new Date(dateString);
 			if (!isValid(dateObj)) return false;
-			const from = filters.date?.from;
-			const to = filters.date?.to;
-			if (from && dateObj < from) return false;
-			if (to && dateObj > to) return false;
+			const normalizedDate = toStartOfDay(dateObj);
+			const from = filters.date?.from
+				? toStartOfDay(filters.date.from)
+				: undefined;
+			const to = filters.date?.to ? toStartOfDay(filters.date.to) : undefined;
+			if (from && normalizedDate < from) return false;
+			if (to && normalizedDate > to) return false;
 			return true;
 		},
 		[filters.date?.from, filters.date?.to],
