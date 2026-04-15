@@ -302,6 +302,8 @@ module AdminPortal
       selected_therapist_ids_param = (params[:therapists] || "").split(",").compact_blank
       date_from_param = parse_date_param(params[:date_from]) || Time.zone.today
       date_to_param = parse_date_param(params[:date_to]) || 1.month.from_now.to_date
+      employment_type_param = params[:employment_type] || ""
+      region_param = params[:region] || ""
 
       appointment_window = date_from_param.beginning_of_day..date_to_param.end_of_day
       invalid_statuses = ["CANCELLED", "UNSCHEDULED", "ON HOLD", "PENDING THERAPIST ASSIGNMENT"]
@@ -309,8 +311,9 @@ module AdminPortal
       # get therapists with lambda
       get_therapists_option_lambda = lambda do
         version = [Therapist.maximum(:updated_at), User.maximum(:updated_at), Service.maximum(:updated_at)].compact.max&.to_i || 0
+        filter_key = "#{employment_type_param}_#{region_param}".tr(" ", "_")
 
-        Rails.cache.fetch("therapists_options:v#{version}", expires_in: 10.minutes) do
+        Rails.cache.fetch("therapists_options:v#{version}:filters:#{filter_key}", expires_in: 10.minutes) do
           therapists_scope = Therapist
             .joins(:user)
             .includes(:user, :service, therapist_addresses: :address)
@@ -320,6 +323,18 @@ module AdminPortal
               # active user (not suspended or suspension ended)
               ["users.suspend_at IS NULL OR (users.suspend_end IS NOT NULL AND users.suspend_end < ?)", Time.current]
             )
+
+          # Apply employment type filter
+          therapists_scope = therapists_scope.where(employment_type: employment_type_param) if employment_type_param.present?
+
+          # Apply region filter by city
+          if region_param.present?
+            therapists_scope = therapists_scope.joins(therapist_addresses: :address)
+              .joins("INNER JOIN locations ON locations.id = addresses.location_id")
+              .where(locations: {city: region_param})
+          end
+
+          therapists_scope = therapists_scope
             .select(:id, :user_id, :service_id, :name, :employment_type, :employment_status, :gender, :registration_number)
             .order(Arel.sql("LOWER(therapists.name) ASC"))
 
@@ -492,13 +507,22 @@ module AdminPortal
         deep_transform_keys_to_camel_case({data:})
       end
 
+      # get the filter options data
+      filter_options_lambda = lambda do
+        employment_types = Therapist.employment_types.map { |key, value| value }.as_json
+        locations = Location.cached_locations.as_json
+
+        deep_transform_keys_to_camel_case({employment_types:, locations:})
+      end
+
       render inertia: "AdminPortal/Therapist/Schedules", props: deep_transform_keys_to_camel_case({
         therapists_schedule: InertiaRails.defer do
           get_selected_therapists_with_appointments_lambda.call
         end,
         therapists_option: InertiaRails.defer(group: "options") do
           get_therapists_option_lambda.call
-        end
+        end,
+        filter_options: InertiaRails.defer { filter_options_lambda.call }
       })
     end
 

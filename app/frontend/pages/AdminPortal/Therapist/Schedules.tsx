@@ -1,7 +1,20 @@
 import { Deferred, Head, router, usePage } from "@inertiajs/react";
-import { addMonths, format, isToday, isValid, parse } from "date-fns";
-import { CalendarIcon, Check, ChevronsUpDown, CopyIcon, X } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+	addMonths,
+	format,
+	isToday,
+	isValid,
+	parse,
+	startOfDay,
+} from "date-fns";
+import {
+	CalendarIcon,
+	Check,
+	ChevronsUpDown,
+	CopyIcon,
+	XIcon,
+} from "lucide-react";
+import { Fragment, useCallback, useMemo, useRef, useState } from "react";
 import type { DateRange } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
@@ -9,6 +22,12 @@ import ChangeViewButton from "@/components/admin-portal/therapist/schedules/chan
 import { useDateContext } from "@/components/providers/date-provider";
 import DotBadgeWithLabel from "@/components/shared/dot-badge";
 import { LoadingBasic } from "@/components/shared/loading";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +39,7 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
+	CommandSeparator,
 } from "@/components/ui/command";
 import {
 	HoverCard,
@@ -31,6 +51,13 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -45,6 +72,7 @@ import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import { useToast } from "@/hooks/use-toast";
 import { getDotVariantStatus } from "@/lib/appointments/utils";
 import type { GENDERS } from "@/lib/constants";
+import { groupLocationsByCountry } from "@/lib/locations";
 import {
 	cn,
 	copyToClipboard,
@@ -103,12 +131,6 @@ type TherapistsApptSchedule = Pick<
 	} | null;
 };
 
-const toStartOfDay = (date: Date) => {
-	const next = new Date(date);
-	next.setHours(0, 0, 0, 0);
-	return next;
-};
-
 type TherapistSchedule = Therapist & {
 	availabilityByDay?: Record<
 		string,
@@ -126,11 +148,15 @@ type AvailabilitySlots = NonNullable<
 >[string];
 
 export interface PageProps {
-	therapistsOption?: {
+	therapistsOption: {
 		data: TherapistsOption[];
 	};
-	therapistsSchedule?: {
+	therapistsSchedule: {
 		data: TherapistSchedule[];
+	};
+	filterOptions?: {
+		employmentTypes: string[];
+		locations: Location[];
 	};
 }
 
@@ -138,6 +164,58 @@ export interface SchedulesPageGlobalProps
 	extends BaseGlobalPageProps,
 		PageProps {
 	[key: string]: any;
+}
+
+// * LocationAccordion component
+interface LocationAccordionProps {
+	appointment: TherapistsApptSchedule;
+}
+
+function LocationAccordion({ appointment }: LocationAccordionProps) {
+	const { toast } = useToast();
+	const locationLine = appointment?.location?.city || "N/A";
+	const addressLine = appointment?.addressLine;
+
+	// Only show accordion if there's more detailed address information
+	const hasDetailedAddress = addressLine && addressLine !== locationLine;
+
+	if (!hasDetailedAddress) {
+		return <TableCell>{locationLine}</TableCell>;
+	}
+
+	return (
+		<Accordion type="single" collapsible className="w-full">
+			<AccordionItem value="address" className="border-none">
+				<AccordionTrigger className="hover:no-underline text-left pt-1 pb-2">
+					<span className="text-sm font-normal">{locationLine}</span>
+				</AccordionTrigger>
+				<AccordionContent className="pb-2">
+					<div className="space-y-2">
+						<div className="flex items-start justify-between gap-2">
+							<span className="font-medium text-muted-foreground/75 text-pretty flex-1">
+								{addressLine}
+							</span>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-6 w-6 p-0 hover:bg-muted shrink-0"
+								onClick={async (e) => {
+									e.preventDefault();
+									if (await copyToClipboard(addressLine)) {
+										toast({
+											description: "Address copied to clipboard successfully",
+										});
+									}
+								}}
+							>
+								<CopyIcon className="h-3 w-3 shrink-0 opacity-75" />
+							</Button>
+						</div>
+					</div>
+				</AccordionContent>
+			</AccordionItem>
+		</Accordion>
+	);
 }
 
 // * TableSchedules component
@@ -283,7 +361,6 @@ function TableSchedules({
 								const visitLine = appt?.totalVisit
 									? `Visit ${appt.visitNumber}/${appt.totalVisit}`
 									: null;
-								const locationLine = appt?.location?.city || "N/A";
 
 								return (
 									<TableRow key={appt.id}>
@@ -351,7 +428,9 @@ function TableSchedules({
 												</span>
 											</DotBadgeWithLabel>
 										</TableCell>
-										<TableCell>{locationLine}</TableCell>
+										<TableCell>
+											<LocationAccordion appointment={appt} />
+										</TableCell>
 									</TableRow>
 								);
 							})}
@@ -493,6 +572,7 @@ function TherapistScheduleColumn({
 export default function SchedulesPage({
 	therapistsOption,
 	therapistsSchedule,
+	filterOptions,
 }: PageProps) {
 	const { props: globalPageProps, url: pageURL } =
 		usePage<SchedulesPageGlobalProps>();
@@ -500,50 +580,117 @@ export default function SchedulesPage({
 	const { locale, tzDate } = useDateContext();
 	const { t } = useTranslation("therapist-schedules");
 
-	// * helpers & filter data states
-	const parsedTherapists = useMemo(() => {
-		const fromQuery = currentQuery?.therapists;
-		if (Array.isArray(fromQuery)) return fromQuery.map((item) => String(item));
-		if (typeof fromQuery === "string") {
-			return fromQuery
-				.split(",")
-				.map((item) => item.trim())
-				.filter(Boolean);
-		}
-		return [] as string[];
-	}, [currentQuery?.therapists]);
+	// ============================================================================
+	// URL PARAMETER PARSING
+	// ============================================================================
 
-	const parseOrFallback = (value: string | undefined, fallback: Date) => {
-		if (!value) return toStartOfDay(fallback);
+	// Parse URL parameters into filter-friendly format
+	const parsedFilters = useMemo(() => {
+		// Parse comma-separated therapist IDs from URL
+		const parseTherapists = (query?: string | string[]): string[] => {
+			if (Array.isArray(query)) return query.map(String);
+			if (typeof query === "string") {
+				return query
+					.split(",")
+					.map((item) => item.trim())
+					.filter(Boolean);
+			}
+			return [];
+		};
+
+		// Parse single employment type from URL (take first value if multiple)
+		const parseEmploymentType = (query?: string | string[]): string[] => {
+			if (Array.isArray(query)) return [String(query[0])];
+			if (typeof query === "string") {
+				const values = query
+					.split(",")
+					.map((item) => item.trim())
+					.filter(Boolean);
+				return values.length > 0 ? [values[0]] : [];
+			}
+			return [];
+		};
+
+		// Parse region from URL (single string value)
+		const parseRegion = (query?: string): string => {
+			if (typeof query === "string" && query.trim()) {
+				return query.trim();
+			}
+			return "";
+		};
+
+		return {
+			therapists: parseTherapists(currentQuery?.therapists),
+			employmentType: parseEmploymentType(currentQuery?.employmentType),
+			region: parseRegion(currentQuery?.region),
+		};
+	}, [
+		currentQuery?.therapists,
+		currentQuery?.employmentType,
+		currentQuery?.region,
+	]);
+
+	// ============================================================================
+	// DATE UTILITIES
+	// ============================================================================
+
+	// Helper to parse date strings with fallback
+	const parseDateOrFallback = (
+		value: string | undefined,
+		fallback: Date,
+	): Date => {
+		if (!value) return startOfDay(fallback);
 		const parsed = parse(value, "dd-MM-yyyy", fallback, { in: tzDate, locale });
-		return toStartOfDay(isValid(parsed) ? parsed : fallback);
+		return startOfDay(isValid(parsed) ? parsed : fallback);
 	};
+
+	// ============================================================================
+	// FILTER STATE MANAGEMENT
+	// ============================================================================
+
+	// Main filters state - controls all filtering logic
 	const [filters, setFilters] = useState<{
 		therapists: string[];
 		date: DateRange | undefined;
+		employmentType: string[];
+		region: string;
 	}>({
-		therapists: parsedTherapists,
+		therapists: parsedFilters.therapists,
 		date: {
-			from: parseOrFallback(
+			from: parseDateOrFallback(
 				currentQuery?.dateFrom as string | undefined,
 				new Date(),
 			),
-			to: parseOrFallback(
+			to: parseDateOrFallback(
 				currentQuery?.dateTo as string | undefined,
 				addMonths(new Date(), 1, { in: tzDate }),
 			),
 		},
+		employmentType: parsedFilters.employmentType,
+		region: parsedFilters.region,
 	});
 
+	// Filter validation alerts - shows user-friendly error messages
 	const [filterAlerts, setFilterAlerts] = useState<{
 		therapists: string | null;
 		date: string | null;
+		employmentType: string | null;
+		region: string | null;
 	}>({
 		therapists: null,
 		date: null,
+		employmentType: null,
+		region: null,
 	});
+
+	// Track previous therapist selection for change detection
 	const therapistsSnapshotRef = useRef(filters.therapists.join(","));
 
+	// ============================================================================
+	// URL SYNCHRONIZATION
+	// ============================================================================
+
+	// Debounced URL updater to prevent excessive navigation
 	const updateQueryParams = useCallback(
 		debounce((url) => {
 			router.get(
@@ -551,26 +698,35 @@ export default function SchedulesPage({
 				{},
 				{
 					preserveState: true,
-					only: ["adminPortal", "therapistsSchedule"],
+					replace: true,
+					only: ["adminPortal", "therapistsSchedule", "therapistsOption"],
 				},
 			);
 		}, 500),
 		[],
 	);
 
+	// Apply all filters to URL with proper formatting
 	const applyFiltersToUrl = useCallback(
-		(therapists: string[], dateRange: DateRange | undefined) => {
-			const from = dateRange?.from;
-			const to = dateRange?.to;
+		(
+			therapists: string[],
+			dateRange: DateRange | undefined,
+			employmentType: string[] = [],
+			region: string = "",
+		) => {
+			// Format dates for URL
+			const formatDate = (date: Date) =>
+				format(date, "dd-MM-yyyy", { in: tzDate, locale });
 
-			const formattedFrom = from
-				? format(from, "dd-MM-yyyy", { in: tzDate, locale })
+			const formattedFrom = dateRange?.from
+				? formatDate(dateRange.from)
 				: undefined;
-			const formattedTo = to
-				? format(to, "dd-MM-yyyy", { in: tzDate, locale })
-				: undefined;
+			const formattedTo = dateRange?.to ? formatDate(dateRange.to) : undefined;
+
+			// Update therapist snapshot for change detection
 			therapistsSnapshotRef.current = therapists.join(",");
 
+			// Update filter alerts
 			setFilterAlerts((prevAlerts) => ({
 				...prevAlerts,
 				therapists: therapists.length
@@ -579,14 +735,26 @@ export default function SchedulesPage({
 							defaultValue:
 								"Choose one or more therapists to preview their schedules side by side.",
 						}),
+				date:
+					!dateRange?.from || !dateRange?.to
+						? t("filters.date.alert", {
+								defaultValue:
+									"Select a valid date range to view therapist schedules.",
+							})
+						: null,
 			}));
 
+			// Build URL with all filter parameters
 			const { fullUrl } = populateQueryParams(
 				pageURL,
 				deepTransformKeysToSnakeCase({
 					therapists: therapists.length ? therapists.join(",") : undefined,
 					dateFrom: formattedFrom,
 					dateTo: formattedTo,
+					employmentType: employmentType.length
+						? employmentType.join(",")
+						: undefined,
+					region: region || undefined,
 				}),
 			);
 
@@ -595,9 +763,15 @@ export default function SchedulesPage({
 		[pageURL, t, updateQueryParams, tzDate, locale],
 	);
 
-	// * filter therapists states
+	// ============================================================================
+	// DATA FILTERING & PROCESSING
+	// ============================================================================
+
+	// Sort therapist options: selected therapists first, then alphabetically
 	const sortedTherapistOptions = useMemo(() => {
 		if (!therapistsOption?.data) return [];
+
+		// Data is already filtered by backend, just sort by selection
 		return [...therapistsOption.data].sort((a, b) => {
 			const aSelected = filters.therapists.includes(String(a.id));
 			const bSelected = filters.therapists.includes(String(b.id));
@@ -608,6 +782,7 @@ export default function SchedulesPage({
 		});
 	}, [therapistsOption?.data, filters.therapists]);
 
+	// Get only the therapists that are currently selected
 	const selectedTherapistOptions = useMemo(
 		() =>
 			sortedTherapistOptions.filter((option) =>
@@ -616,22 +791,29 @@ export default function SchedulesPage({
 		[filters.therapists, sortedTherapistOptions],
 	);
 
+	// Build schedule data structure for selected therapists
 	const schedulesByTherapist = useMemo(() => {
 		const map: Record<string, TherapistSchedule> = {};
 		const source = therapistsSchedule?.data ?? [];
+
+		// Process schedule data for selected therapists
 		for (const therapist of source) {
 			if (!filters.therapists.includes(String(therapist.id))) continue;
+
+			// Sort appointments by date
 			const sortedAppointments = [...(therapist.appointments || [])].sort(
 				(a, b) =>
 					new Date(a.appointmentDateTime || 0).getTime() -
 					new Date(b.appointmentDateTime || 0).getTime(),
 			);
+
 			map[String(therapist.id)] = {
 				...therapist,
 				appointments: sortedAppointments,
 			};
 		}
-		// Ensure selected therapists are always in the map, even if no schedule data returned
+
+		// Ensure all selected therapists have entries (even with no schedule data)
 		for (const therapist of selectedTherapistOptions) {
 			const id = String(therapist.id);
 			if (!map[id]) {
@@ -642,19 +824,28 @@ export default function SchedulesPage({
 				} as unknown as TherapistSchedule;
 			}
 		}
+
 		return map;
 	}, [filters.therapists, therapistsSchedule?.data, selectedTherapistOptions]);
 
+	// ============================================================================
+	// DATE UTILITIES & HELPERS
+	// ============================================================================
+
+	// Check if a date falls within the selected date range filter
 	const isDateWithinFilter = useCallback(
 		(dateString: string) => {
 			if (dateString === "unscheduled") return true;
+
 			const dateObj = new Date(dateString);
 			if (!isValid(dateObj)) return false;
-			const normalizedDate = toStartOfDay(dateObj);
+
+			const normalizedDate = startOfDay(dateObj);
 			const from = filters.date?.from
-				? toStartOfDay(filters.date.from)
+				? startOfDay(filters.date.from)
 				: undefined;
-			const to = filters.date?.to ? toStartOfDay(filters.date.to) : undefined;
+			const to = filters.date?.to ? startOfDay(filters.date.to) : undefined;
+
 			if (from && normalizedDate < from) return false;
 			if (to && normalizedDate > to) return false;
 			return true;
@@ -662,6 +853,7 @@ export default function SchedulesPage({
 		[filters.date?.from, filters.date?.to],
 	);
 
+	// Group appointments by day for calendar display
 	const groupAppointmentsByDay = useCallback(
 		(appointments: TherapistsApptSchedule[]) => {
 			return appointments.reduce(
@@ -681,12 +873,28 @@ export default function SchedulesPage({
 		},
 		[tzDate, locale],
 	);
+
+	// Split selected therapists into first and additional for layout
 	const [firstSelectedTherapist, extraSelectedTherapists] = useMemo(() => {
 		const [first, ...rest] = selectedTherapistOptions || [];
 		return [first, rest];
 	}, [selectedTherapistOptions]);
 
-	// Surface alert when no therapist is selected on close and sync URL
+	// ============================================================================
+	// REGION FILTER DATA
+	// ============================================================================
+
+	// Get grouped locations from backend
+	const groupedLocations = useMemo(() => {
+		// Use backend locations or return empty array
+		if (filterOptions?.locations && filterOptions.locations.length > 0) {
+			return groupLocationsByCountry((filterOptions?.locations as any) || []);
+		}
+
+		return [];
+	}, [filterOptions?.locations]);
+
+	// Handle therapist popover close event - validates selection and syncs URL
 	const handleTherapistPopoverChange = useCallback(
 		(open: boolean) => {
 			if (open) return;
@@ -695,6 +903,7 @@ export default function SchedulesPage({
 			const therapistsChanged =
 				serializedTherapists !== therapistsSnapshotRef.current;
 
+			// Show validation alert if no therapists selected
 			if (!filters.therapists.length) {
 				setFilterAlerts((prev) => ({
 					...prev,
@@ -707,14 +916,20 @@ export default function SchedulesPage({
 				setFilterAlerts((prev) => ({ ...prev, therapists: null }));
 			}
 
+			// Sync URL if therapist selection changed
 			if (therapistsChanged) {
-				applyFiltersToUrl(filters.therapists, filters.date);
+				applyFiltersToUrl(
+					filters.therapists,
+					filters.date,
+					filters.employmentType,
+					filters.region,
+				);
 			}
 		},
 		[applyFiltersToUrl, filters, t],
 	);
 
-	// Toggle a therapist in selection and sync filters
+	// Toggle therapist selection (add/remove)
 	const toggleTherapist = useCallback((therapistId: string) => {
 		setFilters((prev) => {
 			const exists = prev.therapists.includes(therapistId);
@@ -726,44 +941,51 @@ export default function SchedulesPage({
 		});
 	}, []);
 
-	// Remove a specific therapist from selection and sync filters
+	// Remove specific therapist from selection
 	const removeTherapist = useCallback(
 		(therapistId: string) => {
 			setFilters((prev) => {
 				const updatedTherapists = prev.therapists.filter(
 					(id) => id !== therapistId,
 				);
-
-				applyFiltersToUrl(updatedTherapists, prev.date);
-
+				applyFiltersToUrl(
+					updatedTherapists,
+					prev.date,
+					prev.employmentType,
+					prev.region,
+				);
 				return { ...prev, therapists: updatedTherapists };
 			});
 		},
 		[applyFiltersToUrl],
 	);
 
-	// Keep only the first selected therapist, clearing the rest
+	// Keep only first therapist, clear additional selections
 	const clearAdditionalTherapists = useCallback(() => {
 		setFilters((prev) => {
 			const [first, ...rest] = prev.therapists;
-
 			if (rest.length === 0) return prev;
 
 			const nextTherapists = first ? [first] : [];
-
-			applyFiltersToUrl(nextTherapists, prev.date);
-
+			applyFiltersToUrl(
+				nextTherapists,
+				prev.date,
+				prev.employmentType,
+				prev.region,
+			);
 			return { ...prev, therapists: nextTherapists };
 		});
 	}, [applyFiltersToUrl]);
 
-	// * filter date range states
+	// Handle date range filter changes
 	const onChangeDateRange = useCallback(
 		(value: DateRange | undefined) => {
 			setFilters({ ...filters, date: value });
 
 			const from = value?.from;
 			const to = value?.to;
+
+			// Validate date range
 			if (!from || !to) {
 				setFilterAlerts((prev) => ({
 					...prev,
@@ -773,8 +995,12 @@ export default function SchedulesPage({
 			}
 
 			setFilterAlerts((prev) => ({ ...prev, date: null }));
-
-			applyFiltersToUrl(filters.therapists, { from, to });
+			applyFiltersToUrl(
+				filters.therapists,
+				{ from, to },
+				filters.employmentType,
+				filters.region,
+			);
 		},
 		[applyFiltersToUrl, filters],
 	);
@@ -808,157 +1034,8 @@ export default function SchedulesPage({
 
 				<Separator className="bg-border" />
 
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-2">
-					<div className="col-span-full md:col-span-1 lg:col-span-2">
-						<Deferred
-							data={["therapistsOption"]}
-							fallback={<Skeleton className="h-full" />}
-						>
-							<Popover onOpenChange={handleTherapistPopoverChange}>
-								<PopoverTrigger asChild>
-									<Button
-										variant="outline"
-										className={cn(
-											"w-full justify-between font-normal bg-background h-auto shadow min-h-10 p-2",
-											selectedTherapistOptions?.length === 0 &&
-												"text-muted-foreground",
-										)}
-									>
-										<div className="flex flex-wrap items-center gap-1">
-											{firstSelectedTherapist ? (
-												<>
-													<Badge
-														key={firstSelectedTherapist.id}
-														variant="accent"
-														className="text-xs group"
-													>
-														{firstSelectedTherapist.name}
-														{/* biome-ignore lint/a11y/useSemanticElements: icon as button */}
-														<div
-															onClick={(e) => {
-																e.stopPropagation();
-																e.preventDefault();
-																removeTherapist(
-																	String(firstSelectedTherapist.id),
-																);
-															}}
-															onKeyDown={() => {}}
-															className="ml-1 hover:text-destructive opacity-70 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-1 rounded p-0.5 cursor-pointer"
-															role="button"
-															tabIndex={0}
-															aria-label={`Remove ${firstSelectedTherapist.name}`}
-														>
-															<X className="h-3 w-3" />
-														</div>
-													</Badge>
-
-													{extraSelectedTherapists.length > 0 && (
-														<Badge
-															variant="accent"
-															className="text-xs flex items-center gap-1"
-														>
-															+{extraSelectedTherapists.length} more
-															{/* biome-ignore lint/a11y/useSemanticElements: icon as button */}
-															<div
-																onClick={(e) => {
-																	e.stopPropagation();
-																	e.preventDefault();
-																	clearAdditionalTherapists();
-																}}
-																onKeyDown={() => {}}
-																className="ml-1 hover:text-destructive opacity-70 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-1 rounded p-0.5 cursor-pointer"
-																role="button"
-																tabIndex={0}
-																aria-label={`Clear ${extraSelectedTherapists.length} additional therapists`}
-															>
-																<X className="h-3 w-3" />
-															</div>
-														</Badge>
-													)}
-												</>
-											) : (
-												<span>
-													{t("filters.therapist.placeholder", {
-														defaultValue: "Select therapists...",
-													})}
-												</span>
-											)}
-										</div>
-										<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-									</Button>
-								</PopoverTrigger>
-								<PopoverContent
-									className="p-0 w-[var(--radix-popover-trigger-width)]"
-									align="start"
-								>
-									<Command>
-										<CommandInput
-											placeholder={t("filters.therapist.search", {
-												defaultValue: "Search therapist...",
-											})}
-										/>
-										<CommandList>
-											<CommandEmpty>
-												{t("filters.therapist.empty", {
-													defaultValue: "No therapist found.",
-												})}
-											</CommandEmpty>
-											<CommandGroup>
-												{sortedTherapistOptions?.map((t) => {
-													const isSelected = filters.therapists.includes(
-														String(t.id),
-													);
-
-													return (
-														<CommandItem
-															key={t.id}
-															value={t.name}
-															onSelect={() => toggleTherapist(String(t.id))}
-															className={cn(isSelected && "bg-primary/5")}
-														>
-															<div className="flex items-center gap-2 flex-1">
-																<Avatar className="size-6 !rounded-[0px] text-primary border border-primary">
-																	<AvatarFallback className="text-xs !rounded-[0px]">
-																		{t.name?.charAt(0)?.toUpperCase() || "T"}
-																	</AvatarFallback>
-																</Avatar>
-																<div className="flex flex-col">
-																	<span className="text-sm uppercase tracking-tight">
-																		{t.name}
-																	</span>
-																	{t.user?.email && (
-																		<span className="text-xs text-muted-foreground/60">
-																			{t.user.email}
-																		</span>
-																	)}
-																</div>
-															</div>
-															<div className="flex items-center gap-4">
-																<Check
-																	className={cn(
-																		"h-4 w-4",
-																		isSelected ? "opacity-100" : "opacity-0",
-																	)}
-																/>
-															</div>
-														</CommandItem>
-													);
-												})}
-											</CommandGroup>
-										</CommandList>
-									</Command>
-								</PopoverContent>
-							</Popover>
-						</Deferred>
-
-						{filterAlerts?.therapists && (
-							<p className="mt-2 text-[0.8rem] font-medium text-destructive">
-								{filterAlerts.therapists}
-							</p>
-						)}
-					</div>
-
-					<div className="col-span-full md:col-span-1 lg:col-span-1">
+				<div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-8 gap-4 md:gap-2">
+					<div className="col-span-full md:col-span-3 lg:col-span-2 xl:col-span-2">
 						<Popover>
 							<PopoverTrigger asChild>
 								<Button
@@ -1009,6 +1086,322 @@ export default function SchedulesPage({
 						{filterAlerts?.date && (
 							<p className="mt-2 text-[0.8rem] font-medium text-destructive">
 								{filterAlerts.date}
+							</p>
+						)}
+					</div>
+
+					<div className="col-span-full md:col-span-1 lg:col-span-1 xl:col-span-2">
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									className={cn(
+										"w-full justify-between font-normal bg-background h-auto shadow min-h-10 p-2",
+										!filters.region && "text-muted-foreground",
+									)}
+								>
+									<p className="truncate">
+										{filters.region
+											? filters.region
+											: t("filters.region.placeholder", {
+													defaultValue: "Filter by region...",
+												})}
+									</p>
+									<ChevronsUpDown className="opacity-50" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent
+								className="p-0 w-[300px]"
+								align="start"
+								side="bottom"
+							>
+								<Command>
+									<CommandInput
+										placeholder={t("filters.region.search", {
+											defaultValue: "Search region...",
+										})}
+										className="h-9"
+									/>
+									<CommandList>
+										<CommandEmpty>
+											{t("filters.region.empty", {
+												defaultValue: "No region found.",
+											})}
+										</CommandEmpty>
+										{groupedLocations?.map((location) => (
+											<Fragment key={location.country}>
+												<span className="block px-2 py-2 text-xs font-bold text-primary-foreground bg-primary">
+													{location.country}
+												</span>
+
+												{location.states.map((state, stateIndex) => (
+													<CommandGroup key={state.name} heading={state.name}>
+														{state.cities.map((city) => (
+															<CommandItem
+																key={city.name}
+																value={city.name}
+																onSelect={() => {
+																	setFilters((prev) => ({
+																		...prev,
+																		therapists: [], // Reset therapist selection
+																		region: city.name || "",
+																	}));
+																	applyFiltersToUrl(
+																		[], // Pass empty therapists array
+																		filters.date,
+																		filters.employmentType,
+																		city.name || "",
+																	);
+																}}
+															>
+																<span>{city.name}</span>
+																<Check
+																	className={cn(
+																		"ml-auto",
+																		city.name === filters.region
+																			? "opacity-100"
+																			: "opacity-0",
+																	)}
+																/>
+															</CommandItem>
+														))}
+														{location.states.length !== stateIndex + 1 && (
+															<CommandSeparator className="mt-2" />
+														)}
+													</CommandGroup>
+												))}
+											</Fragment>
+										))}
+									</CommandList>
+									<CommandList>
+										<CommandGroup>
+											<CommandSeparator className="mb-2" />
+											<CommandItem
+												onSelect={() => {
+													setFilters((prev) => ({
+														...prev,
+														therapists: [], // Reset therapist selection
+														region: "",
+													}));
+													applyFiltersToUrl(
+														[], // Pass empty therapists array
+														filters.date,
+														filters.employmentType,
+														"",
+													);
+												}}
+											>
+												<span className="mx-auto font-medium text-center uppercase w-fit">
+													{t("filters.region.clear", {
+														defaultValue: "Clear",
+													})}
+												</span>
+											</CommandItem>
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
+
+						{filterAlerts?.region && (
+							<p className="mt-2 text-[0.8rem] font-medium text-destructive">
+								{filterAlerts.region}
+							</p>
+						)}
+					</div>
+
+					<div className="col-span-full md:col-span-2 lg:col-span-1 xl:col-span-1">
+						<Select
+							value={filters.employmentType[0] || "all"}
+							onValueChange={(value) => {
+								const newEmploymentType = value === "all" ? [] : [value];
+								setFilters((prev) => ({
+									...prev,
+									therapists: [], // Reset therapist selection
+									employmentType: newEmploymentType,
+								}));
+								applyFiltersToUrl(
+									[], // Pass empty therapists array
+									filters.date,
+									newEmploymentType,
+									filters.region,
+								);
+							}}
+						>
+							<SelectTrigger className="h-full font-normal bg-background shadow">
+								<SelectValue
+									placeholder={t("filters.employmentType.placeholder", {
+										defaultValue: "Filter by employment type...",
+									})}
+								/>
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="all">
+									{t("filters.employmentType.all", {
+										defaultValue: "All",
+									})}
+								</SelectItem>
+								{filterOptions?.employmentTypes?.map((type) => (
+									<SelectItem key={type} value={type}>
+										<span className="text-sm uppercase tracking-tight">
+											{type}
+										</span>
+									</SelectItem>
+								)) || []}
+							</SelectContent>
+						</Select>
+
+						{filterAlerts?.employmentType && (
+							<p className="mt-2 text-[0.8rem] font-medium text-destructive">
+								{filterAlerts.employmentType}
+							</p>
+						)}
+					</div>
+
+					<div className="col-span-full md:col-span-3 lg:col-span-2 xl:col-span-3">
+						<Deferred
+							data={["therapistsOption"]}
+							fallback={<Skeleton className="h-full" />}
+						>
+							<Popover onOpenChange={handleTherapistPopoverChange}>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										className={cn(
+											"w-full justify-between font-normal bg-background h-auto shadow min-h-10 p-2",
+											selectedTherapistOptions?.length === 0 &&
+												"text-muted-foreground",
+										)}
+									>
+										<div className="flex flex-wrap items-center gap-1">
+											{firstSelectedTherapist ? (
+												<>
+													<Badge
+														key={firstSelectedTherapist.id}
+														variant="accent"
+														className="text-xs group"
+													>
+														{firstSelectedTherapist.name}
+														{/* biome-ignore lint/a11y/useSemanticElements: icon as button */}
+														<div
+															onClick={(e) => {
+																e.stopPropagation();
+																e.preventDefault();
+																removeTherapist(
+																	String(firstSelectedTherapist.id),
+																);
+															}}
+															onKeyDown={() => {}}
+															className="ml-1 hover:text-destructive opacity-70 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-1 rounded p-0.5 cursor-pointer"
+															role="button"
+															tabIndex={0}
+															aria-label={`Remove ${firstSelectedTherapist.name}`}
+														>
+															<XIcon className="h-3 w-3" />
+														</div>
+													</Badge>
+
+													{extraSelectedTherapists.length > 0 && (
+														<Badge
+															variant="accent"
+															className="text-xs flex items-center gap-1"
+														>
+															+{extraSelectedTherapists.length} more
+															{/* biome-ignore lint/a11y/useSemanticElements: icon as button */}
+															<div
+																onClick={(e) => {
+																	e.stopPropagation();
+																	e.preventDefault();
+																	clearAdditionalTherapists();
+																}}
+																onKeyDown={() => {}}
+																className="ml-1 hover:text-destructive opacity-70 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-1 rounded p-0.5 cursor-pointer"
+																role="button"
+																tabIndex={0}
+																aria-label={`Clear ${extraSelectedTherapists.length} additional therapists`}
+															>
+																<XIcon className="h-3 w-3" />
+															</div>
+														</Badge>
+													)}
+												</>
+											) : (
+												<span>
+													{t("filters.therapist.placeholder", {
+														defaultValue: "Select therapists...",
+													})}
+												</span>
+											)}
+										</div>
+										<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent
+									className="p-0 w-[var(--radix-popover-trigger-width)]"
+									align="start"
+								>
+									<Command>
+										<CommandInput
+											placeholder={t("filters.therapist.search", {
+												defaultValue: "Search therapist...",
+											})}
+										/>
+										<CommandList>
+											<CommandEmpty>
+												{t("filters.therapist.empty", {
+													defaultValue: "No therapist found.",
+												})}
+											</CommandEmpty>
+											<CommandGroup>
+												{sortedTherapistOptions?.map((t) => {
+													const isSelected = filters.therapists.includes(
+														String(t.id),
+													);
+
+													return (
+														<CommandItem
+															key={t.id}
+															value={t.name}
+															onSelect={() => toggleTherapist(String(t.id))}
+															className={cn(isSelected && "bg-primary/5")}
+														>
+															<div className="flex items-center gap-2 flex-1">
+																<div className="flex flex-col">
+																	<span className="text-sm uppercase tracking-tight">
+																		{t.name}
+																	</span>
+																	{t?.employmentType && t?.service?.name && (
+																		<span className="text-xs text-muted-foreground/75">
+																			{t.employmentType === "FLAT"
+																				? "MITRA"
+																				: "KARPIS"}{" "}
+																			&bull;{" "}
+																			{t.service.name.replaceAll("_", " ")}
+																		</span>
+																	)}
+																</div>
+															</div>
+															<div className="flex items-center gap-4">
+																<Check
+																	className={cn(
+																		"h-4 w-4",
+																		isSelected ? "opacity-100" : "opacity-0",
+																	)}
+																/>
+															</div>
+														</CommandItem>
+													);
+												})}
+											</CommandGroup>
+										</CommandList>
+									</Command>
+								</PopoverContent>
+							</Popover>
+						</Deferred>
+
+						{filterAlerts?.therapists && (
+							<p className="mt-2 text-[0.8rem] font-medium text-destructive">
+								{filterAlerts.therapists}
 							</p>
 						)}
 					</div>
