@@ -453,6 +453,18 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 		}
 	}, [appointment.id]);
 
+	const onDownloadInvoice = useCallback(async () => {
+		try {
+			const url = `/admin-portal/appointments/${appointment.id}/invoice`;
+			window.open(url, "_blank", "noopener,noreferrer");
+			toast.success("Downloading Invoice");
+		} catch (error) {
+			const message = "Failed to download Invoice";
+			console.error(`${message}: ${error}`);
+			toast.error(message);
+		}
+	}, [appointment.id]);
+
 	const routeTo = useMemo(
 		() => ({
 			cancel: (id: string) =>
@@ -586,6 +598,11 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 					>
 						<Download className="opacity-60" aria-hidden="true" />
 						Download Final SOAP
+					</DropdownMenuItem>
+
+					<DropdownMenuItem onSelect={onDownloadInvoice}>
+						<Download className="opacity-60" aria-hidden="true" />
+						Download Invoice
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 

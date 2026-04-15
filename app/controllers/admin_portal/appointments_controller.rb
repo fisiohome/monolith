@@ -3,7 +3,7 @@ module AdminPortal
     include AppointmentsHelper
 
     before_action :authenticate_user!
-    before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf, :download_soap_final_pdf]
+    before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf, :download_soap_final_pdf, :download_invoice]
     before_action :set_order, only: [:update_payment_status, :send_feedback_reminder]
 
     def index
@@ -404,7 +404,12 @@ module AdminPortal
       end
 
       begin
-        pdf_data = DownloadFileServiceExternalApi.new(@appointment.id, soap_type: DownloadFileServiceExternalApi::SOAP_PER_VISIT).call
+        pdf_data = DownloadFileServiceExternalApi.new(
+          @appointment.id,
+          "appointment",
+          download_type: DownloadFileServiceExternalApi::SOAP_PER_VISIT,
+          use_external_filename: false
+        ).call
 
         if pdf_data[:success]
           Rails.logger.info "Successfully generated SOAP PDF for appointment ID: #{appointment_id}"
@@ -441,7 +446,12 @@ module AdminPortal
       end
 
       begin
-        pdf_data = DownloadFileServiceExternalApi.new(@appointment.id, soap_type: DownloadFileServiceExternalApi::SOAP_FINAL).call
+        pdf_data = DownloadFileServiceExternalApi.new(
+          @appointment.id,
+          "appointment",
+          download_type: DownloadFileServiceExternalApi::SOAP_FINAL,
+          use_external_filename: false
+        ).call
 
         if pdf_data[:success]
           Rails.logger.info "Successfully generated Final SOAP PDF for appointment ID: #{appointment_id}"
@@ -458,6 +468,58 @@ module AdminPortal
         end
       rescue => e
         Rails.logger.error "Exception while generating Final SOAP PDF: #{e.message}"
+        flash[:alert] = "An error occurred while generating the PDF"
+
+        redirect_to determine_redirect_path
+      end
+    end
+
+    def download_invoice
+      appointment_id = params[:id]
+
+      Rails.logger.info "Attempting to download Invoice for appointment ID: #{appointment_id}"
+
+      unless @appointment
+        Rails.logger.error "Appointment not found for ID: #{appointment_id}"
+        flash[:alert] = "Appointment not found"
+
+        redirect_to determine_redirect_path
+        return
+      end
+
+      # Get the order associated with this appointment
+      order = @appointment.order
+      unless order
+        Rails.logger.error "Order not found for appointment ID: #{appointment_id}"
+        flash[:alert] = "Order not found for this appointment"
+
+        redirect_to determine_redirect_path
+        return
+      end
+
+      begin
+        pdf_data = DownloadFileServiceExternalApi.new(
+          order.id,
+          "order",
+          download_type: DownloadFileServiceExternalApi::INVOICE,
+          use_external_filename: false
+        ).call
+
+        if pdf_data[:success]
+          Rails.logger.info "Successfully generated Invoice for appointment ID: #{appointment_id}, order ID: #{order.id}"
+          send_data pdf_data[:data],
+            filename: pdf_data[:filename],
+            type: "application/pdf",
+            disposition: "attachment"
+        else
+          error_message = pdf_data[:error] || "Failed to generate Invoice"
+          Rails.logger.error "Failed to generate Invoice: #{error_message}"
+          flash[:alert] = error_message
+
+          redirect_to determine_redirect_path
+        end
+      rescue => e
+        Rails.logger.error "Exception while generating Invoice: #{e.message}"
         flash[:alert] = "An error occurred while generating the PDF"
 
         redirect_to determine_redirect_path

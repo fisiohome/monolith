@@ -55,6 +55,7 @@ Rails.application.routes.draw do
             post "orders/:order_id/send-feedback-reminder" => "appointments#send_feedback_reminder"
             get ":id/soap-report" => "appointments#download_soap_pdf"
             get ":id/soap-report-final" => "appointments#download_soap_final_pdf"
+            get ":id/invoice" => "appointments#download_invoice"
           end
         end
 

@@ -376,6 +376,23 @@ const OrderActionsCell = ({
 		}
 	}, [order.appointments]);
 
+	const onDownloadInvoice = useCallback(() => {
+		if (!order.firstAppointmentId) {
+			toast.error("Appointment ID unavailable");
+			return;
+		}
+
+		try {
+			const url = `/admin-portal/appointments/${order.firstAppointmentId}/invoice`;
+			window.open(url, "_blank", "noopener,noreferrer");
+			toast.success("Downloading Invoice");
+		} catch (error) {
+			const message = "Failed to download Invoice";
+			console.error(`${message}: ${error}`);
+			toast.error(message);
+		}
+	}, [order.firstAppointmentId]);
+
 	const onViewOnGoogleMaps = useCallback(() => {
 		if (!order.latitude || !order.longitude) {
 			toast.error("Location unavailable");
@@ -603,6 +620,16 @@ const OrderActionsCell = ({
 					>
 						<DownloadIcon className="opacity-60" aria-hidden="true" />
 						{tappt("button.order_actions.menus.download.final_soap")}
+					</DropdownMenuItem>
+
+					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							onDownloadInvoice();
+						}}
+					>
+						<DownloadIcon className="opacity-60" aria-hidden="true" />
+						Download Invoice
 					</DropdownMenuItem>
 
 					<DropdownMenuItem

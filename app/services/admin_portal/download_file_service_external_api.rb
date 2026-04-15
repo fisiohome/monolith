@@ -2,32 +2,35 @@ module AdminPortal
   class DownloadFileServiceExternalApi
     LOG_TAG = "[DownloadAPI]".freeze
 
-    # SOAP types
+    # Download types
     SOAP_PER_VISIT = "report"
     SOAP_FINAL = "report-final"
+    INVOICE = "invoice"
 
-    def initialize(appointment_id, soap_type: SOAP_PER_VISIT, endpoint_path: nil)
-      @appointment_id = appointment_id
+    def initialize(id, id_type, download_type: SOAP_PER_VISIT, use_external_filename: false)
+      @id = id
+      @id_type = id_type
+      @download_type = download_type
+      @use_external_filename = use_external_filename
 
-      @endpoint_path = if endpoint_path
-        endpoint_path
-      elsif soap_type
-        "/api/v1/appointments/#{appointment_id}/#{soap_type}"
+      @endpoint_path = case download_type
+      when "invoice"
+        "/api/v1/bookings/#{id}/invoice"
       else
-        "/api/v1/appointments/#{appointment_id}/report"
+        "/api/v1/appointments/#{id}/#{download_type}"
       end
     end
 
     def call
-      log_info("start", appointment_id: @appointment_id, endpoint: @endpoint_path)
+      log_info("start", id: @id, id_type: @id_type, endpoint: @endpoint_path)
 
       response = call_download_api
       result = handle_api_response(response)
 
       if result[:success]
-        log_info("success", appointment_id: @appointment_id, filename: result[:filename])
+        log_info("success", id: @id, id_type: @id_type, filename: result[:filename])
       else
-        log_error("failed", appointment_id: @appointment_id, error: result[:error])
+        log_error("failed", id: @id, id_type: @id_type, error: result[:error])
       end
 
       result
@@ -45,7 +48,7 @@ module AdminPortal
     private
 
     def call_download_api
-      log_debug("api_request", endpoint: @endpoint_path, appointment_id: @appointment_id)
+      log_debug("api_request", endpoint: @endpoint_path, id: @id, id_type: @id_type)
       FisiohomeApi::Client.get_binary(@endpoint_path)
     end
 
@@ -57,12 +60,25 @@ module AdminPortal
         log_debug("response_headers", content_type: content_type, size: response.body&.bytesize)
 
         if content_type&.include?("application/pdf")
-          # Extract filename from Content-Disposition header if present
-          content_disposition = response.headers["content-disposition"]
-          filename = "soap_report_#{@appointment_id}.pdf"
+          # Generate descriptive filename based on download type with timestamp
+          timestamp = Time.current.strftime("%Y%m%d_%H%M%S")
+          filename = case @download_type
+          when SOAP_PER_VISIT
+            "soap_visit_report_#{timestamp}.pdf"
+          when SOAP_FINAL
+            "soap_final_report_#{timestamp}.pdf"
+          when INVOICE
+            "invoice_#{timestamp}.pdf"
+          else
+            "#{@download_type}_document_#{timestamp}.pdf"
+          end
 
-          if content_disposition&.match?(/filename=(?:"([^"]+)"|([^;]+))/)
-            filename = $1 || $2
+          # Use external API filename if option is enabled and available
+          if @use_external_filename
+            content_disposition = response.headers["content-disposition"]
+            if content_disposition&.match?(/filename=(?:"([^"]+)"|([^;]+))/)
+              filename = $1 || $2
+            end
           end
 
           {
