@@ -261,6 +261,7 @@ export interface StepButtonsProps extends ComponentProps<"div"> {
 }
 
 export function StepButtons({ className, isFormLoading }: StepButtonsProps) {
+	const { setFormStorage } = useFormProvider();
 	const {
 		isDekstop,
 		isDisabledStep,
@@ -273,7 +274,7 @@ export function StepButtons({ className, isFormLoading }: StepButtonsProps) {
 		onPrevStep,
 		onBack,
 		setIsOpenTherapistAlert,
-	} = useStepButtons();
+	} = useStepButtons({ setFormStorage });
 	const { t: taf } = useTranslation("appointments-form");
 
 	return (
@@ -527,14 +528,15 @@ export function AppointmentSchedulingForm() {
 
 	const { locale, tzDate } = useDateContext();
 	const isFirstRender = useIsFirstRender();
-	const { mode, formSelections, setFormSelections } = useFormProvider();
+	const { mode, formSelections, setFormSelections, setFormStorage } =
+		useFormProvider();
 
 	// Get feature flag from page props
 	const { props } = usePage<AppointmentNewGlobalPageProps>();
 	const useNewTherapistSelection = getUseNewTherapistSelection(props);
 
 	// For scheduling-first approach, location selection will be added to the form
-	const schedulingFormResult = useAppointmentSchedulingForm();
+	const schedulingFormResult = useAppointmentSchedulingForm({ setFormStorage });
 	const {
 		form,
 		isLoading,

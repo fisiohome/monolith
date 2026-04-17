@@ -11,20 +11,18 @@ import type { ScheduleListProps } from "../appointment-list";
 // * helper function
 // * bypass this because it's for our admin internal uses
 export const getPermission = {
-	// updateStatus: (appt: Appointment) =>
-	// 	appt.status !== "completed" &&
-	// 	appt.status !== "unscheduled" &&
-	// 	appt.status !== "on_hold",
-	// cancel: (appt: Appointment) => appt.status !== "completed",
-	// createSeries: (appt: Appointment) =>
-	// 	appt.totalPackageVisits > 1 &&
-	// 	appt.visitNumber !== appt.totalPackageVisits &&
-	// 	appt.nextVisitProgress,
-	// reschedule: (appt: Appointment) => appt.status !== "completed",
-	updateStatus: (_appt: Appointment) => true,
-	cancel: (_appt: Appointment) => true,
-	createSeries: (_appt: Appointment) => true,
-	reschedule: (_appt: Appointment) => true,
+	updateStatus: (appt: Appointment) =>
+		true ||
+		(appt.status !== "completed" &&
+			appt.status !== "unscheduled" &&
+			appt.status !== "on_hold"),
+	cancel: (appt: Appointment) => true || appt.status !== "completed",
+	createSeries: (appt: Appointment) =>
+		true ||
+		(appt.totalPackageVisits > 1 &&
+			appt.visitNumber !== appt.totalPackageVisits &&
+			appt.nextVisitProgress),
+	reschedule: (appt: Appointment) => true || appt.status !== "completed",
 };
 
 // * core component
@@ -44,6 +42,10 @@ const AppointmentActionButtons = memo(function Component({
 		usePage<AppointmentIndexGlobalPageProps>();
 	const { t } = useTranslation("appointments");
 
+	// const isPastFromToday = useMemo(() => {
+	// 	if (!schedule.appointmentDateTime) return false;
+	// 	return isBefore(schedule.appointmentDateTime, startOfToday());
+	// }, [schedule.appointmentDateTime]);
 	const isShow = useMemo(() => {
 		const updateStatus = getPermission.updateStatus(schedule);
 		const cancel = getPermission.cancel(schedule);

@@ -20,7 +20,6 @@ export const DRAFT_STEPS_LABELS = {
 };
 
 export const DRAFT_API_BASE_URL = "/api/v1/appointments";
-const QUEUE_CODE_ENDPOINT = `${DRAFT_API_BASE_URL}/queue_code`;
 
 interface DraftInfo {
 	id: string;
@@ -59,35 +58,6 @@ export const useAppointmentDraft = ({
 	const [drafts, setDrafts] = useState<DraftInfo[]>([]);
 	const [currentDraft, setCurrentDraft] = useState<DraftInfo | null>(null);
 	const [internalDraftLoaded, setInternalDraftLoaded] = useState(false);
-
-	const requestQueueCode = useCallback(async () => {
-		try {
-			const response = await fetch(QUEUE_CODE_ENDPOINT, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json",
-				},
-			});
-
-			const payload = await response.json().catch(() => ({}));
-
-			if (!response.ok || payload.success === false) {
-				const errorMessage = payload.error || "Failed to reserve queue code";
-				return { success: false, error: errorMessage };
-			}
-
-			return {
-				success: true,
-				data: payload?.data || {},
-				message: payload.message,
-			};
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : "Failed to reserve queue code";
-			return { success: false, error: errorMessage };
-		}
-	}, []);
 
 	const saveDraft = useCallback(
 		async ({
@@ -407,7 +377,6 @@ export const useAppointmentDraft = ({
 		loadDraft,
 		listDrafts,
 		deleteDraft,
-		requestQueueCode,
 		getStepFromIndex,
 		getIndexFromStep,
 		setCurrentDraft,

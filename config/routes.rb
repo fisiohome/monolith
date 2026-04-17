@@ -158,8 +158,6 @@ Rails.application.routes.draw do
               delete "drafts/:id" => "appointments#delete_draft"
               post "drafts/:id/add_pic" => "appointments#add_pic"
               put "drafts/:id/status_reason" => "appointments#draft_update_status_reason"
-              # Queue code endpoint
-              post "queue_code" => "appointments#queue_code"
             end
           end
         end

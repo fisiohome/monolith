@@ -1096,7 +1096,7 @@ export default function SchedulesPage({
 								<Button
 									variant="outline"
 									className={cn(
-										"w-full justify-between font-normal bg-background h-full shadow p-2",
+										"w-full justify-between font-normal bg-background h-auto shadow min-h-10 p-2",
 										!filters.region && "text-muted-foreground",
 									)}
 								>
