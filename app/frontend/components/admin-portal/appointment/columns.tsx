@@ -600,7 +600,10 @@ const ActionsCell = memo(({ row }: { row: Row<Appointment> }) => {
 						Download Final SOAP
 					</DropdownMenuItem>
 
-					<DropdownMenuItem onSelect={onDownloadInvoice}>
+					<DropdownMenuItem
+						onSelect={onDownloadInvoice}
+						disabled={!appointment.invoiceNumber}
+					>
 						<Download className="opacity-60" aria-hidden="true" />
 						Download Invoice
 					</DropdownMenuItem>

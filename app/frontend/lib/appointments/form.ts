@@ -286,6 +286,7 @@ export const FORM_OPTIONS_SCHEMA = z.object({
 	findTherapistsAllOfDay: z.boolean().optional(),
 	// Draft-related fields
 	draftId: idSchema.optional(),
+	queueCode: z.string().optional(),
 });
 export type FormOptionsSchema = z.infer<typeof FORM_OPTIONS_SCHEMA>;
 
@@ -331,7 +332,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		patientDetails,
 		formOptions,
 	} = values;
-	const { referenceAppointmentId, draftId } = formOptions;
+	const { referenceAppointmentId, draftId, queueCode } = formOptions;
 	const {
 		admins,
 		customFisiohomePartnerName,
@@ -368,6 +369,7 @@ export const buildAppointmentPayload = (values: AppointmentBookingSchema) => {
 		adminIds: admins?.map((admin) => String(admin.id)).join(",") || "",
 		referenceAppointmentId: String(referenceAppointmentId || "") || null,
 		draftId: String(draftId || "") || null,
+		queueCode: String(queueCode || "") || null,
 		patientContact: { ...contactInformation },
 		patientAddress: {
 			...restPatientDetails,
@@ -583,6 +585,7 @@ export const defineAppointmentFormDefaultValues = (
 			coordinateSource,
 			findTherapistsAllOfDay,
 			draftId: undefined,
+			queueCode: undefined,
 		},
 		contactInformation,
 		patientDetails,

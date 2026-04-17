@@ -153,6 +153,7 @@ module AdminPortal
       payload[:fisiohome_partner_booking] = appointment_params[:fisiohome_partner_booking] unless appointment_params[:fisiohome_partner_booking].nil?
       payload[:fisiohome_partner_name] = appointment_params[:fisiohome_partner_name] if appointment_params[:fisiohome_partner_name].present?
       payload[:other_fisiohome_partner_name] = appointment_params[:other_fisiohome_partner_name] if appointment_params[:other_fisiohome_partner_name].present?
+      payload[:queue_code] = appointment_params[:queue_code] if appointment_params[:queue_code].present?
 
       # Add payment expiry minutes from generic content or default to 4 hours (240 minutes)
       begin
@@ -339,6 +340,7 @@ module AdminPortal
 
       appointment_params = params.require(:appointment).permit(
         :service_id, :package_id, :location_id, :therapist_id, :admin_ids, :reference_appointment_id,
+        :draft_id, :queue_code,
         patient_contact: %i[contact_name contact_phone email miitel_link],
         patient_address: %i[location_id latitude longitude postal_code address notes],
         patient: [:name, :date_of_birth, :gender],

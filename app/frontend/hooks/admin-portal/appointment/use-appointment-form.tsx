@@ -63,13 +63,7 @@ export const useFinalStep = () => {
 	return { hasCompletedAllSteps, count, redirectURL };
 };
 
-export const useStepButtons = ({
-	setFormStorage,
-}: {
-	setFormStorage: React.Dispatch<
-		React.SetStateAction<AppointmentBookingSchema | null>
-	>;
-}) => {
+export const useStepButtons = () => {
 	const { isSuccessBooked } = useFormProvider();
 	const isDekstop = useMediaQuery(IS_DEKSTOP_MEDIA_QUERY);
 	const { t: taf } = useTranslation("appointments-form");
@@ -87,7 +81,11 @@ export const useStepButtons = ({
 	} = useStepper();
 
 	// Draft management - only if configured to use draft database
-	const { saveDraft, isLoading: isDraftSaving } = useAppointmentDraft({
+	const {
+		saveDraft,
+		requestQueueCode,
+		isLoading: isDraftSaving,
+	} = useAppointmentDraft({
 		onError: (error) => {
 			console.error("Draft save error:", error);
 		},
@@ -203,8 +201,24 @@ export const useStepButtons = ({
 
 			if (!isValidPatientDetails || !isValidContactInformation) return;
 
-			const values = form.getValues();
-			setFormStorage({ ...values });
+			// request the queue code
+			const formDataValues = form.getValues();
+			if (!formDataValues?.formOptions?.queueCode) {
+				const queueCodeResult = await requestQueueCode();
+
+				if (!queueCodeResult.success) {
+					const defaultQueueFailedMessage = "Failed to reserve queue code";
+					const errorMessage =
+						queueCodeResult.error || defaultQueueFailedMessage;
+					console.error(`${defaultQueueFailedMessage}:`, errorMessage);
+					return;
+				}
+
+				form.setValue(
+					"formOptions.queueCode",
+					queueCodeResult?.data?.queueCode,
+				);
+			}
 
 			// Save draft before moving to next step
 			await saveDraftOnStep();
@@ -223,9 +237,6 @@ export const useStepButtons = ({
 				return;
 			}
 
-			const values = form.getValues();
-			setFormStorage({ ...values });
-
 			// Save draft before moving to next step
 			await saveDraftOnStep();
 
@@ -236,9 +247,6 @@ export const useStepButtons = ({
 			const isValid = await form.trigger("additionalSettings");
 
 			if (!isValid) return;
-
-			const values = form.getValues();
-			setFormStorage({ ...values });
 
 			// Save draft before moving to next step
 			await saveDraftOnStep();
@@ -641,13 +649,7 @@ export const usePatientDetailsForm = () => {
 	};
 };
 
-export const useAppointmentSchedulingForm = ({
-	setFormStorage,
-}: {
-	setFormStorage?: React.Dispatch<
-		React.SetStateAction<AppointmentBookingSchema | null>
-	>;
-} = {}) => {
+export const useAppointmentSchedulingForm = () => {
 	const { props: globalProps, url: pageURL } =
 		usePage<AppointmentNewGlobalPageProps>();
 	const { tzDate } = useDateContext();
@@ -934,18 +936,13 @@ export const useAppointmentSchedulingForm = ({
 			});
 
 			// Save draft after service selection and get updated values
-			const updatedValues = await saveDraftOnServicePackageChange();
-			if (updatedValues && setFormStorage) {
-				// Update form storage with new draft ID
-				setFormStorage(updatedValues);
-			}
+			await saveDraftOnServicePackageChange();
 		},
 		[
 			form.setValue,
 			form.resetField,
 			onResetAllTherapistState,
 			saveDraftOnServicePackageChange,
-			setFormStorage,
 		],
 	);
 	const serviceHooks = {
@@ -978,19 +975,9 @@ export const useAppointmentSchedulingForm = ({
 			onResetTherapistFormValue();
 
 			// Save draft after package selection and get updated values
-			const updatedValues = await saveDraftOnServicePackageChange();
-			if (updatedValues && setFormStorage) {
-				// Update form storage with new draft ID
-				setFormStorage(updatedValues);
-				console.log("Package selection draft saved and form storage updated");
-			}
+			await saveDraftOnServicePackageChange();
 		},
-		[
-			form.setValue,
-			onResetTherapistFormValue,
-			saveDraftOnServicePackageChange,
-			setFormStorage,
-		],
+		[form.setValue, onResetTherapistFormValue, saveDraftOnServicePackageChange],
 	);
 	const packageHooks = { packagesOption, onSelectPackage };
 
