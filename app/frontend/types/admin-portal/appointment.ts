@@ -193,7 +193,8 @@ export interface AppointmentPayload {
 	packageId: string;
 	locationId: string;
 	therapistId: string | null;
-	adminIds: string;
+	adminIds: string | null;
+	queueCode: string | null;
 	referenceAppointmentId: string | null;
 	draftId?: string | null;
 	patientContact: {

@@ -106,6 +106,19 @@ module Api
         render json: {success: false, error: "Failed to update status reason"}, status: :internal_server_error
       end
 
+      def queue_code
+        result = AdminPortal::Orders::QueueCodeRequestServiceExternalApi.new.call
+
+        if result[:success]
+          render json: result
+        else
+          render json: result, status: :bad_gateway
+        end
+      rescue => e
+        Rails.logger.error("Queue code request error: #{e.class} - #{e.message}")
+        render json: {success: false, error: "Failed to reserve queue code."}, status: :internal_server_error
+      end
+
       private
 
       def ensure_json_request
