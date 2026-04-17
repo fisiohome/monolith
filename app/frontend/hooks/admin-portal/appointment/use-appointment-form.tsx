@@ -302,6 +302,7 @@ export const useReviewForm = () => {
 			patientDetails,
 			appointmentScheduling,
 			additionalSettings,
+			formOptions,
 		} = review;
 		const onClickGMaps = (coordinate: number[]) => {
 			window.open(
@@ -310,6 +311,23 @@ export const useReviewForm = () => {
 		};
 
 		return [
+			{
+				key: "order-settings",
+				title: "Order Settings" as const,
+				stepValue: 0,
+				subs: [
+					{
+						key: "",
+						title: "Draft ID",
+						value: formOptions?.draftId || "N/A",
+					},
+					{
+						key: "",
+						title: "Order Request Code",
+						value: formOptions?.queueCode || "N/A",
+					},
+				],
+			},
 			{
 				key: "contact",
 				title: "Contact" as const,
@@ -375,6 +393,11 @@ export const useReviewForm = () => {
 						key: "patient-current-condition",
 						title: "Current Condition",
 						value: <Badge variant="outline">{patientDetails?.condition}</Badge>,
+					},
+					{
+						key: "patient-complaint-description",
+						title: "Complaint Description",
+						value: patientDetails?.complaintDescription || "N/A",
 					},
 					{
 						key: "patient-illness-onset-date",
@@ -665,6 +688,10 @@ export const useAppointmentSchedulingForm = () => {
 		control: form.control,
 		name: "patientDetails",
 	});
+	const watchDraftIdValue = useWatch({
+		control: form.control,
+		name: "formOptions.draftId",
+	});
 	const watchAppointmentSchedulingValue = useWatch({
 		control: form.control,
 		name: "appointmentScheduling",
@@ -829,11 +856,15 @@ export const useAppointmentSchedulingForm = () => {
 		form.trigger,
 	]);
 	const onFocusServiceField = useCallback(() => {
+		const draftIdParam =
+			watchDraftIdValue ||
+			new URLSearchParams(window.location.search).get("draft_id");
 		// fetch the services options data
 		const { queryParams } = populateQueryParams(
 			pageURL,
 			deepTransformKeysToSnakeCase({
 				locationId: watchPatientDetailsValue?.location?.id,
+				draftId: draftIdParam || undefined,
 			}),
 		);
 		router.get(pageURL, queryParams, {
@@ -856,7 +887,7 @@ export const useAppointmentSchedulingForm = () => {
 				}, 250);
 			},
 		});
-	}, [pageURL, watchPatientDetailsValue?.location?.id]);
+	}, [pageURL, watchPatientDetailsValue?.location?.id, watchDraftIdValue]);
 
 	// * Helper function to save draft for service/package selection
 	const saveDraftOnServicePackageChange = useCallback(async () => {

@@ -257,6 +257,19 @@ const columns = (
 		),
 	},
 	{
+		id: "requestCode",
+		header: "Request Code",
+		cell: ({ row }) => {
+			const requestCode = row.original.formData?.formOptions?.queueCode;
+
+			return (
+				<span className="text-sm font-mono font-bold">
+					{requestCode || "N/A"}
+				</span>
+			);
+		},
+	},
+	{
 		id: "patientName",
 		header: "Patient",
 		cell: ({ row }) => {
@@ -316,7 +329,7 @@ const columns = (
 			return (
 				<Badge
 					variant={status === "expired" ? "destructive" : "default"}
-					className="text-xs"
+					className="text-[10px] uppercase !px-2"
 				>
 					{status === "expired" ? "Expired" : "Active"}
 				</Badge>
