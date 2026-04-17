@@ -211,7 +211,6 @@ export const useStepButtons = () => {
 					const errorMessage =
 						queueCodeResult.error || defaultQueueFailedMessage;
 					console.error(`${defaultQueueFailedMessage}:`, errorMessage);
-					return;
 				}
 
 				form.setValue(
