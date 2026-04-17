@@ -216,7 +216,11 @@ module AdminPortal
     # Parses error from API response
     def parse_api_error(response)
       body = response.body
-      return body["error"] || body["message"] || body.to_s if body.is_a?(Hash)
+      if body.is_a?(Hash)
+        message = body["message"] || body[:message]
+        error = body["error"] || body[:error]
+        return message || error || body.to_s
+      end
 
       body.to_s
     end
