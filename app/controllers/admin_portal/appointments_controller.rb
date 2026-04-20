@@ -4,7 +4,7 @@ module AdminPortal
 
     before_action :authenticate_user!
     before_action :set_appointment, only: [:cancel, :update_pic, :update_status, :reschedule_page, :reschedule, :download_soap_pdf, :download_soap_final_pdf, :download_invoice]
-    before_action :set_order, only: [:update_payment_status, :send_feedback_reminder]
+    before_action :set_order, only: [:update_payment_status, :send_feedback_reminder, :change_package]
 
     def index
       preparation = PreparationIndexAppointmentService.new(params, current_user)
@@ -233,9 +233,13 @@ module AdminPortal
       if result[:success]
         redirect_to determine_redirect_path(exclude_param: "cancel"), notice: result[:message] || "Appointment cancelled successfully via external API."
       else
-        Rails.logger.error "Failed to cancel appointment via external API: #{result[:error]}"
+        default_error_message = "Failed to cancel appointment via external API"
+        error_message = result[:error] || default_error_message
+        Rails.logger.error "#{default_error_message}: #{error_message}"
 
-        redirect_to determine_redirect_path, alert: result[:error] || "Failed to cancel appointment via external API"
+        redirect_to determine_redirect_path, alert: error_message, inertia: {
+          errors: deep_transform_keys_to_camel_case({base: [error_message], full_messages: [error_message]})
+        }
       end
     end
 
@@ -316,8 +320,12 @@ module AdminPortal
       if result[:success]
         redirect_to determine_redirect_path(exclude_param: "update_payment_status"), notice: result[:message] || "Payment status updated successfully."
       else
-        Rails.logger.error "Failed to update payment status: #{result[:error]}"
-        redirect_to determine_redirect_path, alert: result[:error] || "Failed to update payment status"
+        default_error_message = "Failed to update payment status"
+        error_message = result[:error] || default_error_message
+        Rails.logger.error "#{default_error_message}: #{error_message}"
+        redirect_to determine_redirect_path, alert: error_message, inertia: {
+          errors: deep_transform_keys_to_camel_case({base: [error_message], full_messages: [error_message]})
+        }
       end
     end
 
@@ -329,8 +337,39 @@ module AdminPortal
       if result[:success]
         redirect_to determine_redirect_path, notice: result[:message] || "Feedback reminder sent successfully."
       else
-        Rails.logger.error "Failed to send feedback reminder: #{result[:error]}"
-        redirect_to determine_redirect_path, alert: result[:error] || "Failed to send feedback reminder"
+        error_message = result[:error] || "Failed to send feedback reminder"
+        Rails.logger.error "Failed to send feedback reminder: #{error_message}"
+        redirect_to determine_redirect_path, alert: error_message, inertia: {
+          errors: deep_transform_keys_to_camel_case({base: [error_message], full_messages: [error_message]})
+        }
+      end
+    end
+
+    def change_package
+      Rails.logger.info "Starting external API package change for order ID: #{@order.id}"
+
+      new_package_id = params.dig(:form_data, :new_package_id)
+      force = params.dig(:form_data, :force) || false
+      bypass_payment = params.dig(:form_data, :bypass_payment) != false # default to true
+
+      if new_package_id.blank?
+        Rails.logger.error "New package ID is required"
+        redirect_to determine_redirect_path, alert: "New package ID is required"
+        return
+      end
+
+      Rails.logger.info "Calling [ChangeOrderPackageServiceExternalApi] with new_package_id: #{new_package_id}, force: #{force}, bypass_payment: #{bypass_payment}"
+      result = ChangeOrderPackageServiceExternalApi.new(@order, current_user, new_package_id, force: force, bypass_payment: bypass_payment).call
+      Rails.logger.info "[ChangeOrderPackageServiceExternalApi] result: #{result}"
+
+      if result[:success]
+        redirect_to orders_admin_portal_appointments_path(search: @order.registration_number), notice: result[:message] || "Package changed successfully."
+      else
+        error_message = result[:error] || "Failed to change package"
+        Rails.logger.error "Failed to change package: #{error_message}"
+        redirect_to determine_redirect_path, alert: error_message, inertia: {
+          errors: deep_transform_keys_to_camel_case({base: [error_message], full_messages: [error_message]})
+        }
       end
     end
 
@@ -534,6 +573,21 @@ module AdminPortal
     # @param custom_params [Hash] Custom parameters to use instead of query params
     # @return [String] The appropriate redirect path
     def determine_redirect_path(keep_params: true, exclude_param: nil, custom_params: nil)
+      # Extract referer params to maintain context (filters, pagination, etc.)
+      referer_query_params = if request.referer.present?
+        begin
+          uri = URI.parse(request.referer)
+          uri.query ? Rack::Utils.parse_nested_query(uri.query).symbolize_keys : {}
+        rescue URI::InvalidURIError
+          {}
+        end
+      else
+        {}
+      end
+
+      # Merge with current query parameters (might be used for one-off flags)
+      effective_params = referer_query_params.merge(request.query_parameters.to_h.symbolize_keys)
+
       # Check if user came from orders page
       is_from_orders = request.referer&.include?(orders_admin_portal_appointments_path)
 
@@ -541,9 +595,10 @@ module AdminPortal
       if custom_params
         is_from_orders ? orders_admin_portal_appointments_path(custom_params) : admin_portal_appointments_path(custom_params)
       elsif exclude_param
-        is_from_orders ? orders_admin_portal_appointments_path(request.query_parameters.except(exclude_param)) : admin_portal_appointments_path(request.query_parameters.except(exclude_param))
+        params_to_keep = effective_params.except(exclude_param.to_sym)
+        is_from_orders ? orders_admin_portal_appointments_path(params_to_keep) : admin_portal_appointments_path(params_to_keep)
       elsif keep_params
-        is_from_orders ? orders_admin_portal_appointments_path(request.query_parameters) : admin_portal_appointments_path(request.query_parameters)
+        is_from_orders ? orders_admin_portal_appointments_path(effective_params) : admin_portal_appointments_path(effective_params)
       else
         is_from_orders ? orders_admin_portal_appointments_path : admin_portal_appointments_path
       end

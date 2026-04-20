@@ -66,9 +66,15 @@
 				},
 				"download": {
 					"soap": "Unduh SOAP",
-					"final_soap": "Unduh SOAP Final"
-				}
+					"final_soap": "Unduh SOAP Final",
+					"invoice": "Unduh Invoice"
+				},
+				"send_feedback_reminder": "Kirim Pengingat Feedback",
+				"change_package": "Ubah Paket"
 			}
+		},
+		"change_package": {
+			"submit": "Ubah Paket"
 		}
 	},
 	"tab": {
@@ -247,7 +253,46 @@
 			"placeholder": "Pilih status janji temu",
 			"search": "Cari status janji temu",
 			"empty_search": "Tidak ada status janji temu yang ditemukan."
+		},
+		"registration_number": {
+			"label": "No. Registrasi"
+		},
+		"patient": {
+			"label": "Pasien"
+		},
+		"service": {
+			"label": "Layanan"
+		},
+		"visit_city_location": {
+			"label": "Kota Kunjungan"
+		},
+		"package": {
+			"label": "Pergantian Paket"
 		}
+	},
+	"form": {
+		"new_package": {
+			"label": "Paket Baru",
+			"placeholder": "Pilih paket...",
+			"search_placeholder": "Cari paket...",
+			"no_package_found": "Tidak ada paket ditemukan."
+		}
+	},
+	"validation": {
+		"package_required": "Paket wajib diisi"
+	},
+	"error": {
+		"title": "Error"
+	},
+	"dialog": {
+		"change_package": {
+			"title": "Ubah Paket",
+			"description": "Ubah paket untuk order ini"
+		}
+	},
+	"common": {
+		"visits": "kunjungan",
+		"to": "ke"
 	},
 	"pagination": {
 		"showing": "Menampilkan",

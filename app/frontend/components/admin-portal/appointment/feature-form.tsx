@@ -1,6 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, usePage } from "@inertiajs/react";
-import { AlertCircle, Check, ChevronsUpDown, LoaderIcon } from "lucide-react";
+import {
+	AlertCircle,
+	Check,
+	ChevronsUpDown,
+	LoaderIcon,
+	Package as PackageIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -708,5 +714,308 @@ export function FeedbackReminderDialog({
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>
+	);
+}
+
+// Types for ChangePackageForm
+export interface Package {
+	id: number;
+	name: string;
+	numberOfVisit: number;
+	totalPrice: number;
+	currency: string;
+	service: {
+		id: number;
+		name: string;
+	};
+}
+
+interface ChangePackageFormProps {
+	order: NonNullable<OrdersGlobalPageProps["selectedOrder"]>;
+	packages: Package[];
+	onSuccess?: () => void;
+	forceMode?: ResponsiveDialogMode;
+}
+
+export function ChangePackageForm({
+	order,
+	packages,
+	onSuccess,
+	forceMode,
+}: ChangePackageFormProps) {
+	const { t } = useTranslation("appointments", { useSuspense: false });
+
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+
+	const currentPackage = order.package || null;
+
+	const buttonProps = useMemo<ResponsiveDialogButton>(
+		() => ({
+			isLoading,
+			forceMode,
+			submitText: t("button.change_package.submit"),
+		}),
+		[isLoading, forceMode, t],
+	);
+
+	const formSchema = useMemo(
+		() =>
+			z.object({
+				new_package_id: z.string().min(1, t("validation.package_required")),
+				force: z.boolean().default(false),
+				bypass_payment: z.boolean().default(true),
+			}),
+		[t],
+	);
+
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			new_package_id: "",
+			force: false,
+			bypass_payment: true,
+		},
+	});
+
+	const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			await router.put(
+				`/admin-portal/appointments/orders/${order.id}/change-package`,
+				{
+					form_data: values,
+				},
+				{
+					preserveState: true,
+					preserveScroll: true,
+					onSuccess: () => {
+						onSuccess?.();
+					},
+					onError: (errors) => {
+						const defaultMessage = "Failed to change package";
+						const errorMessage = errors.message || defaultMessage;
+						setError(errorMessage);
+						console.error(defaultMessage, errorMessage);
+					},
+				},
+			);
+		} catch (err) {
+			const defaultMessage =
+				"An unexpected error occurred while changing package";
+			const errorMessage = err instanceof Error ? err.message : defaultMessage;
+			setError(errorMessage);
+			console.error(defaultMessage, errorMessage);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	return (
+		<Form {...form}>
+			<form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+				{error && (
+					<Alert variant="destructive">
+						<AlertCircle className="h-4 w-4" />
+						<AlertTitle>{t("error.title")}</AlertTitle>
+						<AlertDescription>{error}</AlertDescription>
+					</Alert>
+				)}
+
+				<div className="bg-card rounded-lg p-3 border border-border text-sm space-y-6">
+					{/* Order Info Summary */}
+					<div className="grid grid-cols-2 gap-4">
+						<div className="space-y-0.5">
+							<p className="text-xs uppercase tracking-wider text-muted-foreground/75">
+								{t("fields.registration_number.label")}
+							</p>
+							<p className="font-semibold font-mono">
+								{order.registrationNumber || "N/A"}
+							</p>
+						</div>
+						<div className="space-y-0.5">
+							<p className="text-xs uppercase tracking-wider text-muted-foreground/75">
+								{t("fields.patient.label")}
+							</p>
+							<p className="font-semibold uppercase">
+								{order?.patient?.name || "N/A"}
+							</p>
+						</div>
+						<div className="space-y-0.5">
+							<p className="text-xs uppercase tracking-wider text-muted-foreground/75">
+								{t("fields.service.label")}
+							</p>
+							<p className="font-semibold">
+								{order?.appointments[0]?.serviceName?.replaceAll("_", " ") ||
+									"N/A"}
+							</p>
+						</div>
+						<div className="space-y-0.5">
+							<p className="text-xs uppercase tracking-wider text-muted-foreground/75">
+								{t("fields.visit_city_location.label")}
+							</p>
+							<p className="font-semibold">
+								{order?.appointments[0]?.locationCity || "N/A"}
+							</p>
+						</div>
+
+						{/* Package Transition Information */}
+						{selectedPackage && currentPackage && (
+							<div className="col-span-full space-y-4">
+								<p className="text-xs uppercase tracking-wider text-muted-foreground/75">
+									{t("fields.package.label")}
+								</p>
+								<div className="flex items-center justify-around">
+									<div className="text-center flex-1">
+										<div className="w-12 h-12 bg-card border border-border rounded-lg flex items-center justify-center mb-3 mx-auto">
+											<PackageIcon className="h-6 w-6 shrink-0" />
+										</div>
+
+										<div>
+											<p className="text-sm font-medium tracking-tight">
+												{currentPackage.name}
+											</p>
+											<p className="text-xs text-muted-foreground/75 italic">
+												{currentPackage.numberOfVisit} {t("common.visits")}
+											</p>
+										</div>
+									</div>
+
+									<div className="flex flex-col items-center">
+										<span className="text-xs text-muted-foreground/75">
+											{t("common.to")}
+										</span>
+									</div>
+
+									<div className="text-center flex-1">
+										<div className="w-12 h-12 bg-primary/10 border border-primary/25 rounded-lg flex items-center justify-center mb-3 mx-auto">
+											<PackageIcon className="h-6 w-6 text-primary" />
+										</div>
+
+										<div>
+											<p className="text-sm font-medium tracking-tight text-primary">
+												{selectedPackage.name}
+											</p>
+											<p className="text-xs italic text-primary/75">
+												{selectedPackage.numberOfVisit} {t("common.visits")}
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+
+				<div className="px-1 space-y-4">
+					<FormField
+						control={form.control}
+						name="new_package_id"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>{t("form.new_package.label")}</FormLabel>
+								<Popover>
+									<PopoverTrigger asChild>
+										<FormControl>
+											<Button
+												variant="outline"
+												className={cn(
+													"w-full justify-between bg-input",
+													!field.value && "text-muted-foreground/75",
+												)}
+											>
+												{field.value ? (
+													<span className="font-medium tracking-tight">
+														{
+															packages.find(
+																(pkg) => pkg.id.toString() === field.value,
+															)?.name
+														}{" "}
+														<span className="text-muted-foreground/75 font-normal italic">
+															&mdash;{" "}
+															{
+																packages.find(
+																	(pkg) => pkg.id.toString() === field.value,
+																)?.numberOfVisit
+															}{" "}
+															{t("common.visits")}
+														</span>
+													</span>
+												) : (
+													t("form.new_package.placeholder")
+												)}
+												<ChevronsUpDown className="h-4 w-4 shrink-0 opacity-75" />
+											</Button>
+										</FormControl>
+									</PopoverTrigger>
+									<PopoverContent
+										className="w-full p-0 min-w-[var(--radix-popover-trigger-width)]"
+										align="start"
+									>
+										<Command>
+											<CommandInput
+												placeholder={t("form.new_package.search_placeholder")}
+											/>
+											<CommandList>
+												<CommandEmpty>
+													{t("form.new_package.no_package_found")}
+												</CommandEmpty>
+												<CommandGroup>
+													{packages.map((pkg) => (
+														<CommandItem
+															value={pkg.name}
+															key={pkg.id}
+															onSelect={(value) => {
+																const selected = packages.find(
+																	(p) => p.name === value,
+																);
+																if (selected) {
+																	form.setValue(
+																		"new_package_id",
+																		selected.id.toString(),
+																	);
+																	setSelectedPackage(selected);
+																}
+															}}
+															className="flex items-center justify-between"
+														>
+															<span className="font-medium tracking-tight">
+																{pkg.name}{" "}
+																<span className="text-muted-foreground/75 font-normal italic">
+																	&mdash; {pkg.numberOfVisit}{" "}
+																	{t("common.visits")}
+																</span>
+															</span>
+
+															<Check
+																className={cn(
+																	"h-4 w-4",
+																	pkg.name ===
+																		packages.find(
+																			(p) => p.id.toString() === field.value,
+																		)?.name
+																		? "opacity-100"
+																		: "opacity-0",
+																)}
+															/>
+														</CommandItem>
+													))}
+												</CommandGroup>
+											</CommandList>
+										</Command>
+									</PopoverContent>
+								</Popover>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+				</div>
+
+				<ResponsiveDialogButton {...buttonProps} />
+			</form>
+		</Form>
 	);
 }

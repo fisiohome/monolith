@@ -7,10 +7,11 @@ module AdminPortal
 
     def initialize(params)
       @params = params
-      @selected_id = @params[:view_order] || @params[:selected_order]
+      @selected_id = @params[:view_order] || @params[:selected_order] || @params[:change_package]
       @selected_update_pic_id = @params[:update_pic]
       @selected_update_status_id = @params[:update_status]
       @selected_update_payment_id = @params[:update_payment]
+      @selected_change_package_id = @params[:change_package]
     end
 
     def fetch_orders
@@ -49,10 +50,11 @@ module AdminPortal
     end
 
     def fetch_options_data
-      selected_id = @selected_update_pic_id || @selected_update_status_id || @selected_update_payment_id
+      selected_id = @selected_update_pic_id || @selected_update_status_id || @selected_update_payment_id || @selected_change_package_id
 
       admins = []
       statuses = []
+      service_packages = []
 
       # Only fetch admins and statuses if there's a selected_id for other forms
       if selected_id.present?
@@ -60,11 +62,35 @@ module AdminPortal
         statuses = Appointment.statuses.map { |key, value| deep_transform_keys_to_camel_case({key:, value:}) }.as_json
       end
 
+      # Fetch service packages for change package form
+      if @selected_change_package_id.present?
+        # Get the current order to find its service
+        current_order = Order.includes(package: :service).find_by(id: @selected_change_package_id)
+        if current_order&.package&.service
+          service_packages = Package.includes(:service)
+            .where(active: true, service: current_order.package.service)
+            .where.not(id: current_order.package.id) # Exclude current package
+            .map do |package|
+              deep_transform_keys_to_camel_case({
+                id: package.id,
+                name: package.name,
+                numberOfVisit: package.number_of_visit,
+                totalPrice: package.total_price&.to_f,
+                currency: package.currency,
+                service: {
+                  id: package.service.id,
+                  name: package.service.name
+                }
+              })
+            end
+        end
+      end
+
       # Always provide payment statuses for update payment form
       payment_statuses = Order::PAYMENT_STATUS.select { |status| %w[UNPAID PAID].include?(status) }
         .map { |status| deep_transform_keys_to_camel_case({value: status, label: status}) }
 
-      deep_transform_keys_to_camel_case({admins:, statuses:, payment_statuses:})
+      deep_transform_keys_to_camel_case({admins:, statuses:, payment_statuses:, service_packages:})
     end
 
     private

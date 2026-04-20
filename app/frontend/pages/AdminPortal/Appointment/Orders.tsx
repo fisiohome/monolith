@@ -16,6 +16,7 @@ import {
 	MailIcon,
 	MapPinIcon,
 	MoreHorizontalIcon,
+	PackageIcon,
 	SearchIcon,
 	XIcon,
 } from "lucide-react";
@@ -24,7 +25,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-changer";
 import { getPermission } from "@/components/admin-portal/appointment/details/action-buttons";
+import type { Package } from "@/components/admin-portal/appointment/feature-form";
 import {
+	ChangePackageForm,
 	FeedbackReminderDialog,
 	UpdatePaymentForm,
 	UpdatePICForm,
@@ -182,6 +185,7 @@ interface OrdersPageProps {
 			label: OrderPaymentStatuses;
 			value: OrderPaymentStatuses;
 		}[];
+		servicePackages?: Package[];
 	};
 }
 
@@ -287,6 +291,7 @@ const OrderActionsCell = ({
 			cannotUpdateStatus: !order.appointments?.length || markOrderDone,
 			cannotCancelBooking: !order.firstAppointmentId || markOrderDone,
 			cannotUpdatePayment: !order.appointments?.length || markOrderDone,
+			cannotChangePackage: markOrderDone,
 			cannotSendFeedbackReminder: !allAppointmentsCompleted,
 		};
 	}, [order.appointments, order.firstAppointmentId, order.status]);
@@ -514,6 +519,31 @@ const OrderActionsCell = ({
 		[pageURL],
 	);
 
+	// for open the change package form
+	const openChangePackage = useCallback(() => {
+		const { fullUrl } = populateQueryParams(pageURL, {
+			change_package: order.id,
+		});
+		startTransition(() => {
+			router.get(
+				fullUrl,
+				{},
+				{
+					only: [
+						"adminPortal",
+						"flash",
+						"errors",
+						"selectedOrder",
+						"optionsData",
+					],
+					preserveScroll: true,
+					preserveState: true,
+					replace: false,
+				},
+			);
+		});
+	}, [order.id, pageURL]);
+
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
@@ -629,7 +659,7 @@ const OrderActionsCell = ({
 						}}
 					>
 						<DownloadIcon className="opacity-60" aria-hidden="true" />
-						Download Invoice
+						{tappt("button.order_actions.menus.download.invoice")}
 					</DropdownMenuItem>
 
 					<DropdownMenuItem
@@ -640,7 +670,7 @@ const OrderActionsCell = ({
 						disabled={permission.cannotSendFeedbackReminder}
 					>
 						<MailIcon className="opacity-60" aria-hidden="true" />
-						Send Feedback Reminder
+						{tappt("button.order_actions.menus.send_feedback_reminder")}
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 
@@ -709,6 +739,17 @@ const OrderActionsCell = ({
 							</DropdownMenuSubContent>
 						</DropdownMenuPortal>
 					</DropdownMenuSub>
+
+					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							openChangePackage();
+						}}
+						disabled={permission.cannotChangePackage}
+					>
+						<PackageIcon className="opacity-60" aria-hidden="true" />
+						{tappt("button.order_actions.menus.change_package")}
+					</DropdownMenuItem>
 
 					<DropdownMenuItem
 						onSelect={(e) => {
@@ -1407,7 +1448,7 @@ export default function AppointmentOrders() {
 		[metadata],
 	);
 
-	// ── Dialogs ─────────────────────────────────────────
+	// ── Dialogs ────────────────────────────────────────────────────────────
 	const dialogMode = useMemo(() => {
 		const q = globalProps.adminPortal?.currentQuery;
 		return {
@@ -1415,6 +1456,7 @@ export default function AppointmentOrders() {
 			updatePIC: !!q?.updatePic,
 			updateStatus: !!q?.updateStatus,
 			updatePayment: !!q?.updatePayment,
+			changePackage: !!q?.changePackage,
 		};
 	}, [globalProps.adminPortal?.currentQuery]);
 
@@ -1544,6 +1586,40 @@ export default function AppointmentOrders() {
 			},
 		}),
 		[dialogMode.updatePayment, pageURL],
+	);
+
+	const dialogChangePackage = useMemo<Omit<ResponsiveDialogProps, "children">>(
+		() => ({
+			isOpen: dialogMode.changePackage,
+			title: t("dialog.change_package.title"),
+			description: t("dialog.change_package.description"),
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						change_package: undefined,
+					});
+					startTransition(() => {
+						router.get(
+							fullUrl,
+							{},
+							{
+								only: [
+									"adminPortal",
+									"flash",
+									"errors",
+									"selectedOrder",
+									"optionsData",
+								],
+								preserveScroll: true,
+								preserveState: true,
+								replace: false,
+							},
+						);
+					});
+				}
+			},
+		}),
+		[dialogMode.changePackage, pageURL, t],
 	);
 
 	const openOrderDetail = useCallback(
@@ -1776,6 +1852,20 @@ export default function AppointmentOrders() {
 						}
 						onSuccess={() => {
 							// Refresh the page data after successful update
+							router.reload({ only: ["orders"] });
+						}}
+					/>
+				</ResponsiveDialog>
+			)}
+
+			{/* Change Package Dialog */}
+			{globalProps?.selectedOrder && dialogChangePackage.isOpen && (
+				<ResponsiveDialog {...dialogChangePackage}>
+					<ChangePackageForm
+						order={globalProps.selectedOrder}
+						packages={globalProps.optionsData?.servicePackages || []}
+						onSuccess={() => {
+							// Refresh the page data after successful change
 							router.reload({ only: ["orders"] });
 						}}
 					/>

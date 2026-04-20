@@ -393,7 +393,7 @@ const UnfeasibleTherapistsDialog = forwardRef<
 	{
 		items: FeasibilityReportItem[];
 	}
->(({ items }) => {
+>(({ items }, ref) => {
 	if (items.length === 0) return null;
 
 	const unavailableTherapists = items.filter(
@@ -427,7 +427,7 @@ const UnfeasibleTherapistsDialog = forwardRef<
 					<span>{items.length} Not Shown</span>
 				</Button>
 			</DialogTrigger>
-			<DialogContent className="max-h-[80vh]">
+			<DialogContent className="max-h-[80vh]" ref={ref}>
 				<DialogHeader>
 					<DialogTitle>Therapists Not Shown ({items.length})</DialogTitle>
 					<DialogDescription>

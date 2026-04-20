@@ -66,9 +66,15 @@
 				},
 				"download": {
 					"soap": "Download SOAP",
-					"final_soap": "Download Final SOAP"
-				}
+					"final_soap": "Download Final SOAP",
+					"invoice": "Download Invoice"
+				},
+				"send_feedback_reminder": "Send Feedback Reminder",
+				"change_package": "Change Package"
 			}
+		},
+		"change_package": {
+			"submit": "Change Package"
 		}
 	},
 	"tab": {
@@ -247,7 +253,46 @@
 			"placeholder": "Select appointment status",
 			"search": "Search appointment status",
 			"empty_search": "No appointment status found."
+		},
+		"registration_number": {
+			"label": "Reg. Number"
+		},
+		"patient": {
+			"label": "Patient"
+		},
+		"service": {
+			"label": "Service"
+		},
+		"visit_city_location": {
+			"label": "Visit City"
+		},
+		"package": {
+			"label": "Switching Packages"
 		}
+	},
+	"form": {
+		"new_package": {
+			"label": "New Package",
+			"placeholder": "Select package...",
+			"search_placeholder": "Search package...",
+			"no_package_found": "No package found."
+		}
+	},
+	"validation": {
+		"package_required": "Package is required"
+	},
+	"error": {
+		"title": "Error"
+	},
+	"dialog": {
+		"change_package": {
+			"title": "Change Package",
+			"description": "Change the package for this order"
+		}
+	},
+	"common": {
+		"visits": "visits",
+		"to": "to"
 	},
 	"pagination": {
 		"showing": "Showing",

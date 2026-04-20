@@ -53,6 +53,7 @@ Rails.application.routes.draw do
             get "orders" => "appointments#orders"
             put "orders/:order_id/payment-status" => "appointments#update_payment_status"
             post "orders/:order_id/send-feedback-reminder" => "appointments#send_feedback_reminder"
+            put "orders/:order_id/change-package" => "appointments#change_package"
             get ":id/soap-report" => "appointments#download_soap_pdf"
             get ":id/soap-report-final" => "appointments#download_soap_final_pdf"
             get ":id/invoice" => "appointments#download_invoice"
