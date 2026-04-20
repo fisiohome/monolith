@@ -329,6 +329,38 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_094424) do
     t.index ["city"], name: "index_locations_on_city", unique: true
   end
 
+  create_table "mitra_blast_configs", id: :serial, force: :cascade do |t|
+    t.bigint "location_id", null: false
+    t.string "telegram_group_id", limit: 255
+    t.string "whatsapp_group_id", limit: 255
+    t.boolean "is_active", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "now()" }, null: false
+    t.index ["is_active"], name: "idx_mitra_blast_configs_active"
+    t.index ["location_id"], name: "idx_mitra_blast_configs_location"
+    t.unique_constraint ["location_id"], name: "uq_mitra_blast_configs_location"
+  end
+
+  create_table "mitra_blast_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "appointment_id", null: false
+    t.uuid "order_id", null: false
+    t.bigint "location_id", null: false
+    t.string "channel", limit: 50, null: false
+    t.string "group_id", limit: 255, null: false
+    t.string "status", limit: 50, default: "PENDING", null: false
+    t.text "error_message"
+    t.datetime "blast_at", precision: nil, default: -> { "now()" }, null: false
+    t.uuid "claimed_by"
+    t.datetime "claimed_at", precision: nil
+    t.datetime "created_at", precision: nil, default: -> { "now()" }, null: false
+    t.datetime "updated_at", precision: nil, default: -> { "now()" }, null: false
+    t.index ["appointment_id"], name: "idx_mitra_blast_logs_appointment"
+    t.index ["blast_at"], name: "idx_mitra_blast_logs_blast_at"
+    t.index ["order_id"], name: "idx_mitra_blast_logs_order"
+    t.index ["status"], name: "idx_mitra_blast_logs_status"
+  end
+
   create_table "order_details", id: :uuid, default: -> { "gen_random_uuid()" }, comment: "Visit-level breakdown linked to appointments", force: :cascade do |t|
     t.uuid "order_id", null: false
     t.uuid "appointment_id"
@@ -369,12 +401,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_094424) do
     t.uuid "user_id", comment: "User who owns/created this order. Used for My Orders endpoint."
     t.uuid "voucher_id"
     t.string "cancelled_by", limit: 20, comment: "Who cancelled: PATIENT, ADMIN, or SYSTEM"
+    t.string "queue_code", limit: 50
     t.index ["cancelled_by"], name: "idx_orders_cancelled_by", where: "(cancelled_by IS NOT NULL)"
     t.index ["created_at"], name: "idx_orders_created_at", order: :desc
     t.index ["invoice_number"], name: "idx_orders_invoice_number"
     t.index ["package_id"], name: "idx_orders_package"
     t.index ["patient_id"], name: "idx_orders_patient"
     t.index ["payment_status"], name: "idx_orders_payment_status"
+    t.index ["queue_code"], name: "idx_orders_queue_code", unique: true, where: "(queue_code IS NOT NULL)"
     t.index ["registration_number"], name: "idx_orders_registration_number"
     t.index ["status"], name: "idx_orders_status"
     t.index ["user_id"], name: "idx_orders_user_id"
@@ -382,8 +416,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_094424) do
     t.index ["voucher_id"], name: "idx_orders_voucher_id"
     t.check_constraint "discount_amount >= 0::numeric AND discount_amount <= subtotal", name: "valid_discount"
     t.check_constraint "discount_type::text = ANY (ARRAY['PERCENTAGE'::character varying::text, 'FIXED'::character varying::text, 'VOUCHER'::character varying::text, 'NONE'::character varying::text])", name: "orders_discount_type_check"
-    t.check_constraint "paid_amount >= 0::numeric AND paid_amount <= (total_amount + 100::numeric)", name: "valid_payment"
+    t.check_constraint "paid_amount >= 0::numeric", name: "valid_payment"
     t.check_constraint "payment_status::text = ANY (ARRAY['UNPAID'::character varying::text, 'PARTIALLY_PAID'::character varying::text, 'PAID'::character varying::text, 'OVERPAID'::character varying::text, 'REFUNDED'::character varying::text])", name: "orders_payment_status_check"
+    t.check_constraint "queue_code IS NULL OR queue_code::text ~ '^KA[0-9]+$'::text", name: "chk_orders_queue_code_format"
     t.check_constraint "status::text = ANY (ARRAY['DRAFT'::character varying::text, 'PENDING_PAYMENT'::character varying::text, 'PARTIALLY_PAID'::character varying::text, 'PAID'::character varying::text, 'SCHEDULED'::character varying::text, 'IN_PROGRESS'::character varying::text, 'COMPLETED'::character varying::text, 'CANCELLED'::character varying::text, 'REFUNDED'::character varying::text])", name: "orders_status_check"
     t.unique_constraint ["invoice_number"], name: "orders_invoice_number_key"
     t.unique_constraint ["registration_number"], name: "orders_registration_number_key"
@@ -490,6 +525,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_094424) do
     t.jsonb "payment_details", comment: "Additional payment information in JSON format (source wallet, receipt_id, etc.)"
     t.string "credit_card_token", limit: 100, comment: "Credit card token for tokenized credit card payment"
     t.string "credit_card_charge_id", limit: 100, comment: "Credit card charge ID from payment gateway"
+    t.string "payment_type", limit: 50, default: "PAYMENT", null: false
     t.index ["bank_code"], name: "idx_payments_bank_code"
     t.index ["created_at"], name: "idx_payments_created_at", order: :desc
     t.index ["credit_card_token"], name: "idx_payments_credit_card_token"
@@ -501,7 +537,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_094424) do
     t.index ["payment_gateway"], name: "idx_payments_gateway"
     t.index ["status"], name: "idx_payments_status"
     t.check_constraint "amount > 0::numeric", name: "valid_amount"
-    t.check_constraint "status::text = ANY (ARRAY['PENDING'::character varying::text, 'PROCESSING'::character varying::text, 'COMPLETED'::character varying::text, 'FAILED'::character varying::text, 'EXPIRED'::character varying::text, 'REFUNDED'::character varying::text, 'CANCELLED'::character varying::text])", name: "payments_status_check"
+    t.check_constraint "payment_type::text = ANY (ARRAY['PAYMENT'::character varying::text, 'ADJUSTMENT_REFUND'::character varying::text, 'ADJUSTMENT_CHARGE'::character varying::text])", name: "payments_payment_type_check"
+    t.check_constraint "status::text = ANY (ARRAY['PENDING'::character varying::text, 'PROCESSING'::character varying::text, 'COMPLETED'::character varying::text, 'FAILED'::character varying::text, 'EXPIRED'::character varying::text, 'REFUNDED'::character varying::text, 'CANCELLED'::character varying::text, 'PENDING_REFUND'::character varying::text])", name: "payments_status_check"
     t.unique_constraint ["gateway_transaction_id"], name: "payments_gateway_transaction_id_key"
   end
 
@@ -518,6 +555,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_094424) do
     t.index ["created_at"], name: "idx_push_notification_logs_created_at", order: :desc
     t.index ["sent_by"], name: "idx_push_notification_logs_sent_by"
     t.check_constraint "target_type::text = ANY (ARRAY['USER'::character varying::text, 'ROLE'::character varying::text, 'ALL'::character varying::text])", name: "push_notification_logs_target_type_check"
+  end
+
+  create_table "queue_code_sequence", id: :serial, force: :cascade do |t|
+    t.integer "last_number", default: 0, null: false
+    t.string "prefix", limit: 10, default: "KA", null: false
+    t.boolean "is_initialized", default: false, null: false
+    t.timestamptz "created_at", default: -> { "now()" }
+    t.timestamptz "updated_at", default: -> { "now()" }
   end
 
   create_table "reminder_histories", comment: "Tracks appointment reminder emails sent to therapists", force: :cascade do |t|
@@ -1101,6 +1146,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_09_094424) do
   add_foreign_key "booking_drafts", "users", name: "booking_drafts_user_id_fkey", on_delete: :cascade
   add_foreign_key "location_services", "locations"
   add_foreign_key "location_services", "services"
+  add_foreign_key "mitra_blast_configs", "locations", name: "mitra_blast_configs_location_id_fkey"
+  add_foreign_key "mitra_blast_logs", "appointments", name: "mitra_blast_logs_appointment_id_fkey"
+  add_foreign_key "mitra_blast_logs", "locations", name: "mitra_blast_logs_location_id_fkey"
+  add_foreign_key "mitra_blast_logs", "orders", name: "mitra_blast_logs_order_id_fkey"
+  add_foreign_key "mitra_blast_logs", "users", column: "claimed_by", name: "mitra_blast_logs_claimed_by_fkey"
   add_foreign_key "order_details", "appointments", name: "order_details_appointment_id_fkey", on_delete: :nullify
   add_foreign_key "order_details", "orders", name: "order_details_order_id_fkey", on_delete: :cascade
   add_foreign_key "orders", "booking_drafts", name: "orders_booking_draft_id_fkey", on_delete: :nullify
