@@ -573,21 +573,6 @@ module AdminPortal
     # @param custom_params [Hash] Custom parameters to use instead of query params
     # @return [String] The appropriate redirect path
     def determine_redirect_path(keep_params: true, exclude_param: nil, custom_params: nil)
-      # Extract referer params to maintain context (filters, pagination, etc.)
-      referer_query_params = if request.referer.present?
-        begin
-          uri = URI.parse(request.referer)
-          uri.query ? Rack::Utils.parse_nested_query(uri.query).symbolize_keys : {}
-        rescue URI::InvalidURIError
-          {}
-        end
-      else
-        {}
-      end
-
-      # Merge with current query parameters (might be used for one-off flags)
-      effective_params = referer_query_params.merge(request.query_parameters.to_h.symbolize_keys)
-
       # Check if user came from orders page
       is_from_orders = request.referer&.include?(orders_admin_portal_appointments_path)
 
@@ -595,10 +580,9 @@ module AdminPortal
       if custom_params
         is_from_orders ? orders_admin_portal_appointments_path(custom_params) : admin_portal_appointments_path(custom_params)
       elsif exclude_param
-        params_to_keep = effective_params.except(exclude_param.to_sym)
-        is_from_orders ? orders_admin_portal_appointments_path(params_to_keep) : admin_portal_appointments_path(params_to_keep)
+        is_from_orders ? orders_admin_portal_appointments_path(request.query_parameters.except(exclude_param)) : admin_portal_appointments_path(request.query_parameters.except(exclude_param))
       elsif keep_params
-        is_from_orders ? orders_admin_portal_appointments_path(effective_params) : admin_portal_appointments_path(effective_params)
+        is_from_orders ? orders_admin_portal_appointments_path(request.query_parameters) : admin_portal_appointments_path(request.query_parameters)
       else
         is_from_orders ? orders_admin_portal_appointments_path : admin_portal_appointments_path
       end

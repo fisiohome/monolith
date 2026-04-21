@@ -27,6 +27,7 @@ import ApptViewChanger from "@/components/admin-portal/appointment/appt-view-cha
 import { getPermission } from "@/components/admin-portal/appointment/details/action-buttons";
 import type { Package } from "@/components/admin-portal/appointment/feature-form";
 import {
+	CancelAppointmentForm,
 	ChangePackageForm,
 	FeedbackReminderDialog,
 	RegenerateInvoiceForm,
@@ -1521,6 +1522,7 @@ export default function AppointmentOrders() {
 		const q = globalProps.adminPortal?.currentQuery;
 		return {
 			viewOrder: !!q?.viewOrder,
+			cancel: !!q?.cancel,
 			updatePIC: !!q?.updatePic,
 			updateStatus: !!q?.updateStatus,
 			updatePayment: !!q?.updatePayment,
@@ -1559,6 +1561,35 @@ export default function AppointmentOrders() {
 			},
 		}),
 		[dialogMode.viewOrder, pageURL],
+	);
+
+	const dialogCancel = useMemo<Omit<ResponsiveDialogProps, "children">>(
+		() => ({
+			isOpen: dialogMode.cancel,
+			title: t("modal.cancel.title"),
+			description: t("modal.cancel.description"),
+			dialogWidth: "650px",
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						cancel: null,
+					});
+					startTransition(() => {
+						router.get(
+							fullUrl,
+							{},
+							{
+								only: ["adminPortal", "flash", "errors", "selectedAppointment"],
+								preserveScroll: true,
+								preserveState: true,
+								replace: false,
+							},
+						);
+					});
+				}
+			},
+		}),
+		[dialogMode.cancel, pageURL, t],
 	);
 
 	const dialogUpdatePIC = useMemo<Omit<ResponsiveDialogProps, "children">>(
@@ -1930,6 +1961,15 @@ export default function AppointmentOrders() {
 			{globalProps?.selectedAppointment && dialogUpdatePIC.isOpen && (
 				<ResponsiveDialog {...dialogUpdatePIC}>
 					<UpdatePICForm
+						selectedAppointment={globalProps.selectedAppointment}
+					/>
+				</ResponsiveDialog>
+			)}
+
+			{/* Cancel Dialog */}
+			{globalProps?.selectedAppointment && dialogCancel.isOpen && (
+				<ResponsiveDialog {...dialogCancel}>
+					<CancelAppointmentForm
 						selectedAppointment={globalProps.selectedAppointment}
 					/>
 				</ResponsiveDialog>

@@ -10,6 +10,7 @@ module AdminPortal
       @selected_id = @params[:view_order] || @params[:selected_order] || @params[:change_package] || @params[:regenerate_invoice]
       @selected_update_pic_id = @params[:update_pic]
       @selected_update_status_id = @params[:update_status]
+      @selected_cancel_id = @params[:cancel]
       @selected_update_payment_id = @params[:update_payment]
       @selected_change_package_id = @params[:change_package]
     end
@@ -40,7 +41,7 @@ module AdminPortal
     end
 
     def fetch_selected_appointment
-      selected_id = @selected_update_pic_id || @selected_update_status_id
+      selected_id = @selected_cancel_id || @selected_update_pic_id || @selected_update_status_id
       return nil if selected_id.blank?
 
       appointment = Appointment.includes(:order).find_by(id: selected_id)
