@@ -3,6 +3,7 @@ import { router, usePage } from "@inertiajs/react";
 import {
 	AlertCircle,
 	Check,
+	ChevronDownIcon,
 	ChevronsUpDown,
 	LoaderIcon,
 	Package as PackageIcon,
@@ -25,6 +26,11 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	Command,
 	CommandEmpty,
@@ -737,6 +743,23 @@ interface ChangePackageFormProps {
 	forceMode?: ResponsiveDialogMode;
 }
 
+// Helper component for package change rules
+const RuleItem = ({
+	title,
+	description,
+}: {
+	title: string;
+	description: string;
+}) => (
+	<div className="text-xs space-y-1">
+		<p className="font-semibold leading-none">{title}</p>
+		<p className="text-muted-foreground">{description}</p>
+	</div>
+);
+
+const CHANGE_PACKAGE_FORM_DEFAULT_FORCE = false;
+const CHANGE_PACKAGE_DEFAULT_BYPASS_PAYMENT = true;
+
 export function ChangePackageForm({
 	order,
 	packages,
@@ -750,6 +773,16 @@ export function ChangePackageForm({
 	const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
 
 	const currentPackage = order.package || null;
+
+	const isDowngrade = useMemo(() => {
+		if (!selectedPackage || !currentPackage) return false;
+		return selectedPackage.numberOfVisit < currentPackage.numberOfVisit;
+	}, [selectedPackage, currentPackage]);
+
+	const isUpgrade = useMemo(() => {
+		if (!selectedPackage || !currentPackage) return false;
+		return selectedPackage.numberOfVisit > currentPackage.numberOfVisit;
+	}, [selectedPackage, currentPackage]);
 
 	const buttonProps = useMemo<ResponsiveDialogButton>(
 		() => ({
@@ -774,8 +807,8 @@ export function ChangePackageForm({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			new_package_id: "",
-			force: false,
-			bypass_payment: true,
+			force: CHANGE_PACKAGE_FORM_DEFAULT_FORCE,
+			bypass_payment: CHANGE_PACKAGE_DEFAULT_BYPASS_PAYMENT,
 		},
 	});
 
@@ -864,48 +897,196 @@ export function ChangePackageForm({
 
 						{/* Package Transition Information */}
 						{selectedPackage && currentPackage && (
-							<div className="col-span-full space-y-4">
-								<p className="text-xs uppercase tracking-wider text-muted-foreground/75">
-									{t("fields.package.label")}
-								</p>
-								<div className="flex items-center justify-around">
-									<div className="text-center flex-1">
-										<div className="w-12 h-12 bg-card border border-border rounded-lg flex items-center justify-center mb-3 mx-auto">
-											<PackageIcon className="h-6 w-6 shrink-0" />
+							<>
+								<div className="col-span-full space-y-4">
+									<p className="text-xs uppercase tracking-wider text-muted-foreground/75">
+										{t("fields.package.label")}
+									</p>
+									<div className="flex items-center justify-around">
+										<div className="text-center flex-1">
+											<div className="w-12 h-12 bg-card border border-border rounded-lg flex items-center justify-center mb-3 mx-auto">
+												<PackageIcon className="h-6 w-6 shrink-0" />
+											</div>
+
+											<div>
+												<p className="text-sm font-medium tracking-tight">
+													{currentPackage.name}
+												</p>
+												<p className="text-xs text-muted-foreground/75 italic">
+													{currentPackage.numberOfVisit} {t("common.visits")}
+												</p>
+											</div>
 										</div>
 
-										<div>
-											<p className="text-sm font-medium tracking-tight">
-												{currentPackage.name}
-											</p>
-											<p className="text-xs text-muted-foreground/75 italic">
-												{currentPackage.numberOfVisit} {t("common.visits")}
-											</p>
-										</div>
-									</div>
-
-									<div className="flex flex-col items-center">
-										<span className="text-xs text-muted-foreground/75">
-											{t("common.to")}
-										</span>
-									</div>
-
-									<div className="text-center flex-1">
-										<div className="w-12 h-12 bg-primary/10 border border-primary/25 rounded-lg flex items-center justify-center mb-3 mx-auto">
-											<PackageIcon className="h-6 w-6 text-primary" />
+										<div className="flex flex-col items-center">
+											<span className="text-xs text-muted-foreground/75">
+												{t("common.to")}
+											</span>
 										</div>
 
-										<div>
-											<p className="text-sm font-medium tracking-tight text-primary">
-												{selectedPackage.name}
-											</p>
-											<p className="text-xs italic text-primary/75">
-												{selectedPackage.numberOfVisit} {t("common.visits")}
-											</p>
+										<div className="text-center flex-1">
+											<div className="w-12 h-12 bg-primary/10 border border-primary/25 rounded-lg flex items-center justify-center mb-3 mx-auto">
+												<PackageIcon className="h-6 w-6 text-primary" />
+											</div>
+
+											<div>
+												<p className="text-sm font-medium tracking-tight text-primary">
+													{selectedPackage.name}
+												</p>
+												<p className="text-xs italic text-primary/75">
+													{selectedPackage.numberOfVisit} {t("common.visits")}
+												</p>
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
+
+								<div className="col-span-full">
+									{/* Warnings/Rules */}
+									{isDowngrade && (
+										<Collapsible className="rounded-md data-[state=open]:bg-amber-50 transition-all overflow-hidden">
+											<CollapsibleTrigger asChild>
+												<Button
+													variant="ghost"
+													className="group w-full flex items-center justify-between h-10 hover:bg-amber-100 hover:text-amber-800 text-amber-700 px-2"
+												>
+													<div className="flex items-center gap-2.5">
+														<AlertCircle className="h-4 w-4" />
+														<span className="text-[10px] font-bold uppercase tracking-widest">
+															{t("form.change_package.rules.downgrade.header")}
+														</span>
+													</div>
+													<ChevronDownIcon className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180 opacity-50" />
+												</Button>
+											</CollapsibleTrigger>
+											<CollapsibleContent className="px-2 pb-3 pt-1 space-y-6">
+												<div className="grid gap-3">
+													<RuleItem
+														title={t(
+															"form.change_package.rules.downgrade.items.completed_visits.title",
+														)}
+														description={t(
+															"form.change_package.rules.downgrade.items.completed_visits.description",
+														)}
+													/>
+													<RuleItem
+														title={t(
+															"form.change_package.rules.downgrade.items.schedule_adjustment.title",
+														)}
+														description={t(
+															"form.change_package.rules.downgrade.items.schedule_adjustment.description",
+														)}
+													/>
+													<RuleItem
+														title={t(
+															"form.change_package.rules.downgrade.items.medical_records.title",
+														)}
+														description={t(
+															"form.change_package.rules.downgrade.items.medical_records.description",
+														)}
+													/>
+													<RuleItem
+														title={t(
+															"form.change_package.rules.downgrade.items.auto_sequence.title",
+														)}
+														description={t(
+															"form.change_package.rules.downgrade.items.auto_sequence.description",
+														)}
+													/>
+													<RuleItem
+														title={t(
+															"form.change_package.rules.downgrade.items.price_adjustment.title",
+														)}
+														description={t(
+															"form.change_package.rules.downgrade.items.price_adjustment.description",
+														)}
+													/>
+												</div>
+
+												{/* no need for force update yet */}
+												{/* <FormField
+													control={form.control}
+													name="force"
+													render={({ field }) => (
+														<FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-lg border p-3 bg-background/50 border-border/50">
+															<FormControl>
+																<Checkbox
+																	checked={field.value}
+																	onCheckedChange={field.onChange}
+																/>
+															</FormControl>
+															<div className="space-y-0.5 leading-none">
+																<FormLabel className="text-[11px] font-semibold cursor-pointer">
+																	Paksa Update (Force Change)
+																</FormLabel>
+																<FormDescription className="text-[10px] text-muted-foreground/75 leading-tight">
+																	Izinkan penghapusan kunjungan meskipun
+																	memiliki SOAP atau Evidence.
+																</FormDescription>
+															</div>
+														</FormItem>
+													)}
+												/> */}
+											</CollapsibleContent>
+										</Collapsible>
+									)}
+
+									{isUpgrade && (
+										<Collapsible className="rounded-md data-[state=open]:bg-amber-50 transition-all overflow-hidden">
+											<CollapsibleTrigger asChild>
+												<Button
+													variant="ghost"
+													className="group w-full flex items-center justify-between h-10 hover:bg-amber-100 hover:text-amber-800 text-amber-700 px-2"
+												>
+													<div className="flex items-center gap-2.5">
+														<AlertCircle className="h-4 w-4" />
+														<span className="text-[10px] font-bold uppercase tracking-widest">
+															{t("form.change_package.rules.upgrade.header")}
+														</span>
+													</div>
+													<ChevronDownIcon className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180 opacity-50" />
+												</Button>
+											</CollapsibleTrigger>
+											<CollapsibleContent className="px-2 pb-3 pt-1 space-y-6">
+												<div className="grid gap-3">
+													<RuleItem
+														title={t(
+															"form.change_package.rules.upgrade.items.additional_sessions.title",
+														)}
+														description={t(
+															"form.change_package.rules.upgrade.items.additional_sessions.description",
+														)}
+													/>
+													<RuleItem
+														title={t(
+															"form.change_package.rules.upgrade.items.therapist_assignment.title",
+														)}
+														description={t(
+															"form.change_package.rules.upgrade.items.therapist_assignment.description",
+														)}
+													/>
+													<RuleItem
+														title={t(
+															"form.change_package.rules.upgrade.items.linked_history.title",
+														)}
+														description={t(
+															"form.change_package.rules.upgrade.items.linked_history.description",
+														)}
+													/>
+													<RuleItem
+														title={t(
+															"form.change_package.rules.upgrade.items.price_adjustment.title",
+														)}
+														description={t(
+															"form.change_package.rules.upgrade.items.price_adjustment.description",
+														)}
+													/>
+												</div>
+											</CollapsibleContent>
+										</Collapsible>
+									)}
+								</div>
+							</>
 						)}
 					</div>
 				</div>

@@ -276,6 +276,56 @@
 			"placeholder": "Select package...",
 			"search_placeholder": "Search package...",
 			"no_package_found": "No package found."
+		},
+		"change_package": {
+			"rules": {
+				"downgrade": {
+					"header": "Downgrade Package Rules",
+					"items": {
+						"completed_visits": {
+							"title": "Completed Visits",
+							"description": "Sessions that are already 'Completed' are protected and will not be removed."
+						},
+						"schedule_adjustment": {
+							"title": "Schedule Adjustment",
+							"description": "The system will automatically remove from the most recent session."
+						},
+						"medical_records": {
+							"title": "Medical Records (SOAP)",
+							"description": "Visits with existing medical records will be locked."
+						},
+						"auto_sequence": {
+							"title": "Automatic Sequencing",
+							"description": "Session numbering will be automatically rearranged."
+						},
+						"price_adjustment": {
+							"title": "Price Adjustment",
+							"description": "The total price will be updated according to the new package rate."
+						}
+					}
+				},
+				"upgrade": {
+					"header": "Upgrade Package Rules",
+					"items": {
+						"additional_sessions": {
+							"title": "Additional Sessions",
+							"description": "New visits are automatically added at the end of the schedule."
+						},
+						"therapist_assignment": {
+							"title": "Therapist Assignment",
+							"description": "New sessions will require therapist reassignment."
+						},
+						"linked_history": {
+							"title": "Linked History",
+							"description": "Stay connected to the original order reference."
+						},
+						"price_adjustment": {
+							"title": "Price Adjustment",
+							"description": "The total price will be updated according to the new package rate."
+						}
+					}
+				}
+			}
 		}
 	},
 	"validation": {

@@ -276,6 +276,56 @@
 			"placeholder": "Pilih paket...",
 			"search_placeholder": "Cari paket...",
 			"no_package_found": "Tidak ada paket ditemukan."
+		},
+		"change_package": {
+			"rules": {
+				"downgrade": {
+					"header": "Aturan Downgrade Paket",
+					"items": {
+						"completed_visits": {
+							"title": "Kunjungan Selesai",
+							"description": "Sesi yang sudah selesai dipastikan aman (tidak akan dihapus)."
+						},
+						"schedule_adjustment": {
+							"title": "Penyesuaian Jadwal",
+							"description": "Sistem akan otomatis menghapus dari sesi paling akhir."
+						},
+						"medical_records": {
+							"title": "Catatan Medis (SOAP)",
+							"description": "Kunjungan yang sudah ada catatan medisnya akan terkunci."
+						},
+						"auto_sequence": {
+							"title": "Urutan Otomatis",
+							"description": "Penomoran sesi akan diatur ulang secara otomatis."
+						},
+						"price_adjustment": {
+							"title": "Penyesuaian Harga",
+							"description": "Harga total akan diperbarui mengikuti tarif paket baru."
+						}
+					}
+				},
+				"upgrade": {
+					"header": "Aturan Upgrade Paket",
+					"items": {
+						"additional_sessions": {
+							"title": "Sesi Tambahan",
+							"description": "Kunjungan baru otomatis ditambahkan di akhir jadwal."
+						},
+						"therapist_assignment": {
+							"title": "Penugasan Terapis",
+							"description": "Sesi baru akan membutuhkan penugasan terapis kembali."
+						},
+						"linked_history": {
+							"title": "Riwayat Terhubung",
+							"description": "Tetap terhubung dengan referensi order yang asli."
+						},
+						"price_adjustment": {
+							"title": "Penyesuaian Harga",
+							"description": "Harga total akan diperbarui mengikuti tarif paket baru."
+						}
+					}
+				}
+			}
 		}
 	},
 	"validation": {

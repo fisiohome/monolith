@@ -1,6 +1,6 @@
 import { Deferred, Head, Link, router, usePage } from "@inertiajs/react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { format, type Locale } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import {
 	ActivityIcon,
@@ -35,6 +35,7 @@ import {
 } from "@/components/admin-portal/appointment/feature-form";
 import ApptPagination from "@/components/admin-portal/appointment/pagination-list";
 import { PageContainer } from "@/components/admin-portal/shared/page-layout";
+import { useDateContext } from "@/components/providers/date-provider";
 import {
 	ResponsiveDialog,
 	type ResponsiveDialogProps,
@@ -247,13 +248,18 @@ function formatCurrency(amount: number): string {
 	}).format(amount);
 }
 
-function formatDate(dateString: string): string {
-	return format(new Date(dateString), "dd MMM yyyy", { locale: idLocale });
+function formatDate(dateString: string, locale: Locale = idLocale): string {
+	return format(new Date(dateString), "dd MMM yyyy", { locale });
 }
 
-function formatDateTime(dateString: string): string {
-	return format(new Date(dateString), "dd MMM yyyy, HH:mm", {
-		locale: idLocale,
+function formatDateTime(
+	dateString: string,
+	locale: Locale = idLocale,
+	timeFormatStr: string = "HH:mm",
+): string {
+	const finalTimeFormat = locale.code === "id" ? "HH:mm" : timeFormatStr;
+	return format(new Date(dateString), `dd MMM yyyy, ${finalTimeFormat}`, {
+		locale,
 	});
 }
 
@@ -789,10 +795,12 @@ const orderColumns = ({
 	pageURL,
 	openOrderDetail,
 	onOpenFeedbackDialog,
+	dateFnsLocale,
 }: {
 	pageURL: string;
 	openOrderDetail: (orderId: string) => void;
 	onOpenFeedbackDialog: (orderId: string, registrationNumber: string) => void;
+	dateFnsLocale: Locale;
 }): ColumnDef<OrderRow>[] => [
 	{
 		accessorKey: "registrationNumber",
@@ -917,7 +925,7 @@ const orderColumns = ({
 		header: "Date",
 		cell: ({ row }) => (
 			<span className="text-sm text-muted-foreground text-nowrap">
-				{formatDate(row.original.createdAt)}
+				{formatDate(row.original.createdAt, dateFnsLocale)}
 			</span>
 		),
 	},
@@ -948,6 +956,7 @@ function OrderDetailContent({
 	const { t: tappt } = useTranslation("appointments", {
 		useSuspense: false,
 	});
+	const { locale: dateFnsLocale, timeFormatDateFns } = useDateContext();
 
 	return (
 		<div className="space-y-4 px-1">
@@ -1028,7 +1037,7 @@ function OrderDetailContent({
 					{order.invoiceDueDate && (
 						<InfoItem
 							label="Due Date"
-							value={formatDate(order.invoiceDueDate)}
+							value={formatDate(order.invoiceDueDate, dateFnsLocale)}
 						/>
 					)}
 				</div>
@@ -1113,11 +1122,22 @@ function OrderDetailContent({
 							</Badge>
 						}
 					/>
-					<InfoItem label="Created" value={formatDateTime(order.createdAt)} />
+					<InfoItem
+						label="Created"
+						value={formatDateTime(
+							order.createdAt,
+							dateFnsLocale,
+							timeFormatDateFns,
+						)}
+					/>
 					{order.completedAt && (
 						<InfoItem
 							label="Completed"
-							value={formatDateTime(order.completedAt)}
+							value={formatDateTime(
+								order.completedAt,
+								dateFnsLocale,
+								timeFormatDateFns,
+							)}
 						/>
 					)}
 					{order.cancelledAt && (
@@ -1127,7 +1147,11 @@ function OrderDetailContent({
 							value={
 								<>
 									<p className="font-semibold text-sm text-pretty leading-snug">
-										{formatDateTime(order.cancelledAt)}
+										{formatDateTime(
+											order.cancelledAt,
+											dateFnsLocale,
+											timeFormatDateFns,
+										)}
 									</p>
 
 									{order.cancelledBy && (
@@ -1202,7 +1226,11 @@ function OrderDetailContent({
 											<TableCell className="py-1.5">
 												<span className="text-sm text-muted-foreground text-nowrap">
 													{appt.appointmentDateTime
-														? formatDateTime(appt.appointmentDateTime)
+														? formatDateTime(
+																appt.appointmentDateTime,
+																dateFnsLocale,
+																timeFormatDateFns,
+															)
 														: "—"}
 												</span>
 											</TableCell>
@@ -1461,6 +1489,7 @@ export default function AppointmentOrders() {
 	}, [globalProps.adminPortal?.currentQuery]);
 
 	const { t } = useTranslation("appointments");
+	const { locale: dateFnsLocale } = useDateContext();
 
 	const dialogViewOrder = useMemo<Omit<ResponsiveDialogProps, "children">>(
 		() => ({
@@ -1671,8 +1700,9 @@ export default function AppointmentOrders() {
 				pageURL,
 				openOrderDetail,
 				onOpenFeedbackDialog: handleOpenFeedbackDialog,
+				dateFnsLocale,
 			}),
-		[pageURL, openOrderDetail, handleOpenFeedbackDialog],
+		[pageURL, openOrderDetail, handleOpenFeedbackDialog, dateFnsLocale],
 	);
 
 	return (
