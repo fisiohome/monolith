@@ -5,6 +5,7 @@ import {
 	Check,
 	ChevronDownIcon,
 	ChevronsUpDown,
+	Copy,
 	LoaderIcon,
 	Package as PackageIcon,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -47,6 +49,8 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	MultiSelector,
 	MultiSelectorContent,
@@ -68,6 +72,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { deepTransformKeysToSnakeCase } from "@/hooks/use-change-case";
 import i18n from "@/lib/i18n";
 import { cn, populateQueryParams } from "@/lib/utils";
@@ -78,7 +88,6 @@ import type {
 	AppointmentStatuses,
 } from "@/types/admin-portal/appointment";
 import type { ResponsiveDialogMode } from "@/types/globals";
-
 export function CancelAppointmentForm({
 	selectedAppointment,
 	forceMode,
@@ -625,7 +634,7 @@ export function UpdatePaymentForm({
 									defaultValue={field.value}
 								>
 									<FormControl>
-										<SelectTrigger>
+										<SelectTrigger className="shadow-inner bg-sidebar">
 											<SelectValue placeholder="Select payment status" />
 										</SelectTrigger>
 									</FormControl>
@@ -1104,7 +1113,7 @@ export function ChangePackageForm({
 											<Button
 												variant="outline"
 												className={cn(
-													"w-full justify-between bg-input",
+													"w-full justify-between shadow-inner bg-sidebar",
 													!field.value && "text-muted-foreground/75",
 												)}
 											>
@@ -1198,5 +1207,223 @@ export function ChangePackageForm({
 				<ResponsiveDialogButton {...buttonProps} />
 			</form>
 		</Form>
+	);
+}
+
+export function RegenerateInvoiceForm({
+	order,
+	forceMode,
+}: {
+	order: {
+		id: string;
+		registrationNumber: string;
+		status: string;
+		paymentStatus: string;
+	};
+	forceMode?: ResponsiveDialogMode;
+}) {
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [newInvoiceUrl, setNewInvoiceUrl] = useState<string | null>(null);
+	const [copied, setCopied] = useState(false);
+
+	const { t: tappt } = useTranslation(["appointments"]);
+
+	const buttonProps = useMemo<ResponsiveDialogButton>(
+		() => ({
+			isLoading,
+			forceMode,
+			submitText: tappt("form.regenerate_invoice.submit"),
+		}),
+		[isLoading, forceMode, tappt],
+	);
+
+	const formSchema = z.object({
+		expiry_minutes: z.string().min(1, "Please select an expiration time"),
+	});
+
+	const form = useForm<z.infer<typeof formSchema>>({
+		resolver: zodResolver(formSchema),
+		defaultValues: {
+			expiry_minutes: "180", // default 3 hours
+		},
+	});
+
+	const EXPIRY_OPTIONS = [
+		{ value: "30", label: tappt("form.regenerate_invoice.options.minutes_30") },
+		{ value: "60", label: tappt("form.regenerate_invoice.options.hour_1") },
+		{ value: "180", label: tappt("form.regenerate_invoice.options.hours_3") },
+		{ value: "300", label: tappt("form.regenerate_invoice.options.hours_5") },
+		{ value: "720", label: tappt("form.regenerate_invoice.options.hours_12") },
+	];
+
+	const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			const csrfToken = document
+				.querySelector('meta[name="csrf-token"]')
+				?.getAttribute("content");
+			const response = await fetch(
+				`/api/v1/appointments/orders/${order.id}/regenerate-invoice`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						"X-CSRF-Token": csrfToken || "",
+					},
+					body: JSON.stringify({
+						form_data: {
+							expiry_minutes: parseInt(values.expiry_minutes, 10),
+						},
+					}),
+				},
+			);
+
+			const data = await response.json();
+
+			if (!response.ok || !data.success) {
+				throw new Error(data.error || tappt("form.regenerate_invoice.failed"));
+			}
+
+			toast.success(tappt("form.regenerate_invoice.success"));
+			setNewInvoiceUrl(data.data?.invoice_url || "");
+		} catch (err) {
+			const message =
+				err instanceof Error ? err.message : "An unexpected error occurred";
+			setError(message);
+			console.error("Failed to regenerate invoice:", message);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleCopy = useCallback(() => {
+		if (!newInvoiceUrl) return;
+		navigator.clipboard.writeText(newInvoiceUrl).then(() => {
+			setCopied(true);
+			toast.success(tappt("form.regenerate_invoice.copied"));
+			setTimeout(() => setCopied(false), 2000);
+		});
+	}, [newInvoiceUrl, tappt]);
+
+	if (newInvoiceUrl) {
+		return (
+			<div className="p-0.5 space-y-6">
+				<Alert className="bg-emerald-50 border-emerald-200">
+					<AlertTitle className="text-emerald-800">
+						{tappt("form.regenerate_invoice.success_title")}
+					</AlertTitle>
+					<AlertDescription className="text-emerald-700">
+						{tappt("form.regenerate_invoice.success")}
+					</AlertDescription>
+				</Alert>
+
+				<div className="space-y-2">
+					<Label htmlFor="invoice-url">
+						{tappt("form.regenerate_invoice.new_url")}
+					</Label>
+					<div className="relative">
+						<Input
+							id="invoice-url"
+							className="pe-9 truncate font-mono shadow-inner bg-sidebar select-all"
+							defaultValue={newInvoiceUrl}
+							readOnly
+							type="text"
+						/>
+						<TooltipProvider delayDuration={0}>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<button
+										aria-label={copied ? "Copied" : "Copy to clipboard"}
+										className="absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md text-muted-foreground/80 outline-none transition-[color,box-shadow] hover:text-foreground focus:z-10 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed"
+										disabled={copied}
+										onClick={handleCopy}
+										type="button"
+									>
+										<div
+											className={cn(
+												"transition-all",
+												copied ? "scale-100 opacity-100" : "scale-0 opacity-0",
+											)}
+										>
+											<Check
+												aria-hidden="true"
+												className="stroke-emerald-500"
+												size={16}
+											/>
+										</div>
+										<div
+											className={cn(
+												"absolute transition-all",
+												copied ? "scale-0 opacity-0" : "scale-100 opacity-100",
+											)}
+										>
+											<Copy aria-hidden="true" size={16} />
+										</div>
+									</button>
+								</TooltipTrigger>
+								<TooltipContent className="px-2 py-1 text-xs bg-black text-white">
+									Copy to clipboard
+								</TooltipContent>
+							</Tooltip>
+						</TooltipProvider>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="p-0.5 space-y-6">
+			{error && (
+				<Alert variant="destructive">
+					<AlertCircle className="h-4 w-4" />
+					<AlertTitle>Error</AlertTitle>
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
+			)}
+
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+					<FormField
+						control={form.control}
+						name="expiry_minutes"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>{tappt("form.regenerate_invoice.label")}</FormLabel>
+								<FormControl>
+									<div className="flex flex-wrap gap-2">
+										{EXPIRY_OPTIONS.map((option) => {
+											const isSelected = field.value === option.value;
+											return (
+												<Badge
+													key={option.value}
+													variant={isSelected ? "default" : "outline"}
+													className={cn(
+														"cursor-pointer text-sm py-1.5 px-3 transition-all",
+														isSelected
+															? "ring-2 ring-primary ring-offset-1 shadow-sm"
+															: "hover:bg-muted text-muted-foreground shadow-inner bg-sidebar",
+													)}
+													onClick={() => field.onChange(option.value)}
+												>
+													{option.label}
+												</Badge>
+											);
+										})}
+									</div>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					<ResponsiveDialogButton {...buttonProps} />
+				</form>
+			</Form>
+		</div>
 	);
 }

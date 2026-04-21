@@ -70,7 +70,8 @@
 					"invoice": "Unduh Invoice"
 				},
 				"send_feedback_reminder": "Kirim Pengingat Feedback",
-				"change_package": "Ubah Paket"
+				"change_package": "Ubah Paket",
+				"regenerate_invoice": "Buat Ulang Invoice"
 			}
 		},
 		"change_package": {
@@ -326,6 +327,23 @@
 					}
 				}
 			}
+		},
+		"regenerate_invoice": {
+			"label": "Waktu Kedaluwarsa",
+			"placeholder": "Pilih waktu kedaluwarsa",
+			"options": {
+				"minutes_30": "30 Menit",
+				"hour_1": "1 Jam",
+				"hours_3": "3 Jam",
+				"hours_5": "5 Jam",
+				"hours_12": "12 Jam"
+			},
+			"submit": "Buat Ulang",
+			"success": "Invoice berhasil dibuat ulang.",
+			"success_title": "Berhasil",
+			"new_url": "URL Invoice Baru",
+			"copied": "URL invoice baru ditaruh ke papan klip",
+			"failed": "Gagal membuat ulang invoice"
 		}
 	},
 	"validation": {
@@ -338,6 +356,10 @@
 		"change_package": {
 			"title": "Ubah Paket",
 			"description": "Ubah paket untuk order ini"
+		},
+		"regenerate_invoice": {
+			"title": "Buat Ulang Invoice",
+			"description": "Buat ulang URL invoice dengan waktu kedaluwarsa baru"
 		}
 	},
 	"common": {

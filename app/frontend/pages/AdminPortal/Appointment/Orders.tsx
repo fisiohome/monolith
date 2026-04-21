@@ -29,6 +29,7 @@ import type { Package } from "@/components/admin-portal/appointment/feature-form
 import {
 	ChangePackageForm,
 	FeedbackReminderDialog,
+	RegenerateInvoiceForm,
 	UpdatePaymentForm,
 	UpdatePICForm,
 	UpdateStatusForm,
@@ -298,6 +299,7 @@ const OrderActionsCell = ({
 			cannotCancelBooking: !order.firstAppointmentId || markOrderDone,
 			cannotUpdatePayment: !order.appointments?.length || markOrderDone,
 			cannotChangePackage: markOrderDone,
+			cannotRegenerateInvoice: isOrderCompleted,
 			cannotSendFeedbackReminder: !allAppointmentsCompleted,
 		};
 	}, [order.appointments, order.firstAppointmentId, order.status]);
@@ -431,6 +433,7 @@ const OrderActionsCell = ({
 					],
 					preserveScroll: true,
 					preserveState: true,
+					replace: true,
 				},
 			);
 		} else {
@@ -458,7 +461,7 @@ const OrderActionsCell = ({
 					],
 					preserveScroll: true,
 					preserveState: true,
-					replace: false,
+					replace: true,
 				},
 			);
 		});
@@ -495,7 +498,7 @@ const OrderActionsCell = ({
 						],
 						preserveScroll: true,
 						preserveState: true,
-						replace: false,
+						replace: true,
 					},
 				);
 			} else {
@@ -516,6 +519,7 @@ const OrderActionsCell = ({
 						only: ["adminPortal", "flash", "errors", "selectedAppointment"],
 						preserveScroll: true,
 						preserveState: true,
+						replace: true,
 					},
 				);
 			} else {
@@ -544,7 +548,32 @@ const OrderActionsCell = ({
 					],
 					preserveScroll: true,
 					preserveState: true,
-					replace: false,
+					replace: true,
+				},
+			);
+		});
+	}, [order.id, pageURL]);
+
+	// for open the regenerate invoice form
+	const openRegenerateInvoice = useCallback(() => {
+		const { fullUrl } = populateQueryParams(pageURL, {
+			regenerate_invoice: order.id,
+		});
+		startTransition(() => {
+			router.get(
+				fullUrl,
+				{},
+				{
+					only: [
+						"adminPortal",
+						"flash",
+						"errors",
+						"selectedOrder",
+						"optionsData",
+					],
+					preserveScroll: true,
+					preserveState: true,
+					replace: true,
 				},
 			);
 		});
@@ -766,6 +795,17 @@ const OrderActionsCell = ({
 					>
 						<BanknoteIcon className="opacity-60" aria-hidden="true" />
 						{tappt("button.update_payment")}
+					</DropdownMenuItem>
+
+					<DropdownMenuItem
+						onSelect={(e) => {
+							e.preventDefault();
+							openRegenerateInvoice();
+						}}
+						disabled={permission.cannotRegenerateInvoice}
+					>
+						<BanknoteIcon className="opacity-60" aria-hidden="true" />
+						{tappt("button.order_actions.menus.regenerate_invoice")}
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 
@@ -1485,6 +1525,7 @@ export default function AppointmentOrders() {
 			updateStatus: !!q?.updateStatus,
 			updatePayment: !!q?.updatePayment,
 			changePackage: !!q?.changePackage,
+			regenerateInvoice: !!q?.regenerateInvoice,
 		};
 	}, [globalProps.adminPortal?.currentQuery]);
 
@@ -1649,6 +1690,37 @@ export default function AppointmentOrders() {
 			},
 		}),
 		[dialogMode.changePackage, pageURL, t],
+	);
+
+	const dialogRegenerateInvoice = useMemo<
+		Omit<ResponsiveDialogProps, "children">
+	>(
+		() => ({
+			isOpen: dialogMode.regenerateInvoice,
+			title: t("dialog.regenerate_invoice.title"),
+			description: t("dialog.regenerate_invoice.description"),
+			onOpenChange: (value: boolean) => {
+				if (!value) {
+					const { fullUrl } = populateQueryParams(pageURL, {
+						regenerate_invoice: undefined,
+						selected_order: undefined,
+					});
+					startTransition(() => {
+						router.get(
+							fullUrl,
+							{},
+							{
+								only: ["adminPortal", "flash", "errors", "selectedOrder"],
+								preserveScroll: true,
+								preserveState: true,
+								replace: false,
+							},
+						);
+					});
+				}
+			},
+		}),
+		[dialogMode.regenerateInvoice, pageURL, t],
 	);
 
 	const openOrderDetail = useCallback(
@@ -1899,6 +1971,13 @@ export default function AppointmentOrders() {
 							router.reload({ only: ["orders"] });
 						}}
 					/>
+				</ResponsiveDialog>
+			)}
+
+			{/* Regenerate Invoice Dialog */}
+			{globalProps?.selectedOrder && dialogRegenerateInvoice.isOpen && (
+				<ResponsiveDialog {...dialogRegenerateInvoice}>
+					<RegenerateInvoiceForm order={globalProps.selectedOrder} />
 				</ResponsiveDialog>
 			)}
 

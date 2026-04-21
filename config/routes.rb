@@ -161,6 +161,8 @@ Rails.application.routes.draw do
               put "drafts/:id/status_reason" => "appointments#draft_update_status_reason"
               # Queue code endpoint
               post "queue_code" => "appointments#queue_code"
+              # Regenerate invoice endpoint
+              post "orders/:order_id/regenerate-invoice" => "appointments#regenerate_invoice"
             end
           end
         end

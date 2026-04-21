@@ -7,7 +7,7 @@ module AdminPortal
 
     def initialize(params)
       @params = params
-      @selected_id = @params[:view_order] || @params[:selected_order] || @params[:change_package]
+      @selected_id = @params[:view_order] || @params[:selected_order] || @params[:change_package] || @params[:regenerate_invoice]
       @selected_update_pic_id = @params[:update_pic]
       @selected_update_status_id = @params[:update_status]
       @selected_update_payment_id = @params[:update_payment]

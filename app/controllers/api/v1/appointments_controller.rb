@@ -119,6 +119,30 @@ module Api
         render json: {success: false, error: "Failed to reserve queue code."}, status: :internal_server_error
       end
 
+      def regenerate_invoice
+        order = Order.find(params[:order_id])
+        Rails.logger.info "Starting external API regenerate invoice for order ID: #{order.id}"
+
+        expiry_minutes = params.dig(:form_data, :expiry_minutes)
+
+        result = AdminPortal::Orders::RegenerateInvoiceServiceExternalApi.new(order, expiry_minutes).call
+
+        if result[:success]
+          render json: {
+            success: result.dig(:data, "success"),
+            message: result.dig(:data, "message"),
+            data: result.dig(:data, "data")
+          }
+        else
+          default_error_message = "Failed to regenerate invoice"
+          error_message = result[:error] || default_error_message
+          Rails.logger.error "#{default_error_message}: #{error_message}"
+          render json: {success: false, error: error_message}, status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: {success: false, error: "Order not found"}, status: :not_found
+      end
+
       private
 
       def ensure_json_request

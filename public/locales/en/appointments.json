@@ -70,7 +70,8 @@
 					"invoice": "Download Invoice"
 				},
 				"send_feedback_reminder": "Send Feedback Reminder",
-				"change_package": "Change Package"
+				"change_package": "Change Package",
+				"regenerate_invoice": "Regenerate Invoice"
 			}
 		},
 		"change_package": {
@@ -326,6 +327,23 @@
 					}
 				}
 			}
+		},
+		"regenerate_invoice": {
+			"label": "Expiration Time",
+			"placeholder": "Select expiration time",
+			"options": {
+				"minutes_30": "30 Minutes",
+				"hour_1": "1 Hour",
+				"hours_3": "3 Hours",
+				"hours_5": "5 Hours",
+				"hours_12": "12 Hours"
+			},
+			"submit": "Regenerate",
+			"success": "The invoice has been regenerated successfully.",
+			"success_title": "Success",
+			"new_url": "New Invoice URL",
+			"copied": "New invoice URL copied to clipboard",
+			"failed": "Failed to regenerate invoice"
 		}
 	},
 	"validation": {
@@ -338,6 +356,10 @@
 		"change_package": {
 			"title": "Change Package",
 			"description": "Change the package for this order"
+		},
+		"regenerate_invoice": {
+			"title": "Regenerate Invoice",
+			"description": "Regenerate the invoice URL with a new expiration time"
 		}
 	},
 	"common": {
